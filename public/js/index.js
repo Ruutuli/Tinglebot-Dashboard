@@ -283,11 +283,50 @@ function setupModelCards() {
                   await items.renderItemCards(data, pagination.page);
                   break;
                 case 'inventory':
+                  // Check if inventory filters are active
+                  if (window.inventoryFiltersInitialized && window.savedInventoryFilterState) {
+                    const hasActiveFilters = window.savedInventoryFilterState.searchTerm || 
+                      window.savedInventoryFilterState.categoryFilter !== 'all' || 
+                      window.savedInventoryFilterState.typeFilter !== 'all';
+                    
+                    if (hasActiveFilters) {
+                      console.log('🔍 Inventory filters active - skipping main pagination');
+                      // Don't apply normal pagination when filters are active
+                      // Let the filtered pagination handle it
+                      return;
+                    }
+                  }
+                  
+                  // Update global inventory data for pagination
+                  window.allInventories = data;
+                  
+                  // Re-render with new page data
                   await inventory.renderInventoryItems(data, pagination.page);
+                  
+                  // Update results info
+                  const resultsInfo = document.querySelector('.inventory-results-info p');
+                  if (resultsInfo) {
+                    resultsInfo.innerHTML = `<p>Showing ${data.length} inventory entries (Page ${pagination.page} of ${pagination.pages})</p>`;
+                  }
                   break;
                 default:
                   console.error(`Unknown model type: ${modelName}`);
               }
+              
+              // Recreate pagination with updated page number
+              console.log('📄 Recreating pagination with updated page:', pagination.page);
+              const updatedPaginationDiv = createPagination({ page: pagination.page, pages: pagination.pages }, handlePageChange);
+              
+              // Update pagination in the DOM
+              const contentDiv = document.getElementById('model-details-data');
+              if (contentDiv) {
+                const existingPagination = contentDiv.querySelector('.pagination');
+                if (existingPagination) {
+                  existingPagination.remove();
+                }
+                contentDiv.appendChild(updatedPaginationDiv);
+              }
+              
             } catch (err) {
               console.error('❌ Error loading page data:', err);
               error.logError(err, 'Loading Page Data');
