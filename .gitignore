@@ -61,4 +61,12 @@ Thumbs.db
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# Environment variables
+.env
+
+# Google API credentials and tokens
+config/credentials.json
+config/service_account.json
+config/token.json 
