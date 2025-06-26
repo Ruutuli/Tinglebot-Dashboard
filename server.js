@@ -27,22 +27,22 @@ const {
   getCharacterInventoryCollection,
   getTokenBalance,
   getUserById
-} = require('../database/db');
+} = require('./database/db');
 
 // Import models
-const Character = require('../models/CharacterModel');
-const Quest = require('../models/QuestModel');
-const Item = require('../models/ItemModel');
-const Monster = require('../models/MonsterModel');
-const User = require('../models/UserModel');
-const Pet = require('../models/PetModel');
-const Mount = require('../models/MountModel');
-const VillageShops = require('../models/VillageShopsModel');
-const Weather = require('../models/WeatherModel');
-const { VendingRequest } = require('../models/VendingModel');
-const { Village } = require('../models/VillageModel');
-const Party = require('../models/PartyModel');
-const Relic = require('../models/RelicModel');
+const Character = require('./models/CharacterModel');
+const Quest = require('./models/QuestModel');
+const Item = require('./models/ItemModel');
+const Monster = require('./models/MonsterModel');
+const User = require('./models/UserModel');
+const Pet = require('./models/PetModel');
+const Mount = require('./models/MountModel');
+const VillageShops = require('./models/VillageShopsModel');
+const Weather = require('./models/WeatherModel');
+const { VendingRequest } = require('./models/VendingModel');
+const { Village } = require('./models/VillageModel');
+const Party = require('./models/PartyModel');
+const Relic = require('./models/RelicModel');
 
 // ------------------- Section: App Configuration -------------------
 const app = express();

@@ -1957,7 +1957,7 @@ inventoryUtils.initializeInventoryUtils({
 const recordBlightRoll = async (characterId, characterName, userId, rollValue, previousStage, newStage, notes = '') => {
   try {
     await connectToTinglebot();
-    const BlightRollHistory = require('../models/BlightRollHistoryModel');
+    const BlightRollHistory = require('./models/BlightRollHistoryModel');
     
     const rollRecord = new BlightRollHistory({
       characterId,
@@ -1982,7 +1982,7 @@ const recordBlightRoll = async (characterId, characterName, userId, rollValue, p
 const getCharacterBlightHistory = async (characterId, limit = 10) => {
   try {
     await connectToTinglebot();
-    const BlightRollHistory = require('../models/BlightRollHistoryModel');
+    const BlightRollHistory = require('./models/BlightRollHistoryModel');
     
     return await BlightRollHistory.find({ characterId })
       .sort({ timestamp: -1 })
@@ -2000,7 +2000,7 @@ const getCharacterBlightHistory = async (characterId, limit = 10) => {
 const getUserBlightHistory = async (userId, limit = 20) => {
   try {
     await connectToTinglebot();
-    const BlightRollHistory = require('../models/BlightRollHistoryModel');
+    const BlightRollHistory = require('./models/BlightRollHistoryModel');
     
     return await BlightRollHistory.find({ userId })
       .sort({ timestamp: -1 })

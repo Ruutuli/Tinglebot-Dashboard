@@ -1,6 +1,6 @@
 require('dotenv').config();
 const fs = require('fs');
-const { handleError } = require('../utils/globalErrorHandler');
+const { handleError } = require('./utils/globalErrorHandler');
 const path = require('path');
 const dotenv = require('dotenv');
 dotenv.config({ path: `.env.${env}` });

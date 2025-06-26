@@ -3,8 +3,7 @@
 // External dependencies and internal modules
 // ============================================================================
 
-const { handleError } = require("../utils/globalErrorHandler");
-const { promptUserForSpecificItems } = require('../utils/itemUtils');
+const { handleError } = require("./globalErrorHandler");
 const {
   appendSheetData,
   authorizeSheets,
@@ -14,12 +13,11 @@ const {
   safeAppendDataToSheet,
   extractSpreadsheetId,
   isValidGoogleSheetsUrl
-} = require("../utils/googleSheetsUtils");
+} = require("./googleSheetsUtils");
 const generalCategories = require("../models/GeneralItemCategories");
 const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
 const ItemModel = require('../models/ItemModel');
-const { EmbedBuilder } = require('discord.js');
 
 // ============================================================================
 // ---- Constants ----
@@ -304,16 +302,6 @@ async function addItemInventoryDatabase(characterId, itemName, quantity, interac
 
     const character = await dbFunctions.fetchCharacterById(characterId);
     if (!character) {
-      const errorEmbed = new EmbedBuilder()
-        .setColor(0xFF0000)
-        .setTitle('❌ Character Not Found')
-        .setDescription(`Character with ID ${characterId} not found`)
-        .addFields(
-          { name: 'Character ID', value: characterId.toString(), inline: true }
-        )
-        .setFooter({ text: 'Please check the character ID and try again' })
-        .setTimestamp();
-
       throw new Error(`Character with ID ${characterId} not found`);
     }
     console.log(`[inventoryUtils.js]: 📦 Processing inventory for ${character.name}`);

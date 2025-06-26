@@ -1,8 +1,7 @@
 // ============================================================================
 // ------------------- Error Handling -------------------
-// Global error capturing and logging to Discord and Trello.
+// Global error capturing and logging for web dashboard.
 // ============================================================================
-const { EmbedBuilder } = require('discord.js');
 const dbConfig = require('../config/database');
 
 // ------------------- Standard Libraries -------------------
@@ -10,17 +9,15 @@ const ERROR_LOG_CHANNEL_ID = process.env.CONSOLE_LOG_CHANNEL;
 
 // ------------------- Variables -------------------
 let trelloLogger = null;
-let client = null;
 
 // ------------------- Initialize Error Handler -------------------
-// Sets up Trello logging function and Discord client.
-function initializeErrorHandler(trelloLoggerFunction, discordClient) {
+// Sets up Trello logging function.
+function initializeErrorHandler(trelloLoggerFunction) {
   trelloLogger = trelloLoggerFunction;
-  client = discordClient;
 }
 
 // ------------------- Handle Errors -------------------
-// Captures, formats, and sends errors to both Trello and Discord.
+// Captures, formats, and logs errors to console and optionally Trello.
 async function handleError(error, source = "Unknown Source", context = {}) {
   const message = error?.stack || error?.message || String(error) || 'Unknown error occurred';
   const timestamp = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
@@ -83,36 +80,14 @@ Error: ${message}
 
     try {
       trelloLink = await trelloLogger(trelloContent, source);
+      console.log(`[globalErrorHandler.js]: ✅ Trello card created: ${trelloLink}`);
     } catch (err) {
       console.error(`[globalErrorHandler.js]: ❌ Failed to create Trello card: ${err.message}`);
     }
   }
 
-  // ------------------- Discord Error Channel Logging -------------------
-  if (client && client.channels?.cache.has(ERROR_LOG_CHANNEL_ID)) {
-    const errorChannel = client.channels.cache.get(ERROR_LOG_CHANNEL_ID);
-
-    if (errorChannel) {
-      const errorEmbed = new EmbedBuilder()
-        .setColor(0xFF0000)
-        .setTitle(`❌ Error Detected in ${source}`)
-        .addFields(
-          { name: "🧠 Command Used", value: context.commandName || "Unknown", inline: false },
-          { name: "🙋 User", value: context.userTag ? `${context.userTag} (${context.userId})` : "Unknown", inline: false },
-          { name: "📦 Options", value: context.options ? `\`\`\`json\n${JSON.stringify(context.options, null, 2)}\n\`\`\`` : "None" },
-          { name: "📝 Error Message", value: `\`\`\`\n${message.slice(0, 1000)}\n\`\`\`` || "No error message available" },
-          ...(extraInfo ? [{ name: "🌐 Context", value: extraInfo }] : []),
-          { name: "🔗 Trello Link", value: trelloLink ? trelloLink : "No Trello card available." }
-        )
-        .setTimestamp();
-
-      try {
-        await errorChannel.send({ embeds: [errorEmbed] });
-      } catch (sendError) {
-        console.error(`[globalErrorHandler.js]: ❌ Failed to send error to Discord channel: ${sendError.message}`);
-      }
-    }
-  }
+  // For web dashboard, we'll just log to console and optionally Trello
+  // Discord integration removed since this is a web application
 }
 
 module.exports = {
