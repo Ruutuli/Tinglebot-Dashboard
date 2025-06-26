@@ -195,7 +195,8 @@ function setupModelCards() {
             break;
           case 'inventory':
             console.log('🎒 Initializing inventory page');
-            await inventory.renderInventoryItems(data, pagination.page);
+            // Stay within model details page like items and characters
+            await inventory.initializeInventoryPage(data, pagination.page, contentDiv);
             break;
           default:
             console.error(`Unknown model type: ${modelName}`);
@@ -308,6 +309,9 @@ function setupModelCards() {
             }
             paginationContainer.innerHTML = '';
             paginationContainer.appendChild(paginationDiv);
+          } else if (modelName === 'inventory') {
+            // For inventory, add pagination to the content div like items and characters
+            contentDiv.appendChild(paginationDiv);
           } else {
             contentDiv.appendChild(paginationDiv);
           }
@@ -361,7 +365,7 @@ function handleModelDataError(modelName, contentDiv) {
             items.initializeItemPage(data, pagination.page, contentDiv);
             break;
           case 'inventory':
-            inventory.renderInventoryItems(data, pagination.page);
+            await inventory.initializeInventoryPage(data, pagination.page, contentDiv);
             break;
           default:
             console.error(`Unknown model type: ${modelName}`);

@@ -15,6 +15,7 @@ const fetch = require('node-fetch');
 const session = require('express-session');
 const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
+const { MongoClient } = require('mongodb');
 
 // Import database methods from db.js
 const {
@@ -601,12 +602,6 @@ app.get('/api/models/counts', async (req, res) => {
 // ------------------- Function: getInventoryData -------------------
 // Returns inventory data with streaming support for large datasets
 app.get('/api/models/inventory', async (req, res) => {
-  res.writeHead(200, {
-    'Content-Type': 'application/json',
-    'Transfer-Encoding': 'chunked'
-  });
-  res.write(JSON.stringify({ status: 'loading' }));
-
   try {
     const limit = parseInt(req.query.limit) || 1000;
     const page = parseInt(req.query.page) || 1;
@@ -640,36 +635,29 @@ app.get('/api/models/inventory', async (req, res) => {
         return items.map(it => ({ ...it, characterName: name }));
       }));
       allItems.push(...results.flat());
-
-      if (i + BATCH_SIZE < collections.length) {
-        res.write(JSON.stringify({
-          status: 'loading',
-          progress: Math.round((i + BATCH_SIZE) / collections.length * 100)
-        }));
-      }
     }
 
     await client.close();
 
     const paginated = allItems.slice(skip, skip + limit);
-    res.write(JSON.stringify({
-      status: 'complete',
+    
+    console.log(`[server.js]: ✅ Successfully fetched ${paginated.length} inventory records (page ${page}/${Math.ceil(allItems.length / limit)})`);
+    
+    res.json({
       data: paginated,
       pagination: {
         total: allItems.length,
-        page, limit,
+        page, 
+        limit,
         pages: Math.ceil(allItems.length / limit)
       }
-    }));
-    res.end();
+    });
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching inventory:', error);
-    res.write(JSON.stringify({
-      status: 'error',
+    res.status(500).json({
       error: 'Failed to fetch inventory',
       details: error.message
-    }));
-    res.end();
+    });
   }
 });
 

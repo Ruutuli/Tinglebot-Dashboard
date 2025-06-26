@@ -13,6 +13,12 @@
     onload="console.log('CSS loaded successfully')"
     onerror="console.error('Failed to load CSS')"
   />
+  <link
+    rel="stylesheet"
+    href="css/inventory-new.css"
+    onload="console.log('Inventory CSS loaded successfully')"
+    onerror="console.error('Failed to load Inventory CSS')"
+  />
   <script src="https://kit.fontawesome.com/262000d25d.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -338,12 +344,7 @@
         <div class="inventory-container">
           <div class="inventory-filters">
             <label for="inventory-search" class="visually-hidden">Search inventories</label>
-            <input type="text" id="inventory-search" placeholder="Search inventories..." />
-
-            <label for="inventory-character-filter" class="visually-hidden">Filter by Character</label>
-            <select id="inventory-character-filter" name="inventory-character-filter">
-              <option value="all">All Characters</option>
-            </select>
+            <input type="text" id="inventory-search" placeholder="Search items or characters..." />
 
             <label for="inventory-category-filter" class="visually-hidden">Filter by Category</label>
             <select id="inventory-category-filter" name="inventory-category-filter">
@@ -355,14 +356,14 @@
               <option value="all">All Types</option>
             </select>
 
-            <label for="inventory-sort" class="visually-hidden">Sort Inventories</label>
+            <label for="inventory-sort" class="visually-hidden">Sort Characters</label>
             <select id="inventory-sort" name="inventory-sort">
               <option value="character-asc">Character (A-Z)</option>
               <option value="character-desc">Character (Z-A)</option>
-              <option value="item-asc">Item (A-Z)</option>
-              <option value="item-desc">Item (Z-A)</option>
-              <option value="quantity-desc">Quantity (High-Low)</option>
-              <option value="quantity-asc">Quantity (Low-High)</option>
+              <option value="items-desc">Most Items</option>
+              <option value="items-asc">Least Items</option>
+              <option value="quantity-desc">Most Quantity</option>
+              <option value="quantity-asc">Least Quantity</option>
             </select>
 
             <button id="inventory-clear-filters">Clear Filters</button>
