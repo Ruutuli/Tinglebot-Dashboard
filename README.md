@@ -41,6 +41,59 @@ DISCORD_CALLBACK_URL=https://tinglebot.xyz/auth/discord/callback
 SESSION_SECRET=your_session_secret
 ```
 
+## 🔐 Discord OAuth Setup
+
+The dashboard now supports Discord OAuth authentication for enhanced user experience and personal features.
+
+### Setting Up Discord OAuth
+
+1. **Create Discord Application**
+   - Go to [Discord Developer Portal](https://discord.com/developers/applications)
+   - Click "New Application"
+   - Give it a name (e.g., "Tinglebot Dashboard")
+   - Save the application
+
+2. **Configure OAuth2 Settings**
+   - Go to the "OAuth2" section in your Discord application
+   - Add redirect URL: `https://tinglebot.xyz/auth/discord/callback` (production)
+   - For local development: `http://localhost:5001/auth/discord/callback`
+   - Save changes
+
+3. **Get Credentials**
+   - Copy the "Client ID" from the OAuth2 section
+   - Click "Reset Secret" to generate a new client secret
+   - Copy the client secret
+
+4. **Set Environment Variables**
+   ```bash
+   DISCORD_CLIENT_ID=your_client_id_here
+   DISCORD_CLIENT_SECRET=your_client_secret_here
+   DISCORD_CALLBACK_URL=https://tinglebot.xyz/auth/discord/callback
+   SESSION_SECRET=your_secure_session_secret
+   ```
+
+### OAuth Scopes
+
+The application requests these Discord scopes:
+- `identify` - Get user's Discord ID, username, and avatar
+- `email` - Get user's email address (optional)
+
+### User Features
+
+When users log in with Discord, they get access to:
+- Personal character management
+- Token tracking and synchronization
+- Custom settings and preferences
+- Progress tracking across sessions
+- Enhanced dashboard features
+
+### Security Notes
+
+- Session secrets should be long, random strings
+- Never commit Discord credentials to version control
+- Use HTTPS in production for secure cookie transmission
+- Regularly rotate client secrets for security
+
 ### Deployment Steps
 
 1. **Connect Repository**: Link your GitHub repository to Railway

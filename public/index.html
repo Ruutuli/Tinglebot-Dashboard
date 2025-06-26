@@ -52,10 +52,45 @@
         <span class="status-dot"></span>
         <span class="status-text">Online</span>
       </div>
-      <div class="user-menu">
-        <img src="/images/ankleicon.png" alt="Profile picture of the user" class="user-avatar" />
-        <span class="username">Admin</span>
+      <div class="user-menu" id="user-menu">
+        <img src="/images/ankleicon.png" alt="Profile picture of the user" class="user-avatar" id="user-avatar" />
+        <span class="username" id="username">Loading...</span>
         <i class="fas fa-chevron-down" aria-hidden="true"></i>
+        <div class="user-dropdown" id="user-dropdown">
+          <div class="user-dropdown-content">
+            <div class="user-info" id="user-info" style="display: none;">
+              <div class="user-details">
+                <img src="/images/ankleicon.png" alt="Profile picture" class="user-dropdown-avatar" id="user-dropdown-avatar" />
+                <div class="user-text">
+                  <span class="user-name" id="user-name">Username</span>
+                  <span class="user-discriminator" id="user-discriminator">#0000</span>
+                </div>
+              </div>
+              <div class="user-stats">
+                <span class="user-tokens">Tokens: <span id="user-tokens">0</span></span>
+                <span class="user-slots">Slots: <span id="user-slots">2</span></span>
+              </div>
+              <div class="user-actions">
+                <a href="/auth/logout" class="logout-button">
+                  <i class="fas fa-sign-out-alt"></i>
+                  Logout
+                </a>
+              </div>
+            </div>
+            <div class="guest-info" id="guest-info" style="display: none;">
+              <div class="guest-message">
+                <i class="fas fa-user-circle"></i>
+                <span>Guest User</span>
+              </div>
+              <div class="guest-actions">
+                <a href="/login" class="login-button">
+                  <i class="fab fa-discord"></i>
+                  Login with Discord
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </header>

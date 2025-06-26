@@ -12,6 +12,9 @@ const path = require('path');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const fetch = require('node-fetch');
+const session = require('express-session');
+const passport = require('passport');
+const DiscordStrategy = require('passport-discord').Strategy;
 
 // Import database methods from db.js
 const {
@@ -26,7 +29,8 @@ const {
   fetchMonsterByName,
   getCharacterInventoryCollection,
   getTokenBalance,
-  getUserById
+  getUserById,
+  getOrCreateUser
 } = require('./database/db');
 
 // Import models
@@ -47,6 +51,85 @@ const Relic = require('./models/RelicModel');
 // ------------------- Section: App Configuration -------------------
 const app = express();
 const PORT = process.env.PORT || 5001;
+
+// ------------------- Section: Session & Authentication Configuration -------------------
+// Session configuration for Discord OAuth
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize Passport and restore authentication state from session
+app.use(passport.initialize());
+app.use(passport.session());
+
+// ------------------- Section: Passport Configuration -------------------
+// Serialize user for session
+passport.serializeUser((user, done) => {
+  done(null, user.discordId);
+});
+
+// Deserialize user from session
+passport.deserializeUser(async (discordId, done) => {
+  try {
+    const user = await User.findOne({ discordId });
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
+});
+
+// Discord OAuth Strategy
+passport.use(new DiscordStrategy({
+  clientID: process.env.DISCORD_CLIENT_ID,
+  clientSecret: process.env.DISCORD_CLIENT_SECRET,
+  callbackURL: process.env.DISCORD_CALLBACK_URL || 'http://localhost:5001/auth/discord/callback',
+  scope: ['identify', 'email']
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    // Find or create user in database
+    let user = await User.findOne({ discordId: profile.id });
+    
+    if (!user) {
+      // Create new user
+      user = new User({
+        discordId: profile.id,
+        username: profile.username,
+        email: profile.email,
+        avatar: profile.avatar,
+        discriminator: profile.discriminator,
+        tokens: 0,
+        tokenTracker: '',
+        blightedcharacter: false,
+        characterSlot: 2,
+        status: 'active',
+        statusChangedAt: new Date()
+      });
+      await user.save();
+      console.log(`[server.js]: ✅ New Discord user created: ${profile.username}#${profile.discriminator}`);
+    } else {
+      // Update existing user's Discord info
+      user.username = profile.username;
+      user.email = profile.email;
+      user.avatar = profile.avatar;
+      user.discriminator = profile.discriminator;
+      user.status = 'active';
+      user.statusChangedAt = new Date();
+      await user.save();
+      console.log(`[server.js]: ✅ Discord user updated: ${profile.username}#${profile.discriminator}`);
+    }
+    
+    return done(null, user);
+  } catch (error) {
+    console.error('[server.js]: ❌ Discord OAuth error:', error);
+    return done(error, null);
+  }
+}));
 
 // Database connection options
 const connectionOptions = {
@@ -126,12 +209,96 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
+// ------------------- Section: Authentication Middleware -------------------
+
+// ------------------- Function: requireAuth -------------------
+// Middleware to require authentication for protected routes
+function requireAuth(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ error: 'Authentication required' });
+}
+
+// ------------------- Function: optionalAuth -------------------
+// Middleware that adds user info to request if authenticated
+function optionalAuth(req, res, next) {
+  // Always continue, but req.user will be available if authenticated
+  next();
+}
+
 // ------------------- Section: Page Routes -------------------
 
 // ------------------- Function: serveIndexPage -------------------
 // Serves the main dashboard page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ------------------- Function: serveLoginPage -------------------
+// Serves the login page
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// ------------------- Function: serveDashboardPage -------------------
+// Serves the main dashboard page
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ------------------- Section: Discord OAuth Routes -------------------
+
+// ------------------- Function: initiateDiscordAuth -------------------
+// Initiates Discord OAuth flow
+app.get('/auth/discord', passport.authenticate('discord'));
+
+// ------------------- Function: handleDiscordCallback -------------------
+// Handles Discord OAuth callback
+app.get('/auth/discord/callback', 
+  passport.authenticate('discord', { 
+    failureRedirect: '/login',
+    failureFlash: true 
+  }), 
+  (req, res) => {
+    // Successful authentication
+    console.log(`[server.js]: ✅ Discord login successful for user: ${req.user.username}`);
+    res.redirect('/dashboard');
+  }
+);
+
+// ------------------- Function: logout -------------------
+// Handles user logout
+app.get('/auth/logout', (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      console.error('[server.js]: ❌ Logout error:', err);
+      return res.redirect('/login');
+    }
+    console.log('[server.js]: ✅ User logged out successfully');
+    res.redirect('/login');
+  });
+});
+
+// ------------------- Function: checkAuthStatus -------------------
+// Returns current authentication status
+app.get('/api/auth/status', (req, res) => {
+  if (req.isAuthenticated()) {
+    res.json({
+      authenticated: true,
+      user: {
+        discordId: req.user.discordId,
+        username: req.user.username,
+        email: req.user.email,
+        avatar: req.user.avatar,
+        discriminator: req.user.discriminator,
+        tokens: req.user.tokens,
+        characterSlot: req.user.characterSlot
+      }
+    });
+  } else {
+    res.json({ authenticated: false });
+  }
 });
 
 // ------------------- Section: API Routes -------------------
@@ -172,8 +339,27 @@ app.get('/api/health', async (req, res) => {
 
 // ------------------- Function: getUserInfo -------------------
 // Returns basic user information for dashboard
-app.get('/api/user', (req, res) => {
-  res.json({ username: 'Admin' });
+app.get('/api/user', optionalAuth, (req, res) => {
+  if (req.isAuthenticated()) {
+    res.json({
+      authenticated: true,
+      username: req.user.username,
+      discordId: req.user.discordId,
+      email: req.user.email,
+      avatar: req.user.avatar,
+      discriminator: req.user.discriminator,
+      tokens: req.user.tokens,
+      characterSlot: req.user.characterSlot,
+      status: req.user.status,
+      avatarUrl: req.user.avatar ? `https://cdn.discordapp.com/avatars/${req.user.discordId}/${req.user.avatar}.png` : null
+    });
+  } else {
+    res.json({ 
+      authenticated: false,
+      username: 'Guest',
+      message: 'Login with Discord for enhanced features'
+    });
+  }
 });
 
 // ------------------- Function: getActivities -------------------
