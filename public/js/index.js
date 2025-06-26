@@ -13,6 +13,7 @@ import * as items from './items.js';
 import * as characters from './characters.js';
 import * as stats from './stats.js';
 import * as error from './error.js';
+import * as auth from './auth.js';
 import { createPagination, setupBackToTopButton, scrollToTop } from './ui.js';
 
 // Import specific functions from characters module
@@ -23,7 +24,8 @@ export {
   items,
   characters,
   stats,
-  error
+  error,
+  auth
 };
 
 // ============================================================================
@@ -33,6 +35,10 @@ export {
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     console.log('🚀 DOM Content Loaded - Starting initialization...');
+    
+    // Initialize authentication first
+    console.log('🔐 Initializing authentication...');
+    await auth.checkUserAuthStatus();
     
     // Check if back-to-top button exists
     const backToTopButton = document.getElementById('backToTop');
@@ -471,6 +477,8 @@ function setupSidebarNavigation() {
         showStatsSection();
       } else if (sectionId === 'dashboard-section') {
         showDashboardSection();
+      } else if (sectionId === 'profile-section') {
+        showProfileSection();
       } else {
         // For other sections, use the existing showSection function
         showSection(sectionId);
@@ -487,6 +495,8 @@ function setupSidebarNavigation() {
       showStatsSection();
     } else if (section === 'dashboard-section') {
       showDashboardSection();
+    } else if (section === 'profile-section') {
+      showProfileSection();
     } else {
       showSection(section);
     }
@@ -502,6 +512,8 @@ function setupSidebarNavigation() {
       showStatsSection();
     } else if (sectionId === 'dashboard-section') {
       showDashboardSection();
+    } else if (sectionId === 'profile-section') {
+      showProfileSection();
     } else {
       showSection(sectionId);
     }
@@ -702,6 +714,58 @@ function showDashboardSection() {
 }
 
 // ============================================================================
+// ------------------- Profile Navigation -------------------
+// Handles profile page navigation specifically
+// ============================================================================
+function showProfileSection() {
+  console.log('👤 Showing profile section...');
+  
+  // Hide all main content sections
+  const mainContent = document.querySelector('.main-content');
+  const sections = mainContent.querySelectorAll('section, #model-details-page');
+  
+  sections.forEach(section => {
+    section.style.display = 'none';
+  });
+  
+  // Show the profile section
+  const profileSection = document.getElementById('profile-section');
+  if (profileSection) {
+    profileSection.style.display = 'block';
+    console.log('✅ Profile section displayed');
+    
+    // Initialize profile page
+    import('./profile.js').then(profileModule => {
+      profileModule.initProfilePage();
+    }).catch(err => {
+      console.error('❌ Error loading profile module:', err);
+    });
+  } else {
+    console.error('❌ Profile section not found');
+  }
+  
+  // Update active state in sidebar
+  const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+  sidebarLinks.forEach(link => {
+    const linkSection = link.getAttribute('data-section');
+    const listItem = link.closest('li');
+    if (listItem) {
+      if (linkSection === 'profile-section') {
+        listItem.classList.add('active');
+      } else {
+        listItem.classList.remove('active');
+      }
+    }
+  });
+  
+  // Update breadcrumb
+  const breadcrumb = document.querySelector('.breadcrumb');
+  if (breadcrumb) {
+    breadcrumb.textContent = 'Profile';
+  }
+}
+
+// ============================================================================
 // ------------------- Exports -------------------
 // Shared helpers and UI controls
 // ============================================================================
@@ -717,5 +781,6 @@ export {
   formatCharacterIconUrl,
   renderMarkdownLinks,
   renderItemTypeIcon,
-  loadModelData
+  loadModelData,
+  showProfileSection
 };

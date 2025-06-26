@@ -71,6 +71,10 @@
                 <span class="user-slots">Slots: <span id="user-slots">2</span></span>
               </div>
               <div class="user-actions">
+                <a href="#profile" class="profile-button" id="profile-link">
+                  <i class="fas fa-user"></i>
+                  Profile
+                </a>
                 <a href="/auth/logout" class="logout-button">
                   <i class="fas fa-sign-out-alt"></i>
                   Logout
@@ -126,6 +130,9 @@
           </li>
           <li>
             <a href="#stats" data-section="stats-section"><i class="fas fa-chart-bar"></i><span>Stats</span></a>
+          </li>
+          <li>
+            <a href="#profile" data-section="profile-section"><i class="fas fa-user"></i><span>Profile</span></a>
           </li>
         </ul>
       </nav>
@@ -269,6 +276,59 @@
         </div>
       </section>
 
+      <!-- Profile Section -->
+      <section id="profile-section" style="display:none;">
+        <div class="dashboard-header">
+          <h1>Profile</h1>
+          <div class="dashboard-divider"></div>
+        </div>
+        <div class="profile-container">
+          <div class="profile-card">
+            <div class="profile-header">
+              <div class="profile-avatar-container">
+                <img src="/images/ankleicon.png" alt="Profile Avatar" class="profile-avatar" id="profile-avatar" />
+                <div class="profile-status online">
+                  <span class="status-dot"></span>
+                </div>
+              </div>
+              <div class="profile-info">
+                <h2 class="profile-name" id="profile-name">Loading...</h2>
+              </div>
+            </div>
+            <div class="profile-stats">
+              <div class="stat-item">
+                <span class="stat-label">Tokens</span>
+                <span class="stat-value" id="profile-tokens">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Character Slots</span>
+                <span class="stat-value" id="profile-slots">2</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Member Since</span>
+                <span class="stat-value" id="profile-joined">Loading...</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- User Characters Section -->
+          <div class="profile-characters-section">
+            <div class="profile-characters-header">
+              <h3>My Characters</h3>
+              <div class="profile-characters-count" id="profile-characters-count">
+                <span id="characters-count">0</span> characters
+              </div>
+            </div>
+            <div class="profile-characters-container" id="profile-characters-container">
+              <div class="profile-characters-loading" id="profile-characters-loading">
+                <div class="loading-spinner"></div>
+                <p>Loading your characters...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Inventory Section -->
       <section id="inventory-section" style="display:none;">
         <div class="dashboard-header">
@@ -348,6 +408,7 @@
     });
   </script>
   <script type="module" src="js/ui.js"></script>
+  <script type="module" src="js/auth.js"></script>
   <script type="module" src="js/characters.js"></script>
   <script type="module" src="js/items.js"></script>
   <script type="module" src="js/inventory.js"></script>

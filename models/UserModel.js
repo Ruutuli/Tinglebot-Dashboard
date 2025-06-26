@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
   // ------------------- Message tracking fields -------------------
   lastMessageContent: { type: String, default: '' }, // Content of the last message sent
   lastMessageTimestamp: { type: Date }, // Timestamp of the last message
-});
+}, { timestamps: true }); // Add timestamps for createdAt and updatedAt
 
 // ------------------- Export the User model -------------------
 const User = mongoose.model('User', userSchema);

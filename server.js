@@ -56,10 +56,11 @@ const PORT = process.env.PORT || 5001;
 // Session configuration for Discord OAuth
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: false, // Set to false for development
+    httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
@@ -263,7 +264,16 @@ app.get('/auth/discord/callback',
   (req, res) => {
     // Successful authentication
     console.log(`[server.js]: ✅ Discord login successful for user: ${req.user.username}`);
-    res.redirect('/dashboard');
+    console.log('[server.js]: 🔍 Session after login:', {
+      sessionId: req.session.id,
+      passport: req.session.passport,
+      user: req.user ? {
+        username: req.user.username,
+        discordId: req.user.discordId,
+        id: req.user._id
+      } : null
+    });
+    res.redirect('/?login=success');
   }
 );
 
@@ -340,6 +350,19 @@ app.get('/api/health', async (req, res) => {
 // ------------------- Function: getUserInfo -------------------
 // Returns basic user information for dashboard
 app.get('/api/user', optionalAuth, (req, res) => {
+  console.log('[server.js]: 🔍 /api/user called - Auth check:', {
+    isAuthenticated: req.isAuthenticated(),
+    user: req.user ? {
+      username: req.user.username,
+      discordId: req.user.discordId,
+      id: req.user._id
+    } : null,
+    session: req.session ? {
+      id: req.session.id,
+      passport: req.session.passport
+    } : null
+  });
+  
   if (req.isAuthenticated()) {
     res.json({
       authenticated: true,
@@ -351,6 +374,7 @@ app.get('/api/user', optionalAuth, (req, res) => {
       tokens: req.user.tokens,
       characterSlot: req.user.characterSlot,
       status: req.user.status,
+      createdAt: req.user.createdAt,
       avatarUrl: req.user.avatar ? `https://cdn.discordapp.com/avatars/${req.user.discordId}/${req.user.avatar}.png` : null
     });
   } else {
@@ -824,6 +848,31 @@ app.get('/api/character/:id', async (req, res) => {
     res.json({ ...char.toObject(), icon: char.icon });
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching character:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: getUserCharacters -------------------
+// Returns all characters belonging to the authenticated user
+app.get('/api/user/characters', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.discordId;
+    console.log(`[server.js]: 🔍 Fetching characters for user: ${userId}`);
+    
+    const characters = await Character.find({ userId }).lean();
+    
+    // Transform icon URLs for characters (same as in the main character endpoint)
+    characters.forEach(character => {
+      if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
+        const filename = character.icon.split('/').pop();
+        character.icon = filename;
+      }
+    });
+    
+    console.log(`[server.js]: ✅ Found ${characters.length} characters for user ${userId}`);
+    res.json({ data: characters });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching user characters:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
