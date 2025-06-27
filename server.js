@@ -865,6 +865,57 @@ app.get('/api/user/characters', requireAuth, async (req, res) => {
   }
 });
 
+// ------------------- Function: getGuildMemberInfo -------------------
+// Returns Discord guild member information including join date
+app.get('/api/user/guild-info', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.discordId;
+    const guildId = process.env.PROD_GUILD_ID;
+    
+    if (!guildId) {
+      console.error('[server.js]: ❌ PROD_GUILD_ID not configured');
+      return res.status(500).json({ error: 'Guild ID not configured' });
+    }
+    
+    console.log(`[server.js]: 🔍 Fetching guild member info for user: ${userId} in guild: ${guildId}`);
+    
+    // Fetch guild member information from Discord API
+    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log(`[server.js]: ⚠️ User ${userId} not found in guild ${guildId}`);
+        return res.json({ 
+          joinedAt: null, 
+          message: 'User not found in guild',
+          inGuild: false 
+        });
+      }
+      throw new Error(`Discord API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const memberData = await response.json();
+    const joinedAt = memberData.joined_at ? new Date(memberData.joined_at) : null;
+    
+    console.log(`[server.js]: ✅ Found guild member info for user ${userId}, joined: ${joinedAt}`);
+    
+    res.json({
+      joinedAt: joinedAt ? joinedAt.toISOString() : null,
+      inGuild: true,
+      roles: memberData.roles || [],
+      nick: memberData.nick || null
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching guild member info:', error);
+    res.status(500).json({ error: 'Failed to fetch guild member information' });
+  }
+});
+
 // ------------------- Section: Image Proxy Routes -------------------
 
 // ------------------- Function: proxyImage -------------------

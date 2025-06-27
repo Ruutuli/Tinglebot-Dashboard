@@ -97,13 +97,8 @@ function updateProfileDisplay(userData) {
   profileTokens.textContent = userData.tokens || 0;
   profileSlots.textContent = userData.characterSlot || 2;
   
-  // Update join date
-  if (userData.createdAt) {
-    const joinDate = new Date(userData.createdAt);
-    profileJoined.textContent = formatDate(joinDate);
-  } else {
-    profileJoined.textContent = 'Unknown';
-  }
+  // Update join date - will be updated by loadExtendedProfileData
+  profileJoined.textContent = 'Loading...';
   
   console.log('[profile.js]: ✅ Profile display updated');
 }
@@ -112,16 +107,56 @@ function updateProfileDisplay(userData) {
 // Loads additional profile data from server if needed
 async function loadExtendedProfileData() {
   try {
-    // This could load additional data like:
-    // - Character count
-    // - Last login
-    // - Achievement stats
-    // - etc.
+    console.log('[profile.js]: 📈 Loading extended profile data...');
     
-    // For now, we'll just use the basic user data
-    console.log('[profile.js]: 📈 Extended profile data loaded');
+    // Fetch guild member information to get actual join date
+    const response = await fetch('/api/user/guild-info', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const guildData = await response.json();
+    const profileJoined = document.getElementById('profile-joined');
+    
+    if (profileJoined) {
+      if (guildData.joinedAt) {
+        const joinDate = new Date(guildData.joinedAt);
+        profileJoined.textContent = formatDate(joinDate);
+        console.log('[profile.js]: ✅ Updated profile with guild join date:', joinDate);
+      } else if (guildData.inGuild === false) {
+        profileJoined.textContent = 'Not in guild';
+        console.log('[profile.js]: ⚠️ User not found in guild');
+      } else {
+        // Fallback to database creation date
+        if (currentUser && currentUser.createdAt) {
+          const joinDate = new Date(currentUser.createdAt);
+          profileJoined.textContent = formatDate(joinDate) + ' (Account)';
+        } else {
+          profileJoined.textContent = 'Unknown';
+        }
+        console.log('[profile.js]: ⚠️ Using fallback join date');
+      }
+    }
+    
+    console.log('[profile.js]: 📈 Extended profile data loaded successfully');
   } catch (error) {
     console.error('[profile.js]: ❌ Error loading extended profile data:', error);
+    
+    // Fallback to database creation date on error
+    const profileJoined = document.getElementById('profile-joined');
+    if (profileJoined && currentUser && currentUser.createdAt) {
+      const joinDate = new Date(currentUser.createdAt);
+      profileJoined.textContent = formatDate(joinDate) + ' (Account)';
+    } else if (profileJoined) {
+      profileJoined.textContent = 'Unknown';
+    }
   }
 }
 

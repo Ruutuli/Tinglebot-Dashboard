@@ -258,7 +258,7 @@ function setupModelCards() {
                     // since they have their own filtering system
                     if (!window.characterFiltersInitialized) {
                       // If filters aren't initialized, use the main pagination
-                      await characters.renderCharacterCards(data, pagination.page);
+                      await characters.renderCharacterCards(data, pagination.page, false);
                       console.log('✅ Characters rendered successfully');
                     } else {
                       // If filters are initialized, let the character module handle pagination

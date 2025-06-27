@@ -13,11 +13,12 @@ import { scrollToTop } from './ui.js';
 
 // ------------------- Function: renderCharacterCards -------------------
 // Renders all character cards with pagination and stat sections
-function renderCharacterCards(characters, page = 1) {
+function renderCharacterCards(characters, page = 1, enableModals = true) {
     console.log('🎨 Starting character rendering:', { 
       charactersLength: characters?.length,
       page,
-      firstCharacter: characters?.[0]?.name
+      firstCharacter: characters?.[0]?.name,
+      enableModals
     });
 
     // Scroll to top of the page
@@ -175,33 +176,37 @@ function renderCharacterCards(characters, page = 1) {
     console.log('✅ Character cards rendered');
   
     // ------------------- Attach Modal Handlers -------------------
-    console.log('🎯 Attaching modal handlers');
-    const characterCards = grid.querySelectorAll('.character-card');
-    characterCards.forEach(card => {
-      card.addEventListener('click', () => {
-        const name = card.getAttribute('data-character');
-        console.log('🖱️ Character card clicked:', name);
-        const character = window.allCharacters.find(c => c.name === name);
-        if (!character) return;
-  
-        const modal = document.createElement('div');
-        modal.className = 'character-modal';
-        modal.innerHTML = generateCharacterModalHTML(character);
-        document.body.appendChild(modal);
-  
-        const closeBtn = modal.querySelector('.close-modal');
-        closeBtn?.addEventListener('click', () => modal.remove());
-  
-        modal.addEventListener('click', (e) => {
-          if (e.target === modal) modal.remove();
+    if (enableModals) {
+      console.log('🎯 Attaching modal handlers');
+      const characterCards = grid.querySelectorAll('.character-card');
+      characterCards.forEach(card => {
+        card.addEventListener('click', () => {
+          const name = card.getAttribute('data-character');
+          console.log('🖱️ Character card clicked:', name);
+          const character = window.allCharacters.find(c => c.name === name);
+          if (!character) return;
+    
+          const modal = document.createElement('div');
+          modal.className = 'character-modal';
+          modal.innerHTML = generateCharacterModalHTML(character);
+          document.body.appendChild(modal);
+    
+          const closeBtn = modal.querySelector('.close-modal');
+          closeBtn?.addEventListener('click', () => modal.remove());
+    
+          modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+          });
+    
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') modal.remove();
+          }, { once: true });
         });
-  
-        document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape') modal.remove();
-        }, { once: true });
       });
-    });
-    console.log('✅ Modal handlers attached');
+      console.log('✅ Modal handlers attached');
+    } else {
+      console.log('🚫 Modal handlers disabled');
+    }
 
     // Update results info
     const resultsInfo = document.querySelector('.character-results-info p');
@@ -590,7 +595,7 @@ async function populateFilterOptions(characters) {
         }
 
         // Render the paginated filtered characters
-        renderCharacterCards(paginatedCharacters, page);
+        renderCharacterCards(paginatedCharacters, page, false);
 
         // Update pagination
         if (charactersPerPageSelect.value !== 'all' && filteredAndSorted.length > charactersPerPage) {
@@ -659,7 +664,7 @@ async function populateFilterOptions(characters) {
         }
       }
 
-      renderCharacterCards(paginatedCharacters, page);
+      renderCharacterCards(paginatedCharacters, page, false);
 
       // Update pagination
       if (charactersPerPageSelect.value !== 'all' && sorted.length > charactersPerPage) {
@@ -907,7 +912,7 @@ async function populateFilterOptions(characters) {
         const paginatedCharacters = sortedCharacters.slice(0, charactersPerPage);
         
         // Render paginated characters
-        renderCharacterCards(paginatedCharacters, 1);
+        renderCharacterCards(paginatedCharacters, 1, false);
         
         // Update results info
         const resultsInfo = document.querySelector('.character-results-info p');
@@ -932,7 +937,7 @@ async function populateFilterOptions(characters) {
               const endIndex = startIndex + charactersPerPage;
               const pageCharacters = sortedCharacters.slice(startIndex, endIndex);
               
-              renderCharacterCards(pageCharacters, pageNum);
+              renderCharacterCards(pageCharacters, pageNum, false);
               
               // Update results info
               if (resultsInfo) {
@@ -1055,7 +1060,7 @@ async function initializeCharacterPage(data, page = 1, contentDiv) {
         await setupCharacterFilters(data);
     } else {
         // If filters are already initialized, just update the character display
-        renderCharacterCards(data, page);
+        renderCharacterCards(data, page, false);
     }
 
     // Update results info
