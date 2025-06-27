@@ -916,6 +916,83 @@ app.get('/api/inventory', async (req, res) => {
   }
 });
 
+// ------------------- Function: getCharacterInventory -------------------
+// Returns inventory data for specific characters
+app.get('/api/inventory/characters', async (req, res) => {
+  try {
+    const { characters } = req.query;
+    
+    if (!characters) {
+      return res.status(400).json({ error: 'Characters parameter is required' });
+    }
+    
+    const characterNames = characters.split(',').map(name => name.trim());
+    console.log(`[server.js]: 🔍 Fetching inventory for characters:`, characterNames);
+    
+    const inventoryData = [];
+    
+    for (const characterName of characterNames) {
+      try {
+        const col = await getCharacterInventoryCollection(characterName);
+        const inv = await col.find().toArray();
+        inventoryData.push(...inv.map(item => ({ ...item, characterName })));
+      } catch (error) {
+        console.warn(`[server.js]: ⚠️ Error fetching inventory for character ${characterName}:`, error.message);
+        continue;
+      }
+    }
+    
+    console.log(`[server.js]: ✅ Successfully fetched ${inventoryData.length} inventory items for ${characterNames.length} characters`);
+    res.json({ data: inventoryData });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching character inventory data:', error);
+    res.status(500).json({ error: 'Failed to fetch character inventory data', details: error.message });
+  }
+});
+
+// ------------------- Function: getInventorySummary -------------------
+// Returns inventory summary (counts) for all characters
+app.get('/api/inventory/summary', async (req, res) => {
+  try {
+    const characters = await fetchAllCharacters();
+    const summary = [];
+
+    for (const char of characters) {
+      try {
+        const col = await getCharacterInventoryCollection(char.name);
+        const items = await col.find().toArray();
+        
+        const totalItems = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const uniqueItems = items.length;
+        
+        summary.push({
+          characterName: char.name,
+          totalItems,
+          uniqueItems,
+          categories: [...new Set(items.map(item => item.category).filter(Boolean))],
+          types: [...new Set(items.map(item => item.type).filter(Boolean))]
+        });
+      } catch (error) {
+        console.warn(`[server.js]: ⚠️ Error fetching inventory summary for character ${char.name}:`, error.message);
+        // Add character with zero items
+        summary.push({
+          characterName: char.name,
+          totalItems: 0,
+          uniqueItems: 0,
+          categories: [],
+          types: []
+        });
+      }
+    }
+    
+    console.log(`[server.js]: ✅ Successfully fetched inventory summary for ${summary.length} characters`);
+    res.json({ data: summary });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching inventory summary:', error);
+    res.status(500).json({ error: 'Failed to fetch inventory summary', details: error.message });
+  }
+});
+
 // ------------------- Function: getItemsData -------------------
 // Returns all items data
 app.get('/api/items', async (req, res) => {

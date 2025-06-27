@@ -1,12 +1,240 @@
 // ============================================================================
-// Inventory Management System
-// Character-based inventory display with expandable/collapsible sections
+// Inventory Management System - EFFICIENT VERSION
+// Character-based inventory display with on-demand loading
+// 
+// NEW EFFICIENT APPROACH:
+// 1. Load character summaries first (fast)
+// 2. Show character cards immediately 
+// 3. Load inventory items only when character is expanded
+// 4. Cache inventory data per character
 // ============================================================================
 
+// Add a simple test to verify this file is loaded
+console.log('🎒 Inventory.js loaded successfully');
+
+// ------------------- Utility Functions -------------------
+
+/**
+ * Gets the content div element consistently
+ * @returns {HTMLElement|null} The content div element
+ */
+function getContentDiv() {
+  return document.getElementById('model-details-data');
+}
+
+/**
+ * Creates pagination HTML with consistent styling and behavior
+ * @param {Object} options - Pagination options
+ * @param {number} options.currentPage - Current page number
+ * @param {number} options.totalPages - Total number of pages
+ * @param {Function} options.handlePageChange - Function to handle page changes
+ * @param {string} options.type - Type of pagination ('filtered' or 'normal')
+ * @returns {HTMLElement} Pagination container element
+ */
+function createPaginationElement({ currentPage, totalPages, handlePageChange, type = 'normal' }) {
+  const paginationDiv = document.createElement('div');
+  paginationDiv.className = 'pagination';
+  
+  // Helper to create pagination buttons
+  const createButton = (label, pageNum, isActive = false, icon = null) => {
+    const button = document.createElement('button');
+    button.className = `pagination-button ${isActive ? 'active' : ''}`;
+    button.title = icon ? `${label} Page` : `Page ${pageNum}`;
+    
+    if (icon) {
+      button.innerHTML = `<i class="fas fa-chevron-${icon}"></i>`;
+    } else {
+      button.textContent = label;
+    }
+    
+    button.addEventListener('click', () => handlePageChange(pageNum));
+    return button;
+  };
+
+  // Previous button
+  if (currentPage > 1) {
+    paginationDiv.appendChild(createButton('Previous', currentPage - 1, false, 'left'));
+  }
+
+  // Page numbers with ellipsis
+  const startPage = Math.max(1, currentPage - 2);
+  const endPage = Math.min(totalPages, currentPage + 2);
+
+  if (startPage > 1) {
+    paginationDiv.appendChild(createButton('1', 1));
+    if (startPage > 2) {
+      const ellipsis = document.createElement('span');
+      ellipsis.className = 'pagination-ellipsis';
+      ellipsis.textContent = '...';
+      paginationDiv.appendChild(ellipsis);
+    }
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    paginationDiv.appendChild(createButton(i.toString(), i, i === currentPage));
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) {
+      const ellipsis = document.createElement('span');
+      ellipsis.className = 'pagination-ellipsis';
+      ellipsis.textContent = '...';
+      paginationDiv.appendChild(ellipsis);
+    }
+    paginationDiv.appendChild(createButton(totalPages.toString(), totalPages));
+  }
+
+  // Next button
+  if (currentPage < totalPages) {
+    paginationDiv.appendChild(createButton('Next', currentPage + 1, false, 'right'));
+  }
+
+  return paginationDiv;
+}
+
+/**
+ * Removes existing pagination from the content div
+ */
+function removeExistingPagination() {
+  const contentDiv = getContentDiv();
+  if (contentDiv) {
+    const existingPagination = contentDiv.querySelector('.pagination');
+    if (existingPagination) {
+      existingPagination.remove();
+    }
+  }
+}
+
+/**
+ * Updates results info with consistent formatting
+ * @param {number} currentCount - Current items being shown
+ * @param {number} totalCount - Total items available
+ * @param {string} type - Type of results ('inventory', 'filtered', etc.)
+ * @param {Object} pagination - Optional pagination info
+ */
+function updateResultsInfo(currentCount, totalCount, type = 'inventory', pagination = null) {
+  const resultsInfo = document.querySelector('.inventory-results-info p');
+  if (!resultsInfo) return;
+
+  let message = '';
+  if (pagination && pagination.pages > 1) {
+    message = `Showing ${currentCount} of ${totalCount} ${type} entries (Page ${pagination.page} of ${pagination.pages})`;
+  } else if (currentCount === totalCount) {
+    message = `Showing ${currentCount} ${type} entries`;
+  } else {
+    message = `Showing ${currentCount} of ${totalCount} ${type} entries`;
+  }
+  
+  resultsInfo.textContent = message;
+}
+
+/**
+ * Creates filter HTML with consistent structure
+ * @returns {string} Filter HTML
+ */
+function createFilterHTML() {
+  return `
+    <div class="search-filter-control search-input">
+      <input type="text" id="inventory-search" placeholder="Search characters...">
+    </div>
+    <div class="search-filter-control">
+      <select id="inventory-category-filter">
+        <option value="all">All Categories</option>
+      </select>
+    </div>
+    <div class="search-filter-control">
+      <select id="inventory-type-filter">
+        <option value="all">All Types</option>
+      </select>
+    </div>
+    <div class="search-filter-control">
+      <select id="inventory-sort">
+        <option value="character-asc">Character (A-Z)</option>
+        <option value="character-desc">Character (Z-A)</option>
+        <option value="items-asc">Items (Low-High)</option>
+        <option value="items-desc">Items (High-Low)</option>
+        <option value="quantity-asc">Quantity (Low-High)</option>
+        <option value="quantity-desc">Quantity (High-Low)</option>
+      </select>
+    </div>
+    <div class="search-filter-control">
+      <select id="inventory-characters-per-page">
+        <option value="12">12 per page</option>
+        <option value="24">24 per page</option>
+        <option value="36">36 per page</option>
+        <option value="48">48 per page</option>
+        <option value="all">All characters</option>
+      </select>
+    </div>
+    <button id="inventory-clear-filters" class="clear-filters-btn">Clear Filters</button>
+  `;
+}
+
+/**
+ * Applies sorting to an array with consistent logic
+ * @param {Array} items - Items to sort
+ * @param {string} sortBy - Sort criteria
+ * @returns {Array} Sorted items
+ */
+function applySorting(items, sortBy) {
+  const [field, direction] = sortBy.split('-');
+  const isAsc = direction === 'asc';
+
+  return [...items].sort((a, b) => {
+    let valA, valB;
+    
+    switch (field) {
+      case 'character':
+        valA = a.characterName ?? '';
+        valB = b.characterName ?? '';
+        break;
+      case 'items':
+        valA = a.uniqueItems ?? 0;
+        valB = b.uniqueItems ?? 0;
+        break;
+      case 'quantity':
+        valA = a.totalItems ?? 0;
+        valB = b.totalItems ?? 0;
+        break;
+      default:
+        valA = a[field] ?? '';
+        valB = b[field] ?? '';
+    }
+    
+    return isAsc
+      ? (typeof valA === 'string' ? valA.localeCompare(valB) : valA - valB)
+      : (typeof valB === 'string' ? valB.localeCompare(valA) : valB - valA);
+  });
+}
+
+/**
+ * Updates cache status with consistent messaging
+ * @param {string} status - Status message
+ * @param {number} duration - Duration to show status (ms)
+ */
+function updateCacheStatus(status, duration = 2000) {
+  const cacheStatus = document.querySelector('.cache-status');
+  if (!cacheStatus) return;
+
+  cacheStatus.innerHTML = status;
+  
+  if (duration > 0) {
+    setTimeout(() => {
+      const cache = window.inventoryPageCache;
+      if (cache) {
+        const stats = cache.getStats();
+        if (stats) {
+          cacheStatus.innerHTML = `📦 Cache: ${stats.size}/${stats.maxSize} pages`;
+        }
+      }
+    }, duration);
+  }
+}
+
 // ------------------- Global State -------------------
-let currentInventoryData = [];
-let characterGroups = new Map();
+let currentCharacterSummaries = [];
 let expandedCharacters = new Set();
+let loadedCharacterInventories = new Map(); // Cache for loaded inventory data
 let currentFilters = {
   search: '',
   category: 'all',
@@ -14,9 +242,13 @@ let currentFilters = {
   sortBy: 'character-asc'
 };
 
-// Global state for inventory filters (similar to characters.js)
+// Global state for inventory filters
 window.inventoryFiltersInitialized = false;
 window.savedInventoryFilterState = {};
+
+// Global state for pagination
+let currentPage = 1;
+let charactersPerPage = 12;
 
 // ------------------- Cache System -------------------
 
@@ -158,23 +390,17 @@ function initializeInventoryCache() {
 // ------------------- Page Initialization -------------------
 
 /**
- * Initializes the inventory page with filters, pagination, and card rendering
- * @param {Array} data - Inventory data
+ * Initializes the inventory page with the new efficient approach
+ * @param {Array} data - Initial inventory data (legacy support)
  * @param {number} page - Current page number
  * @param {HTMLElement} contentDiv - Content container element
  */
 async function initializeInventoryPage(data, page = 1, contentDiv) {
-  console.log('🎒 Initializing inventory page:', { 
-    dataLength: data?.length, 
-    page 
-  });
+  console.log('🎒 ===== EFFICIENT INVENTORY PAGE INITIALIZATION START =====');
+  console.log('🎒 Using new efficient approach - loading character summaries first');
 
   const startTime = Date.now();
   const cache = initializeInventoryCache();
-  const cacheKey = `inventory_page_${page}_${JSON.stringify(currentFilters)}`;
-
-  // Store inventories globally for filtering
-  window.allInventories = data;
 
   // Add cache status indicator
   let cacheStatus = document.querySelector('.cache-status');
@@ -225,94 +451,24 @@ async function initializeInventoryPage(data, page = 1, contentDiv) {
     }, 5000);
   }
 
-  // Check cache first
-  const cachedData = cache.get(cacheKey);
-  if (cachedData) {
-    console.log(`[Inventory Cache] 🎯 Using cached data for page ${page}`);
-    console.log(`[Inventory Cache] ⏱️ Cache response time: ${Date.now() - startTime}ms`);
-    
-    // Update cache status
-    if (cacheStatus) {
-      cacheStatus.innerHTML = '<i class="fas fa-bolt"></i> Cache: Hit!';
-      setTimeout(() => {
-        const stats = cache.getStats();
-        if (stats) {
-          cacheStatus.innerHTML = `📦 Cache: ${stats.size}/${stats.maxSize} pages`;
-        }
-      }, 2000);
-    }
-    
-    // Restore expanded state from cache
-    if (cachedData.expandedCharacters) {
-      expandedCharacters = new Set(cachedData.expandedCharacters);
-    }
-  } else {
-    console.log(`[Inventory Cache] 🔍 Cache miss for page ${page}, rendering fresh...`);
-    
-    // Update cache status
-    if (cacheStatus) {
-      cacheStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cache: Miss, rendering...';
-    }
-  }
-
   // Create filters container if it doesn't exist
-  let filtersContainer = document.querySelector('.inventory-filters');
+  let filtersContainer = document.querySelector('.search-filter-bar');
   if (!filtersContainer) {
-    console.log('🔧 Creating inventory filters container');
+    console.log('🔧 Creating filters container...');
     filtersContainer = document.createElement('div');
-    filtersContainer.className = 'inventory-filters';
-    filtersContainer.style.display = 'block'; // Ensure it's visible
-    filtersContainer.style.visibility = 'visible';
-    filtersContainer.innerHTML = `
-      <div class="search-filter-bar">
-        <div class="search-filter-control search-input">
-          <input type="text" id="inventory-search" placeholder="Search inventories...">
-        </div>
-        <div class="search-filter-control">
-          <select id="inventory-category-filter">
-            <option value="all">All Categories</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="inventory-type-filter">
-            <option value="all">All Types</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="inventory-sort">
-            <option value="character-asc">Character (A-Z)</option>
-            <option value="character-desc">Character (Z-A)</option>
-            <option value="items-asc">Items (Low-High)</option>
-            <option value="items-desc">Items (High-Low)</option>
-            <option value="quantity-asc">Quantity (Low-High)</option>
-            <option value="quantity-desc">Quantity (High-Low)</option>
-          </select>
-        </div>
-        <button id="inventory-clear-filters" class="clear-filters-btn">Clear Filters</button>
-      </div>
-    `;
-    contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
-    console.log('✅ Inventory filters container created and inserted');
+    filtersContainer.className = 'search-filter-bar';
+    filtersContainer.innerHTML = createFilterHTML();
     
-    // Debug: Check if elements are created
-    setTimeout(() => {
-      const searchInput = document.getElementById('inventory-search');
-      const catSelect = document.getElementById('inventory-category-filter');
-      const typeSelect = document.getElementById('inventory-type-filter');
-      const sortSelect = document.getElementById('inventory-sort');
-      const clearBtn = document.getElementById('inventory-clear-filters');
-      
-      console.log('🔍 Filter elements check:', {
-        searchInput: !!searchInput,
-        catSelect: !!catSelect,
-        typeSelect: !!typeSelect,
-        sortSelect: !!sortSelect,
-        clearBtn: !!clearBtn,
-        filtersContainerVisible: filtersContainer.offsetParent !== null
-      });
-    }, 100);
-  } else {
-    console.log('🔧 Inventory filters container already exists');
+    // Try to insert into the model details data div
+    const contentDiv = getContentDiv();
+    if (contentDiv) {
+      contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
+      console.log('✅ Created and inserted filters into model-details-data');
+    } else {
+      // Fallback to body
+      document.body.appendChild(filtersContainer);
+      console.log('⚠️ Created filters and appended to body as fallback');
+    }
   }
 
   // Create inventory container if it doesn't exist
@@ -334,8 +490,8 @@ async function initializeInventoryPage(data, page = 1, contentDiv) {
   if (!resultsInfo) {
     resultsInfo = document.createElement('div');
     resultsInfo.className = 'inventory-results-info';
-    resultsInfo.innerHTML = '<p>Loading inventory data...</p>';
-    // Insert before the container (which is now guaranteed to be a child of contentDiv)
+    resultsInfo.innerHTML = '<p>Loading character summaries...</p>';
+    // Insert before the container
     contentDiv.insertBefore(resultsInfo, container);
   } else {
     // If resultsInfo exists but is not in the right place, move it
@@ -347,242 +503,301 @@ async function initializeInventoryPage(data, page = 1, contentDiv) {
     }
   }
 
-  // Always initialize filters and render data
-  populateInventoryFilterOptions(data);
-  setupInventoryFilters(data);
-  await renderInventoryItems(data, page);
+  // Initialize filters and load character summaries
+  setupInventoryFilters();
+  await loadCharacterSummaries();
 
-  // Update results info
-  if (resultsInfo) {
-    resultsInfo.innerHTML = `<p>Showing ${data.length} inventory entries</p>`;
-  }
+  console.log(`✅ Efficient inventory page initialized in ${Date.now() - startTime}ms`);
+  console.log('🎒 ===== EFFICIENT INVENTORY PAGE INITIALIZATION END =====');
+}
 
-  // Cache the rendered HTML after content is fully rendered
-  setTimeout(() => {
-    const htmlToCache = contentDiv.innerHTML;
-    // Only cache if the content is not the loading state
-    if (!htmlToCache.includes('Organizing inventory data')) {
-      cache.set(cacheKey, {
-        html: htmlToCache,
-        expandedCharacters: Array.from(expandedCharacters),
-        timestamp: Date.now()
-      });
-      console.log(`[Inventory Cache] 💾 Cached inventory page data for page ${page}`);
-    } else {
-      console.log(`[Inventory Cache] ⚠️ Skipped caching due to loading state`);
+/**
+ * Loads character summaries from the new efficient API
+ */
+async function loadCharacterSummaries() {
+  try {
+    console.log('📊 Loading character summaries...');
+    
+    const response = await fetch('/api/inventory/summary');
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const { data: summaries } = await response.json();
+    
+    console.log('📊 Loaded character summaries:', summaries.length);
+    
+    // Store summaries globally
+    currentCharacterSummaries = summaries;
+    
+    // Apply current filters and render
+    applyFiltersAndRender(currentPage);
+    
+  } catch (error) {
+    console.error('❌ Error loading character summaries:', error);
+    
+    // Show error state
+    const container = document.getElementById('inventory-grid');
+    if (container) {
+      container.innerHTML = `
+        <div class="inventory-empty-state">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h3>Error loading inventory data</h3>
+          <p>There was an error loading the character summaries. Please try refreshing the page.</p>
+          <p>Error: ${error.message}</p>
+        </div>
+      `;
     }
-  }, 100);
-
-  // Update cache status
-  if (cacheStatus) {
-    cacheStatus.innerHTML = '<i class="fas fa-save"></i> Cache: Saved!';
-    setTimeout(() => {
-      const stats = cache.getStats();
-      if (stats) {
-        cacheStatus.innerHTML = `📦 Cache: ${stats.size}/${stats.maxSize} pages`;
-      }
-    }, 2000);
   }
+}
 
-  console.log(`✅ Inventory page initialized in ${Date.now() - startTime}ms`);
+/**
+ * Loads inventory items for a specific character
+ * @param {string} characterName - Name of the character
+ * @returns {Promise<Array>} Inventory items for the character
+ */
+async function loadCharacterInventory(characterName) {
+  // Check if already loaded
+  if (loadedCharacterInventories.has(characterName)) {
+    console.log(`📦 Using cached inventory for ${characterName}`);
+    return loadedCharacterInventories.get(characterName);
+  }
+  
+  try {
+    console.log(`📦 Loading inventory for character: ${characterName}`);
+    
+    const response = await fetch(`/api/inventory/characters?characters=${encodeURIComponent(characterName)}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const { data: items } = await response.json();
+    
+    console.log(`📦 Loaded ${items.length} items for ${characterName}`);
+    
+    // Cache the inventory data
+    loadedCharacterInventories.set(characterName, items);
+    
+    return items;
+  } catch (error) {
+    console.error(`❌ Error loading inventory for ${characterName}:`, error);
+    return [];
+  }
 }
 
 // ------------------- Main Rendering Functions -------------------
 
 /**
- * Renders inventory items grouped by character with expandable sections
- * @param {Array} inventories - Raw inventory data
- * @param {number} page - Current page number
+ * Applies current filters and renders character cards
+ * @param {number} page - Current page number (default: 1)
  */
-async function renderInventoryItems(inventories, page = 1) {
-  console.log('🎒 Rendering inventory items:', { 
-    totalItems: inventories.length, 
-    page 
+function applyFiltersAndRender(page = 1) {
+  const searchTerm = document.getElementById('inventory-search')?.value.toLowerCase() || '';
+  const categoryFilter = document.getElementById('inventory-category-filter')?.value || 'all';
+  const typeFilter = document.getElementById('inventory-type-filter')?.value || 'all';
+  const sortBy = document.getElementById('inventory-sort')?.value || 'character-asc';
+  const charactersPerPageSelect = document.getElementById('inventory-characters-per-page');
+  const charactersPerPage = charactersPerPageSelect ? 
+    (charactersPerPageSelect.value === 'all' ? currentCharacterSummaries.length : parseInt(charactersPerPageSelect.value)) : 
+    12;
+
+  console.log('🔍 Applying filters:', { searchTerm, categoryFilter, typeFilter, sortBy, page, charactersPerPage });
+
+  // Save current filter state
+  window.savedInventoryFilterState = {
+    searchTerm: document.getElementById('inventory-search')?.value || '',
+    categoryFilter,
+    typeFilter,
+    sortBy,
+    charactersPerPage: charactersPerPageSelect?.value || '12'
+  };
+
+  // Filter character summaries
+  let filteredSummaries = currentCharacterSummaries.filter(summary => {
+    const matchesSearch = !searchTerm || 
+      summary.characterName.toLowerCase().includes(searchTerm);
+    
+    const matchesCategory = categoryFilter === 'all' || 
+      summary.categories.includes(categoryFilter);
+    
+    const matchesType = typeFilter === 'all' || 
+      summary.types.includes(typeFilter);
+    
+    return matchesSearch && matchesCategory && matchesType;
   });
-  
-  // Update global inventory data for this page
-  currentInventoryData = inventories;
-  characterGroups = groupInventoriesByCharacter(inventories);
-  
-  console.log('📊 After grouping - characterGroups size:', characterGroups.size);
+
+  // Apply sorting
+  filteredSummaries = applySorting(filteredSummaries, sortBy);
+
+  console.log('🔍 Filtered summaries:', filteredSummaries.length);
+
+  // Apply pagination
+  const totalPages = Math.ceil(filteredSummaries.length / charactersPerPage);
+  const startIndex = (page - 1) * charactersPerPage;
+  const endIndex = startIndex + charactersPerPage;
+  const paginatedSummaries = filteredSummaries.slice(startIndex, endIndex);
+
+  console.log('🔍 Pagination details:', {
+    totalPages,
+    startIndex,
+    endIndex,
+    paginatedSummariesLength: paginatedSummaries.length,
+    charactersPerPage
+  });
+
+  // Update results info
+  if (charactersPerPageSelect && charactersPerPageSelect.value === 'all') {
+    updateResultsInfo(filteredSummaries.length, currentCharacterSummaries.length, 'character');
+  } else {
+    updateResultsInfo(paginatedSummaries.length, filteredSummaries.length, 'character', { page, pages: totalPages });
+  }
+
+  // Render character cards
+  renderCharacterCards(paginatedSummaries);
+
+  // Update pagination
+  if (charactersPerPageSelect && charactersPerPageSelect.value !== 'all' && filteredSummaries.length > charactersPerPage) {
+    updateInventoryPagination(page, totalPages, filteredSummaries.length);
+  } else {
+    removeExistingPagination();
+  }
+}
+
+/**
+ * Renders character cards with summaries
+ * @param {Array} summaries - Character summaries to render
+ */
+function renderCharacterCards(summaries) {
+  console.log('🎨 Rendering character cards:', summaries.length);
   
   const container = document.getElementById('inventory-grid');
   if (!container) {
     console.error('❌ Inventory grid container not found');
     return;
   }
-  
-  console.log('✅ Found inventory grid container');
-  
-  // Show loading state briefly for better UX
-  container.innerHTML = `
-    <div class="inventory-loading">
-      <i class="fas fa-spinner fa-spin"></i>
-      <p>Organizing inventory data...</p>
-    </div>
-  `;
-  
-  console.log('⏳ Set loading state, starting render in 50ms...');
-  
-  // Use a shorter timeout and ensure rendering completes
-  setTimeout(() => {
-    try {
-      console.log('🎨 Starting character cards rendering...');
-      const characterCards = renderCharacterInventoryCards();
-      console.log('✅ Character cards HTML generated, length:', characterCards.length);
-      
-      container.innerHTML = characterCards;
-      console.log('✅ HTML set to container');
-      
-      // Initialize character cards after rendering
-      initializeCharacterCards();
-      
-      console.log('✅ Inventory rendering complete');
-    } catch (error) {
-      console.error('❌ Error rendering inventory:', error);
-      container.innerHTML = `
-        <div class="inventory-empty-state">
-          <i class="fas fa-exclamation-triangle"></i>
-          <h3>Error loading inventory</h3>
-          <p>There was an error rendering the inventory data. Please try refreshing the page.</p>
-          <p>Error: ${error.message}</p>
-        </div>
-      `;
-    }
-  }, 50); // Reduced timeout for faster loading
-}
 
-/**
- * Groups inventory items by character
- * @param {Array} inventories - Raw inventory data
- * @returns {Map} Character groups with their items
- */
-function groupInventoriesByCharacter(inventories) {
-  console.log('📊 groupInventoriesByCharacter called with', inventories.length, 'items');
-  console.log('📊 First few items:', inventories.slice(0, 3));
-  
-  const groups = new Map();
-  
-  inventories.forEach((item, index) => {
-    const charName = item.characterName || 'Unknown Character';
+  if (summaries.length === 0) {
+    // Get current search term for better user feedback
+    const searchInput = document.getElementById('inventory-search');
+    const searchTerm = searchInput?.value || '';
+    const categoryFilter = document.getElementById('inventory-category-filter')?.value || 'all';
+    const typeFilter = document.getElementById('inventory-type-filter')?.value || 'all';
     
-    if (index < 3) {
-      console.log('📦 Processing item', index, ':', item.itemName, 'for character:', charName);
+    let emptyMessage = 'No characters found';
+    let emptyDetails = 'Try adjusting your filters or check back later.';
+    
+    if (searchTerm) {
+      emptyMessage = `No characters found for "${searchTerm}"`;
+      emptyDetails = `Try a different search term or check your spelling.`;
+    } else if (categoryFilter !== 'all' || typeFilter !== 'all') {
+      emptyMessage = 'No characters found with current filters';
+      emptyDetails = `Try clearing your filters or selecting different options.`;
     }
     
-    if (!groups.has(charName)) {
-      groups.set(charName, {
-        characterName: charName,
-        totalItems: 0,
-        uniqueItems: 0,
-        items: [],
-        categories: new Set(),
-        types: new Set()
-      });
-    }
-    
-    const group = groups.get(charName);
-    group.items.push(item);
-    group.totalItems += item.quantity || 0;
-    group.categories.add(item.category || 'Unknown');
-    group.types.add(item.type || 'Unknown');
-  });
-  
-  // Calculate unique items count
-  groups.forEach(group => {
-    group.uniqueItems = new Set(group.items.map(item => item.itemName)).size;
-    group.categories = Array.from(group.categories);
-    group.types = Array.from(group.types);
-  });
-  
-  console.log('📊 Grouped inventory data:', {
-    totalCharacters: groups.size,
-    totalItems: inventories.length,
-    characterNames: Array.from(groups.keys())
-  });
-  
-  return groups;
-}
-
-/**
- * Renders character inventory cards
- * @returns {string} HTML for character cards
- */
-function renderCharacterInventoryCards() {
-  console.log('🎨 renderCharacterInventoryCards called');
-  console.log('📊 characterGroups size:', characterGroups.size);
-  console.log('📊 characterGroups keys:', Array.from(characterGroups.keys()));
-  
-  const sortedCharacters = sortCharacterGroups();
-  console.log('📊 sortedCharacters length:', sortedCharacters.length);
-  console.log('📊 sortedCharacters:', sortedCharacters.map(c => c.characterName));
-  
-  if (sortedCharacters.length === 0) {
-    console.log('⚠️ No characters to render, showing empty state');
-    return `
+    container.innerHTML = `
       <div class="inventory-empty-state">
-        <i class="fas fa-box-open"></i>
-        <h3>No inventory data found</h3>
-        <p>Try adjusting your filters or check back later.</p>
-      </div>
-    `;
-  }
-  
-  console.log('🎨 Rendering', sortedCharacters.length, 'character cards');
-  
-  return sortedCharacters.map(character => {
-    const isExpanded = expandedCharacters.has(character.characterName);
-    const itemCount = character.items.length;
-    const totalQuantity = character.totalItems;
-    
-    console.log('🎭 Rendering character:', character.characterName, 'with', itemCount, 'items');
-    
-    return `
-      <div class="character-inventory-card" data-character="${character.characterName}">
-        <div class="character-inventory-header ${isExpanded ? 'expanded' : ''}" 
-             onclick="toggleCharacterInventory('${character.characterName}')">
-          <div class="character-inventory-info">
-            <div class="character-avatar">
-              <i class="fas fa-user-circle"></i>
-            </div>
-            <div class="character-details">
-              <h3 class="character-name">${character.characterName}</h3>
-              <div class="character-stats">
-                <span class="stat-item">
-                  <i class="fas fa-box"></i>
-                  ${itemCount} items
-                </span>
-                <span class="stat-item">
-                  <i class="fas fa-layer-group"></i>
-                  ${totalQuantity} total
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="character-inventory-controls">
-            <button class="expand-button" aria-label="Toggle inventory">
-              <i class="fas fa-chevron-${isExpanded ? 'up' : 'down'}"></i>
+        <i class="fas fa-search"></i>
+        <h3>${emptyMessage}</h3>
+        <p>${emptyDetails}</p>
+        ${searchTerm || categoryFilter !== 'all' || typeFilter !== 'all' ? `
+          <div class="empty-state-filters">
+            <p><strong>Current filters:</strong></p>
+            <ul>
+              ${searchTerm ? `<li>Search: "${searchTerm}"</li>` : ''}
+              ${categoryFilter !== 'all' ? `<li>Category: ${categoryFilter}</li>` : ''}
+              ${typeFilter !== 'all' ? `<li>Type: ${typeFilter}</li>` : ''}
+            </ul>
+            <button onclick="document.getElementById('inventory-clear-filters').click()" class="clear-filters-btn">
+              <i class="fas fa-times"></i> Clear All Filters
             </button>
           </div>
-        </div>
-        
-        <div class="character-inventory-content ${isExpanded ? 'expanded' : ''}">
-          ${isExpanded ? renderCharacterItems(character) : ''}
+        ` : ''}
+      </div>
+    `;
+    return;
+  }
+
+  const cardsHTML = summaries.map(summary => {
+    const isExpanded = expandedCharacters.has(summary.characterName);
+    return `
+      <div class="character-inventory-card" data-character="${summary.characterName}">
+        <div class="character-inventory-scroll">
+          <div class="character-inventory-header ${isExpanded ? 'expanded' : ''}" 
+               onclick="toggleCharacterInventory('${summary.characterName}')">
+            <div class="character-inventory-info">
+              <div class="character-avatar">
+                <i class="fas fa-user-circle"></i>
+              </div>
+              <div class="character-details">
+                <h3 class="character-name">${summary.characterName}</h3>
+                <div class="character-stats">
+                  <span class="stat-item">
+                    <i class="fas fa-box"></i>
+                    ${summary.uniqueItems} items
+                  </span>
+                  <span class="stat-item">
+                    <i class="fas fa-layer-group"></i>
+                    ${summary.totalItems} total
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="character-inventory-controls">
+              <button class="expand-button" aria-label="Toggle inventory">
+                <i class="fas fa-chevron-${isExpanded ? 'up' : 'down'}"></i>
+              </button>
+            </div>
+          </div>
+          <div class="character-inventory-content ${isExpanded ? 'expanded' : ''}">
+            ${isExpanded ? '<div class="loading-inventory"><i class="fas fa-spinner fa-spin"></i> Loading inventory...</div>' : ''}
+          </div>
         </div>
       </div>
     `;
   }).join('');
+
+  container.innerHTML = cardsHTML;
+  console.log('✅ Character cards rendered');
+}
+
+/**
+ * Updates pagination for inventory results
+ * @param {number} currentPage - Current page number
+ * @param {number} totalPages - Total number of pages
+ * @param {number} totalItems - Total number of items
+ */
+function updateInventoryPagination(currentPage, totalPages, totalItems) {
+  const contentDiv = getContentDiv();
+  if (!contentDiv) {
+    console.error('❌ Content div not found');
+    return;
+  }
+
+  // Remove existing pagination
+  removeExistingPagination();
+
+  // Only show pagination if there are multiple pages
+  if (totalPages > 1) {
+    console.log('📄 Setting up pagination for inventory results:', { currentPage, totalPages, totalItems });
+    
+    const handlePageChange = (pageNum) => {
+      console.log(`🔄 Inventory page change requested to page ${pageNum}`);
+      applyFiltersAndRender(pageNum);
+    };
+
+    const paginationDiv = createPaginationElement({
+      currentPage,
+      totalPages,
+      handlePageChange,
+      type: 'filtered'
+    });
+
+    contentDiv.appendChild(paginationDiv);
+    console.log('✅ Inventory pagination created successfully');
+  }
 }
 
 /**
  * Renders items for a specific character
- * @param {Object} character - Character group data
+ * @param {Array} items - Character's items
  * @returns {string} HTML for character items
  */
-function renderCharacterItems(character) {
-  const sortedItems = sortCharacterItems(character.items);
-  
-  if (sortedItems.length === 0) {
+function renderCharacterItems(items) {
+  if (!items || items.length === 0) {
     return `
       <div class="character-inventory-empty">
         <i class="fas fa-inbox"></i>
@@ -590,6 +805,13 @@ function renderCharacterItems(character) {
       </div>
     `;
   }
+  
+  // Sort items by quantity (descending) then by name
+  const sortedItems = items.sort((a, b) => {
+    const quantityDiff = (b.quantity || 0) - (a.quantity || 0);
+    if (quantityDiff !== 0) return quantityDiff;
+    return (a.itemName || '').localeCompare(b.itemName || '');
+  });
   
   return `
     <div class="character-items-grid">
@@ -629,14 +851,21 @@ function renderCharacterItems(character) {
 
 /**
  * Populates inventory filter options based on available data
- * @param {Array} inventories - Raw inventory data
  */
-function populateInventoryFilterOptions(inventories) {
-  console.log('🔧 Populating filter options');
+function populateInventoryFilterOptions() {
+  console.log('🔧 Populating filter options from character summaries');
   
-  // Extract unique values
-  const categories = [...new Set(inventories.map(inv => inv.category).filter(Boolean))].sort();
-  const types = [...new Set(inventories.map(inv => inv.type).filter(Boolean))].sort();
+  // Extract unique values from all character summaries
+  const allCategories = new Set();
+  const allTypes = new Set();
+  
+  currentCharacterSummaries.forEach(summary => {
+    summary.categories.forEach(cat => allCategories.add(cat));
+    summary.types.forEach(type => allTypes.add(type));
+  });
+  
+  const categories = Array.from(allCategories).sort();
+  const types = Array.from(allTypes).sort();
   
   // Populate category filter
   const catSelect = document.getElementById('inventory-category-filter');
@@ -657,22 +886,27 @@ function populateInventoryFilterOptions(inventories) {
 
 /**
  * Sets up inventory filters with event listeners
- * @param {Array} inventories - Raw inventory data
  */
-function setupInventoryFilters(inventories) {
+function setupInventoryFilters() {
   console.log('🔧 Setting up inventory filters');
   
   // Check if filters are already initialized
   if (window.inventoryFiltersInitialized) {
     console.log('🔧 Inventory filters already initialized, skipping setup');
-    window.filterInventories(1);
     return;
+  }
+  
+  // Show the filters container
+  const filtersContainer = document.querySelector('.search-filter-bar');
+  if (filtersContainer) {
+    filtersContainer.style.display = 'flex';
   }
   
   const searchInput = document.getElementById('inventory-search');
   const catSelect = document.getElementById('inventory-category-filter');
   const typeSelect = document.getElementById('inventory-type-filter');
   const sortSelect = document.getElementById('inventory-sort');
+  const charactersPerPageSelect = document.getElementById('inventory-characters-per-page');
   const clearBtn = document.getElementById('inventory-clear-filters');
   
   // Restore filter state if it exists
@@ -681,235 +915,37 @@ function setupInventoryFilters(inventories) {
   if (savedFilterState.categoryFilter && catSelect) catSelect.value = savedFilterState.categoryFilter;
   if (savedFilterState.typeFilter && typeSelect) typeSelect.value = savedFilterState.typeFilter;
   if (savedFilterState.sortBy && sortSelect) sortSelect.value = savedFilterState.sortBy;
+  if (savedFilterState.charactersPerPage && charactersPerPageSelect) charactersPerPageSelect.value = savedFilterState.charactersPerPage;
   
-  // ------------------- Function: filterInventories -------------------
-  // Main filtering function that handles both server-side and client-side filtering
-  window.filterInventories = async function (page = 1) {
-    const searchTerm = searchInput?.value.toLowerCase() || '';
-    const categoryFilter = catSelect?.value || 'all';
-    const typeFilter = typeSelect?.value || 'all';
-    const sortBy = sortSelect?.value || 'character-asc';
-
-    console.log('🔍 filterInventories called:', {
-      page,
-      searchTerm,
-      categoryFilter,
-      typeFilter,
-      sortBy
-    });
-
-    // Save current filter state
-    window.savedInventoryFilterState = {
-      searchTerm: searchInput?.value || '',
-      categoryFilter,
-      typeFilter,
-      sortBy
-    };
-
-    // Check if any filters are active
-    const hasActiveFilters = searchTerm || 
-      categoryFilter !== 'all' || 
-      typeFilter !== 'all';
-
-    console.log('🔍 Filter analysis:', {
-      hasActiveFilters,
-      willUseServerSide: hasActiveFilters
-    });
-
-    // Always use server-side filtering when filters are active
-    if (hasActiveFilters) {
-      console.log('🔍 Using server-side filtering (filterInventoriesWithAllData)');
-      await filterInventoriesWithAllData(page);
-    } else {
-      console.log('🔍 Using client-side filtering (filterInventoriesClientSide)');
-      filterInventoriesClientSide(page);
-    }
-  };
-
-  // ------------------- Function: filterInventoriesWithAllData -------------------
-  // Fetches all inventories from database and applies client-side filtering
-  async function filterInventoriesWithAllData(page = 1) {
-    const searchTerm = searchInput?.value.toLowerCase() || '';
-    const categoryFilter = catSelect?.value || 'all';
-    const typeFilter = typeSelect?.value || 'all';
-    const sortBy = sortSelect?.value || 'character-asc';
-
-    console.log('🔍 filterInventoriesWithAllData called:', { page });
-
-    // Show loading state
-    const resultsInfo = document.querySelector('.inventory-results-info p');
-    if (resultsInfo) {
-      resultsInfo.textContent = 'Loading filtered inventories...';
-    }
-
-    try {
-      // Always fetch ALL inventories from the database
-      const response = await fetch('/api/models/inventory?all=true');
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const { data: allInventories } = await response.json();
-
-      console.log('🔍 Fetched inventories from database:', allInventories.length);
-
-      // Apply filtering and sorting to ALL inventories
-      const filteredAndSorted = applyFiltersAndSort(allInventories);
-
-      console.log('🔍 After filtering and sorting:', filteredAndSorted.length);
-
-      // Update global inventories for this filtered view
-      window.allInventories = filteredAndSorted;
-
-      // Update results info
-      if (resultsInfo) {
-        resultsInfo.textContent = `Showing ${filteredAndSorted.length} filtered inventory entries`;
-      }
-
-      // Render the filtered inventories
-      renderInventoryItems(filteredAndSorted, page);
-
-      // Remove any existing pagination since we're showing all filtered results
-      const contentDiv = document.getElementById('model-details-data');
-      if (contentDiv) {
-        const existingPagination = contentDiv.querySelector('.pagination');
-        if (existingPagination) {
-          existingPagination.remove();
-        }
-      }
-
-    } catch (error) {
-      console.error('❌ Error fetching all inventories for filtering:', error);
-      // Fallback to client-side filtering on current inventories
-      console.log('🔄 Falling back to client-side filtering on current page...');
-      filterInventoriesClientSide(page);
-    }
-  }
-
-  // ------------------- Function: filterInventoriesClientSide -------------------
-  // Client-side filtering for when no server-side filtering is needed
-  function filterInventoriesClientSide(page = 1) {
-    const searchTerm = searchInput?.value.toLowerCase() || '';
-    const categoryFilter = catSelect?.value || 'all';
-    const typeFilter = typeSelect?.value || 'all';
-    const sortBy = sortSelect?.value || 'character-asc';
-
-    const filtered = window.allInventories.filter(inv => {
-      const matchesSearch = !searchTerm ||
-        inv.itemName?.toLowerCase().includes(searchTerm) ||
-        inv.characterName?.toLowerCase().includes(searchTerm);
-      const matchesCategory = categoryFilter === 'all' || inv.category === categoryFilter;
-      const matchesType = typeFilter === 'all' || inv.type === typeFilter;
-      
-      return matchesSearch && matchesCategory && matchesType;
-    });
-
-    // Apply sorting
-    const [field, direction] = sortBy.split('-');
-    const isAsc = direction === 'asc';
-
-    const sorted = [...filtered].sort((a, b) => {
-      let valA, valB;
-      
-      switch (field) {
-        case 'character':
-          valA = a.characterName ?? '';
-          valB = b.characterName ?? '';
-          break;
-        case 'items':
-          valA = 1; // For inventory items, we count as 1 per entry
-          valB = 1;
-          break;
-        case 'quantity':
-          valA = a.quantity ?? 0;
-          valB = b.quantity ?? 0;
-          break;
-        default:
-          valA = a[field] ?? '';
-          valB = b[field] ?? '';
+  // Add event listeners with debouncing
+  if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+      // Clear existing timeout
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
       }
       
-      return isAsc
-        ? (typeof valA === 'string' ? valA.localeCompare(valB) : valA - valB)
-        : (typeof valB === 'string' ? valB.localeCompare(valA) : valB - valA);
-    });
-
-    const resultsInfo = document.querySelector('.inventory-results-info p');
-    if (resultsInfo) {
-      resultsInfo.textContent = `Showing ${sorted.length} of ${window.allInventories.length} inventory entries`;
-    }
-
-    renderInventoryItems(sorted, page);
-
-    // Remove any existing pagination since we're showing all filtered results
-    const contentDiv = document.getElementById('model-details-data');
-    if (contentDiv) {
-      const existingPagination = contentDiv.querySelector('.pagination');
-      if (existingPagination) {
-        existingPagination.remove();
-      }
-    }
-  }
-
-  // ------------------- Function: applyFiltersAndSort -------------------
-  // Applies all filters and sorting to an inventory array
-  function applyFiltersAndSort(inventories) {
-    const searchTerm = searchInput?.value.toLowerCase() || '';
-    const categoryFilter = catSelect?.value || 'all';
-    const typeFilter = typeSelect?.value || 'all';
-    const sortBy = sortSelect?.value || 'character-asc';
-
-    // Apply filters
-    const filtered = inventories.filter(inv => {
-      const matchesSearch = !searchTerm ||
-        inv.itemName?.toLowerCase().includes(searchTerm) ||
-        inv.characterName?.toLowerCase().includes(searchTerm);
-      const matchesCategory = categoryFilter === 'all' || inv.category === categoryFilter;
-      const matchesType = typeFilter === 'all' || inv.type === typeFilter;
-      
-      return matchesSearch && matchesCategory && matchesType;
-    });
-
-    // Apply sorting
-    const [field, direction] = sortBy.split('-');
-    const isAsc = direction === 'asc';
-
-    return [...filtered].sort((a, b) => {
-      let valA, valB;
-      
-      switch (field) {
-        case 'character':
-          valA = a.characterName ?? '';
-          valB = b.characterName ?? '';
-          break;
-        case 'items':
-          valA = 1; // For inventory items, we count as 1 per entry
-          valB = 1;
-          break;
-        case 'quantity':
-          valA = a.quantity ?? 0;
-          valB = b.quantity ?? 0;
-          break;
-        default:
-          valA = a[field] ?? '';
-          valB = b[field] ?? '';
-      }
-      
-      return isAsc
-        ? (typeof valA === 'string' ? valA.localeCompare(valB) : valA - valB)
-        : (typeof valB === 'string' ? valB.localeCompare(valA) : valB - valA);
+      // Set new timeout for 300ms debouncing
+      searchTimeout = setTimeout(() => {
+        console.log('🔍 Search input debounced, applying filters...');
+        applyFiltersAndRender(1);
+      }, 300);
     });
   }
   
-  // Add event listeners
-  if (searchInput) searchInput.addEventListener('input', () => window.filterInventories(1));
-  if (catSelect) catSelect.addEventListener('change', () => window.filterInventories(1));
-  if (typeSelect) typeSelect.addEventListener('change', () => window.filterInventories(1));
-  if (sortSelect) sortSelect.addEventListener('change', () => window.filterInventories(1));
+  if (catSelect) catSelect.addEventListener('change', () => applyFiltersAndRender(1));
+  if (typeSelect) typeSelect.addEventListener('change', () => applyFiltersAndRender(1));
+  if (sortSelect) sortSelect.addEventListener('change', () => applyFiltersAndRender(1));
+  if (charactersPerPageSelect) charactersPerPageSelect.addEventListener('change', () => applyFiltersAndRender(1));
   
   if (clearBtn) {
-    clearBtn.addEventListener('click', async () => {
+    clearBtn.addEventListener('click', () => {
       if (searchInput) searchInput.value = '';
       if (catSelect) catSelect.value = 'all';
       if (typeSelect) typeSelect.value = 'all';
       if (sortSelect) sortSelect.value = 'character-asc';
+      if (charactersPerPageSelect) charactersPerPageSelect.value = '12';
       
       currentFilters = {
         search: '',
@@ -926,89 +962,14 @@ function setupInventoryFilters(inventories) {
       cache.clearForFilters();
       console.log('[Inventory Cache] 🗑️ Cache cleared due to filter reset');
       
-      // Reset the global inventory list to the original data
-      try {
-        console.log('🔄 Fetching all inventories after clearing filters...');
-        const response = await fetch('/api/models/inventory?all=true');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const { data: allInventories } = await response.json();
-        
-        // Update the global inventory list with all inventories
-        window.allInventories = allInventories;
-        console.log('✅ Reset global inventory list to', allInventories.length, 'entries');
-        
-        // Render all inventories
-        renderInventoryItems(allInventories, 1);
-        
-        // Update results info
-        const resultsInfo = document.querySelector('.inventory-results-info p');
-        if (resultsInfo) {
-          resultsInfo.textContent = `Showing ${allInventories.length} inventory entries`;
-        }
-        
-        // Remove any existing pagination
-        const contentDiv = document.getElementById('model-details-data');
-        if (contentDiv) {
-          const existingPagination = contentDiv.querySelector('.pagination');
-          if (existingPagination) {
-            existingPagination.remove();
-          }
-        }
-        
-      } catch (error) {
-        console.error('❌ Error resetting inventory list:', error);
-        // Fallback to just calling filterInventories
-        window.filterInventories(1);
-      }
+      // Reset pagination and reload character summaries
+      currentPage = 1;
+      loadCharacterSummaries();
     });
   }
   
   window.inventoryFiltersInitialized = true;
   console.log('✅ Inventory filters setup complete');
-  window.filterInventories(1);
-}
-
-// ------------------- Sorting Functions -------------------
-
-/**
- * Sorts character groups based on current sort criteria
- * @returns {Array} Sorted character groups
- */
-function sortCharacterGroups() {
-  const characters = Array.from(characterGroups.values());
-  
-  switch (currentFilters.sortBy) {
-    case 'character-asc':
-      return characters.sort((a, b) => a.characterName.localeCompare(b.characterName));
-    case 'character-desc':
-      return characters.sort((a, b) => b.characterName.localeCompare(a.characterName));
-    case 'items-asc':
-      return characters.sort((a, b) => a.uniqueItems - b.uniqueItems);
-    case 'items-desc':
-      return characters.sort((a, b) => b.uniqueItems - a.uniqueItems);
-    case 'quantity-asc':
-      return characters.sort((a, b) => a.totalItems - b.totalItems);
-    case 'quantity-desc':
-      return characters.sort((a, b) => b.totalItems - a.totalItems);
-    default:
-      return characters.sort((a, b) => a.characterName.localeCompare(b.characterName));
-  }
-}
-
-/**
- * Sorts items within a character's inventory
- * @param {Array} items - Character's items
- * @returns {Array} Sorted items
- */
-function sortCharacterItems(items) {
-  return items.sort((a, b) => {
-    // First sort by quantity (descending)
-    const quantityDiff = (b.quantity || 0) - (a.quantity || 0);
-    if (quantityDiff !== 0) return quantityDiff;
-    
-    // Then sort by name (ascending)
-    return (a.itemName || '').localeCompare(b.itemName || '');
-  });
 }
 
 // ------------------- Interaction Functions -------------------
@@ -1017,7 +978,7 @@ function sortCharacterItems(items) {
  * Toggles the expansion state of a character's inventory
  * @param {string} characterName - Name of the character
  */
-function toggleCharacterInventory(characterName) {
+async function toggleCharacterInventory(characterName) {
   console.log('🔄 Toggling inventory for:', characterName);
   
   const card = document.querySelector(`[data-character="${characterName}"]`);
@@ -1040,290 +1001,44 @@ function toggleCharacterInventory(characterName) {
     content.classList.add('expanded');
     expandButton.className = 'fas fa-chevron-up';
     
-    // Load content if not already loaded
-    if (!content.innerHTML.trim()) {
-      const character = characterGroups.get(characterName);
-      if (character) {
-        content.innerHTML = renderCharacterItems(character);
+    // Load inventory items if not already loaded
+    if (!loadedCharacterInventories.has(characterName)) {
+      content.innerHTML = '<div class="loading-inventory"><i class="fas fa-spinner fa-spin"></i> Loading inventory...</div>';
+      
+      try {
+        const items = await loadCharacterInventory(characterName);
+        content.innerHTML = renderCharacterItems(items);
+      } catch (error) {
+        console.error(`❌ Error loading inventory for ${characterName}:`, error);
+        content.innerHTML = `
+          <div class="character-inventory-empty">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Error loading inventory</p>
+            <small>${error.message}</small>
+          </div>
+        `;
       }
+    } else {
+      // Use cached inventory data
+      const items = loadedCharacterInventories.get(characterName);
+      content.innerHTML = renderCharacterItems(items);
     }
   }
 }
-
-/**
- * Initializes character cards after rendering
- */
-function initializeCharacterCards() {
-  // Add any additional initialization logic here
-  console.log('🎯 Character cards initialized');
-}
-
-// ------------------- Pagination Functions -------------------
-
-/**
- * Updates inventory pagination for filtered results
- * @param {number} currentPage - Current page number
- * @param {number} totalPages - Total number of pages
- * @param {number} totalItems - Total number of items
- */
-function updateFilteredPagination(currentPage, totalPages, totalItems) {
-  const contentDiv = document.getElementById('model-details-data');
-  if (!contentDiv) {
-    console.error('❌ Content div not found');
-    return;
-  }
-
-  // Remove ALL existing pagination (both main and filtered)
-  const existingPagination = contentDiv.querySelector('.pagination');
-  if (existingPagination) {
-    existingPagination.remove();
-  }
-
-  // Only show pagination if there are multiple pages
-  if (totalPages > 1) {
-    console.log('📄 Setting up pagination for filtered inventory results:', { currentPage, totalPages, totalItems });
-    
-    const handlePageChange = async (pageNum) => {
-      console.log(`🔄 Filtered inventory page change requested to page ${pageNum}`);
-      // Call filterInventories with the new page number
-      window.filterInventories(pageNum);
-    };
-
-    // Create pagination manually
-    const paginationDiv = document.createElement('div');
-    paginationDiv.className = 'pagination';
-    
-    // Add previous button
-    if (currentPage > 1) {
-      const prevButton = document.createElement('button');
-      prevButton.className = 'pagination-button';
-      prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
-      prevButton.title = 'Previous Page';
-      prevButton.addEventListener('click', () => handlePageChange(currentPage - 1));
-      paginationDiv.appendChild(prevButton);
-    }
-
-    // Add page numbers
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
-
-    if (startPage > 1) {
-      const firstButton = document.createElement('button');
-      firstButton.className = 'pagination-button';
-      firstButton.textContent = '1';
-      firstButton.addEventListener('click', () => handlePageChange(1));
-      paginationDiv.appendChild(firstButton);
-
-      if (startPage > 2) {
-        const ellipsis = document.createElement('span');
-        ellipsis.className = 'pagination-ellipsis';
-        ellipsis.textContent = '...';
-        paginationDiv.appendChild(ellipsis);
-      }
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      const pageButton = document.createElement('button');
-      pageButton.className = `pagination-button ${i === currentPage ? 'active' : ''}`;
-      pageButton.textContent = i.toString();
-      pageButton.addEventListener('click', () => handlePageChange(i));
-      paginationDiv.appendChild(pageButton);
-    }
-
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
-        const ellipsis = document.createElement('span');
-        ellipsis.className = 'pagination-ellipsis';
-        ellipsis.textContent = '...';
-        paginationDiv.appendChild(ellipsis);
-      }
-
-      const lastButton = document.createElement('button');
-      lastButton.className = 'pagination-button';
-      lastButton.textContent = totalPages.toString();
-      lastButton.addEventListener('click', () => handlePageChange(totalPages));
-      paginationDiv.appendChild(lastButton);
-    }
-
-    // Add next button
-    if (currentPage < totalPages) {
-      const nextButton = document.createElement('button');
-      nextButton.className = 'pagination-button';
-      nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
-      nextButton.title = 'Next Page';
-      nextButton.addEventListener('click', () => handlePageChange(currentPage + 1));
-      paginationDiv.appendChild(nextButton);
-    }
-
-    contentDiv.appendChild(paginationDiv);
-    console.log('✅ Filtered inventory pagination created successfully');
-  }
-}
-
-/**
- * Creates normal pagination for unfiltered inventory results
- * @param {number} currentPage - Current page number
- * @param {number} totalPages - Total number of pages
- * @param {Function} handlePageChange - Function to handle page changes
- */
-function createNormalPagination(currentPage, totalPages, handlePageChange) {
-  const contentDiv = document.getElementById('model-details-data');
-  if (!contentDiv) return;
-
-  const paginationDiv = document.createElement('div');
-  paginationDiv.className = 'pagination';
-  
-  // Add previous button
-  if (currentPage > 1) {
-    const prevButton = document.createElement('button');
-    prevButton.className = 'pagination-button';
-    prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
-    prevButton.title = 'Previous Page';
-    prevButton.addEventListener('click', () => handlePageChange(currentPage - 1));
-    paginationDiv.appendChild(prevButton);
-  }
-
-  // Add page numbers
-  const startPage = Math.max(1, currentPage - 2);
-  const endPage = Math.min(totalPages, currentPage + 2);
-
-  if (startPage > 1) {
-    const firstButton = document.createElement('button');
-    firstButton.className = 'pagination-button';
-    firstButton.textContent = '1';
-    firstButton.addEventListener('click', () => handlePageChange(1));
-    paginationDiv.appendChild(firstButton);
-
-    if (startPage > 2) {
-      const ellipsis = document.createElement('span');
-      ellipsis.className = 'pagination-ellipsis';
-      ellipsis.textContent = '...';
-      paginationDiv.appendChild(ellipsis);
-    }
-  }
-
-  for (let i = startPage; i <= endPage; i++) {
-    const pageButton = document.createElement('button');
-    pageButton.className = `pagination-button ${i === currentPage ? 'active' : ''}`;
-    pageButton.textContent = i.toString();
-    pageButton.addEventListener('click', () => handlePageChange(i));
-    paginationDiv.appendChild(pageButton);
-  }
-
-  if (endPage < totalPages) {
-    if (endPage < totalPages - 1) {
-      const ellipsis = document.createElement('span');
-      ellipsis.className = 'pagination-ellipsis';
-      ellipsis.textContent = '...';
-      paginationDiv.appendChild(ellipsis);
-    }
-
-    const lastButton = document.createElement('button');
-    lastButton.className = 'pagination-button';
-    lastButton.textContent = totalPages.toString();
-    lastButton.addEventListener('click', () => handlePageChange(totalPages));
-    paginationDiv.appendChild(lastButton);
-  }
-
-  // Add next button
-  if (currentPage < totalPages) {
-    const nextButton = document.createElement('button');
-    nextButton.className = 'pagination-button';
-    nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
-    nextButton.title = 'Next Page';
-    nextButton.addEventListener('click', () => handlePageChange(currentPage + 1));
-    paginationDiv.appendChild(nextButton);
-  }
-
-  contentDiv.appendChild(paginationDiv);
-  console.log('✅ Normal inventory pagination created successfully');
-}
-
-/**
- * Updates inventory pagination (legacy function for compatibility)
- * @param {Array} inventories - Raw inventory data
- * @param {number} currentPage - Current page number
- */
-function updateInventoryPagination(inventories, currentPage) {
-  // This function is kept for compatibility but the actual pagination
-  // is now handled by updateFilteredPagination and createNormalPagination
-  console.log('📄 Legacy pagination updated:', { currentPage, totalItems: inventories.length });
-}
-
-// ============================================================================
-// ------------------- Global Cache Management -------------------
-// Utilities accessible from browser console for cache debugging and management
-// ============================================================================
-
-// Make cache management available globally for debugging
-window.InventoryPageCache = {
-  // Get cache statistics
-  getStats() {
-    const cache = window.inventoryPageCache;
-    if (!cache) return { error: 'Cache not initialized' };
-    return cache.getStats();
-  },
-  
-  // Clear the entire cache
-  clear() {
-    const cache = window.inventoryPageCache;
-    if (!cache) return { error: 'Cache not initialized' };
-    cache.clear();
-    return { success: 'Inventory cache cleared' };
-  },
-  
-  // Get cache size
-  getSize() {
-    const cache = window.inventoryPageCache;
-    if (!cache) return { error: 'Cache not initialized' };
-    return { size: cache.data.size, maxSize: cache.MAX_CACHE_SIZE };
-  },
-  
-  // List all cached pages
-  listPages() {
-    const cache = window.inventoryPageCache;
-    if (!cache) return { error: 'Cache not initialized' };
-    return Array.from(cache.data.keys());
-  },
-  
-  // Check if specific page is cached
-  hasPage(pageKey) {
-    const cache = window.inventoryPageCache;
-    if (!cache) return { error: 'Cache not initialized' };
-    return cache.has(pageKey);
-  },
-  
-  // Remove specific page from cache
-  removePage(pageKey) {
-    const cache = window.inventoryPageCache;
-    if (!cache) return { error: 'Cache not initialized' };
-    cache.data.delete(pageKey);
-    cache.persist();
-    return { success: `Removed page ${pageKey} from cache` };
-  },
-  
-  // Clear filter-related cache
-  clearFilters() {
-    const cache = window.inventoryPageCache;
-    if (!cache) return { error: 'Cache not initialized' };
-    cache.clearForFilters();
-    return { success: 'Filter-related cache cleared' };
-  }
-};
 
 // ------------------- Export Functions -------------------
 
 export {
   initializeInventoryPage,
-  renderInventoryItems,
+  renderCharacterCards,
   populateInventoryFilterOptions,
   setupInventoryFilters,
-  updateInventoryPagination,
-  updateFilteredPagination,
-  createNormalPagination,
   toggleCharacterInventory,
-  initializeInventoryCache
+  initializeInventoryCache,
+  updateInventoryPagination
 };
 
 // Make toggleCharacterInventory globally available for HTML onclick
-window.toggleCharacterInventory = toggleCharacterInventory; 
+window.toggleCharacterInventory = toggleCharacterInventory;
+
+console.log('🎒 Efficient Inventory.js loaded successfully'); 

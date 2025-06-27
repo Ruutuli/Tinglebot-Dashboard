@@ -195,7 +195,8 @@ function setupModelCards() {
             break;
           case 'inventory':
             console.log('🎒 Initializing inventory page');
-            // Stay within model details page like items and characters
+            // Inventory uses its own efficient pagination system
+            // Skip the main pagination logic entirely
             await inventory.initializeInventoryPage(data, pagination.page, contentDiv);
             break;
           default:
@@ -224,6 +225,12 @@ function setupModelCards() {
               // Let the filtered pagination handle it
               return;
             }
+          }
+
+          // Skip pagination for inventory as it uses its own efficient system
+          if (modelName === 'inventory') {
+            console.log('🎒 Skipping main pagination for inventory - uses efficient pagination system');
+            return;
           }
 
           console.log('📄 Setting up pagination');
@@ -283,32 +290,10 @@ function setupModelCards() {
                   await items.renderItemCards(data, pagination.page);
                   break;
                 case 'inventory':
-                  // Check if inventory filters are active
-                  if (window.inventoryFiltersInitialized && window.savedInventoryFilterState) {
-                    const hasActiveFilters = window.savedInventoryFilterState.searchTerm || 
-                      window.savedInventoryFilterState.categoryFilter !== 'all' || 
-                      window.savedInventoryFilterState.typeFilter !== 'all';
-                    
-                    if (hasActiveFilters) {
-                      console.log('🔍 Inventory filters active - skipping main pagination');
-                      // Don't apply normal pagination when filters are active
-                      // Let the filtered pagination handle it
-                      return;
-                    }
-                  }
-                  
-                  // Update global inventory data for pagination
-                  window.allInventories = data;
-                  
-                  // Re-render with new page data
-                  await inventory.renderInventoryItems(data, pagination.page);
-                  
-                  // Update results info
-                  const resultsInfo = document.querySelector('.inventory-results-info p');
-                  if (resultsInfo) {
-                    resultsInfo.innerHTML = `<p>Showing ${data.length} inventory entries (Page ${pagination.page} of ${pagination.pages})</p>`;
-                  }
-                  break;
+                  // Inventory uses its own efficient pagination system
+                  // Skip the main pagination handling
+                  console.log('🎒 Skipping main pagination handling for inventory');
+                  return;
                 default:
                   console.error(`Unknown model type: ${modelName}`);
               }
@@ -349,8 +334,9 @@ function setupModelCards() {
             paginationContainer.innerHTML = '';
             paginationContainer.appendChild(paginationDiv);
           } else if (modelName === 'inventory') {
-            // For inventory, add pagination to the content div like items and characters
-            contentDiv.appendChild(paginationDiv);
+            // Inventory uses its own efficient pagination system
+            // Skip creating main pagination container
+            console.log('🎒 Skipping main pagination container creation for inventory');
           } else {
             contentDiv.appendChild(paginationDiv);
           }
@@ -450,7 +436,7 @@ async function loadInventoryData() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     inventory.setupInventoryFilters(data);
-    inventory.renderInventoryItems(data);
+    inventory.renderCharacterCards(data);
   } catch (err) {
     error.logError(err, 'Loading Inventory');
   }
