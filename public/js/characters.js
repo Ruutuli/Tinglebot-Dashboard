@@ -7,6 +7,217 @@ import { getVillageCrestUrl } from './utils.js';
 import { scrollToTop } from './ui.js';
 
 // ============================================================================
+// ------------------- Mobile-Friendly Utilities -------------------
+// Touch optimizations and responsive behavior helpers
+// ============================================================================
+
+// ------------------- Function: isMobileDevice -------------------
+// Detects if the current device is mobile/touch-based
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+         window.innerWidth <= 768 ||
+         ('ontouchstart' in window);
+}
+
+// ------------------- Function: isTouchDevice -------------------
+// Detects if the device supports touch events
+function isTouchDevice() {
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}
+
+// ------------------- Function: getMobileGridColumns -------------------
+// Returns appropriate grid columns based on screen size
+function getMobileGridColumns() {
+  const width = window.innerWidth;
+  if (width <= 360) return 1;      // Extra small phones
+  if (width <= 480) return 2;      // Small phones
+  if (width <= 768) return 2;      // Tablets/large phones
+  if (width <= 1024) return 3;     // Large tablets
+  return 4;                        // Desktop
+}
+
+// ------------------- Function: optimizeForMobile -------------------
+// Applies mobile-specific optimizations to character cards
+function optimizeForMobile() {
+  const isMobile = isMobileDevice();
+  const isTouch = isTouchDevice();
+  
+  // Add mobile-specific classes to body
+  if (isMobile) {
+    document.body.classList.add('mobile-device');
+  }
+  if (isTouch) {
+    document.body.classList.add('touch-device');
+  }
+  
+  // Adjust grid layout for mobile
+  const grid = document.getElementById('characters-container');
+  if (grid) {
+    const columns = getMobileGridColumns();
+    grid.style.setProperty('--mobile-columns', columns);
+  }
+  
+  return { isMobile, isTouch };
+}
+
+// ------------------- Function: setupMobileEventHandlers -------------------
+// Sets up touch-optimized event handlers for mobile devices
+function setupMobileEventHandlers() {
+  const isMobile = isMobileDevice();
+  const isTouch = isTouchDevice();
+  
+  if (!isMobile && !isTouch) return;
+  
+  // Add touch feedback to character cards
+  const characterCards = document.querySelectorAll('.character-card');
+  characterCards.forEach(card => {
+    // Remove hover effects on touch devices
+    if (isTouch) {
+      card.style.setProperty('--hover-transform', 'none');
+      card.style.setProperty('--hover-shadow', 'var(--card-shadow)');
+    }
+    
+    // Add touch feedback
+    card.addEventListener('touchstart', function() {
+      this.style.transform = 'scale(0.98)';
+      this.style.transition = 'transform 0.1s ease';
+    });
+    
+    card.addEventListener('touchend', function() {
+      this.style.transform = '';
+      this.style.transition = '';
+    });
+    
+    // Prevent zoom on double tap
+    card.addEventListener('touchend', function(e) {
+      e.preventDefault();
+    }, { passive: false });
+  });
+  
+  // Optimize filter controls for mobile
+  const filterControls = document.querySelectorAll('.search-filter-control select, .search-filter-control input');
+  filterControls.forEach(control => {
+    // Increase touch target size
+    control.style.minHeight = '44px';
+    control.style.fontSize = '16px'; // Prevents zoom on iOS
+    
+    // Add mobile-specific styling
+    if (isMobile) {
+      control.classList.add('mobile-optimized');
+    }
+  });
+  
+  // Optimize pagination buttons for mobile
+  const paginationButtons = document.querySelectorAll('.pagination-button');
+  paginationButtons.forEach(button => {
+    button.style.minHeight = '44px';
+    button.style.minWidth = '44px';
+    button.style.fontSize = '16px';
+  });
+}
+
+// ------------------- Function: handleMobileOrientationChange -------------------
+// Handles orientation changes on mobile devices
+function handleMobileOrientationChange() {
+  const isMobile = isMobileDevice();
+  if (!isMobile) return;
+  
+  // Debounce the orientation change handler
+  let orientationTimeout;
+  const handleOrientationChange = () => {
+    clearTimeout(orientationTimeout);
+    orientationTimeout = setTimeout(() => {
+      console.log('📱 Orientation changed, re-optimizing for mobile');
+      
+      // Re-apply mobile optimizations
+      optimizeForMobile();
+      setupMobileEventHandlers();
+      
+      // Re-render character cards with new layout
+      if (window.allCharacters) {
+        const currentPage = 1; // Reset to first page on orientation change
+        renderCharacterCards(window.allCharacters, currentPage, true);
+      }
+    }, 300);
+  };
+  
+  window.addEventListener('orientationchange', handleOrientationChange);
+  window.addEventListener('resize', handleOrientationChange);
+  
+  return handleOrientationChange;
+}
+
+// ------------------- Function: createMobileFriendlyModal -------------------
+// Creates a mobile-optimized modal for character details
+function createMobileFriendlyModal(character) {
+  const isMobile = isMobileDevice();
+  const isTouch = isTouchDevice();
+  
+  const modal = document.createElement('div');
+  modal.className = 'character-modal';
+  
+  // Add mobile-specific classes
+  if (isMobile) {
+    modal.classList.add('mobile-modal');
+  }
+  if (isTouch) {
+    modal.classList.add('touch-modal');
+  }
+  
+  modal.innerHTML = generateCharacterModalHTML(character);
+  
+  // Mobile-specific modal behavior
+  if (isMobile) {
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+    
+    // Add swipe-to-close functionality
+    let startY = 0;
+    let currentY = 0;
+    
+    modal.addEventListener('touchstart', (e) => {
+      startY = e.touches[0].clientY;
+    });
+    
+    modal.addEventListener('touchmove', (e) => {
+      currentY = e.touches[0].clientY;
+      const diff = currentY - startY;
+      
+      if (diff > 50) { // Swipe down to close
+        modal.style.transform = `translateY(${diff}px)`;
+        modal.style.opacity = Math.max(0, 1 - (diff / 200));
+      }
+    });
+    
+    modal.addEventListener('touchend', (e) => {
+      const diff = currentY - startY;
+      if (diff > 100) { // Close if swiped down far enough
+        closeModal(modal);
+      } else {
+        // Reset modal position
+        modal.style.transform = '';
+        modal.style.opacity = '';
+      }
+    });
+  }
+  
+  return modal;
+}
+
+// ------------------- Function: closeModal -------------------
+// Closes modal with mobile-friendly cleanup
+function closeModal(modal) {
+  const isMobile = isMobileDevice();
+  
+  if (isMobile) {
+    // Restore body scroll
+    document.body.style.overflow = '';
+  }
+  
+  modal.remove();
+}
+
+// ============================================================================
 // ------------------- Rendering: Character Cards -------------------
 // Displays characters with pagination and status-based styling
 // ============================================================================
@@ -20,6 +231,9 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
       firstCharacter: characters?.[0]?.name,
       enableModals
     });
+
+    // Apply mobile optimizations
+    const { isMobile, isTouch } = optimizeForMobile();
 
     // Scroll to top of the page
     scrollToTop();
@@ -48,7 +262,7 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
     const charactersPerPageSelect = document.getElementById('characters-per-page');
     const charactersPerPage = charactersPerPageSelect ? 
       (charactersPerPageSelect.value === 'all' ? characters.length : parseInt(charactersPerPageSelect.value)) : 
-      12;
+      (isMobile ? 6 : 12); // Fewer characters per page on mobile
     
     // Calculate pagination info
     const totalPages = Math.ceil(characters.length / charactersPerPage);
@@ -79,7 +293,7 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
       const defensePercent = Math.min((character.defense / 15) * 100, 100);
   
       return `
-        <div class="character-card ${cardStatusClass}" data-character="${character.name}">
+        <div class="character-card ${cardStatusClass} ${isMobile ? 'mobile-card' : ''} ${isTouch ? 'touch-card' : ''}" data-character="${character.name}">
           <div class="character-header">
             ${character.homeVillage ? `
               <div class="village-crest">
@@ -119,11 +333,11 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
               <div class="character-links">
                 ${character.appLink ? `
                   <a href="${character.appLink}" target="_blank" class="character-link">
-                    <i class="fas fa-external-link-alt"></i> Character Sheet
+                    <i class="fas fa-external-link-alt"></i> ${isMobile ? 'Sheet' : 'Character Sheet'}
                   </a>` : ''}
                 ${character.inventory ? `
                   <a href="${character.inventory}" target="_blank" class="character-link">
-                    <i class="fas fa-backpack"></i> Inventory
+                    <i class="fas fa-backpack"></i> ${isMobile ? 'Items' : 'Inventory'}
                   </a>` : ''}
                 ${character.shopLink ? `
                   <a href="${character.shopLink}" target="_blank" class="character-link">
@@ -186,20 +400,18 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
           const character = window.allCharacters.find(c => c.name === name);
           if (!character) return;
     
-          const modal = document.createElement('div');
-          modal.className = 'character-modal';
-          modal.innerHTML = generateCharacterModalHTML(character);
+          const modal = createMobileFriendlyModal(character);
           document.body.appendChild(modal);
     
           const closeBtn = modal.querySelector('.close-modal');
-          closeBtn?.addEventListener('click', () => modal.remove());
+          closeBtn?.addEventListener('click', () => closeModal(modal));
     
           modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.remove();
+            if (e.target === modal) closeModal(modal);
           });
     
           document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') modal.remove();
+            if (e.key === 'Escape') closeModal(modal);
           }, { once: true });
         });
       });
@@ -207,6 +419,9 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
     } else {
       console.log('🚫 Modal handlers disabled');
     }
+
+    // Setup mobile event handlers after rendering
+    setupMobileEventHandlers();
 
     // Update results info
     const resultsInfo = document.querySelector('.character-results-info p');
@@ -474,11 +689,45 @@ async function populateFilterOptions(characters) {
   
     window.filterSetupRetried = false;
   
+    // Apply mobile optimizations to filter controls
+    const { isMobile, isTouch } = optimizeForMobile();
+    
+    // Mobile-specific filter optimizations
+    if (isMobile) {
+      // Adjust characters per page options for mobile
+      const mobileOptions = ['6', '12', '24', 'all'];
+      charactersPerPageSelect.innerHTML = '';
+      mobileOptions.forEach(option => {
+        const opt = document.createElement('option');
+        opt.value = option;
+        opt.textContent = option === 'all' ? 'All characters' : `${option} per page`;
+        charactersPerPageSelect.appendChild(opt);
+      });
+      charactersPerPageSelect.value = '6'; // Default to 6 on mobile
+      
+      // Add mobile-specific classes to filter controls
+      [searchInput, jobSelect, raceSelect, villageSelect, sortSelect, charactersPerPageSelect].forEach(control => {
+        if (control) {
+          control.classList.add('mobile-filter-control');
+          control.style.minHeight = '44px';
+          control.style.fontSize = '16px';
+        }
+      });
+      
+      // Optimize clear filters button for mobile
+      if (clearFiltersBtn) {
+        clearFiltersBtn.classList.add('mobile-clear-btn');
+        clearFiltersBtn.style.minHeight = '44px';
+        clearFiltersBtn.style.fontSize = '16px';
+      }
+    }
+
     // Populate filter options with available values from database
     await populateFilterOptions(characters);
-  
+
     // Restore filter state if it exists
     const savedFilterState = window.savedFilterState || {};
+  
     // ------------------- Function: filterCharacters -------------------
     // Main filtering function that handles both server-side and client-side filtering
     window.filterCharacters = async function (page = 1) {
@@ -981,12 +1230,61 @@ async function initializeCharacterPage(data, page = 1, contentDiv) {
     // Store characters globally for filtering
     window.allCharacters = data;
 
+    // Apply mobile optimizations early
+    const { isMobile, isTouch } = optimizeForMobile();
+
     // Create filters container if it doesn't exist
     let filtersContainer = document.querySelector('.character-filters');
     if (!filtersContainer) {
         filtersContainer = document.createElement('div');
         filtersContainer.className = 'character-filters';
-        filtersContainer.innerHTML = `
+        
+        // Mobile-friendly filter layout
+        const filterLayout = isMobile ? `
+            <div class="search-filter-bar mobile-filter-bar">
+                <div class="search-filter-control search-input">
+                    <input type="text" id="character-search-input" placeholder="Search characters..." autocomplete="off">
+                </div>
+                <div class="mobile-filter-row">
+                    <div class="search-filter-control">
+                        <select id="filter-job">
+                            <option value="all">All Jobs</option>
+                        </select>
+                    </div>
+                    <div class="search-filter-control">
+                        <select id="filter-race">
+                            <option value="all">All Races</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mobile-filter-row">
+                    <div class="search-filter-control">
+                        <select id="filter-village">
+                            <option value="all">All Villages</option>
+                        </select>
+                    </div>
+                    <div class="search-filter-control">
+                        <select id="sort-by">
+                            <option value="name-asc">Name (A-Z)</option>
+                            <option value="name-desc">Name (Z-A)</option>
+                            <option value="level-desc">Level (High-Low)</option>
+                            <option value="level-asc">Level (Low-High)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mobile-filter-row">
+                    <div class="search-filter-control">
+                        <select id="characters-per-page">
+                            <option value="6">6 per page</option>
+                            <option value="12">12 per page</option>
+                            <option value="24">24 per page</option>
+                            <option value="all">All characters</option>
+                        </select>
+                    </div>
+                    <button id="clear-filters" class="clear-filters-btn">Clear</button>
+                </div>
+            </div>
+        ` : `
             <div class="search-filter-bar">
                 <div class="search-filter-control search-input">
                     <input type="text" id="character-search-input" placeholder="Search characters...">
@@ -1026,6 +1324,8 @@ async function initializeCharacterPage(data, page = 1, contentDiv) {
                 <button id="clear-filters" class="clear-filters-btn">Clear Filters</button>
             </div>
         `;
+        
+        filtersContainer.innerHTML = filterLayout;
         contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
     }
 
@@ -1035,6 +1335,15 @@ async function initializeCharacterPage(data, page = 1, contentDiv) {
         container = document.createElement('div');
         container.id = 'characters-container';
         container.className = 'characters-grid';
+        
+        // Add mobile-specific classes
+        if (isMobile) {
+            container.classList.add('mobile-characters-grid');
+        }
+        if (isTouch) {
+            container.classList.add('touch-characters-grid');
+        }
+        
         contentDiv.appendChild(container);
     }
 
@@ -1052,8 +1361,17 @@ async function initializeCharacterPage(data, page = 1, contentDiv) {
     if (!paginationContainer) {
         paginationContainer = document.createElement('div');
         paginationContainer.id = 'character-pagination';
+        
+        // Add mobile-specific classes
+        if (isMobile) {
+            paginationContainer.classList.add('mobile-pagination');
+        }
+        
         contentDiv.appendChild(paginationContainer);
     }
+
+    // Setup mobile orientation change handler
+    handleMobileOrientationChange();
 
     // Only initialize filters if they haven't been initialized yet
     if (!window.characterFiltersInitialized) {
@@ -1077,7 +1395,15 @@ export {
     renderCharacterCards,
     populateFilterOptions,
     setupCharacterFilters,
-    initializeCharacterPage
+    initializeCharacterPage,
+    // Mobile-friendly utilities
+    isMobileDevice,
+    isTouchDevice,
+    optimizeForMobile,
+    setupMobileEventHandlers,
+    handleMobileOrientationChange,
+    createMobileFriendlyModal,
+    closeModal
   };
   
   
