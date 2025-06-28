@@ -4,10 +4,11 @@
   "description": "Tinglebot 2.0 Dashboard",
   "main": "server.js",
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   },
   "scripts": {
     "start": "node server.js",
+    "build": "echo 'Build completed'",
     "dev": "nodemon server.js",
     "debug": "nodemon --inspect server.js",
     "test-auth": "node test-auth.js"

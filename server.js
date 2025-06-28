@@ -53,16 +53,16 @@ const Relic = require('./models/RelicModel');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// ------------------- Section: Session & Authentication Configuration -------------------
+// Session configuration for Discord OAuth
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'true';
+const domain = process.env.DOMAIN || (isProduction ? 'tinglebot.xyz' : 'localhost');
+
 // Trust proxy for production environments (Railway, etc.)
 if (isProduction) {
   app.set('trust proxy', 1);
   console.log('[server.js]: 🔧 Trust proxy enabled for production');
 }
-
-// ------------------- Section: Session & Authentication Configuration -------------------
-// Session configuration for Discord OAuth
-const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'true';
-const domain = process.env.DOMAIN || (isProduction ? 'tinglebot.xyz' : 'localhost');
 
 console.log('[server.js]: 🔧 Environment Configuration:', {
   NODE_ENV: process.env.NODE_ENV,

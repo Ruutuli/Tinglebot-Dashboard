@@ -1,113 +1,114 @@
-# Deployment Checklist
+# 🚀 Railway Deployment Checklist
 
-## Before Deploying
+## ✅ Pre-Deployment Fixes Applied
 
-### 1. Environment Variables Check
-Ensure these are set in Railway:
-- `DOMAIN=tinglebot.xyz` (not `tionglebot.xyz`)
-- `SESSION_SECRET=your_secure_session_secret`
-- `DISCORD_CLIENT_ID=your_discord_client_id`
-- `DISCORD_CLIENT_SECRET=your_discord_client_secret`
-- `MONGODB_TINGLEBOT_URI_PROD=your_mongodb_uri`
-- `MONGODB_INVENTORIES_URI_PROD=your_inventories_uri`
-- `MONGODB_VENDING_URI_PROD=your_vending_uri`
+### 1. **Fixed Variable Declaration Order**
+- ✅ Moved `isProduction` variable declaration before usage in `server.js`
+- ✅ This was causing a ReferenceError during startup
 
-### 2. Discord OAuth Settings
-- Go to Discord Developer Portal
-- Check your OAuth app settings
-- Ensure redirect URI is: `https://tinglebot.xyz/auth/discord/callback`
+### 2. **Updated Package Configuration**
+- ✅ Changed Node.js engine from `>=18.0.0` to `18.x` for better Railway compatibility
+- ✅ Added `build` script to `package.json`
+- ✅ Removed conflicting `buildCommand` from `railway.json`
 
-### 3. Code Changes Made
-- ✅ Session cookies set to `secure: false` to avoid HTTPS issues
-- ✅ Simplified Discord callback
-- ✅ Removed complex debugging middleware
-- ✅ Added proxy trust for Railway
+### 3. **Added Nixpacks Configuration**
+- ✅ Created `nixpacks.toml` with explicit Node.js 18 configuration
+- ✅ Specified build and start commands
 
-## Deployment Steps
+### 4. **Optimized Build Process**
+- ✅ Created `.dockerignore` to exclude unnecessary files
+- ✅ This speeds up the Docker build process
 
-### 1. Commit and Push
+## 🔧 Railway Environment Variables Required
+
+Make sure these are set in your Railway project:
+
+### **Essential Variables:**
 ```bash
-git add .
-git commit -m "Fix authentication issues - simplify session config"
-git push origin main
+NODE_ENV=production
+RAILWAY_ENVIRONMENT=true
+PORT=5001
 ```
 
-### 2. Monitor Railway Deployment
-- Watch the Railway dashboard for deployment progress
-- Check logs for any startup errors
-- Wait for health check to pass
-
-### 3. Test After Deployment
+### **Database Variables:**
 ```bash
-# Test the endpoints
-node test-auth.js
+MONGODB_TINGLEBOT_URI_PROD=your_mongodb_connection_string
+MONGODB_INVENTORIES_URI_PROD=your_inventories_connection_string
+MONGODB_VENDING_URI_PROD=your_vending_connection_string
 ```
 
-## Common Deployment Issues
+### **Discord OAuth (Optional):**
+```bash
+DISCORD_CLIENT_ID=your_discord_client_id
+DISCORD_CLIENT_SECRET=your_discord_client_secret
+DISCORD_CALLBACK_URL=https://your-domain.railway.app/auth/discord/callback
+SESSION_SECRET=your_secure_session_secret
+```
 
-### Service Unavailable Error
-**Cause**: Application fails to start due to configuration issues
-**Solution**: 
-- Check environment variables are set correctly
-- Verify database connections
-- Look at Railway logs for specific error messages
+### **Domain Configuration:**
+```bash
+DOMAIN=your-domain.railway.app
+```
 
-### Health Check Failure
-**Cause**: `/api/health` endpoint returns error
-**Solution**:
-- Check database connections
-- Verify all required environment variables
-- Look for startup errors in logs
+## 🚀 Deployment Steps
 
-### Authentication Still Not Working
-**Cause**: Session configuration issues
-**Solution**:
-1. Clear browser cookies for `tinglebot.xyz`
-2. Try logging in again
-3. Check `/api/debug/session` endpoint
-4. Verify Discord OAuth settings
+1. **Commit and Push Changes:**
+   ```bash
+   git add .
+   git commit -m "Fix Railway deployment issues"
+   git push origin main
+   ```
 
-## Post-Deployment Testing
+2. **Verify Railway Configuration:**
+   - Check that `railway.json` is in your repository
+   - Ensure all environment variables are set in Railway dashboard
+   - Verify the health check path: `/api/health`
 
-### 1. Health Check
-Visit: `https://tinglebot.xyz/api/health`
-Should return: `{"status":"ok",...}`
+3. **Monitor Deployment:**
+   - Watch the Railway deployment logs
+   - Check for any startup errors
+   - Verify the health check endpoint responds
 
-### 2. Debug Session
-Visit: `https://tinglebot.xyz/api/debug/session`
-Should show session information
+## 🔍 Troubleshooting
 
-### 3. Authentication Flow
-1. Visit: `https://tinglebot.xyz/login`
-2. Click "Continue with Discord"
-3. Complete OAuth flow
-4. Should redirect to dashboard as authenticated user
+### **If Deployment Still Fails:**
 
-## If Deployment Still Fails
+1. **Check Railway Logs:**
+   - Look for specific error messages
+   - Check if the application starts successfully
 
-### Check Railway Logs
-1. Go to Railway dashboard
-2. Click on your service
-3. Go to "Deployments" tab
-4. Click on the failed deployment
-5. Check the logs for specific error messages
+2. **Verify Environment Variables:**
+   - Ensure all required variables are set
+   - Check for typos in variable names
 
-### Common Error Messages
-- `MongoServerSelectionError`: Database connection issue
-- `EADDRINUSE`: Port already in use
-- `MODULE_NOT_FOUND`: Missing dependencies
-- `ENOENT`: Missing environment variables
+3. **Test Health Endpoint:**
+   - Once deployed, visit: `https://your-domain.railway.app/api/health`
+   - Should return a JSON response with status information
 
-### Rollback Plan
-If deployment fails:
-1. Revert to previous working commit
-2. Push the revert
-3. Railway will automatically redeploy the working version
+4. **Database Connection Issues:**
+   - Verify MongoDB connection strings are correct
+   - Check if databases are accessible from Railway's network
 
-## Success Indicators
+## 📊 Expected Behavior
 
-✅ Health check passes (`/api/health` returns 200)
-✅ Debug endpoint accessible (`/api/debug/session`)
-✅ Discord OAuth flow completes
-✅ User shows as authenticated after login
-✅ Session persists across page refreshes 
+After successful deployment:
+- ✅ Application starts without errors
+- ✅ Health check endpoint responds at `/api/health`
+- ✅ Main dashboard loads at the root URL
+- ✅ Database connections are established
+- ✅ Static files are served correctly
+
+## 🆘 Common Issues
+
+1. **Build Timeout:** The `.dockerignore` file should help with this
+2. **Startup Errors:** Fixed the `isProduction` variable issue
+3. **Environment Variables:** Make sure all required variables are set in Railway
+4. **Database Connections:** Verify connection strings and network access
+
+## 📞 Next Steps
+
+If deployment still fails after these fixes:
+1. Check Railway deployment logs for specific error messages
+2. Verify all environment variables are correctly set
+3. Test the application locally with production environment variables
+4. Contact Railway support if issues persist 
