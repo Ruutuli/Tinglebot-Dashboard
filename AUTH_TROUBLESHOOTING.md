@@ -175,4 +175,141 @@ If the problem persists:
 
 ---
 
-**Need more help?** Check the server logs in Railway dashboard for specific error messages. 
+**Need more help?** Check the server logs in Railway dashboard for specific error messages.
+
+## Issue: User Not Authenticated After Discord Login
+
+### Symptoms
+- User completes Discord OAuth flow
+- Session exists but `passport` is `undefined` in session
+- User shows as "Guest" instead of authenticated user
+- `isAuthenticated: false` in API responses
+
+### Root Causes & Solutions
+
+#### 1. Secure Cookie Issues (Most Common)
+
+**Problem**: Session cookies are set to `secure: true` but site is accessed over HTTP or through a proxy.
+
+**Solution**: 
+- Set `FORCE_HTTPS=true` in your environment variables if you're using HTTPS
+- Or remove the `FORCE_HTTPS` variable to disable secure cookies
+
+```bash
+# In your .env file or Railway environment variables:
+FORCE_HTTPS=true  # Only if you're using HTTPS
+```
+
+#### 2. Domain Configuration Issues
+
+**Problem**: Session cookies are not being sent due to domain mismatch.
+
+**Check**:
+- Ensure `DOMAIN=tinglebot.xyz` is set correctly (not `tionglebot.xyz`)
+- Verify the domain in your Discord OAuth app settings matches exactly
+
+#### 3. Proxy/Reverse Proxy Issues
+
+**Problem**: App is behind a reverse proxy (Railway, etc.) and headers are not being trusted.
+
+**Solution**: The app now automatically enables `trust proxy` in production.
+
+#### 4. Session Store Issues
+
+**Problem**: Sessions are not being saved properly.
+
+**Debug Steps**:
+1. Check the `/api/debug/session` endpoint
+2. Look for session save errors in server logs
+3. Verify `SESSION_SECRET` is set
+
+### Debugging Steps
+
+#### Step 1: Check Session Debug Endpoint
+Visit: `https://tinglebot.xyz/api/debug/session`
+
+This will show:
+- Session ID and passport data
+- Authentication status
+- Request headers
+- Environment configuration
+
+#### Step 2: Test Authentication Flow
+1. Clear browser cookies for the domain
+2. Visit `https://tinglebot.xyz/login`
+3. Complete Discord OAuth
+4. Check `/api/debug/session` again
+
+#### Step 3: Check Server Logs
+Look for these log messages:
+- `✅ Discord login successful for user: [username]`
+- `🔍 Session after login:` with passport data
+- Any session save errors
+
+#### Step 4: Environment Variables Check
+Ensure these are set correctly:
+```bash
+DOMAIN=tinglebot.xyz
+SESSION_SECRET=your_secure_session_secret
+DISCORD_CLIENT_ID=your_discord_client_id
+DISCORD_CLIENT_SECRET=your_discord_client_secret
+FORCE_HTTPS=true  # Only if using HTTPS
+```
+
+### Quick Fixes
+
+#### Fix 1: Disable Secure Cookies (Temporary)
+If you're not using HTTPS, remove or set:
+```bash
+FORCE_HTTPS=false
+```
+
+#### Fix 2: Clear Browser Data
+1. Clear all cookies for `tinglebot.xyz`
+2. Clear browser cache
+3. Try logging in again
+
+#### Fix 3: Check Discord App Settings
+1. Go to Discord Developer Portal
+2. Check your OAuth app settings
+3. Ensure redirect URI is: `https://tinglebot.xyz/auth/discord/callback`
+
+### Testing Script
+
+Run the test script to check all endpoints:
+```bash
+node test-auth.js
+```
+
+Or set a custom URL:
+```bash
+TEST_URL=https://your-domain.com node test-auth.js
+```
+
+### Common Environment Issues
+
+#### Railway Deployment
+- Ensure all environment variables are set in Railway dashboard
+- Check that `RAILWAY_ENVIRONMENT=true` is set
+- Verify domain configuration
+
+#### Local Development
+- Use `http://localhost:5001` for local testing
+- Set `NODE_ENV=development`
+- Don't set `FORCE_HTTPS` locally
+
+### Still Having Issues?
+
+1. Check the server logs for detailed error messages
+2. Use the debug endpoint to see session state
+3. Verify all environment variables are correct
+4. Test with a different browser or incognito mode
+5. Check if the issue occurs on all devices or just one
+
+### Contact Support
+
+If you're still experiencing issues:
+1. Include the output from `/api/debug/session`
+2. Share relevant server logs
+3. Describe the exact steps to reproduce
+4. Mention your deployment platform (Railway, etc.) 

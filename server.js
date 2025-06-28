@@ -53,6 +53,12 @@ const Relic = require('./models/RelicModel');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Trust proxy for production environments (Railway, etc.)
+if (isProduction) {
+  app.set('trust proxy', 1);
+  console.log('[server.js]: 🔧 Trust proxy enabled for production');
+}
+
 // ------------------- Section: Session & Authentication Configuration -------------------
 // Session configuration for Discord OAuth
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'true';
@@ -66,18 +72,46 @@ console.log('[server.js]: 🔧 Environment Configuration:', {
   DISCORD_CALLBACK_URL: process.env.DISCORD_CALLBACK_URL
 });
 
+// Determine if we should use secure cookies
+// Only use secure cookies if we're in production AND the request is coming over HTTPS
+const useSecureCookies = isProduction && process.env.FORCE_HTTPS === 'true';
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
   resave: true,
   saveUninitialized: false, // Changed to false for better security
   cookie: {
-    secure: isProduction, // Set to true in production for HTTPS
+    secure: useSecureCookies, // Only use secure in production with HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: isProduction ? 'lax' : 'lax' // Changed from 'strict' to 'lax' for better compatibility
+    sameSite: 'lax', // Use 'lax' for better compatibility
+    domain: isProduction ? `.${domain}` : undefined // Allow subdomain access in production
   },
   name: 'tinglebot.sid' // Custom session name
 }));
+
+// Add session debugging middleware
+app.use((req, res, next) => {
+  if (req.path === '/api/user' || req.path === '/auth/discord/callback') {
+    console.log('[server.js]: 🔍 Session Debug:', {
+      path: req.path,
+      sessionId: req.session?.id,
+      passport: req.session?.passport,
+      isAuthenticated: req.isAuthenticated(),
+      user: req.user ? {
+        username: req.user.username,
+        discordId: req.user.discordId,
+        id: req.user._id
+      } : null,
+      headers: {
+        'x-forwarded-proto': req.headers['x-forwarded-proto'],
+        'x-forwarded-for': req.headers['x-forwarded-for'],
+        host: req.headers.host
+      }
+    });
+  }
+  next();
+});
 
 // Initialize Passport and restore authentication state from session
 app.use(passport.initialize());
@@ -281,19 +315,34 @@ app.get('/auth/discord/callback',
     failureRedirect: '/login',
     failureFlash: true 
   }), 
-  (req, res) => {
-    // Successful authentication
-    console.log(`[server.js]: ✅ Discord login successful for user: ${req.user.username}`);
-    console.log('[server.js]: 🔍 Session after login:', {
-      sessionId: req.session.id,
-      passport: req.session.passport,
-      user: req.user ? {
-        username: req.user.username,
-        discordId: req.user.discordId,
-        id: req.user._id
-      } : null
-    });
-    res.redirect('/?login=success');
+  async (req, res) => {
+    try {
+      // Ensure session is saved before redirecting
+      req.session.save((err) => {
+        if (err) {
+          console.error('[server.js]: ❌ Session save error:', err);
+          return res.redirect('/login?error=session_save_failed');
+        }
+        
+        // Successful authentication
+        console.log(`[server.js]: ✅ Discord login successful for user: ${req.user.username}`);
+        console.log('[server.js]: 🔍 Session after login:', {
+          sessionId: req.session.id,
+          passport: req.session.passport,
+          user: req.user ? {
+            username: req.user.username,
+            discordId: req.user.discordId,
+            id: req.user._id
+          } : null
+        });
+        
+        // Redirect with success parameter
+        res.redirect('/?login=success');
+      });
+    } catch (error) {
+      console.error('[server.js]: ❌ Discord callback error:', error);
+      res.redirect('/login?error=callback_failed');
+    }
   }
 );
 
@@ -334,32 +383,37 @@ app.get('/api/auth/status', (req, res) => {
 // ------------------- Function: debugSession -------------------
 // Debug endpoint for session troubleshooting (development only)
 app.get('/api/debug/session', (req, res) => {
-  if (process.env.NODE_ENV !== 'production') {
-    res.json({
-      session: req.session ? {
-        id: req.session.id,
-        passport: req.session.passport,
-        cookie: req.session.cookie
-      } : null,
-      isAuthenticated: req.isAuthenticated(),
-      user: req.user ? {
-        username: req.user.username,
-        discordId: req.user.discordId,
-        id: req.user._id
-      } : null,
-      headers: {
-        cookie: req.headers.cookie ? 'present' : 'missing',
-        'user-agent': req.headers['user-agent']
-      },
-      environment: {
-        NODE_ENV: process.env.NODE_ENV,
-        RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
-        DOMAIN: process.env.DOMAIN
-      }
-    });
-  } else {
-    res.status(404).json({ error: 'Debug endpoint not available in production' });
-  }
+  // Allow debug endpoint in production for troubleshooting
+  res.json({
+    session: req.session ? {
+      id: req.session.id,
+      passport: req.session.passport,
+      cookie: req.session.cookie
+    } : null,
+    isAuthenticated: req.isAuthenticated(),
+    user: req.user ? {
+      username: req.user.username,
+      discordId: req.user.discordId,
+      id: req.user._id
+    } : null,
+    headers: {
+      cookie: req.headers.cookie ? 'present' : 'missing',
+      'user-agent': req.headers['user-agent'],
+      'x-forwarded-proto': req.headers['x-forwarded-proto'],
+      'x-forwarded-for': req.headers['x-forwarded-for'],
+      host: req.headers.host
+    },
+    environment: {
+      NODE_ENV: process.env.NODE_ENV,
+      RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+      DOMAIN: process.env.DOMAIN,
+      FORCE_HTTPS: process.env.FORCE_HTTPS
+    },
+    app: {
+      trustProxy: app.get('trust proxy'),
+      isProduction
+    }
+  });
 });
 
 // ------------------- Section: API Routes -------------------
