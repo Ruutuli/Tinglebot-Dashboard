@@ -2806,184 +2806,6 @@
 }
 
 
-/* ==========================================================================
-   Inventory: Container
-========================================================================== */
-
-#inventory-grid {
-  backdrop-filter: blur(10px);
-  background: linear-gradient(135deg, rgba(15, 15, 20, 0.95), rgba(25, 25, 35, 0.95));
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  margin: 0 auto;
-  max-width: 1600px;
-  overflow: visible;
-  padding: 2rem;
-}
-
-
-/* ==========================================================================
-   Inventory: Sections and Headers
-========================================================================== */
-
-.inventory-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  height: 100%;
-  overflow-y: auto;
-  padding: 1.5rem;
-  width: 100%;
-}
-
-.inventory-section h3 {
-  color: var(--text-primary);
-  font-size: 1.2rem;
-  margin-bottom: 0.5rem;
-  text-align: center;
-}
-
-.inventory-header {
-  align-items: center;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-}
-
-.inventory-header h3 {
-  color: var(--text-primary);
-  font-size: 1.2rem;
-  margin: 0;
-}
-
-
-/* ==========================================================================
-   Inventory: Grids and Stats
-========================================================================== */
-
-.inventory-details-grid {
-  animation: fadeIn 0.3s ease-in-out;
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  padding: 1rem;
-}
-
-.inventory-stats {
-  background: var(--bg-secondary);
-  border-radius: 8px;
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(3, 1fr);
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-}
-
-
-/* ==========================================================================
-   Inventory: Lists and Items
-========================================================================== */
-
-.inventory-list,
-.inventory-items {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.inventory-item {
-  animation: slideIn 0.3s ease-out;
-  background: var(--card-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  display: flex;
-  gap: 0.75rem;
-  padding: 1rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.inventory-item:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
-}
-
-.inventory-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-
-/* ==========================================================================
-   Inventory: Results Info Box
-========================================================================== */
-
-.inventory-results-info {
-  backdrop-filter: blur(10px);
-  background: linear-gradient(135deg, rgba(79, 172, 254, 0.1), rgba(0, 242, 254, 0.1));
-  border: 1px solid rgba(79, 172, 254, 0.3);
-  border-radius: 12px;
-  color: #e0e7ff;
-  font-size: 0.9rem;
-  font-weight: 500;
-  margin-bottom: 1.5rem;
-  padding: 1rem 1.5rem;
-  text-align: center;
-}
-
-
-/* ==========================================================================
-   Inventory: Loading and Empty State
-========================================================================== */
-
-.inventory-loading,
-.inventory-empty-state {
-  animation: pulse 2s infinite;
-  background: linear-gradient(135deg, rgba(25, 25, 35, 0.8), rgba(40, 40, 50, 0.8));
-  border: 2px dashed rgba(79, 172, 254, 0.3);
-  border-radius: 16px;
-  color: #b8c5d6;
-  padding: 4rem 2rem;
-  text-align: center;
-}
-
-.inventory-loading {
-  border: 2px solid rgba(79, 172, 254, 0.2);
-}
-
-.inventory-empty-state i,
-.inventory-loading i {
-  animation: spin 1.5s linear infinite;
-  color: #4facfe;
-  font-size: 3rem;
-  margin-bottom: 1.5rem;
-  opacity: 0.7;
-}
-
-.inventory-empty-state h3 {
-  color: #fff;
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.inventory-empty-state p,
-.inventory-loading p {
-  color: #b8c5d6;
-  font-size: 1rem;
-  font-weight: 500;
-  line-height: 1.6;
-  margin: 0;
-}
-
-
 /* ============================================================================
    Button: Logout
 ============================================================================ */
@@ -4373,4 +4195,566 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes slideInBottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 
+@keyframes slideInTop {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   Inventory
+========================================================================== */
+
+
+/* ==========================================================================
+   Inventory Grid Container
+========================================================================== */
+
+.inventory-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 90%;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   Inventory Loading States
+========================================================================== */
+
+.inventory-loading {
+  align-items: center;
+  animation: fadeIn 0.3s ease-in-out;
+  background: rgba(20, 20, 25, 0.7);
+  border: 1px solid rgba(75, 75, 75, 0.3);
+  border-radius: var(--card-radius);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  color: var(--botw-blue);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: center;
+  min-height: 250px;
+  padding: 3rem;
+  text-align: center;
+}
+
+.inventory-loading i {
+  animation: spin 1s linear infinite;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.inventory-loading p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ==========================================================================
+   Inventory Empty States
+========================================================================== */
+
+.inventory-empty-state {
+  align-items: center;
+  animation: fadeIn 0.3s ease-in-out;
+  background: rgba(20, 20, 25, 0.7);
+  border: 1px solid rgba(75, 75, 75, 0.3);
+  border-radius: var(--card-radius);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: center;
+  min-height: 200px;
+  padding: 3rem;
+  text-align: center;
+}
+
+.inventory-empty-state i {
+  color: var(--text-secondary);
+  font-size: 3rem;
+  opacity: 0.5;
+}
+
+.inventory-empty-state h3 {
+  color: var(--text-primary);
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.inventory-empty-state p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+  max-width: 400px;
+}
+
+.inventory-empty-state small {
+  color: var(--error-color);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+/* ==========================================================================
+   Empty State Filters
+========================================================================== */
+
+.empty-state-filters {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  margin-top: 1rem;
+  padding: 1.5rem;
+  text-align: left;
+}
+
+.empty-state-filters p {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.empty-state-filters ul {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  list-style: none;
+  margin: 0 0 1rem 0;
+  padding: 0;
+}
+
+.empty-state-filters li {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+/* ==========================================================================
+   Inventory Results Info
+========================================================================== */
+
+.inventory-results-info {
+  background: var(--glass-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 1rem 1.5rem;
+  padding: 1rem 1.5rem;
+  text-align: center;
+}
+
+.inventory-results-info p {
+  margin: 0;
+}
+
+/* ==========================================================================
+   Character Inventory Cards
+========================================================================== */
+
+.character-inventory-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.character-inventory-card:hover {
+  border-color: var(--botw-blue);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   Character Inventory Empty
+========================================================================== */
+
+.character-inventory-empty {
+  align-items: center;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.character-inventory-empty i {
+  color: var(--text-secondary);
+  font-size: 2rem;
+  opacity: 0.5;
+}
+
+.character-inventory-empty p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.character-inventory-empty small {
+  color: var(--error-color);
+  font-size: 0.9rem;
+}
+
+/* Inventory-specific character details */
+.character-inventory-details {
+  flex: 1;
+}
+
+.character-inventory-name {
+  color: var(--text-primary);
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.character-inventory-stats {
+  display: flex;
+  gap: 1rem;
+}
+
+/* ==========================================================================
+   Character Inventory Header
+========================================================================== */
+
+.character-inventory-header {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--glass-border);
+  cursor: pointer;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.character-inventory-header:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.character-inventory-header.expanded {
+  background: rgba(79, 172, 254, 0.1);
+  border-bottom-color: var(--botw-blue);
+}
+
+.character-inventory-info {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+}
+
+.character-inventory-controls {
+  display: flex;
+  align-items: center;
+}
+
+.expand-button {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  font-size: 1rem;
+  height: 40px;
+  justify-content: center;
+  transition: all 0.3s ease;
+  width: 40px;
+}
+
+.expand-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--botw-blue);
+  color: var(--botw-blue);
+}
+
+/* ==========================================================================
+   Character Inventory Content
+========================================================================== */
+
+.character-inventory-content {
+  background: rgba(30, 30, 35, 0.8);
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.character-inventory-content.expanded {
+  max-height: 500px;
+  padding: 1.5rem;
+  overflow-y: auto;
+  /* Add bottom padding to ensure last item is fully visible */
+  padding-bottom: 2rem;
+}
+
+/* Add scrollbar styling for the expanded content */
+.character-inventory-content.expanded::-webkit-scrollbar {
+  width: 8px;
+}
+
+.character-inventory-content.expanded::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--totk-light-green), var(--botw-blue));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.character-inventory-content.expanded::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--botw-blue), var(--totk-light-green));
+  box-shadow: 0 0 8px rgba(73, 213, 156, 0.3);
+}
+
+.character-inventory-content.expanded::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.character-inventory-content.expanded::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.loading-inventory {
+  align-items: center;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.loading-inventory i {
+  animation: spin 1s linear infinite;
+  font-size: 1.5rem;
+  color: var(--botw-blue);
+}
+
+.loading-inventory p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+
+/* ==========================================================================
+   Inventory Item Styles
+========================================================================== */
+
+.inventory-item-card {
+  align-items: center;
+  animation: slideInTop 0.4s ease-out;
+  background: linear-gradient(145deg, rgba(35, 35, 45, 0.9), rgba(50, 50, 65, 0.9));
+  border: 2px solid rgba(120, 140, 200, 0.15);
+  border-radius: 16px;
+  display: flex;
+  gap: 1.25rem;
+  overflow: hidden;
+  padding: 1.25rem;
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.inventory-item-card::before {
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.05), rgba(0, 242, 254, 0.05));
+  content: '';
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.inventory-item-card:hover {
+  border-color: rgba(79, 172, 254, 0.4);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(79, 172, 254, 0.2);
+  transform: translateY(-6px) scale(1.02);
+}
+
+.inventory-item-card:hover::before {
+  opacity: 1;
+}
+
+.inventory-stat-item {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.2), rgba(0, 242, 254, 0.2));
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(79, 172, 254, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(79, 172, 254, 0.2);
+  color: #e0e7ff;
+  display: flex;
+  font-size: 0.9rem;
+  font-weight: 500;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.inventory-stat-item i {
+  color: #4facfe;
+  font-size: 0.8rem;
+}
+
+/* Inventory-specific item styles */
+.inventory-item-icon {
+  align-items: center;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #4facfe 100%);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-shrink: 0;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.inventory-item-icon i {
+  color: #fff;
+  font-size: 1.2rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.inventory-item-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.inventory-item-name {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inventory-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.inventory-item-quantity,
+.inventory-item-category,
+.inventory-item-type {
+  align-items: center;
+  backdrop-filter: blur(5px);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  color: #b8c5d6;
+  display: flex;
+  font-size: 0.8rem;
+  font-weight: 500;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  transition: all 0.3s ease;
+}
+
+.inventory-item-quantity:hover,
+.inventory-item-category:hover,
+.inventory-item-type:hover {
+  background: rgba(79, 172, 254, 0.15);
+  border-color: rgba(79, 172, 254, 0.3);
+  color: #e0e7ff;
+}
+
+.inventory-item-quantity i,
+.inventory-item-category i,
+.inventory-item-type i {
+  color: #4facfe;
+  font-size: 0.7rem;
+}
+
+
+
+/* ==========================================================================
+   Inventory Scrollbar Styles
+========================================================================== */
+
+/* Custom scrollbar for character inventory scroll container */
+.character-inventory-scroll {
+  /* Remove max-height and overflow - let it fit full card height */
+  height: 100%;
+  /* Remove scrollbar styles since this container shouldn't scroll */
+}
+
+/* WebKit scrollbar styles for character inventory scroll */
+.character-inventory-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.character-inventory-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--totk-light-green), var(--botw-blue));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.character-inventory-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--botw-blue), var(--totk-light-green));
+  box-shadow: 0 0 8px rgba(73, 213, 156, 0.3);
+}
+
+.character-inventory-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.character-inventory-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Responsive adjustments for inventory-specific styles */
+@media (max-width: 768px) {
+  .character-inventory-stats {
+    justify-content: center;
+  }
+
+  .inventory-item-meta {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .character-inventory-name {
+    font-size: 1.1rem;
+  }
+
+  .inventory-stat-item {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+  }
+}

@@ -1,12 +1,6 @@
 // ============================================================================
-// Inventory Management System - EFFICIENT VERSION
-// Character-based inventory display with on-demand loading
-// 
-// NEW EFFICIENT APPROACH:
-// 1. Load character summaries first (fast)
-// 2. Show character cards immediately 
-// 3. Load inventory items only when character is expanded
-// 4. Cache inventory data per character
+// Inventory Management System - STRIPPED DOWN VERSION
+// Basic structure and connection functionality for rebuilding
 // ============================================================================
 
 // Add a simple test to verify this file is loaded
@@ -20,6 +14,29 @@ console.log('🎒 Inventory.js loaded successfully');
  */
 function getContentDiv() {
   return document.getElementById('model-details-data');
+}
+
+/**
+ * Creates a basic container for the inventory page
+ * @param {HTMLElement} contentDiv - Content container element
+ */
+function createInventoryContainer(contentDiv) {
+  // Create basic container
+  let container = document.getElementById('inventory-grid');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'inventory-grid';
+    container.className = 'inventory-grid';
+    contentDiv.appendChild(container);
+  }
+
+  // Add basic loading state
+  container.innerHTML = `
+    <div class="inventory-loading">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Loading inventory...</p>
+    </div>
+  `;
 }
 
 /**
@@ -207,30 +224,6 @@ function applySorting(items, sortBy) {
   });
 }
 
-/**
- * Updates cache status with consistent messaging
- * @param {string} status - Status message
- * @param {number} duration - Duration to show status (ms)
- */
-function updateCacheStatus(status, duration = 2000) {
-  const cacheStatus = document.querySelector('.cache-status');
-  if (!cacheStatus) return;
-
-  cacheStatus.innerHTML = status;
-  
-  if (duration > 0) {
-    setTimeout(() => {
-      const cache = window.inventoryPageCache;
-      if (cache) {
-        const stats = cache.getStats();
-        if (stats) {
-          cacheStatus.innerHTML = `📦 Cache: ${stats.size}/${stats.maxSize} pages`;
-        }
-      }
-    }, duration);
-  }
-}
-
 // ------------------- Global State -------------------
 let currentCharacterSummaries = [];
 let expandedCharacters = new Set();
@@ -250,207 +243,17 @@ window.savedInventoryFilterState = {};
 let currentPage = 1;
 let charactersPerPage = 12;
 
-// ------------------- Cache System -------------------
-
-/**
- * Enhanced Inventory Cache System
- * Provides fast access to inventory data with localStorage persistence
- */
-function initializeInventoryCache() {
-  if (window.inventoryPageCache) return window.inventoryPageCache;
-
-  const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
-  const MAX_CACHE_SIZE = 50; // Maximum number of cached pages
-  const CACHE_KEY = 'tinglebot_inventory_page_cache';
-
-  // Load existing cache from localStorage
-  let data = new Map();
-  let timestamp = Date.now();
-
-  try {
-    const savedData = localStorage.getItem(CACHE_KEY);
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
-      data = new Map(parsed.data || []);
-      timestamp = parsed.timestamp || Date.now();
-
-      // Check if cache is still valid
-      if (Date.now() - timestamp < CACHE_DURATION) {
-        console.log(`[Inventory Cache] Loaded ${data.size} cached pages from localStorage`);
-      } else {
-        console.log('[Inventory Cache] Cache expired, starting fresh');
-        data = new Map();
-        timestamp = Date.now();
-      }
-    }
-  } catch (error) {
-    console.warn('[Inventory Cache] Failed to load cache from localStorage:', error);
-    data = new Map();
-    timestamp = Date.now();
-  }
-
-  window.inventoryPageCache = {
-    data,
-    timestamp,
-    CACHE_DURATION,
-    MAX_CACHE_SIZE,
-
-    // Add data to cache with automatic cleanup
-    set(key, value) {
-      // Remove oldest entries if cache is full
-      if (this.data.size >= this.MAX_CACHE_SIZE) {
-        const oldestKey = this.data.keys().next().value;
-        this.data.delete(oldestKey);
-        console.log(`[Inventory Cache] Evicted oldest entry: ${oldestKey}`);
-      }
-
-      this.data.set(key, {
-        value,
-        timestamp: Date.now()
-      });
-
-      this.persist();
-    },
-
-    // Get data from cache
-    get(key) {
-      const entry = this.data.get(key);
-      if (!entry) return null;
-
-      if (Date.now() - entry.timestamp > this.CACHE_DURATION) {
-        this.data.delete(key);
-        return null;
-      }
-
-      return entry.value;
-    },
-
-    // Check if key exists and is valid
-    has(key) {
-      const entry = this.data.get(key);
-      if (!entry) return false;
-
-      if (Date.now() - entry.timestamp > this.CACHE_DURATION) {
-        this.data.delete(key);
-        return false;
-      }
-
-      return true;
-    },
-
-    // Clear all cache
-    clear() {
-      this.data.clear();
-      this.timestamp = Date.now();
-      localStorage.removeItem(CACHE_KEY);
-      console.log('[Inventory Cache] Cache cleared');
-    },
-
-    // Clear cache for specific filters
-    clearForFilters() {
-      const keysToDelete = [];
-      for (const [key] of this.data.entries()) {
-        if (key.includes('inventory_page_')) {
-          keysToDelete.push(key);
-        }
-      }
-      keysToDelete.forEach(key => this.data.delete(key));
-      this.persist();
-      console.log(`[Inventory Cache] Cleared ${keysToDelete.length} filter-related cache entries`);
-    },
-
-    // Get cache statistics
-    getStats() {
-      return {
-        size: this.data.size,
-        maxSize: this.MAX_CACHE_SIZE,
-        duration: this.CACHE_DURATION / (60 * 1000), // minutes
-        timestamp: this.timestamp
-      };
-    },
-
-    // Persist cache to localStorage
-    persist() {
-      try {
-        const dataObj = {
-          data: Array.from(this.data.entries()),
-          timestamp: this.timestamp
-        };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(dataObj));
-      } catch (error) {
-        console.warn('[Inventory Cache] Failed to persist cache to localStorage:', error);
-      }
-    }
-  };
-
-  console.log(`[Inventory Cache] Enhanced inventory cache initialized with ${data.size} pages`);
-  return window.inventoryPageCache;
-}
-
 // ------------------- Page Initialization -------------------
 
 /**
- * Initializes the inventory page with the new efficient approach
+ * Basic initialization function for the inventory page
  * @param {Array} data - Initial inventory data (legacy support)
  * @param {number} page - Current page number
  * @param {HTMLElement} contentDiv - Content container element
  */
 async function initializeInventoryPage(data, page = 1, contentDiv) {
-  console.log('🎒 ===== EFFICIENT INVENTORY PAGE INITIALIZATION START =====');
-  console.log('🎒 Using new efficient approach - loading character summaries first');
-
-  const startTime = Date.now();
-  const cache = initializeInventoryCache();
-
-  // Add cache status indicator
-  let cacheStatus = document.querySelector('.cache-status');
-  if (!cacheStatus) {
-    cacheStatus = document.createElement('div');
-    cacheStatus.className = 'cache-status';
-    cacheStatus.style.cssText = `
-      display: inline-block;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 8px 12px;
-      border-radius: 5px;
-      font-size: 12px;
-      margin-left: 10px;
-      cursor: pointer;
-      transition: opacity 0.3s;
-    `;
-    cacheStatus.innerHTML = '<i class="fas fa-database"></i> Cache: Loading...';
-    cacheStatus.title = 'Click to see cache statistics';
-    
-    // Find the header and add cache status
-    const header = document.querySelector('.model-details-header');
-    if (header) {
-      header.appendChild(cacheStatus);
-    } else {
-      // Fallback to body if header not found
-      cacheStatus.style.position = 'fixed';
-      cacheStatus.style.bottom = '20px';
-      cacheStatus.style.right = '20px';
-      cacheStatus.style.zIndex = '1000';
-      document.body.appendChild(cacheStatus);
-    }
-    
-    // Add click handler to show cache stats
-    cacheStatus.addEventListener('click', () => {
-      const stats = cache.getStats();
-      if (stats) {
-        alert(`Inventory Cache Statistics:\n\nSize: ${stats.size}/${stats.maxSize} pages\nDuration: ${stats.duration} minutes\nTimestamp: ${new Date(stats.timestamp).toLocaleString()}`);
-      }
-    });
-    
-    // Update cache status periodically
-    setInterval(() => {
-      const stats = cache.getStats();
-      if (stats) {
-        cacheStatus.innerHTML = `📦 Cache: ${stats.size}/${stats.maxSize} pages`;
-      }
-    }, 5000);
-  }
-
+  console.log('🎒 ===== BASIC INVENTORY PAGE INITIALIZATION =====');
+  
   // Create filters container if it doesn't exist
   let filtersContainer = document.querySelector('.search-filter-bar');
   if (!filtersContainer) {
@@ -471,19 +274,8 @@ async function initializeInventoryPage(data, page = 1, contentDiv) {
     }
   }
 
-  // Create inventory container if it doesn't exist
-  let container = document.getElementById('inventory-grid');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'inventory-grid';
-    container.className = 'inventory-grid';
-    contentDiv.appendChild(container);
-  } else {
-    // If container exists but is not a child of contentDiv, move it
-    if (!contentDiv.contains(container)) {
-      contentDiv.appendChild(container);
-    }
-  }
+  // Create basic container
+  createInventoryContainer(contentDiv);
 
   // Add results info section after container is created
   let resultsInfo = document.querySelector('.inventory-results-info');
@@ -492,10 +284,14 @@ async function initializeInventoryPage(data, page = 1, contentDiv) {
     resultsInfo.className = 'inventory-results-info';
     resultsInfo.innerHTML = '<p>Loading character summaries...</p>';
     // Insert before the container
-    contentDiv.insertBefore(resultsInfo, container);
+    const container = document.getElementById('inventory-grid');
+    if (container) {
+      contentDiv.insertBefore(resultsInfo, container);
+    }
   } else {
     // If resultsInfo exists but is not in the right place, move it
-    if (!contentDiv.contains(resultsInfo) || resultsInfo.nextSibling !== container) {
+    const container = document.getElementById('inventory-grid');
+    if (container && !contentDiv.contains(resultsInfo) || resultsInfo.nextSibling !== container) {
       if (contentDiv.contains(resultsInfo)) {
         resultsInfo.remove();
       }
@@ -507,8 +303,8 @@ async function initializeInventoryPage(data, page = 1, contentDiv) {
   setupInventoryFilters();
   await loadCharacterSummaries();
 
-  console.log(`✅ Efficient inventory page initialized in ${Date.now() - startTime}ms`);
-  console.log('🎒 ===== EFFICIENT INVENTORY PAGE INITIALIZATION END =====');
+  console.log('✅ Basic inventory page initialized');
+  console.log('🎒 Ready for rebuild');
 }
 
 /**
@@ -722,14 +518,14 @@ function renderCharacterCards(summaries) {
               <div class="character-avatar">
                 <i class="fas fa-user-circle"></i>
               </div>
-              <div class="character-details">
-                <h3 class="character-name">${summary.characterName}</h3>
-                <div class="character-stats">
-                  <span class="stat-item">
+              <div class="character-inventory-details">
+                <h3 class="character-inventory-name">${summary.characterName}</h3>
+                <div class="character-inventory-stats">
+                  <span class="inventory-stat-item">
                     <i class="fas fa-box"></i>
                     ${summary.uniqueItems} items
                   </span>
-                  <span class="stat-item">
+                  <span class="inventory-stat-item">
                     <i class="fas fa-layer-group"></i>
                     ${summary.totalItems} total
                   </span>
@@ -816,25 +612,25 @@ function renderCharacterItems(items) {
   return `
     <div class="character-items-grid">
       ${sortedItems.map(item => `
-        <div class="character-item-card" data-item="${item.itemName}">
-          <div class="item-icon">
+        <div class="inventory-item-card" data-item="${item.itemName}">
+          <div class="inventory-item-icon">
             <i class="fas fa-box"></i>
           </div>
-          <div class="item-details">
-            <h4 class="item-name">${item.itemName}</h4>
-            <div class="item-meta">
-              <span class="item-quantity">
+          <div class="inventory-item-details">
+            <h4 class="inventory-item-name">${item.itemName}</h4>
+            <div class="inventory-item-meta">
+              <span class="inventory-item-quantity">
                 <i class="fas fa-layer-group"></i>
                 ${item.quantity}
               </span>
               ${item.category ? `
-                <span class="item-category">
+                <span class="inventory-item-category">
                   <i class="fas fa-tag"></i>
                   ${item.category}
                 </span>
               ` : ''}
               ${item.type ? `
-                <span class="item-type">
+                <span class="inventory-item-type">
                   <i class="fas fa-cube"></i>
                   ${item.type}
                 </span>
@@ -957,11 +753,6 @@ function setupInventoryFilters() {
       // Clear saved filter state
       window.savedInventoryFilterState = {};
       
-      // Clear cache when filters are reset
-      const cache = initializeInventoryCache();
-      cache.clearForFilters();
-      console.log('[Inventory Cache] 🗑️ Cache cleared due to filter reset');
-      
       // Reset pagination and reload character summaries
       currentPage = 1;
       loadCharacterSummaries();
@@ -1034,11 +825,10 @@ export {
   populateInventoryFilterOptions,
   setupInventoryFilters,
   toggleCharacterInventory,
-  initializeInventoryCache,
   updateInventoryPagination
 };
 
 // Make toggleCharacterInventory globally available for HTML onclick
 window.toggleCharacterInventory = toggleCharacterInventory;
 
-console.log('🎒 Efficient Inventory.js loaded successfully'); 
+console.log('🎒 Stripped Inventory.js loaded successfully'); 
