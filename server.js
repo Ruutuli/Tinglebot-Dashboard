@@ -55,14 +55,19 @@ const PORT = process.env.PORT || 5001;
 
 // ------------------- Section: Session & Authentication Configuration -------------------
 // Session configuration for Discord OAuth
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
+const domain = process.env.DOMAIN || 'tinglebot.xyz';
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
   resave: true,
   saveUninitialized: true,
   cookie: {
-    secure: false, // Set to false for development
+    secure: isProduction, // Set to true in production for HTTPS
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    domain: isProduction ? domain : undefined,
+    sameSite: isProduction ? 'strict' : 'lax'
   }
 }));
 
@@ -87,10 +92,14 @@ passport.deserializeUser(async (discordId, done) => {
 });
 
 // Discord OAuth Strategy
+const callbackURL = isProduction 
+  ? `https://${domain}/auth/discord/callback`
+  : (process.env.DISCORD_CALLBACK_URL || 'http://localhost:5001/auth/discord/callback');
+
 passport.use(new DiscordStrategy({
   clientID: process.env.DISCORD_CLIENT_ID,
   clientSecret: process.env.DISCORD_CLIENT_SECRET,
-  callbackURL: process.env.DISCORD_CALLBACK_URL || 'http://localhost:5001/auth/discord/callback',
+  callbackURL: callbackURL,
   scope: ['identify', 'email']
 }, async (accessToken, refreshToken, profile, done) => {
   try {
