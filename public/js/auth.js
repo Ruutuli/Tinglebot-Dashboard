@@ -10,6 +10,7 @@
 
 let currentUser = null;
 let isAuthenticated = false;
+let userDropdown = null; // Global reference to user dropdown element
 
 // ============================================================================
 // ------------------- Section: Initialization -------------------
@@ -105,32 +106,103 @@ async function checkUserAuthStatus() {
 // Sets up user menu click handlers and interactions
 function setupUserMenu() {
   const userMenu = document.getElementById('user-menu');
-  const userDropdown = document.getElementById('user-dropdown');
+  userDropdown = document.getElementById('user-dropdown'); // Assign to global variable
   
   if (!userMenu || !userDropdown) {
     console.error('[auth.js]: ❌ User menu elements not found');
     return;
   }
   
-  // Toggle dropdown on click
-  userMenu.addEventListener('click', (event) => {
+  console.log('[auth.js]: 🔧 Setting up user menu interactions');
+
+  // User menu click handler
+  userMenu.addEventListener('click', function(event) {
+    event.preventDefault();
     event.stopPropagation();
-    userDropdown.classList.toggle('show');
+    
+    // Toggle dropdown
+    if (userDropdown.classList.contains('show')) {
+        closeUserDropdown('userMenu click');
+    } else {
+        openUserDropdown('userMenu click');
+    }
   });
-  
+
   // Close dropdown when clicking outside
-  document.addEventListener('click', (event) => {
-    if (!userMenu.contains(event.target)) {
-      userDropdown.classList.remove('show');
+  document.addEventListener('click', function(event) {
+    if (!userMenu.contains(event.target) && !userDropdown.contains(event.target)) {
+        closeUserDropdown('outside click');
     }
   });
+
+  // Close dropdown when window loses focus
+  window.addEventListener('blur', function() {
+    closeUserDropdown('window blur');
+  });
+
+  // Close dropdown when pressing Escape key
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && userDropdown.classList.contains('show')) {
+        closeUserDropdown('escape key');
+    }
+  });
+
+  // Handle logout button click
+  const logoutButton = userDropdown.querySelector('.logout-button');
+  if (logoutButton) {
+    logoutButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      console.log('[auth.js]: 🚪 Logout button clicked', {time: Date.now(), stack: new Error().stack});
+      closeUserDropdown('logout button');
+      await logout();
+    });
+  }
+
+  // Handle profile button click
+  const profileButton = userDropdown.querySelector('.profile-button');
+  if (profileButton) {
+    profileButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      console.log('[auth.js]: 👤 Profile button clicked', {time: Date.now(), stack: new Error().stack});
+      closeUserDropdown('profile button');
+      // Navigate to profile section
+      const profileLink = document.querySelector('a[data-section="profile-section"]');
+      if (profileLink) {
+        profileLink.click();
+      }
+    });
+  }
+
+  console.log('[auth.js]: ✅ User menu interactions set up successfully');
+}
+
+// ------------------- Function: openUserDropdown -------------------
+// Opens the user dropdown menu
+function openUserDropdown(source = 'unknown') {
+  // Get userDropdown element if not already initialized
+  const dropdown = userDropdown || document.getElementById('user-dropdown');
+  if (!dropdown) {
+    console.error('[auth.js]: ❌ User dropdown element not found');
+    return;
+  }
   
-  // Close dropdown on escape key
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      userDropdown.classList.remove('show');
-    }
-  });
+  dropdown.classList.add('show');
+  dropdown.setAttribute('aria-expanded', 'true');
+}
+
+// ------------------- Function: closeUserDropdown -------------------
+// Closes the user dropdown menu
+function closeUserDropdown(source = 'unknown') {
+  // Get userDropdown element if not already initialized
+  const dropdown = userDropdown || document.getElementById('user-dropdown');
+  if (!dropdown || !dropdown.classList.contains('show')) {
+    return;
+  }
+  
+  dropdown.classList.remove('show');
+  dropdown.setAttribute('aria-expanded', 'false');
 }
 
 // ------------------- Function: updateUserMenu -------------------
@@ -239,8 +311,7 @@ async function logout() {
       isAuthenticated = false;
       showGuestUser();
       
-      // Close dropdown
-      const userDropdown = document.getElementById('user-dropdown');
+      // Close dropdown using global variable
       if (userDropdown) {
         userDropdown.classList.remove('show');
       }
@@ -265,5 +336,7 @@ export {
   showGuestUser,
   refreshUserData,
   forceRefreshUserMenu,
-  logout
+  logout,
+  openUserDropdown,
+  closeUserDropdown
 }; 

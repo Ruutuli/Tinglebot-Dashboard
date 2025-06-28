@@ -13,6 +13,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const fetch = require('node-fetch');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
 const { MongoClient } = require('mongodb');
@@ -74,10 +75,16 @@ console.log('[server.js]: 🔧 Environment Configuration:', {
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
-  resave: true,
+  resave: false,
   saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/tinglebot',
+    collectionName: 'sessions',
+    ttl: 24 * 60 * 60, // 24 hours in seconds
+    autoRemove: 'native'
+  }),
   cookie: {
-    secure: false, // Set to false to avoid HTTPS issues
+    secure: isProduction, // Set to true in production with HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: 'lax'

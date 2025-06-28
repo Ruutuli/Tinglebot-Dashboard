@@ -497,6 +497,9 @@ function setupSidebarNavigation() {
       e.preventDefault();
       console.log('🖱️ Sidebar link clicked:', sectionId);
       
+      // Close mobile sidebar if open
+      closeMobileSidebar();
+      
       // Update URL
       const newUrl = sectionId === 'dashboard-section' ? '/' : `#${sectionId}`;
       window.history.pushState({ section: sectionId }, '', newUrl);
@@ -546,6 +549,186 @@ function setupSidebarNavigation() {
     } else {
       showSection(sectionId);
     }
+  }
+  
+  // ============================================================================
+  // ------------------- Mobile Sidebar Functionality -------------------
+  // Handles mobile sidebar toggle and overlay
+  // ============================================================================
+  setupMobileSidebar();
+}
+
+// ============================================================================
+// ------------------- Mobile Sidebar Functions -------------------
+// Handles mobile sidebar toggle, overlay, and responsive behavior
+// ============================================================================
+
+function setupMobileSidebar() {
+  console.log('📱 Setting up mobile sidebar functionality...');
+  
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const sidebar = document.querySelector('.sidebar');
+  const mainWrapper = document.querySelector('.main-wrapper');
+  
+  if (!sidebarToggle || !sidebar) {
+    console.warn('⚠️ Sidebar toggle or sidebar not found');
+    return;
+  }
+  
+  // Create overlay element for mobile
+  const overlay = document.createElement('div');
+  overlay.className = 'sidebar-overlay';
+  document.body.appendChild(overlay);
+  
+  // Sidebar toggle click handler
+  sidebarToggle.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('📱 Sidebar toggle clicked');
+    
+    if (isMobileView()) {
+      toggleMobileSidebar();
+    } else {
+      toggleDesktopSidebar();
+    }
+  });
+  
+  // Overlay click handler to close sidebar
+  overlay.addEventListener('click', () => {
+    console.log('📱 Overlay clicked - closing sidebar');
+    closeMobileSidebar();
+  });
+  
+  // Close sidebar on escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isMobileView()) {
+      console.log('📱 Escape key pressed - closing sidebar');
+      closeMobileSidebar();
+    }
+  });
+  
+  // Handle window resize
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      console.log('📱 Window resized - checking mobile state');
+      handleWindowResize();
+    }, 250);
+  });
+  
+  // Initial setup
+  handleWindowResize();
+}
+
+function isMobileView() {
+  return window.innerWidth <= 768;
+}
+
+function toggleMobileSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  
+  if (!sidebar) return;
+  
+  const isOpen = sidebar.classList.contains('mobile-open');
+  
+  if (isOpen) {
+    closeMobileSidebar();
+  } else {
+    openMobileSidebar();
+  }
+}
+
+function openMobileSidebar() {
+  console.log('📱 Opening mobile sidebar');
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  
+  if (sidebar) {
+    sidebar.classList.add('mobile-open');
+    sidebar.classList.remove('mobile-closing');
+  }
+  
+  if (overlay) {
+    overlay.classList.add('active');
+  }
+  
+  // Prevent body scroll when sidebar is open
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMobileSidebar() {
+  console.log('📱 Closing mobile sidebar');
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  
+  if (sidebar) {
+    sidebar.classList.add('mobile-closing');
+    sidebar.classList.remove('mobile-open');
+    
+    // Remove closing class after animation
+    setTimeout(() => {
+      sidebar.classList.remove('mobile-closing');
+    }, 300);
+  }
+  
+  if (overlay) {
+    overlay.classList.remove('active');
+  }
+  
+  // Restore body scroll
+  document.body.style.overflow = '';
+}
+
+function toggleDesktopSidebar() {
+  console.log('🖥️ Toggling desktop sidebar');
+  const sidebar = document.querySelector('.sidebar');
+  const mainWrapper = document.querySelector('.main-wrapper');
+  
+  if (sidebar && mainWrapper) {
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    
+    if (isCollapsed) {
+      sidebar.classList.remove('collapsed');
+      mainWrapper.classList.remove('sidebar-collapsed');
+    } else {
+      sidebar.classList.add('collapsed');
+      mainWrapper.classList.add('sidebar-collapsed');
+    }
+  }
+}
+
+function handleWindowResize() {
+  const isMobile = isMobileView();
+  const sidebar = document.querySelector('.sidebar');
+  const mainWrapper = document.querySelector('.main-wrapper');
+  const overlay = document.querySelector('.sidebar-overlay');
+  
+  if (isMobile) {
+    // Mobile view: ensure sidebar is hidden by default
+    if (sidebar) {
+      sidebar.classList.remove('collapsed');
+      sidebar.classList.remove('mobile-open');
+      sidebar.classList.remove('mobile-closing');
+    }
+    if (mainWrapper) {
+      mainWrapper.classList.remove('sidebar-collapsed');
+    }
+    if (overlay) {
+      overlay.classList.remove('active');
+    }
+    document.body.style.overflow = '';
+  } else {
+    // Desktop view: ensure mobile classes are removed
+    if (sidebar) {
+      sidebar.classList.remove('mobile-open');
+      sidebar.classList.remove('mobile-closing');
+    }
+    if (overlay) {
+      overlay.classList.remove('active');
+    }
+    document.body.style.overflow = '';
   }
 }
 
