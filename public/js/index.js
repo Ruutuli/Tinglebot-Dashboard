@@ -898,6 +898,12 @@ function showDashboardSection() {
       loadingStatesDisplay: Array.from(loadingStates).map(el => el.style.display)
     });
     
+    // Render weather section
+    if (window.renderWeatherSection) {
+      console.log('🌤️ Rendering weather section...');
+      window.renderWeatherSection();
+    }
+    
     // The dashboard content (welcome message, links, model cards) is already in the HTML
     // No need to load data dynamically for the main dashboard view
   } else {

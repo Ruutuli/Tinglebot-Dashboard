@@ -1149,6 +1149,71 @@ app.post('/api/inventory/item', async (req, res) => {
   }
 });
 
+// ------------------- Section: Weather API Routes -------------------
+
+// ------------------- Function: getTodayWeather -------------------
+// Returns today's weather for all villages
+app.get('/api/weather/today', async (req, res) => {
+  try {
+    console.log('[server.js]: 🌤️ Fetching today\'s weather for all villages...');
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Get weather for all villages for today
+    const weatherData = await Weather.find({
+      date: {
+        $gte: today,
+        $lt: tomorrow
+      }
+    }).lean();
+    
+    // Organize by village
+    const weatherByVillage = {};
+    const villages = ['Rudania', 'Inariko', 'Vhintl'];
+    
+    villages.forEach(village => {
+      const villageWeather = weatherData.find(w => w.village === village);
+      weatherByVillage[village] = villageWeather || null;
+    });
+    
+    console.log(`[server.js]: ✅ Successfully fetched weather for ${weatherData.length} villages`);
+    res.json({
+      date: today.toISOString(),
+      villages: weatherByVillage
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching today\'s weather:', error);
+    res.status(500).json({ error: 'Failed to fetch weather data', details: error.message });
+  }
+});
+
+// ------------------- Function: getWeatherHistory -------------------
+// Returns recent weather history for a specific village
+app.get('/api/weather/history/:village', async (req, res) => {
+  try {
+    const { village } = req.params;
+    const days = parseInt(req.query.days) || 7;
+    
+    console.log(`[server.js]: 🌤️ Fetching ${days} days of weather history for ${village}...`);
+    
+    const history = await Weather.getRecentWeather(village, days);
+    
+    console.log(`[server.js]: ✅ Successfully fetched ${history.length} days of weather history for ${village}`);
+    res.json({
+      village,
+      history,
+      days
+    });
+  } catch (error) {
+    console.error(`[server.js]: ❌ Error fetching weather history for ${req.params.village}:`, error);
+    res.status(500).json({ error: 'Failed to fetch weather history', details: error.message });
+  }
+});
+
 // ------------------- Section: Utility Functions -------------------
 
 // ------------------- Function: formatUptime -------------------
