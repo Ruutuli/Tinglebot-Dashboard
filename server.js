@@ -55,8 +55,16 @@ const PORT = process.env.PORT || 5001;
 
 // ------------------- Section: Session & Authentication Configuration -------------------
 // Session configuration for Discord OAuth
-const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
-const domain = process.env.DOMAIN || 'tinglebot.xyz';
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'true';
+const domain = process.env.DOMAIN || (isProduction ? 'tinglebot.xyz' : 'localhost');
+
+console.log('[server.js]: 🔧 Environment Configuration:', {
+  NODE_ENV: process.env.NODE_ENV,
+  RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+  isProduction,
+  domain,
+  DISCORD_CALLBACK_URL: process.env.DISCORD_CALLBACK_URL
+});
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
@@ -94,7 +102,9 @@ passport.deserializeUser(async (discordId, done) => {
 // Discord OAuth Strategy
 const callbackURL = isProduction 
   ? `https://${domain}/auth/discord/callback`
-  : (process.env.DISCORD_CALLBACK_URL || 'http://localhost:5001/auth/discord/callback');
+  : (process.env.DISCORD_CALLBACK_URL || `http://${domain}:5001/auth/discord/callback`);
+
+console.log('[server.js]: 🔗 Discord OAuth Callback URL:', callbackURL);
 
 passport.use(new DiscordStrategy({
   clientID: process.env.DISCORD_CLIENT_ID,
