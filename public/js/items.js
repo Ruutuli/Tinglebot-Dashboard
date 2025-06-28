@@ -1923,3 +1923,205 @@ const LOCATION_COLORS = {
   'leaf dew way': 'location-leafdew',
   'path of scarlet leaves': 'location-scarletleaves'
 }; 
+
+// ============================================================================
+// ------------------- Mobile Optimization Functions -------------------
+// Touch optimizations and responsive behavior for items
+// ============================================================================
+
+// ------------------- Function: isMobileDevice -------------------
+// Enhanced mobile device detection for items
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+         window.innerWidth <= 768 ||
+         ('ontouchstart' in window) ||
+         navigator.maxTouchPoints > 0 ||
+         window.matchMedia('(pointer: coarse)').matches;
+}
+
+// ------------------- Function: isTouchDevice -------------------
+// Enhanced touch device detection for items
+function isTouchDevice() {
+  return 'ontouchstart' in window || 
+         navigator.maxTouchPoints > 0 || 
+         window.matchMedia('(pointer: coarse)').matches;
+}
+
+// ------------------- Function: optimizeItemsForMobile -------------------
+// Apply mobile-specific optimizations to item cards
+function optimizeItemsForMobile() {
+  const isMobile = isMobileDevice();
+  const isTouch = isTouchDevice();
+  
+  console.log('📱 Optimizing items for mobile:', { isMobile, isTouch });
+  
+  // Add mobile-specific classes to body
+  if (isMobile) {
+    document.body.classList.add('mobile-device');
+  }
+  if (isTouch) {
+    document.body.classList.add('touch-device');
+  }
+  
+  // Setup mobile event handlers for items
+  setupItemMobileEventHandlers();
+  
+  return { isMobile, isTouch };
+}
+
+// ------------------- Function: setupItemMobileEventHandlers -------------------
+// Setup touch-optimized event handlers for item cards
+function setupItemMobileEventHandlers() {
+  const isMobile = isMobileDevice();
+  const isTouch = isTouchDevice();
+  
+  if (!isMobile && !isTouch) return;
+  
+  console.log('📱 Setting up mobile event handlers for items');
+  
+  // Add touch feedback to item cards
+  const itemCards = document.querySelectorAll('.item-card');
+  itemCards.forEach(card => {
+    setupItemCardTouchHandlers(card);
+  });
+  
+  // Optimize item filter controls for mobile
+  optimizeItemFilterControls();
+  
+  // Optimize item pagination buttons for mobile
+  optimizeItemPaginationButtons();
+}
+
+// ------------------- Function: setupItemCardTouchHandlers -------------------
+// Enhanced touch handlers for item cards
+function setupItemCardTouchHandlers(card) {
+  const isTouch = isTouchDevice();
+  
+  // Remove hover effects on touch devices
+  if (isTouch) {
+    card.style.setProperty('--hover-transform', 'none');
+    card.style.setProperty('--hover-shadow', 'var(--card-shadow)');
+  }
+  
+  // Enhanced touch feedback
+  let touchStartTime = 0;
+  let touchStartY = 0;
+  
+  card.addEventListener('touchstart', function(e) {
+    touchStartTime = Date.now();
+    touchStartY = e.touches[0].clientY;
+    
+    this.style.transform = 'scale(0.98)';
+    this.style.transition = 'transform 0.1s ease';
+    this.classList.add('touching');
+  }, { passive: true });
+  
+  card.addEventListener('touchmove', function(e) {
+    const currentY = e.touches[0].clientY;
+    const diffY = Math.abs(currentY - touchStartY);
+    
+    // Prevent scrolling if user is trying to interact with card
+    if (diffY > 10) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+  
+  card.addEventListener('touchend', function(e) {
+    const touchDuration = Date.now() - touchStartTime;
+    
+    this.style.transform = '';
+    this.style.transition = '';
+    this.classList.remove('touching');
+    
+    // Handle tap vs long press
+    if (touchDuration < 500) {
+      // Short tap - normal interaction
+      this.classList.add('tapped');
+      setTimeout(() => this.classList.remove('tapped'), 200);
+    }
+  }, { passive: true });
+  
+  // Prevent zoom on double tap
+  card.addEventListener('touchend', function(e) {
+    e.preventDefault();
+  }, { passive: false });
+}
+
+// ------------------- Function: optimizeItemFilterControls -------------------
+// Enhanced filter control optimization for item mobile
+function optimizeItemFilterControls() {
+  const filterControls = document.querySelectorAll('.search-filter-control select, .search-filter-control input');
+  
+  filterControls.forEach(control => {
+    // Increase touch target size
+    control.style.minHeight = '44px';
+    control.style.fontSize = '16px'; // Prevents zoom on iOS
+    
+    // Add mobile-specific styling
+    if (isMobileDevice()) {
+      control.classList.add('mobile-optimized');
+      
+      // Add focus improvements for mobile
+      control.addEventListener('focus', function() {
+        this.parentElement.classList.add('focused');
+      });
+      
+      control.addEventListener('blur', function() {
+        this.parentElement.classList.remove('focused');
+      });
+    }
+  });
+}
+
+// ------------------- Function: optimizeItemPaginationButtons -------------------
+// Enhanced pagination button optimization for item mobile
+function optimizeItemPaginationButtons() {
+  const paginationButtons = document.querySelectorAll('.pagination-button');
+  
+  paginationButtons.forEach(button => {
+    button.style.minHeight = '44px';
+    button.style.minWidth = '44px';
+    button.style.fontSize = '16px';
+    
+    // Add mobile-specific touch feedback
+    if (isTouchDevice()) {
+      button.addEventListener('touchstart', function() {
+        this.style.transform = 'scale(0.95)';
+      }, { passive: true });
+      
+      button.addEventListener('touchend', function() {
+        this.style.transform = '';
+      }, { passive: true });
+    }
+  });
+}
+
+// ------------------- Function: handleItemMobileOrientationChange -------------------
+// Enhanced orientation change handling for items
+function handleItemMobileOrientationChange() {
+  const isMobile = isMobileDevice();
+  if (!isMobile) return;
+  
+  // Debounce the orientation change handler
+  let orientationTimeout;
+  const handleOrientationChange = () => {
+    clearTimeout(orientationTimeout);
+    orientationTimeout = setTimeout(() => {
+      console.log('📱 Orientation changed, re-optimizing items for mobile');
+      
+      // Re-apply mobile optimizations
+      optimizeItemsForMobile();
+      
+      // Re-render item cards with new layout if needed
+      if (window.allItems) {
+        const currentPage = 1; // Reset to first page on orientation change
+        renderItemCards(window.allItems, currentPage);
+      }
+    }, 300);
+  };
+  
+  window.addEventListener('orientationchange', handleOrientationChange);
+  window.addEventListener('resize', handleOrientationChange);
+  
+  return handleOrientationChange;
+}

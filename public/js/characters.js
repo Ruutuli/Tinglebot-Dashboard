@@ -7,26 +7,30 @@ import { getVillageCrestUrl } from './utils.js';
 import { scrollToTop } from './ui.js';
 
 // ============================================================================
-// ------------------- Mobile-Friendly Utilities -------------------
-// Touch optimizations and responsive behavior helpers
+// ------------------- Enhanced Mobile-Friendly Utilities -------------------
+// Advanced touch optimizations and responsive behavior helpers
 // ============================================================================
 
 // ------------------- Function: isMobileDevice -------------------
-// Detects if the current device is mobile/touch-based
+// Enhanced mobile device detection with better accuracy
 function isMobileDevice() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
          window.innerWidth <= 768 ||
-         ('ontouchstart' in window);
+         ('ontouchstart' in window) ||
+         navigator.maxTouchPoints > 0 ||
+         window.matchMedia('(pointer: coarse)').matches;
 }
 
 // ------------------- Function: isTouchDevice -------------------
-// Detects if the device supports touch events
+// Enhanced touch device detection
 function isTouchDevice() {
-  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  return 'ontouchstart' in window || 
+         navigator.maxTouchPoints > 0 || 
+         window.matchMedia('(pointer: coarse)').matches;
 }
 
 // ------------------- Function: getMobileGridColumns -------------------
-// Returns appropriate grid columns based on screen size
+// Enhanced grid column calculation with better breakpoints
 function getMobileGridColumns() {
   const width = window.innerWidth;
   if (width <= 360) return 1;      // Extra small phones
@@ -37,10 +41,12 @@ function getMobileGridColumns() {
 }
 
 // ------------------- Function: optimizeForMobile -------------------
-// Applies mobile-specific optimizations to character cards
+// Enhanced mobile optimizations with performance improvements
 function optimizeForMobile() {
   const isMobile = isMobileDevice();
   const isTouch = isTouchDevice();
+  
+  console.log('📱 Mobile optimization:', { isMobile, isTouch, width: window.innerWidth });
   
   // Add mobile-specific classes to body
   if (isMobile) {
@@ -55,69 +61,251 @@ function optimizeForMobile() {
   if (grid) {
     const columns = getMobileGridColumns();
     grid.style.setProperty('--mobile-columns', columns);
+    
+    // Add mobile-specific grid classes
+    if (isMobile) {
+      grid.classList.add('mobile-grid');
+    }
   }
+  
+  // Optimize images for mobile
+  optimizeImagesForMobile();
+  
+  // Setup mobile-specific event listeners
+  setupMobileEventHandlers();
   
   return { isMobile, isTouch };
 }
 
+// ------------------- Function: optimizeImagesForMobile -------------------
+// Optimize image loading and display for mobile devices
+function optimizeImagesForMobile() {
+  const isMobile = isMobileDevice();
+  const images = document.querySelectorAll('img');
+  
+  images.forEach(img => {
+    if (isMobile) {
+      // Add lazy loading for mobile
+      img.loading = 'lazy';
+      
+      // Optimize image sizes for mobile
+      if (img.classList.contains('character-avatar')) {
+        img.style.maxWidth = '80px';
+        img.style.maxHeight = '80px';
+      }
+      
+      // Add mobile-specific classes
+      img.classList.add('mobile-optimized');
+    }
+  });
+}
+
 // ------------------- Function: setupMobileEventHandlers -------------------
-// Sets up touch-optimized event handlers for mobile devices
+// Enhanced mobile event handlers with better touch feedback
 function setupMobileEventHandlers() {
   const isMobile = isMobileDevice();
   const isTouch = isTouchDevice();
   
   if (!isMobile && !isTouch) return;
   
+  console.log('📱 Setting up mobile event handlers');
+  
   // Add touch feedback to character cards
   const characterCards = document.querySelectorAll('.character-card');
   characterCards.forEach(card => {
-    // Remove hover effects on touch devices
-    if (isTouch) {
-      card.style.setProperty('--hover-transform', 'none');
-      card.style.setProperty('--hover-shadow', 'var(--card-shadow)');
-    }
-    
-    // Add touch feedback
-    card.addEventListener('touchstart', function() {
-      this.style.transform = 'scale(0.98)';
-      this.style.transition = 'transform 0.1s ease';
-    });
-    
-    card.addEventListener('touchend', function() {
-      this.style.transform = '';
-      this.style.transition = '';
-    });
-    
-    // Prevent zoom on double tap
-    card.addEventListener('touchend', function(e) {
-      e.preventDefault();
-    }, { passive: false });
+    setupCardTouchHandlers(card);
   });
   
   // Optimize filter controls for mobile
+  optimizeFilterControls();
+  
+  // Optimize pagination buttons for mobile
+  optimizePaginationButtons();
+  
+  // Setup mobile modal interactions
+  setupMobileModalHandlers();
+}
+
+// ------------------- Function: setupCardTouchHandlers -------------------
+// Enhanced touch handlers for character cards
+function setupCardTouchHandlers(card) {
+  const isTouch = isTouchDevice();
+  
+  // Remove hover effects on touch devices
+  if (isTouch) {
+    card.style.setProperty('--hover-transform', 'none');
+    card.style.setProperty('--hover-shadow', 'var(--card-shadow)');
+  }
+  
+  // Enhanced touch feedback
+  let touchStartTime = 0;
+  let touchStartY = 0;
+  
+  card.addEventListener('touchstart', function(e) {
+    touchStartTime = Date.now();
+    touchStartY = e.touches[0].clientY;
+    
+    this.style.transform = 'scale(0.98)';
+    this.style.transition = 'transform 0.1s ease';
+    this.classList.add('touching');
+  }, { passive: true });
+  
+  card.addEventListener('touchmove', function(e) {
+    const currentY = e.touches[0].clientY;
+    const diffY = Math.abs(currentY - touchStartY);
+    
+    // Prevent scrolling if user is trying to interact with card
+    if (diffY > 10) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+  
+  card.addEventListener('touchend', function(e) {
+    const touchDuration = Date.now() - touchStartTime;
+    
+    this.style.transform = '';
+    this.style.transition = '';
+    this.classList.remove('touching');
+    
+    // Handle tap vs long press
+    if (touchDuration < 500) {
+      // Short tap - normal interaction
+      this.classList.add('tapped');
+      setTimeout(() => this.classList.remove('tapped'), 200);
+    }
+  }, { passive: true });
+  
+  // Prevent zoom on double tap
+  card.addEventListener('touchend', function(e) {
+    e.preventDefault();
+  }, { passive: false });
+}
+
+// ------------------- Function: optimizeFilterControls -------------------
+// Enhanced filter control optimization for mobile
+function optimizeFilterControls() {
   const filterControls = document.querySelectorAll('.search-filter-control select, .search-filter-control input');
+  
   filterControls.forEach(control => {
     // Increase touch target size
     control.style.minHeight = '44px';
     control.style.fontSize = '16px'; // Prevents zoom on iOS
     
     // Add mobile-specific styling
-    if (isMobile) {
+    if (isMobileDevice()) {
       control.classList.add('mobile-optimized');
+      
+      // Add focus improvements for mobile
+      control.addEventListener('focus', function() {
+        this.parentElement.classList.add('focused');
+      });
+      
+      control.addEventListener('blur', function() {
+        this.parentElement.classList.remove('focused');
+      });
     }
   });
-  
-  // Optimize pagination buttons for mobile
+}
+
+// ------------------- Function: optimizePaginationButtons -------------------
+// Enhanced pagination button optimization for mobile
+function optimizePaginationButtons() {
   const paginationButtons = document.querySelectorAll('.pagination-button');
+  
   paginationButtons.forEach(button => {
     button.style.minHeight = '44px';
     button.style.minWidth = '44px';
     button.style.fontSize = '16px';
+    
+    // Add mobile-specific touch feedback
+    if (isTouchDevice()) {
+      button.addEventListener('touchstart', function() {
+        this.style.transform = 'scale(0.95)';
+      }, { passive: true });
+      
+      button.addEventListener('touchend', function() {
+        this.style.transform = '';
+      }, { passive: true });
+    }
   });
 }
 
+// ------------------- Function: setupMobileModalHandlers -------------------
+// Enhanced mobile modal interaction handlers
+function setupMobileModalHandlers() {
+  const modals = document.querySelectorAll('.character-modal');
+  
+  modals.forEach(modal => {
+    setupModalTouchHandlers(modal);
+  });
+}
+
+// ------------------- Function: setupModalTouchHandlers -------------------
+// Enhanced touch handlers for modals
+function setupModalTouchHandlers(modal) {
+  const isMobile = isMobileDevice();
+  
+  if (!isMobile) return;
+  
+  let startY = 0;
+  let currentY = 0;
+  let isDragging = false;
+  
+  // Prevent body scroll when modal is open
+  document.body.style.overflow = 'hidden';
+  
+  // Enhanced swipe-to-close functionality
+  modal.addEventListener('touchstart', (e) => {
+    startY = e.touches[0].clientY;
+    isDragging = false;
+  }, { passive: true });
+  
+  modal.addEventListener('touchmove', (e) => {
+    currentY = e.touches[0].clientY;
+    const diff = currentY - startY;
+    
+    if (diff > 20) {
+      isDragging = true;
+    }
+    
+    if (diff > 50 && isDragging) { // Swipe down to close
+      modal.style.transform = `translateY(${diff}px)`;
+      modal.style.opacity = Math.max(0, 1 - (diff / 200));
+    }
+  }, { passive: true });
+  
+  modal.addEventListener('touchend', (e) => {
+    const diff = currentY - startY;
+    
+    if (diff > 100 && isDragging) { // Close if swiped down far enough
+      closeModal(modal);
+    } else if (isDragging) {
+      // Reset modal position with smooth animation
+      modal.style.transition = 'all 0.3s ease';
+      modal.style.transform = '';
+      modal.style.opacity = '';
+      
+      setTimeout(() => {
+        modal.style.transition = '';
+      }, 300);
+    }
+  }, { passive: true });
+  
+  // Add close button touch optimization
+  const closeButton = modal.querySelector('.close-modal');
+  if (closeButton) {
+    closeButton.addEventListener('touchstart', function() {
+      this.style.transform = 'scale(0.9)';
+    }, { passive: true });
+    
+    closeButton.addEventListener('touchend', function() {
+      this.style.transform = '';
+    }, { passive: true });
+  }
+}
+
 // ------------------- Function: handleMobileOrientationChange -------------------
-// Handles orientation changes on mobile devices
+// Enhanced orientation change handling
 function handleMobileOrientationChange() {
   const isMobile = isMobileDevice();
   if (!isMobile) return;
@@ -131,12 +319,18 @@ function handleMobileOrientationChange() {
       
       // Re-apply mobile optimizations
       optimizeForMobile();
-      setupMobileEventHandlers();
       
       // Re-render character cards with new layout
       if (window.allCharacters) {
         const currentPage = 1; // Reset to first page on orientation change
         renderCharacterCards(window.allCharacters, currentPage, true);
+      }
+      
+      // Adjust modal positioning if open
+      const openModal = document.querySelector('.character-modal');
+      if (openModal) {
+        openModal.style.transform = '';
+        openModal.style.opacity = '';
       }
     }, 300);
   };
@@ -148,7 +342,7 @@ function handleMobileOrientationChange() {
 }
 
 // ------------------- Function: createMobileFriendlyModal -------------------
-// Creates a mobile-optimized modal for character details
+// Enhanced mobile-optimized modal creation
 function createMobileFriendlyModal(character) {
   const isMobile = isMobileDevice();
   const isTouch = isTouchDevice();
@@ -166,55 +360,54 @@ function createMobileFriendlyModal(character) {
   
   modal.innerHTML = generateCharacterModalHTML(character);
   
-  // Mobile-specific modal behavior
+  // Enhanced mobile-specific modal behavior
   if (isMobile) {
     // Prevent body scroll when modal is open
     document.body.style.overflow = 'hidden';
     
-    // Add swipe-to-close functionality
-    let startY = 0;
-    let currentY = 0;
+    // Add enhanced swipe-to-close functionality
+    setupModalTouchHandlers(modal);
     
-    modal.addEventListener('touchstart', (e) => {
-      startY = e.touches[0].clientY;
-    });
+    // Add mobile-specific close button
+    const closeButton = modal.querySelector('.close-modal');
+    if (closeButton) {
+      closeButton.style.minHeight = '44px';
+      closeButton.style.minWidth = '44px';
+      closeButton.style.fontSize = '18px';
+    }
     
-    modal.addEventListener('touchmove', (e) => {
-      currentY = e.touches[0].clientY;
-      const diff = currentY - startY;
-      
-      if (diff > 50) { // Swipe down to close
-        modal.style.transform = `translateY(${diff}px)`;
-        modal.style.opacity = Math.max(0, 1 - (diff / 200));
-      }
-    });
-    
-    modal.addEventListener('touchend', (e) => {
-      const diff = currentY - startY;
-      if (diff > 100) { // Close if swiped down far enough
-        closeModal(modal);
-      } else {
-        // Reset modal position
-        modal.style.transform = '';
-        modal.style.opacity = '';
-      }
-    });
+    // Optimize modal content for mobile
+    const modalContent = modal.querySelector('.character-modal-content');
+    if (modalContent) {
+      modalContent.style.maxHeight = 'calc(100vh - 32px)';
+      modalContent.style.margin = '16px';
+      modalContent.style.borderRadius = '16px';
+    }
   }
   
   return modal;
 }
 
 // ------------------- Function: closeModal -------------------
-// Closes modal with mobile-friendly cleanup
+// Enhanced modal closing with mobile-friendly cleanup
 function closeModal(modal) {
   const isMobile = isMobileDevice();
   
   if (isMobile) {
     // Restore body scroll
     document.body.style.overflow = '';
+    
+    // Add closing animation for mobile
+    modal.style.transition = 'all 0.3s ease';
+    modal.style.transform = 'translateY(100%)';
+    modal.style.opacity = '0';
+    
+    setTimeout(() => {
+      modal.remove();
+    }, 300);
+  } else {
+    modal.remove();
   }
-  
-  modal.remove();
 }
 
 // ============================================================================
