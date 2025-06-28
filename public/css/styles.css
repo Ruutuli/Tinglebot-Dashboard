@@ -6114,3 +6114,1513 @@
   position: relative;
   z-index: 2;
 }
+
+/* ============================================================================ */
+/* Guilds Section Styles                                                       */
+/* ============================================================================ */
+
+.guilds-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1rem 0;
+}
+
+.guild-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--frost-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 2rem;
+  transition: all 0.3s ease;
+}
+
+.guild-card:hover {
+  border-color: var(--totk-light-green);
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(73, 213, 156, 0.1);
+  transform: translateY(-2px);
+}
+
+.guild-header {
+  align-items: center;
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.guild-icon-container {
+  position: relative;
+}
+
+.guild-icon {
+  border: 2px solid var(--glass-border);
+  border-radius: 50%;
+  height: 80px;
+  width: 80px;
+  transition: all 0.3s ease;
+}
+
+.guild-icon:hover {
+  border-color: var(--totk-light-green);
+  transform: scale(1.05);
+}
+
+.guild-status {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+.guild-status.online .status-dot {
+  background: var(--totk-light-green);
+  box-shadow: 0 0 10px rgba(73, 213, 156, 0.5);
+}
+
+.guild-info {
+  flex: 1;
+}
+
+.guild-name {
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.guild-description {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.guild-stats {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin-bottom: 2rem;
+}
+
+.guild-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.guild-action-button {
+  align-items: center;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.75rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.95rem;
+  font-weight: 600;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.guild-action-button:hover {
+  border-color: var(--totk-light-green);
+  box-shadow: 0 6px 20px rgba(73, 213, 156, 0.2);
+  transform: translateY(-2px);
+}
+
+.guild-action-button.primary {
+  background: linear-gradient(135deg, var(--totk-light-green), var(--totk-green));
+  border-color: var(--totk-light-green);
+  color: #000;
+}
+
+.guild-action-button.primary:hover {
+  background: linear-gradient(135deg, var(--totk-green), var(--totk-light-green));
+  box-shadow: 0 8px 25px rgba(73, 213, 156, 0.3);
+}
+
+.guild-action-button.secondary {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  color: var(--text-primary);
+}
+
+.guild-action-button.secondary:hover {
+  background: rgba(73, 213, 156, 0.1);
+  border-color: var(--totk-light-green);
+  color: var(--totk-light-green);
+}
+
+.guild-action-button i {
+  font-size: 1.1rem;
+}
+
+/* Discord Content Section */
+.discord-content-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--frost-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 2rem;
+  min-height: 200px;
+}
+
+.discord-content-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.discord-content-header h3 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.discord-content-header p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.discord-content-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  color: var(--text-secondary);
+  font-style: italic;
+  border: 2px dashed var(--glass-border);
+  border-radius: 0.5rem;
+}
+
+/* Online Members Section */
+.online-members-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--frost-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.online-members-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.online-members-header h3 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.online-count {
+  background: var(--totk-light-green);
+  color: #000;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  min-width: 2rem;
+  text-align: center;
+}
+
+.online-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.no-online-members {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  text-align: center;
+  border: 2px dashed var(--glass-border);
+  border-radius: 0.5rem;
+}
+
+.no-online-members i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.no-online-members p {
+  margin: 0;
+  font-style: italic;
+}
+
+.online-member-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(73, 213, 156, 0.05);
+  border: 1px solid rgba(73, 213, 156, 0.1);
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.online-member-item:hover {
+  background: rgba(73, 213, 156, 0.1);
+  border-color: rgba(73, 213, 156, 0.2);
+  transform: translateX(4px);
+}
+
+.online-member-avatar {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--glass-border);
+}
+
+.online-member-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.online-member-avatar .default-avatar {
+  width: 100%;
+  height: 100%;
+  background: var(--glass-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+}
+
+.online-member-status {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-primary);
+}
+
+.online-member-status.online {
+  background: var(--totk-light-green);
+  box-shadow: 0 0 8px rgba(73, 213, 156, 0.5);
+}
+
+.online-member-status.idle {
+  background: #f39c12;
+  box-shadow: 0 0 8px rgba(243, 156, 18, 0.5);
+}
+
+.online-member-status.dnd {
+  background: #e74c3c;
+  box-shadow: 0 0 8px rgba(231, 76, 60, 0.5);
+}
+
+.online-member-info {
+  flex: 1;
+}
+
+.online-member-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.online-member-status-text {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.online-member-activity {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Responsive Design for Guilds */
+@media (max-width: 768px) {
+  .guilds-container {
+    gap: 1.5rem;
+    padding: 0.5rem 0;
+  }
+
+  .guild-card {
+    padding: 1.5rem;
+  }
+
+  .guild-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .guild-icon {
+    height: 70px;
+    width: 70px;
+  }
+
+  .guild-name {
+    font-size: 1.5rem;
+  }
+
+  .guild-stats {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+  }
+
+  .guild-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .guild-action-button {
+    justify-content: center;
+    padding: 0.875rem 1.25rem;
+  }
+
+  .online-members-section {
+    padding: 1.5rem;
+  }
+
+  .online-members-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .online-member-item {
+    padding: 0.75rem;
+  }
+
+  .online-member-avatar {
+    width: 35px;
+    height: 35px;
+  }
+
+  .discord-content-section {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .guild-card {
+    padding: 1rem;
+  }
+
+  .guild-header {
+    gap: 0.75rem;
+  }
+
+  .guild-icon {
+    height: 60px;
+    width: 60px;
+  }
+
+  .guild-name {
+    font-size: 1.25rem;
+  }
+
+  .guild-description {
+    font-size: 0.9rem;
+  }
+
+  .guild-stats {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .guild-action-button {
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .online-members-section {
+    padding: 1rem;
+  }
+
+  .online-members-header h3 {
+    font-size: 1.25rem;
+  }
+
+  .online-member-item {
+    padding: 0.5rem;
+  }
+
+  .online-member-avatar {
+    width: 30px;
+    height: 30px;
+  }
+
+  .online-member-name {
+    font-size: 0.9rem;
+  }
+
+  .online-member-status-text {
+    font-size: 0.8rem;
+  }
+
+  .discord-content-section {
+    padding: 1rem;
+  }
+
+  .discord-content-header h3 {
+    font-size: 1.25rem;
+  }
+}
+
+/* ============================================================================ */
+/* Commands Page Styles                                                          */
+/* ============================================================================ */
+
+/* Commands Container */
+.commands-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 100%;
+}
+
+/* Commands Overview */
+.commands-overview {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  padding: 1.5rem;
+  backdrop-filter: blur(var(--frost-blur));
+}
+
+.commands-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Command Categories */
+.command-categories {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  padding: 1.5rem;
+  backdrop-filter: blur(var(--frost-blur));
+}
+
+.category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.category-filter {
+  align-items: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.9rem;
+  font-weight: 500;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.category-filter:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.category-filter.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-primary);
+  box-shadow: 0 4px 12px rgba(0, 163, 218, 0.3);
+}
+
+.category-filter i {
+  font-size: 1rem;
+}
+
+/* Commands List Container */
+.commands-list-container {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  padding: 1.5rem;
+  backdrop-filter: blur(var(--frost-blur));
+}
+
+/* Commands Search */
+.commands-search {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.search-input-wrapper {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  display: flex;
+  flex: 1;
+  max-width: 400px;
+  position: relative;
+}
+
+.search-input-wrapper i {
+  color: var(--text-secondary);
+  left: 1rem;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#commands-search {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  width: 100%;
+}
+
+#commands-search::placeholder {
+  color: var(--text-secondary);
+}
+
+.search-filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+#sort-commands {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  padding: 0.75rem 1rem;
+}
+
+#sort-commands option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Commands Grid */
+.commands-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+}
+
+/* Command Card */
+.command-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.command-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px rgba(0, 163, 218, 0.15);
+  transform: translateY(-2px);
+}
+
+.command-header {
+  align-items: center;
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.command-icon {
+  align-items: center;
+  background: var(--accent);
+  border-radius: 0.5rem;
+  color: var(--text-primary);
+  display: flex;
+  font-size: 1.2rem;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.command-info {
+  flex: 1;
+}
+
+.command-name {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.command-category {
+  background: var(--accent);
+  border-radius: 0.25rem;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  text-transform: uppercase;
+}
+
+.command-usage-count {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.usage-number {
+  color: var(--stat-value);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.usage-label {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.command-body {
+  padding: 1rem;
+}
+
+.command-description {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.command-usage {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.usage-label {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.usage-code {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  color: var(--accent);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.command-footer {
+  background: var(--glass-bg);
+  border-top: 1px solid var(--glass-border);
+  padding: 1rem;
+}
+
+.command-stats {
+  display: flex;
+  gap: 1rem;
+}
+
+.command-stats .stat-item {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.command-stats .stat-item i {
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+
+/* Commands Loading State */
+.commands-loading {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: center;
+  min-height: 200px;
+  text-align: center;
+}
+
+.commands-loading .loading-spinner {
+  border: 3px solid var(--border-color);
+  border-radius: 50%;
+  border-top: 3px solid var(--accent);
+  height: 3rem;
+  width: 3rem;
+  animation: spin 1s linear infinite;
+}
+
+.commands-loading p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+/* Commands Error State */
+.commands-error {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: center;
+  min-height: 200px;
+  text-align: center;
+}
+
+.commands-error i {
+  color: var(--error-color);
+  font-size: 3rem;
+}
+
+.commands-error p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+/* No Commands State */
+.no-commands {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: center;
+  min-height: 200px;
+  text-align: center;
+}
+
+.no-commands i {
+  color: var(--text-secondary);
+  font-size: 3rem;
+}
+
+.no-commands p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+/* Responsive Design for Commands */
+@media (max-width: 1024px) {
+  .commands-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+  
+  .commands-search {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input-wrapper {
+    max-width: none;
+  }
+  
+  .search-filters {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .commands-container {
+    gap: 1.5rem;
+  }
+  
+  .commands-overview,
+  .command-categories,
+  .commands-list-container {
+    padding: 1rem;
+  }
+  
+  .commands-stats {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .category-filters {
+    gap: 0.5rem;
+  }
+  
+  .category-filter {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .commands-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .command-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    text-align: center;
+  }
+  
+  .command-usage-count {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+  
+  .command-stats {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .commands-overview,
+  .command-categories,
+  .commands-list-container {
+    padding: 0.75rem;
+  }
+  
+  .category-filter {
+    font-size: 0.75rem;
+    padding: 0.5rem;
+  }
+  
+  .category-filter span {
+    display: none;
+  }
+  
+  .command-name {
+    font-size: 1rem;
+  }
+  
+  .command-description {
+    font-size: 0.85rem;
+  }
+  
+  .usage-code {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+  }
+}
+
+/* ==========================================================================
+   Commands: New Category-Based Layout
+========================================================================== */
+
+.category-section {
+  margin-bottom: 3rem;
+}
+
+.category-header {
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--accent);
+}
+
+.category-description {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.command-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+#category-filter {
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  min-width: 150px;
+}
+
+#search-input {
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  min-width: 200px;
+}
+
+/* ==========================================================================
+   Command Cards with Flip Animation
+========================================================================== */
+
+.commands-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.command-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.command-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: var(--accent);
+}
+
+.command-card.flipped {
+  transform: rotateY(180deg);
+}
+
+.command-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.command-name {
+  color: var(--accent);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+  font-family: 'Courier New', monospace;
+}
+
+.command-category {
+  background: var(--accent);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.command-description {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  flex-grow: 1;
+}
+
+.command-usage {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  border-left: 3px solid var(--accent);
+}
+
+.command-details-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.command-details-toggle i {
+  font-size: 1rem;
+}
+
+/* ==========================================================================
+   Command Modal
+========================================================================== */
+
+.command-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 16px 16px 0 0;
+}
+
+.modal-header h2 {
+  color: var(--accent);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  font-family: 'Courier New', monospace;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.command-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.info-section {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border-left: 4px solid var(--accent);
+}
+
+.info-section h3 {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-section h3::before {
+  content: '';
+  width: 4px;
+  height: 16px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.info-section p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.usage-example {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 0.75rem 0;
+  border: 1px solid var(--border-color);
+}
+
+.usage-example code {
+  color: var(--accent);
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.examples {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.example {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  padding: 0.75rem;
+  border-left: 3px solid var(--accent);
+}
+
+.example strong {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.example code {
+  color: var(--accent);
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.info-section ul {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.info-section li {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+.info-section li code {
+  color: var(--accent);
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+}
+
+/* ==========================================================================
+   Mobile Responsiveness for Commands
+========================================================================== */
+
+@media (max-width: 768px) {
+  .commands-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .command-card {
+    padding: 1.25rem;
+    min-height: 180px;
+  }
+  
+  .command-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+  
+  .command-category {
+    align-self: flex-start;
+  }
+  
+  .modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .modal-header {
+    padding: 1.25rem;
+  }
+  
+  .modal-body {
+    padding: 1.25rem;
+  }
+  
+  .info-section {
+    padding: 1rem;
+  }
+  
+  .command-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  #category-filter,
+  #search-input {
+    min-width: auto;
+    width: 100%;
+  }
+}
+
+/* ==========================================================================
+   Touch Device Optimizations for Commands
+========================================================================== */
+
+@media (hover: none) and (pointer: coarse) {
+  .command-card {
+    transform: none;
+  }
+  
+  .command-card:hover {
+    transform: none;
+  }
+  
+  .command-card:active {
+    transform: scale(0.98);
+  }
+  
+  .command-card.tapped {
+    transform: scale(0.95);
+  }
+}
+
+/* ==========================================================================
+   Command Card Flip Animation (3D)
+========================================================================== */
+
+.command-card {
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.command-card.flipped {
+  transform: rotateY(180deg);
+}
+
+.command-card-front,
+.command-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.command-card-front {
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+}
+
+.command-card-back {
+  background: var(--glass-bg);
+  border: 1px solid var(--accent);
+  transform: rotateY(180deg);
+  overflow-y: auto;
+}
+
+.command-card-back-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.command-card-back-title {
+  color: var(--accent);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.command-card-back-section {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  padding: 1rem;
+  border-left: 3px solid var(--accent);
+}
+
+.command-card-back-section h4 {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.command-card-back-section p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.command-card-back-section ul {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+
+.command-card-back-section li {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-bottom: 0.25rem;
+}
+
+.command-card-back-section code {
+  color: var(--accent);
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0.15rem 0.3rem;
+  border-radius: 3px;
+}
+
+/* ==========================================================================
+   Command Card Flip Indicators
+========================================================================== */
+
+.command-card::after {
+  content: '';
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 24px;
+  height: 24px;
+  background: var(--accent);
+  border-radius: 50%;
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.command-card:hover::after {
+  opacity: 0.6;
+}
+
+.command-card::before {
+  content: '↻';
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* ==========================================================================
+   Command Statistics
+========================================================================== */
+
+.commands-overview {
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.commands-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+}
+
+.stat-label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  display: block;
+  color: var(--accent);
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+}

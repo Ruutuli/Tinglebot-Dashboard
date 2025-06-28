@@ -462,13 +462,94 @@ app.get('/api/activities', (_, res) => {
 });
 
 // ------------------- Function: getCommands -------------------
-// Returns command usage statistics
+// Returns comprehensive command data with usage statistics
 app.get('/api/commands', (_, res) => {
-  res.json([
-    { name: 'help', description: 'Shows all available commands', usage: '/help [command]', usageCount: 1500 },
-    { name: 'play', description: 'Plays music from YouTube', usage: '/play <url>', usageCount: 800 },
-    { name: 'ping', description: 'Shows bot latency', usage: '/ping', usageCount: 2000 }
-  ]);
+  try {
+    console.log('[server.js]: 📋 Getting commands data...');
+    
+    const commands = [
+      // Character Commands
+      { name: 'character', description: 'Manage your characters', usage: '/character <subcommand>', category: 'character' },
+      { name: 'character create', description: 'Create a new character', usage: '/character create <village>', category: 'character' },
+      { name: 'character create inariko', description: 'Create a character with an Inariko exclusive job', usage: '/character create inariko <name> <age> <height> <hearts> <stamina> <pronouns> <race> <job> <inventory> <applink> <icon>', category: 'character' },
+      { name: 'character create rudania', description: 'Create a character with a Rudania exclusive job', usage: '/character create rudania <name> <age> <height> <hearts> <stamina> <pronouns> <race> <job> <inventory> <applink> <icon>', category: 'character' },
+      { name: 'character create vhintl', description: 'Create a character with a Vhintl exclusive job', usage: '/character create vhintl <name> <age> <height> <hearts> <stamina> <pronouns> <race> <job> <inventory> <applink> <icon>', category: 'character' },
+      { name: 'character create general', description: 'Create a character with a general job', usage: '/character create general <name> <age> <height> <hearts> <stamina> <pronouns> <race> <village> <job> <inventory> <applink> <icon>', category: 'character' },
+      { name: 'character edit', description: 'Edit an existing character', usage: '/character edit <charactername> <category> <updatedinfo> [newicon]', category: 'character' },
+      { name: 'character view', description: 'View details of a character', usage: '/character view <charactername>', category: 'character' },
+      { name: 'character viewlist', description: 'View a list of characters', usage: '/character viewlist [user]', category: 'character' },
+      { name: 'character delete', description: 'Delete a character', usage: '/character delete <charactername>', category: 'character' },
+      { name: 'character changejob', description: 'Change the job of your character', usage: '/character changejob <charactername> <newjob>', category: 'character' },
+      { name: 'character setbirthday', description: 'Set the birthday of a character', usage: '/character setbirthday <charactername> <birthday>', category: 'character' },
+      
+      // Economy Commands
+      { name: 'economy', description: 'Economy commands for gifts, shops, trades, and transfers', usage: '/economy <subcommand>', category: 'economy' },
+      { name: 'economy gift', description: 'Gift items from your character to another character', usage: '/economy gift <fromcharacter> <tocharacter> <itema> <quantitya> [itemb] [quantityb] [itemc] [quantityc]', category: 'economy' },
+      { name: 'economy shop-view', description: 'View items available in the shop', usage: '/economy shop-view', category: 'economy' },
+      { name: 'economy shop-buy', description: 'Buy an item from the shop', usage: '/economy shop-buy <charactername> <itemname> <quantity>', category: 'economy' },
+      { name: 'economy shop-sell', description: 'Sell an item to the shop', usage: '/economy shop-sell <charactername> <itemname> <quantity>', category: 'economy' },
+      { name: 'economy trade', description: 'Trade items between two characters', usage: '/economy trade <fromcharacter> <tocharacter> <item1> <quantity1> [item2] [quantity2] [item3] [quantity3] [tradeid]', category: 'economy' },
+      { name: 'economy transfer', description: 'Transfer items between your characters', usage: '/economy transfer <fromcharacter> <tocharacter> <itema> <quantitya> [itemb] [quantityb] [itemc] [quantityc]', category: 'economy' },
+      
+      // Inventory Commands
+      { name: 'inventory', description: 'Manage your character\'s inventory', usage: '/inventory <subcommand>', category: 'inventory' },
+      { name: 'inventory view', description: 'View your character\'s inventory', usage: '/inventory view <charactername>', category: 'inventory' },
+      { name: 'inventory sync', description: 'Sync your character\'s inventory from Google Sheets', usage: '/inventory sync <charactername>', category: 'inventory' },
+      { name: 'inventory test', description: 'Test if the inventory setup is correct', usage: '/inventory test <charactername>', category: 'inventory' },
+      { name: 'gear', description: 'Displays, equips, or unequips gear of a character', usage: '/gear <charactername> <type> [itemname] [status]', category: 'inventory' },
+      { name: 'item', description: 'Use an item for various purposes', usage: '/item <charactername> <itemname> [quantity] [jobname]', category: 'inventory' },
+      { name: 'spiritorbs', description: 'Check or exchange Spirit Orbs for health or stamina upgrades', usage: '/spiritorbs <subcommand>', category: 'inventory' },
+      { name: 'spiritorbs check', description: 'Check how many Spirit Orbs your character has', usage: '/spiritorbs check <character>', category: 'inventory' },
+      { name: 'spiritorbs exchange', description: 'Exchange 4 Spirit Orbs for +1 heart or stamina', usage: '/spiritorbs exchange <character> <type>', category: 'inventory' },
+      
+      // Exploration Commands
+      { name: 'explore', description: 'Manage exploration parties and expeditions', usage: '/explore <subcommand>', category: 'exploration' },
+      { name: 'explore setup', description: 'Setup a new exploration party', usage: '/explore setup <region>', category: 'exploration' },
+      { name: 'explore join', description: 'Join an expedition party', usage: '/explore join <id> <charactername> <item1> <item2> <item3>', category: 'exploration' },
+      { name: 'explore start', description: 'Start the expedition', usage: '/explore start <id>', category: 'exploration' },
+      { name: 'explore roll', description: 'Roll for a random encounter', usage: '/explore roll <id> <charactername>', category: 'exploration' },
+      { name: 'viewmap', description: 'View the status of a specific quadrant or full square', usage: '/viewmap <square> [quadrant]', category: 'exploration' },
+      
+      // Companions Commands
+      { name: 'pet', description: 'Manage your pets and their abilities', usage: '/pet <subcommand>', category: 'companions' },
+      { name: 'pet roll', description: 'Roll for items with your pet', usage: '/pet roll <charactername> <petname> [rolltype]', category: 'companions' },
+      { name: 'pet upgrade', description: 'Upgrade your pet\'s level', usage: '/pet upgrade <charactername> <petname> <level>', category: 'companions' },
+      { name: 'pet add', description: 'Add a new pet', usage: '/pet add <charactername> <petname> <category> <species> <pettype> [image]', category: 'companions' },
+      { name: 'pet edit', description: 'Edit your pet\'s image', usage: '/pet edit <charactername> <petname> <image>', category: 'companions' },
+      { name: 'pet view', description: 'View details for one of your pets', usage: '/pet view <charactername> <petname>', category: 'companions' },
+      { name: 'mount', description: 'Manage or view mount details', usage: '/mount <subcommand>', category: 'companions' },
+      { name: 'mount encounter', description: 'Join or interact with an existing mount encounter', usage: '/mount encounter <encounterid> <charactername>', category: 'companions' },
+      { name: 'mount view', description: 'View your mount\'s details', usage: '/mount view <charactername>', category: 'companions' },
+      
+      // Jobs Commands
+      { name: 'gather', description: 'Gather resources', usage: '/gather <charactername>', category: 'jobs' },
+      { name: 'loot', description: 'Search for loot', usage: '/loot <charactername>', category: 'jobs' },
+      { name: 'crafting', description: 'Craft items', usage: '/crafting <charactername> <itemname> <quantity> [flavortext]', category: 'jobs' },
+      { name: 'heal', description: 'Heal yourself or others', usage: '/heal <subcommand>', category: 'jobs' },
+      { name: 'heal request', description: 'Request healing from a healer', usage: '/heal request <charactername> <hearts> <payment>', category: 'jobs' },
+      { name: 'heal fulfill', description: 'Fulfill a healing request (healers only)', usage: '/heal fulfill <requestid> <healername>', category: 'jobs' },
+      
+      // Utility Commands
+      { name: 'lookup', description: 'Look up item information', usage: '/lookup <item> [ingredient]', category: 'utility' },
+      { name: 'tokens', description: 'Manage your tokens', usage: '/tokens <subcommand>', category: 'utility' },
+      { name: 'tokens check', description: 'Check your current token balance', usage: '/tokens check', category: 'utility' },
+      { name: 'tokens setup', description: 'Set up your token tracker', usage: '/tokens setup <link>', category: 'utility' },
+      { name: 'roll', description: 'Roll dice for various purposes', usage: '/roll <dice> <sides> [flavor] [advantage]', category: 'utility' },
+      { name: 'cancelvoucher', description: 'Cancel a job voucher', usage: '/cancelvoucher <charactername>', category: 'utility' },
+      
+      // World Commands
+      { name: 'travel', description: 'Travel between villages', usage: '/travel <charactername> <destination> <mode>', category: 'world' },
+      { name: 'quest', description: 'Quest management system', usage: '/quest <subcommand>', category: 'world' },
+      { name: 'blight', description: 'Manage blight progression and healing', usage: '/blight <subcommand>', category: 'world' },
+      { name: 'specialweather', description: 'Gather special items during special weather conditions', usage: '/specialweather <charactername>', category: 'world' }
+    ];
+    
+    console.log(`[server.js]: ✅ Returning ${commands.length} commands`);
+    res.json(commands);
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching commands:', error);
+    res.status(500).json({ error: 'Failed to fetch commands' });
+  }
 });
 
 // ------------------- Section: Statistics API Routes -------------------
@@ -977,6 +1058,136 @@ app.get('/api/user/guild-info', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching guild member info:', error);
     res.status(500).json({ error: 'Failed to fetch guild member information' });
+  }
+});
+
+// ------------------- Function: getGuildInfo -------------------
+// Returns general guild information
+app.get('/api/guild/info', async (req, res) => {
+  try {
+    const guildId = process.env.PROD_GUILD_ID;
+    const RESIDENT_ROLE = '788137728943325185';
+    const INACTIVE_ROLE = '788148064182730782';
+    if (!guildId) {
+      console.error('[server.js]: ❌ PROD_GUILD_ID not configured');
+      return res.status(500).json({ error: 'Guild ID not configured' });
+    }
+    console.log(`[server.js]: 🔍 Fetching guild info for guild: ${guildId}`);
+    // Fetch guild information
+    const guildResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!guildResponse.ok) {
+      throw new Error(`Discord API error: ${guildResponse.status} ${guildResponse.statusText}`);
+    }
+    const guildData = await guildResponse.json();
+    // Get guild icon URL if available
+    const iconUrl = guildData.icon 
+      ? `https://cdn.discordapp.com/icons/${guildId}/${guildData.icon}.png`
+      : null;
+    // Fetch all members
+    let after = null;
+    let allMembers = [];
+    let hasMore = true;
+    while (hasMore) {
+      const url = new URL(`https://discord.com/api/v10/guilds/${guildId}/members`);
+      url.searchParams.set('limit', '1000');
+      if (after) url.searchParams.set('after', after);
+      const membersResponse = await fetch(url.toString(), {
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!membersResponse.ok) {
+        throw new Error(`Discord API error: ${membersResponse.status} ${membersResponse.statusText}`);
+      }
+      const members = await membersResponse.json();
+      allMembers = allMembers.concat(members);
+      if (members.length < 1000) {
+        hasMore = false;
+      } else {
+        after = members[members.length - 1].user.id;
+      }
+    }
+    // Count residents and inactive
+    let residentCount = 0;
+    let inactiveCount = 0;
+    
+    for (const member of allMembers) {
+      const roles = member.roles || [];
+      if (roles.includes(RESIDENT_ROLE)) {
+        residentCount++;
+      }
+      if (roles.includes(INACTIVE_ROLE)) {
+        inactiveCount++;
+      }
+    }
+    
+    res.json({
+      id: guildData.id,
+      name: guildData.name,
+      description: guildData.description || 'A community server for Tinglebot users to play together, share experiences, and enjoy the RPG system.',
+      icon: iconUrl,
+      memberCount: residentCount,
+      inactiveCount,
+      features: guildData.features || []
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching guild info:', error);
+    res.status(500).json({ error: 'Failed to fetch guild information' });
+  }
+});
+
+// ------------------- Function: joinGuild -------------------
+// Generates an invite link for the guild
+app.post('/api/guild/join', async (req, res) => {
+  try {
+    const guildId = process.env.PROD_GUILD_ID;
+    
+    if (!guildId) {
+      console.error('[server.js]: ❌ PROD_GUILD_ID not configured');
+      return res.status(500).json({ error: 'Guild ID not configured' });
+    }
+    
+    console.log(`[server.js]: 🔗 Generating invite link for guild: ${guildId}`);
+    
+    // Create an invite link for the guild
+    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/invites`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        max_age: 0, // Never expires
+        max_uses: 0, // Unlimited uses
+        temporary: false,
+        unique: true
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Discord API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const inviteData = await response.json();
+    const inviteUrl = `https://discord.gg/${inviteData.code}`;
+    
+    console.log(`[server.js]: ✅ Generated invite link for guild ${guildId}: ${inviteUrl}`);
+    
+    res.json({
+      success: true,
+      inviteUrl: inviteUrl,
+      code: inviteData.code,
+      expiresAt: inviteData.expires_at
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error generating guild invite:', error);
+    res.status(500).json({ error: 'Failed to generate guild invite link' });
   }
 });
 

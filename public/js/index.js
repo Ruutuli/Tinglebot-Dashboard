@@ -14,10 +14,17 @@ import * as characters from './characters.js';
 import * as stats from './stats.js';
 import * as error from './error.js';
 import * as auth from './auth.js';
+import * as guilds from './guilds.js';
+import * as commands from './commands.js';
 import { createPagination, setupBackToTopButton, scrollToTop } from './ui.js';
 
 // Import specific functions from characters module
 const { renderCharacterCards } = characters;
+
+// Test commands module import
+// console.log('🔍 Testing commands module import...');
+// console.log('📦 Commands module:', commands);
+// console.log('🔧 showCommandsSection available:', typeof commands?.showCommandsSection);
 
 export {
   inventory,
@@ -25,7 +32,9 @@ export {
   characters,
   stats,
   error,
-  auth
+  auth,
+  guilds,
+  commands,
 };
 
 // ============================================================================
@@ -511,6 +520,10 @@ function setupSidebarNavigation() {
         showDashboardSection();
       } else if (sectionId === 'profile-section') {
         showProfileSection();
+      } else if (sectionId === 'guilds-section') {
+        showGuildSection();
+      } else if (sectionId === 'commands-section') {
+        commands.showCommandsSection();
       } else {
         // For other sections, use the existing showSection function
         showSection(sectionId);
@@ -529,6 +542,10 @@ function setupSidebarNavigation() {
       showDashboardSection();
     } else if (section === 'profile-section') {
       showProfileSection();
+    } else if (section === 'guilds-section') {
+      showGuildSection();
+    } else if (section === 'commands-section') {
+      commands.showCommandsSection();
     } else {
       showSection(section);
     }
@@ -546,6 +563,10 @@ function setupSidebarNavigation() {
       showDashboardSection();
     } else if (sectionId === 'profile-section') {
       showProfileSection();
+    } else if (sectionId === 'guilds-section') {
+      showGuildSection();
+    } else if (sectionId === 'commands-section') {
+      commands.showCommandsSection();
     } else {
       showSection(sectionId);
     }
@@ -898,12 +919,17 @@ function showDashboardSection() {
       loadingStatesDisplay: Array.from(loadingStates).map(el => el.style.display)
     });
     
+    // Always clear and reload the weather section
+    const weatherSection = document.getElementById('weather-section');
+    if (weatherSection) {
+      weatherSection.innerHTML = '';
+      weatherSection.style.display = 'block';
+    }
     // Render weather section
     if (window.renderWeatherSection) {
       console.log('🌤️ Rendering weather section...');
       window.renderWeatherSection();
     }
-    
     // The dashboard content (welcome message, links, model cards) is already in the HTML
     // No need to load data dynamically for the main dashboard view
   } else {
@@ -984,6 +1010,54 @@ function showProfileSection() {
 }
 
 // ============================================================================
+// ------------------- Guild Navigation -------------------
+// Handles guild page navigation specifically
+// ============================================================================
+function showGuildSection() {
+  console.log('🏰 Showing guild section...');
+  
+  // Hide all main content sections
+  const mainContent = document.querySelector('.main-content');
+  const sections = mainContent.querySelectorAll('section, #model-details-page');
+  
+  sections.forEach(section => {
+    section.style.display = 'none';
+  });
+  
+  // Show the guild section
+  const guildSection = document.getElementById('guilds-section');
+  if (guildSection) {
+    guildSection.style.display = 'block';
+    console.log('✅ Guild section displayed');
+    
+    // Initialize guild page
+    guilds.showGuildSection();
+  } else {
+    console.error('❌ Guild section not found');
+  }
+  
+  // Update active state in sidebar
+  const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+  sidebarLinks.forEach(link => {
+    const linkSection = link.getAttribute('data-section');
+    const listItem = link.closest('li');
+    if (listItem) {
+      if (linkSection === 'guilds-section') {
+        listItem.classList.add('active');
+      } else {
+        listItem.classList.remove('active');
+      }
+    }
+  });
+  
+  // Update breadcrumb
+  const breadcrumb = document.querySelector('.breadcrumb');
+  if (breadcrumb) {
+    breadcrumb.textContent = 'Guilds';
+  }
+}
+
+// ============================================================================
 // ------------------- Exports -------------------
 // Shared helpers and UI controls
 // ============================================================================
@@ -1000,5 +1074,6 @@ export {
   renderMarkdownLinks,
   renderItemTypeIcon,
   loadModelData,
-  showProfileSection
+  showProfileSection,
+  showGuildSection
 };

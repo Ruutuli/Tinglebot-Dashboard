@@ -117,7 +117,7 @@
             <a href="#dashboard" data-section="dashboard-section"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
           </li>
           <li>
-            <a href="#guilds" data-section="guilds-section"><i class="fas fa-server"></i><span>Guilds</span></a>
+            <a href="#guilds" data-section="guilds-section"><i class="fas fa-server"></i><span>Discord</span></a>
           </li>
           <li>
             <a href="#commands" data-section="commands-section"><i class="fas fa-terminal"></i><span>Commands</span></a>
@@ -334,6 +334,115 @@
         </div>
       </section>
 
+      <!-- Guilds Section -->
+      <section id="guilds-section" style="display:none;">
+        <div class="dashboard-header">
+          <h1>Discord</h1>
+          <div class="dashboard-divider"></div>
+        </div>
+        <div class="guilds-container">
+          <div class="guild-card">
+            <div class="guild-header">
+              <div class="guild-icon-container">
+                <img src="/images/tingleicon.png" alt="Guild Icon" class="guild-icon" id="guild-icon" />
+                <div class="guild-status online">
+                  <span class="status-dot"></span>
+                </div>
+              </div>
+              <div class="guild-info">
+                <h2 class="guild-name" id="guild-name">Loading...</h2>
+                <p class="guild-description" id="guild-description">Loading guild information...</p>
+              </div>
+            </div>
+            <div class="guild-stats">
+              <div class="stat-item">
+                <span class="stat-label">Residents</span>
+                <span class="stat-value" id="guild-members">Loading...</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Inactive</span>
+                <span class="stat-value" id="guild-inactive">Loading...</span>
+              </div>
+            </div>
+            <div class="guild-actions">
+              <button class="guild-action-button primary" id="join-guild-btn">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Join Server</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Discord Content Section -->
+          <div class="discord-content-section">
+            <div class="discord-content-header">
+              <h3>Discord Content</h3>
+              <p>Content coming soon...</p>
+            </div>
+            <div class="discord-content-placeholder">
+              <!-- Future content will be added here -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Commands Section -->
+      <section id="commands-section" style="display:none;">
+        <div class="dashboard-header">
+          <h1>Commands</h1>
+          <div class="dashboard-divider"></div>
+        </div>
+        <div class="commands-container">
+          <!-- Commands Overview -->
+          <div class="commands-overview">
+            <div class="commands-stats">
+              <div class="stat-item">
+                <span class="stat-label">Total Commands</span>
+                <span class="stat-value" id="total-commands">Loading...</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Categories</span>
+                <span class="stat-value" id="category-count">Loading...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Command Filters -->
+          <div class="command-filters">
+            <div class="search-input-wrapper">
+              <i class="fas fa-search"></i>
+              <input type="text" id="search-input" placeholder="Search commands..." />
+            </div>
+            <div class="filter-controls">
+              <select id="category-filter">
+                <option value="all">All Categories</option>
+                <option value="character">Character</option>
+                <option value="economy">Economy</option>
+                <option value="inventory">Inventory</option>
+                <option value="exploration">Exploration</option>
+                <option value="companions">Companions</option>
+                <option value="jobs">Jobs</option>
+                <option value="utility">Utility</option>
+                <option value="moderation">Moderation</option>
+                <option value="admin">Admin</option>
+                <option value="world">World</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Commands Error State -->
+          <div class="commands-error" id="commands-error" style="display: none;">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Failed to load commands</p>
+            <button class="retry-button" onclick="commandsModule.loadCommands()">Retry</button>
+          </div>
+
+          <!-- Commands Container -->
+          <div id="commands-container">
+            <!-- Commands will be dynamically loaded here -->
+          </div>
+        </div>
+      </section>
+
       <!-- Inventory Section -->
 
 
@@ -372,6 +481,8 @@
   <script type="module" src="js/inventory.js"></script>
   <script type="module" src="js/stats.js"></script>
   <script type="module" src="js/weather.js"></script>
+  <script type="module" src="js/guilds.js"></script>
+  <script type="module" src="js/commands.js"></script>
   <script type="module" src="js/index.js"></script>
   <script src="js/debug.js"></script>
 </body>
