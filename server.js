@@ -61,14 +61,14 @@ const domain = process.env.DOMAIN || 'tinglebot.xyz';
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
   resave: true,
-  saveUninitialized: true,
+  saveUninitialized: false, // Changed to false for better security
   cookie: {
     secure: isProduction, // Set to true in production for HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    domain: isProduction ? domain : undefined,
-    sameSite: isProduction ? 'strict' : 'lax'
-  }
+    sameSite: isProduction ? 'lax' : 'lax' // Changed from 'strict' to 'lax' for better compatibility
+  },
+  name: 'tinglebot.sid' // Custom session name
 }));
 
 // Initialize Passport and restore authentication state from session
@@ -321,6 +321,37 @@ app.get('/api/auth/status', (req, res) => {
   }
 });
 
+// ------------------- Function: debugSession -------------------
+// Debug endpoint for session troubleshooting (development only)
+app.get('/api/debug/session', (req, res) => {
+  if (process.env.NODE_ENV !== 'production') {
+    res.json({
+      session: req.session ? {
+        id: req.session.id,
+        passport: req.session.passport,
+        cookie: req.session.cookie
+      } : null,
+      isAuthenticated: req.isAuthenticated(),
+      user: req.user ? {
+        username: req.user.username,
+        discordId: req.user.discordId,
+        id: req.user._id
+      } : null,
+      headers: {
+        cookie: req.headers.cookie ? 'present' : 'missing',
+        'user-agent': req.headers['user-agent']
+      },
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+        DOMAIN: process.env.DOMAIN
+      }
+    });
+  } else {
+    res.status(404).json({ error: 'Debug endpoint not available in production' });
+  }
+});
+
 // ------------------- Section: API Routes -------------------
 
 // ------------------- Function: healthCheck -------------------
@@ -369,8 +400,13 @@ app.get('/api/user', optionalAuth, (req, res) => {
     } : null,
     session: req.session ? {
       id: req.session.id,
-      passport: req.session.passport
-    } : null
+      passport: req.session.passport,
+      cookie: req.session.cookie
+    } : null,
+    headers: {
+      cookie: req.headers.cookie ? 'present' : 'missing',
+      'user-agent': req.headers['user-agent']
+    }
   });
   
   if (req.isAuthenticated()) {
