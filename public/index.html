@@ -19,6 +19,12 @@
     id="commands-css-link"
     media="(max-width: 0px)"
   />
+  <link
+    rel="stylesheet"
+    href="css/items.css"
+    onload="console.log('Items CSS loaded successfully')"
+    onerror="console.error('Failed to load Items CSS')"
+  />
   <script src="https://kit.fontawesome.com/262000d25d.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -319,8 +325,8 @@
           <button type="button" class="model-card" data-model="village">
             <i class="fas fa-home" aria-hidden="true"></i><span>Villages</span>
           </button>
-          <button type="button" class="model-card" data-model="party">
-            <i class="fas fa-users" aria-hidden="true"></i><span>Parties</span>
+          <button type="button" class="model-card" data-model="villageShops">
+            <i class="fas fa-store-alt" aria-hidden="true"></i><span>Village Shops</span>
           </button>
           <button type="button" class="model-card" data-model="relic">
             <i class="fas fa-gem" aria-hidden="true"></i><span>Relics</span>
@@ -365,6 +371,52 @@
             </select>
             <button id="clear-filters">Clear</button>
           </div>
+          
+          <!-- Village Shop Filters Bar (only shown for villageShops model) -->
+          <div class="village-shop-filters" style="display:none;">
+            <div class="village-shop-results-info">
+              <p>Loading village shop items...</p>
+            </div>
+            <div class="village-shop-controls">
+              <input type="text" id="village-shop-search-input" placeholder="Search village shop items..." />
+              <select id="filter-category">
+                <option value="all">All Categories</option>
+              </select>
+              <select id="filter-type">
+                <option value="all">All Types</option>
+              </select>
+              <select id="filter-subtype">
+                <option value="all">All Subtypes</option>
+              </select>
+              <select id="filter-jobs">
+                <option value="all">All Jobs</option>
+              </select>
+              <select id="filter-locations">
+                <option value="all">All Locations</option>
+              </select>
+              <select id="filter-sources">
+                <option value="all">All Sources</option>
+              </select>
+              <select id="sort-by">
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="price-asc">Price (Low-High)</option>
+                <option value="price-desc">Price (High-Low)</option>
+                <option value="stock-asc">Stock (Low-High)</option>
+                <option value="stock-desc">Stock (High-Low)</option>
+              </select>
+              <select id="items-per-page">
+                <option value="12">12 per page</option>
+                <option value="24">24 per page</option>
+                <option value="48">48 per page</option>
+                <option value="all">All items</option>
+              </select>
+              <button id="clear-filters">Clear</button>
+            </div>
+          </div>
+          
+          <div id="village-shops-container" class="village-shops-grid"></div>
+          
           <div id="inventory-loading-state" class="loading-state" style="display: none;">
             <div class="loading-spinner"></div>
             <p>Loading inventory data...</p>

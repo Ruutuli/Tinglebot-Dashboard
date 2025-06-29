@@ -1,0 +1,141 @@
+/* ============================================================================ */
+/* Item Card Total in World Badge Styles                                        */
+/* ============================================================================ */
+
+.total-in-world-badge {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 163, 218, 0.15);
+  border: 1px solid rgba(0, 163, 218, 0.3);
+  border-radius: 12px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #00A3DA;
+  margin-left: 8px;
+  transition: all 0.2s ease;
+  cursor: help;
+}
+
+.total-in-world-badge:hover {
+  background: rgba(0, 163, 218, 0.25);
+  border-color: rgba(0, 163, 218, 0.5);
+  transform: scale(1.05);
+}
+
+.total-in-world-badge i {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.total-in-world-badge .total-count {
+  font-weight: 600;
+  color: #49D59C;
+}
+
+/* Loading state for badge */
+.total-in-world-badge.loading .total-count {
+  color: #888888;
+}
+
+.total-in-world-badge.loading i {
+  animation: spin 1s linear infinite;
+}
+
+/* Badge with value */
+.total-in-world-badge.has-value {
+  background: rgba(73, 213, 156, 0.15);
+  border-color: rgba(73, 213, 156, 0.3);
+}
+
+.total-in-world-badge.has-value:hover {
+  background: rgba(73, 213, 156, 0.25);
+  border-color: rgba(73, 213, 156, 0.5);
+}
+
+/* Badge with zero value */
+.total-in-world-badge.zero-value {
+  background: rgba(136, 136, 136, 0.15);
+  border-color: rgba(136, 136, 136, 0.3);
+  opacity: 0.7;
+}
+
+.total-in-world-badge.zero-value .total-count {
+  color: #888888;
+}
+
+.item-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.item-name-big {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Total in world section in card back */
+.total-in-world {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 163, 218, 0.1);
+  border: 1px solid rgba(0, 163, 218, 0.2);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #00A3DA;
+}
+
+.total-in-world i {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.total-in-world strong {
+  color: #49D59C;
+  font-weight: 600;
+}
+
+/* Mobile optimization for total in world badge */
+@media (max-width: 768px) {
+  .total-in-world-badge {
+    font-size: 10px;
+    padding: 3px 6px;
+    margin-left: 4px;
+  }
+  
+  .total-in-world-badge i {
+    font-size: 9px;
+  }
+  
+  .item-name-row {
+    gap: 4px;
+  }
+  
+  .total-in-world {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .total-in-world-badge {
+    font-size: 9px;
+    padding: 2px 4px;
+    margin-left: 2px;
+  }
+  
+  .total-in-world-badge i {
+    font-size: 8px;
+  }
+  
+  .total-in-world {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+} 

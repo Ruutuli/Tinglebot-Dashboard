@@ -16,6 +16,7 @@ import * as error from './error.js';
 import * as auth from './auth.js';
 import * as guilds from './guilds.js';
 import * as commands from './commands.js';
+import * as villageShops from './villageShops.js';
 import { createPagination, setupBackToTopButton, scrollToTop } from './ui.js';
 
 // Import specific functions from characters module
@@ -35,6 +36,7 @@ export {
   auth,
   guilds,
   commands,
+  villageShops,
 };
 
 // ============================================================================
@@ -176,6 +178,17 @@ function setupModelCards() {
           characterFiltersBar.style.display = 'none';
         }
 
+        const villageShopFiltersBar = document.querySelector('.village-shop-filters');
+        if (modelName === 'villageShops' && villageShopFiltersBar) {
+          console.log('🏪 Setting up village shop filters');
+          if (contentDiv.firstChild !== villageShopFiltersBar) {
+            contentDiv.insertBefore(villageShopFiltersBar, contentDiv.firstChild);
+          }
+          villageShopFiltersBar.style.display = 'flex';
+        } else if (villageShopFiltersBar) {
+          villageShopFiltersBar.style.display = 'none';
+        }
+
         console.log('🚀 Initializing model:', modelName);
         switch (modelName) {
           case 'character':
@@ -207,6 +220,10 @@ function setupModelCards() {
             // Inventory uses its own efficient pagination system
             // Skip the main pagination logic entirely
             await inventory.initializeInventoryPage(data, pagination.page, contentDiv);
+            break;
+          case 'villageShops':
+            console.log('🏰 Initializing village shops page');
+            await villageShops.initializeVillageShopsPage(data, pagination.page, contentDiv);
             break;
           default:
             console.error(`Unknown model type: ${modelName}`);
@@ -296,12 +313,17 @@ function setupModelCards() {
                       return;
                     }
                   }
-                  await items.renderItemCards(data, pagination.page);
+                  await items.renderItemCards(data, pagination.page, pagination.total);
                   break;
                 case 'inventory':
                   // Inventory uses its own efficient pagination system
                   // Skip the main pagination handling
                   console.log('🎒 Skipping main pagination handling for inventory');
+                  return;
+                case 'villageShops':
+                  // Village shops uses its own efficient pagination system
+                  // Skip the main pagination handling
+                  console.log('🏰 Skipping main pagination handling for village shops');
                   return;
                 default:
                   console.error(`Unknown model type: ${modelName}`);
@@ -346,6 +368,10 @@ function setupModelCards() {
             // Inventory uses its own efficient pagination system
             // Skip creating main pagination container
             console.log('🎒 Skipping main pagination container creation for inventory');
+          } else if (modelName === 'villageShops') {
+            // Village shops uses its own efficient pagination system
+            // Skip creating main pagination container
+            console.log('🏰 Skipping main pagination container creation for village shops');
           } else {
             contentDiv.appendChild(paginationDiv);
           }
@@ -400,6 +426,9 @@ function handleModelDataError(modelName, contentDiv) {
             break;
           case 'inventory':
             await inventory.initializeInventoryPage(data, pagination.page, contentDiv);
+            break;
+          case 'villageShops':
+            await villageShops.initializeVillageShopsPage(data, pagination.page, contentDiv);
             break;
           default:
             console.error(`Unknown model type: ${modelName}`);

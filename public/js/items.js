@@ -12,7 +12,7 @@ import { scrollToTop } from './ui.js';
 
 // ------------------- Function: renderItemCards -------------------
 // Renders all item cards with pagination and detail sections
-function renderItemCards(items, page = 1) {
+function renderItemCards(items, page = 1, totalItems = null) {
     // ------------------- Sort Items Alphabetically by Default -------------------
     const sortedItems = [...items].sort((a, b) => {
       const nameA = (a.itemName || '').toLowerCase();
@@ -23,6 +23,7 @@ function renderItemCards(items, page = 1) {
     console.log('🎨 Starting item rendering:', { 
       itemsLength: sortedItems?.length,
       page,
+      totalItems,
       firstItem: sortedItems?.[0]?.itemName
     });
 
@@ -53,10 +54,11 @@ function renderItemCards(items, page = 1) {
       (itemsPerPageSelect.value === 'all' ? sortedItems.length : parseInt(itemsPerPageSelect.value)) : 
       12;
     
-    // Calculate pagination info
-    const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
+    // Calculate pagination info - use totalItems if provided, otherwise use current items length
+    const itemsForPagination = totalItems !== null ? totalItems : sortedItems.length;
+    const totalPages = Math.ceil(itemsForPagination / itemsPerPage);
     const startIndex = (page - 1) * itemsPerPage;
-    const endIndex = Math.min(startIndex + itemsPerPage, sortedItems.length);
+    const endIndex = Math.min(startIndex + itemsPerPage, itemsForPagination);
   
     // ------------------- Render Item Cards -------------------
     console.log('🎨 Rendering item cards');
@@ -144,6 +146,10 @@ function renderItemCards(items, page = 1) {
             <div class="item-header-info modern-item-header-info">
               <div class="item-name-row">
                 <span class="item-name-big">${item.itemName}</span>
+                <div class="total-in-world-badge loading" data-item-name="${item.itemName}" title="Total quantity across all character inventories">
+                  <i class="fas fa-spinner"></i>
+                  <span class="total-count">...</span>
+                </div>
               </div>
               <div class="item-type-bar" style="background:${typeBarColor};">
                 ${renderItemTypeIcon(item.imageType)}
@@ -346,8 +352,8 @@ function renderItemCards(items, page = 1) {
     // Update results info
     const resultsInfo = document.querySelector('.item-results-info p');
     if (resultsInfo) {
-      const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
-      resultsInfo.textContent = `Showing ${startIndex + 1}-${endIndex} of ${sortedItems.length} items (Page ${page} of ${totalPages})`;
+      const totalPages = Math.ceil(itemsForPagination / itemsPerPage);
+      resultsInfo.textContent = `Showing ${startIndex + 1}-${endIndex} of ${itemsForPagination} items (Page ${page} of ${totalPages})`;
     }
   }
   
@@ -590,12 +596,24 @@ async function fetchItemInventoryWithTimeout(itemName, timeout = 15000) {
 // ------------------- Function: createInventoryHTML -------------------
 // Creates HTML for inventory display
 function createInventoryHTML(itemName, data) {
+  // Filter out entries with 0 quantity
+  const filteredData = data ? data.filter(item => (item.quantity || 0) > 0) : [];
+  
+  // Calculate total quantity across all characters (using filtered data)
+  const totalInWorld = filteredData.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  
   let inventoryHTML = `
     <div class="character-inventory-section">
-      <div class="character-inventory-title">Characters that have ${itemName}</div>
+      <div class="character-inventory-title">
+        Characters that have ${itemName}
+        <div class="total-in-world">
+          <i class="fas fa-globe"></i>
+          Total in world: <strong>${totalInWorld}</strong>
+        </div>
+      </div>
   `;
 
-  if (!data || data.length === 0) {
+  if (!filteredData || filteredData.length === 0) {
     inventoryHTML += `
       <div class="character-inventory-empty">
         No characters have this item
@@ -603,10 +621,10 @@ function createInventoryHTML(itemName, data) {
     `;
   } else {
     // Sort by quantity descending before rendering
-    data.sort((a, b) => b.quantity - a.quantity);
+    filteredData.sort((a, b) => b.quantity - a.quantity);
     inventoryHTML += `
       <div class="character-inventory-list">
-        ${data.map(item => `
+        ${filteredData.map(item => `
           <div class="character-inventory-item">
             <span class="character-inventory-name">${item.characterName}</span>
             <span class="character-inventory-quantity">x${item.quantity}</span>
@@ -635,6 +653,13 @@ async function fetchItemInventory(itemName) {
     if (cachedHTML) {
       cache.hitCount++;
       console.log(`[Cache] ✅ Cache hit for: ${itemName}`);
+      
+      // Extract total count from cached HTML and update badge
+      const totalMatch = cachedHTML.match(/Total in world: <strong>(\d+)<\/strong>/);
+      if (totalMatch) {
+        updateTotalInWorldBadge(itemName, parseInt(totalMatch[1]));
+      }
+      
       return cachedHTML;
     }
     
@@ -643,6 +668,12 @@ async function fetchItemInventory(itemName) {
     
     // Fetch data with timeout
     const data = await fetchItemInventoryWithTimeout(itemName, 12000);
+    
+    // Calculate total in world
+    const totalInWorld = data ? data.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0;
+    
+    // Update the badge immediately
+    updateTotalInWorldBadge(itemName, totalInWorld);
     
     // Create HTML
     const inventoryHTML = createInventoryHTML(itemName, data);
@@ -703,8 +734,13 @@ async function preloadVisibleItemInventories() {
     // Process batch sequentially instead of concurrently to reduce server load
     for (const item of batch) {
       try {
-        await fetchItemInventory(item.itemName);
-        console.log(`[Preload] ✅ Preloaded: ${item.itemName}`);
+        const data = await fetchItemInventoryWithTimeout(item.itemName, 12000);
+        const totalInWorld = data ? data.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0;
+        
+        // Update the badge immediately
+        updateTotalInWorldBadge(item.itemName, totalInWorld);
+        
+        console.log(`[Preload] ✅ Preloaded: ${item.itemName} (Total: ${totalInWorld})`);
       } catch (error) {
         console.warn(`[Preload] ⚠️ Failed to preload: ${item.itemName}`, error);
         timeoutCount++;
@@ -1014,7 +1050,7 @@ async function setupItemFilters(items) {
       }
 
       // Render the paginated filtered items
-      renderItemCards(paginatedItems, page);
+      renderItemCards(paginatedItems, page, filteredAndSorted.length);
 
       // Update pagination for filtered results
       if (itemsPerPageSelect.value !== 'all' && filteredAndSorted.length > itemsPerPage) {
@@ -1159,7 +1195,7 @@ async function setupItemFilters(items) {
     }
 
     // Render the paginated items
-    renderItemCards(paginatedItems, page);
+    renderItemCards(paginatedItems, page, sorted.length);
 
     // Update pagination
     if (itemsPerPageSelect.value !== 'all' && sorted.length > itemsPerPage) {
@@ -1393,7 +1429,7 @@ async function setupItemFilters(items) {
       }
       
       // Re-render with original data
-      renderItemCards(data, 1);
+      renderItemCards(data, 1, pagination.total);
       
       // Remove any filtered pagination
       const contentDiv = document.getElementById('model-details-data');
@@ -1418,7 +1454,7 @@ async function setupItemFilters(items) {
               resultsInfo.textContent = `Showing ${pageData.length} of ${pagePagination.total} items (sorted alphabetically)`;
             }
             
-            renderItemCards(pageData, pageNum);
+            renderItemCards(pageData, pageNum, pagePagination.total);
             
             // Update pagination
             const contentDiv = document.getElementById('model-details-data');
@@ -1819,8 +1855,13 @@ window.TinglebotCache = {
     
     for (const itemName of itemNames) {
       try {
-        await fetchItemInventory(itemName);
-        results.push({ item: itemName, status: 'success' });
+        const data = await fetchItemInventoryWithTimeout(itemName, 12000);
+        const totalInWorld = data ? data.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0;
+        
+        // Update the badge immediately
+        updateTotalInWorldBadge(itemName, totalInWorld);
+        
+        results.push({ item: itemName, status: 'success', total: totalInWorld });
       } catch (error) {
         results.push({ item: itemName, status: 'error', error: error.message });
       }
@@ -2115,7 +2156,7 @@ function handleItemMobileOrientationChange() {
       // Re-render item cards with new layout if needed
       if (window.allItems) {
         const currentPage = 1; // Reset to first page on orientation change
-        renderItemCards(window.allItems, currentPage);
+        renderItemCards(window.allItems, currentPage, window.allItems.length);
       }
     }, 300);
   };
@@ -2124,4 +2165,36 @@ function handleItemMobileOrientationChange() {
   window.addEventListener('resize', handleOrientationChange);
   
   return handleOrientationChange;
+}
+
+// ------------------- Function: updateTotalInWorldBadge -------------------
+// Updates the total in world badge for a specific item
+function updateTotalInWorldBadge(itemName, totalCount) {
+  const badge = document.querySelector(`.total-in-world-badge[data-item-name="${itemName}"]`);
+  if (!badge) return;
+  
+  const countSpan = badge.querySelector('.total-count');
+  const iconElement = badge.querySelector('i');
+  if (!countSpan || !iconElement) return;
+  
+  // Update the count
+  countSpan.textContent = totalCount;
+  
+  // Change icon from spinner to globe
+  iconElement.className = 'fas fa-globe';
+  
+  // Show the badge
+  badge.style.display = 'flex';
+  
+  // Remove all state classes
+  badge.classList.remove('loading', 'has-value', 'zero-value');
+  
+  // Apply appropriate state class
+  if (totalCount === 0) {
+    badge.classList.add('zero-value');
+  } else if (totalCount > 0) {
+    badge.classList.add('has-value');
+  }
+  
+  console.log(`[Badge] Updated badge for ${itemName}: ${totalCount}`);
 }

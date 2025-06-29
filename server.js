@@ -903,6 +903,9 @@ app.get('/api/models/:modelType', async (req, res) => {
       case 'relic':
         Model = Relic;
         break;
+      case 'villageShops':
+        Model = VillageShops;
+        break;
       case 'inventory':
         // Create inventory model dynamically for the inventories connection
         Model = inventoriesConnection ? inventoriesConnection.model('Inventory', new mongoose.Schema({
