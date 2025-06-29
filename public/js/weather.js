@@ -10,6 +10,13 @@ let weatherCache = {
   CACHE_DURATION: 5 * 60 * 1000 // 5 minutes
 };
 
+// Weather day information
+let currentWeatherDay = {
+  start: null,
+  end: null,
+  displayText: ''
+};
+
 // Weather emoji mappings from weatherData.js
 const weatherEmojis = {
   temperature: {
@@ -159,11 +166,19 @@ async function fetchTodayWeather() {
     
     const data = await response.json();
     
+    // Update weather day information
+    if (data.weatherDayStart && data.weatherDayEnd) {
+      currentWeatherDay.start = new Date(data.weatherDayStart);
+      currentWeatherDay.end = new Date(data.weatherDayEnd);
+      currentWeatherDay.displayText = formatWeatherDayDisplay(currentWeatherDay.start, currentWeatherDay.end);
+    }
+    
     // Update cache
     weatherCache.data = data;
     weatherCache.timestamp = Date.now();
     
     console.log('[weather.js]: ✅ Weather data fetched successfully');
+    console.log(`[weather.js]: 📅 Weather day: ${currentWeatherDay.displayText}`);
     return data;
   } catch (error) {
     console.error('[weather.js]: ❌ Error fetching weather:', error);
@@ -260,6 +275,8 @@ function getOverlayImage(weatherData) {
 function createWeatherCard(village, weatherData) {
   const bannerImg = getRandomBanner(village);
   const overlayImg = weatherData ? getOverlayImage(weatherData) : null;
+  const weatherDayBadge = getWeatherDayBadgeText();
+  
   if (!weatherData) {
     return `
       <div class="weather-card weather-card-${village.toLowerCase()}" style="--village-color: ${villageColors[village]?.primary || '#666'}">
@@ -267,7 +284,7 @@ function createWeatherCard(village, weatherData) {
           ${bannerImg ? `<img src="${bannerImg}" class="weather-header-banner" alt="${village} banner" />` : ''}
           ${overlayImg ? `<img src="${overlayImg}" class="weather-header-overlay" alt="Weather overlay" />` : ''}
           <div class="weather-header-left">
-            <span class="weather-badge weather-badge-today">Today</span>
+            <span class="weather-badge weather-badge-today">${weatherDayBadge}</span>
           </div>
           <div class="weather-header-center">
             <img src="${villageCrests[village]}" alt="${village} Crest" class="weather-village-crest" />
@@ -302,7 +319,7 @@ function createWeatherCard(village, weatherData) {
         ${bannerImg ? `<img src="${bannerImg}" class="weather-header-banner" alt="${village} banner" />` : ''}
         ${overlayImg ? `<img src="${overlayImg}" class="weather-header-overlay" alt="Weather overlay" />` : ''}
         <div class="weather-header-left">
-          <span class="weather-badge weather-badge-today">Today</span>
+          <span class="weather-badge weather-badge-today">${weatherDayBadge}</span>
         </div>
         <div class="weather-header-center">
           <img src="${villageCrests[village]}" alt="${village} Crest" class="weather-village-crest" />
@@ -463,14 +480,18 @@ async function renderWeatherSection() {
       createWeatherCard(village, weatherData.villages[village])
     ).join('');
 
+    // Create weather day display text
+    const weatherDayText = currentWeatherDay.displayText || 'Loading...';
+
     // Render the weather section
     weatherContainer.innerHTML = `
       <div class="weather-header">
-        <h2>Today's Weather</h2>
-        <div class="weather-refresh">
-          <button class="weather-refresh-btn" onclick="refreshWeather()" title="Refresh weather">
-            <i class="fas fa-sync-alt"></i>
-          </button>
+        <div class="weather-header-info">
+          <h2>Today's Weather</h2>
+          <div class="weather-day-range">
+            <i class="fas fa-clock"></i>
+            <span>${weatherDayText}</span>
+          </div>
         </div>
       </div>
       <div class="weather-grid">
@@ -488,25 +509,10 @@ async function renderWeatherSection() {
         <div class="weather-error">
           <i class="fas fa-exclamation-triangle"></i>
           <p>Failed to load weather data</p>
-          <button class="weather-retry-btn" onclick="refreshWeather()">Retry</button>
         </div>
       `;
     }
   }
-}
-
-/**
- * Refreshes the weather data and re-renders the section
- */
-async function refreshWeather() {
-  console.log('[weather.js]: 🔄 Refreshing weather data...');
-  
-  // Clear cache to force fresh fetch
-  weatherCache.data = null;
-  weatherCache.timestamp = 0;
-  
-  // Re-render the weather section
-  await renderWeatherSection();
 }
 
 // ============================================================================
@@ -532,6 +538,74 @@ function initWeather() {
 // Initialize when module loads
 initWeather();
 
-// Export functions for global access
-window.refreshWeather = refreshWeather;
-window.renderWeatherSection = renderWeatherSection; 
+// ============================================================================
+// Weather Day Calculation Functions
+// ============================================================================
+
+/**
+ * Calculates the current weather day bounds (8am to 8am)
+ */
+function calculateWeatherDayBounds() {
+  const now = new Date();
+  const currentHour = now.getHours();
+  
+  let weatherDayStart, weatherDayEnd;
+  
+  if (currentHour >= 8) {
+    // If it's 8am or later, the weather day started at 8am today
+    weatherDayStart = new Date(now);
+    weatherDayStart.setHours(8, 0, 0, 0);
+    
+    weatherDayEnd = new Date(now);
+    weatherDayEnd.setDate(weatherDayEnd.getDate() + 1);
+    weatherDayEnd.setHours(8, 0, 0, 0);
+  } else {
+    // If it's before 8am, the weather day started at 8am yesterday
+    weatherDayStart = new Date(now);
+    weatherDayStart.setDate(weatherDayStart.getDate() - 1);
+    weatherDayStart.setHours(8, 0, 0, 0);
+    
+    weatherDayEnd = new Date(now);
+    weatherDayEnd.setHours(8, 0, 0, 0);
+  }
+  
+  return { weatherDayStart, weatherDayEnd };
+}
+
+/**
+ * Formats the weather day for display
+ */
+function formatWeatherDayDisplay(weatherDayStart, weatherDayEnd) {
+  const startDate = new Date(weatherDayStart);
+  const endDate = new Date(weatherDayEnd);
+  
+  const startFormatted = startDate.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+  
+  const endFormatted = endDate.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+  
+  return `${startFormatted} - ${endFormatted}`;
+}
+
+/**
+ * Gets the appropriate badge text for the weather day
+ */
+function getWeatherDayBadgeText() {
+  const now = new Date();
+  const currentHour = now.getHours();
+  
+  if (currentHour >= 8) {
+    return 'Today';
+  } else {
+    return 'Today';
+  }
+} 

@@ -633,7 +633,7 @@ app.get('/api/stats/characters', async (req, res) => {
       .filter(c => c.nextBirthday && (c.nextBirthday - today) <= (30 * 24 * 60 * 60 * 1000))
       .sort((a, b) => a.nextBirthday - b.nextBirthday);
 
-    // Get visiting counts
+    // Get visiting counts and details
     const villages = ['rudania', 'inariko', 'vhintl'];
     const visitingAgg = await Character.aggregate([
       { $match: { currentVillage: { $in: villages }, homeVillage: { $in: villages, $ne: null }, $expr: { $ne: ['$currentVillage', '$homeVillage'] } } },
@@ -642,12 +642,34 @@ app.get('/api/stats/characters', async (req, res) => {
     const visitingCounts = { rudania: 0, inariko: 0, vhintl: 0 };
     visitingAgg.forEach(r => visitingCounts[r._id] = r.count);
 
+    // Get detailed visiting characters
+    const visitingCharacters = await Character.find(
+      { 
+        currentVillage: { $in: villages }, 
+        homeVillage: { $in: villages, $ne: null }, 
+        $expr: { $ne: ['$currentVillage', '$homeVillage'] } 
+      },
+      { name: 1, currentVillage: 1, homeVillage: 1 }
+    ).lean();
+
+    // Group visiting characters by current village
+    const visitingDetails = { rudania: [], inariko: [], vhintl: [] };
+    visitingCharacters.forEach(char => {
+      const currentVillage = char.currentVillage.toLowerCase();
+      if (visitingDetails[currentVillage]) {
+        visitingDetails[currentVillage].push({
+          name: char.name,
+          homeVillage: char.homeVillage
+        });
+      }
+    });
+
     // Get top characters by various stats
     const getTop = async (field) => {
       const top = await Character.find({ [field]: { $gt: 0 } }).sort({ [field]: -1 }).limit(1).lean();
       if (!top.length) return { names: [], value: 0 };
       const val = top[0][field];
-      const names = (await Character.find({ [field]: val }, { name: 1 }).limit(3).lean()).map(c => c.name);
+      const names = (await Character.find({ [field]: val }, { name: 1 }).limit(5).lean()).map(c => c.name);
       return { names, value: val };
     };
 
@@ -658,10 +680,27 @@ app.get('/api/stats/characters', async (req, res) => {
     ]);
 
     // Get special character counts
-    const [kodCount, blightedCount] = await Promise.all([
+    const [kodCount, blightedCount, debuffedCount] = await Promise.all([
       Character.countDocuments({ ko: true }),
-      Character.countDocuments({ blighted: true })
+      Character.countDocuments({ blighted: true }),
+      Character.countDocuments({ 'debuff.active': true })
     ]);
+
+    // Get debuffed characters details
+    const debuffedCharacters = await Character.find(
+      { 'debuff.active': true },
+      { name: 1, 'debuff.endDate': 1 }
+    ).lean();
+
+    // Get KO'd and blighted characters details
+    const kodCharacters = await Character.find(
+      { ko: true },
+      { name: 1, lastRollDate: 1, ko: 1 }
+    ).lean();
+    const blightedCharacters = await Character.find(
+      { blighted: true },
+      { name: 1, blightedAt: 1, blighted: 1 }
+    ).lean();
 
     res.json({
       totalCharacters,
@@ -670,11 +709,16 @@ app.get('/api/stats/characters', async (req, res) => {
       charactersPerJob,
       upcomingBirthdays: upcoming,
       visitingCounts,
+      visitingDetails,
       mostStaminaChar: mostStamina,
       mostHeartsChar: mostHearts,
       mostOrbsChar: mostOrbs,
       kodCount,
-      blightedCount
+      blightedCount,
+      debuffedCount,
+      debuffedCharacters,
+      kodCharacters,
+      blightedCharacters
     });
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching character stats:', error);
@@ -1362,23 +1406,50 @@ app.post('/api/inventory/item', async (req, res) => {
 
 // ------------------- Section: Weather API Routes -------------------
 
+// ------------------- Function: getWeatherDayBounds -------------------
+// Calculates the start and end of the current weather day (8am to 8am)
+function getWeatherDayBounds() {
+  const now = new Date();
+  const currentHour = now.getHours();
+  
+  let weatherDayStart, weatherDayEnd;
+  
+  if (currentHour >= 8) {
+    // If it's 8am or later, the weather day started at 8am today
+    weatherDayStart = new Date(now);
+    weatherDayStart.setHours(8, 0, 0, 0);
+    
+    weatherDayEnd = new Date(now);
+    weatherDayEnd.setDate(weatherDayEnd.getDate() + 1);
+    weatherDayEnd.setHours(8, 0, 0, 0);
+  } else {
+    // If it's before 8am, the weather day started at 8am yesterday
+    weatherDayStart = new Date(now);
+    weatherDayStart.setDate(weatherDayStart.getDate() - 1);
+    weatherDayStart.setHours(8, 0, 0, 0);
+    
+    weatherDayEnd = new Date(now);
+    weatherDayEnd.setHours(8, 0, 0, 0);
+  }
+  
+  return { weatherDayStart, weatherDayEnd };
+}
+
 // ------------------- Function: getTodayWeather -------------------
-// Returns today's weather for all villages
+// Returns today's weather for all villages (using 8am-8am weather day)
 app.get('/api/weather/today', async (req, res) => {
   try {
     console.log('[server.js]: 🌤️ Fetching today\'s weather for all villages...');
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const { weatherDayStart, weatherDayEnd } = getWeatherDayBounds();
     
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    console.log(`[server.js]: 📅 Weather day: ${weatherDayStart.toISOString()} to ${weatherDayEnd.toISOString()}`);
     
-    // Get weather for all villages for today
+    // Get weather for all villages for the current weather day
     const weatherData = await Weather.find({
       date: {
-        $gte: today,
-        $lt: tomorrow
+        $gte: weatherDayStart,
+        $lt: weatherDayEnd
       }
     }).lean();
     
@@ -1393,7 +1464,9 @@ app.get('/api/weather/today', async (req, res) => {
     
     console.log(`[server.js]: ✅ Successfully fetched weather for ${weatherData.length} villages`);
     res.json({
-      date: today.toISOString(),
+      date: weatherDayStart.toISOString(),
+      weatherDayStart: weatherDayStart.toISOString(),
+      weatherDayEnd: weatherDayEnd.toISOString(),
       villages: weatherByVillage
     });
   } catch (error) {

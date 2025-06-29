@@ -62,45 +62,84 @@ function setupBackToTopButton() {
 
 /**
  * ------------------- Function: scrollToTop -------------------
- * Smoothly scrolls the window to the top of the page with fallback support.
+ * Smoothly scrolls the window to the top of the page with a single, smooth animation.
  */
 function scrollToTop() {
   console.log('📜 scrollToTop function called');
-  console.log('📜 Current scroll position:', window.pageYOffset);
+  console.log('📜 Current window scroll position:', window.pageYOffset);
+  console.log('📜 Current document scroll position:', document.documentElement.scrollTop);
+  console.log('📜 Current body scroll position:', document.body.scrollTop);
   
-  // Try scrolling the model details container first
+  // Check for scrollable containers that might need scrolling
+  const mainContent = document.querySelector('.main-content');
   const modelDetailsData = document.getElementById('model-details-data');
+  
+  if (mainContent) {
+    console.log('📜 Main content scroll position:', mainContent.scrollTop);
+    console.log('📜 Main content scroll height:', mainContent.scrollHeight);
+    console.log('📜 Main content client height:', mainContent.clientHeight);
+  }
+  
   if (modelDetailsData) {
-    console.log('📜 Found model-details-data container, scrolling it to top');
-    modelDetailsData.scrollTop = 0;
+    console.log('📜 Model details scroll position:', modelDetailsData.scrollTop);
+    console.log('📜 Model details scroll height:', modelDetailsData.scrollHeight);
+    console.log('📜 Model details client height:', modelDetailsData.clientHeight);
   }
   
-  // Try smooth scrolling first
+  // Check if any scrollable containers need scrolling
+  const scrollableElements = [];
+  
+  if (mainContent && mainContent.scrollTop > 0) {
+    scrollableElements.push(mainContent);
+  }
+  
+  if (modelDetailsData && modelDetailsData.scrollTop > 0) {
+    scrollableElements.push(modelDetailsData);
+  }
+  
+  // If we have scrollable elements, scroll them first
+  if (scrollableElements.length > 0) {
+    console.log('📜 Found scrollable elements:', scrollableElements.length);
+    scrollableElements.forEach(element => {
+      console.log('📜 Scrolling element:', element.className || element.id);
+      element.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  
+  // Always scroll the window as well
   if ('scrollBehavior' in document.documentElement.style) {
-    console.log('📜 Using smooth scroll behavior');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    console.log('📜 Using native smooth scroll behavior for window');
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    });
   } else {
-    // Fallback for older browsers
-    console.log('📜 Using fallback scroll method');
-    window.scrollTo(0, 0);
+    // Fallback for older browsers with custom easing
+    console.log('📜 Using fallback smooth scroll method for window');
+    const start = window.pageYOffset;
+    const startTime = performance.now();
+    const duration = 600; // Slightly faster for better UX
+    
+    const easeOutCubic = (t) => {
+      return 1 - Math.pow(1 - t, 3);
+    };
+    
+    const animateWindowScroll = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = easeOutCubic(progress);
+      
+      window.scrollTo(0, start - (start * easedProgress));
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateWindowScroll);
+      }
+    };
+    
+    requestAnimationFrame(animateWindowScroll);
   }
   
-  // Additional fallback for edge cases
-  document.documentElement.scrollTop = 0;
-  document.body.scrollTop = 0;
-  
-  // Force scroll after a brief delay to ensure DOM is updated
-  setTimeout(() => {
-    console.log('📜 Force scrolling after delay');
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    if (modelDetailsData) {
-      modelDetailsData.scrollTop = 0;
-    }
-  }, 50);
-  
-  console.log('📜 Scroll to top completed');
+  console.log('📜 Smooth scroll to top initiated');
 }
   
 // ============================================================================

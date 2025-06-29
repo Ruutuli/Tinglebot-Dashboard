@@ -5,6 +5,9 @@
 
 console.log('🚀 Commands module loading...');
 
+// Import UI functions
+import { setupBackToTopButton } from './ui.js';
+
 // Commands page functionality
 let allCommands = [];
 let filteredCommands = [];
@@ -13,7 +16,19 @@ let filteredCommands = [];
 // ------------------- Section Display -------------------
 // Shows the commands section
 // ============================================================================
+function loadCommandsCSS() {
+  if (!document.getElementById('commands-css')) {
+    const link = document.createElement('link');
+    link.id = 'commands-css';
+    link.rel = 'stylesheet';
+    link.href = 'css/commands.css';
+    document.head.appendChild(link);
+    console.log('✅ commands.css loaded');
+  }
+}
+
 export function showCommandsSection() {
+  loadCommandsCSS();
   console.log('📋 Showing commands section...');
   
   try {
@@ -46,6 +61,9 @@ export function showCommandsSection() {
         link.parentElement.classList.add('active');
       }
     });
+    
+    // Setup back to top button for commands page
+    setupBackToTopButton();
     
     // Initialize commands if not already done
     if (allCommands.length === 0) {
@@ -205,11 +223,11 @@ function createCommandCard(command) {
         </div>
         <div class="command-footer">
           <div class="command-stats">
-            <span class="stat-item">
+            <span class="command-stat-item">
               <i class="fas fa-clock"></i>
               <span>${command.cooldown || 'No cooldown'}</span>
             </span>
-            <span class="stat-item">
+            <span class="command-stat-item">
               <i class="fas fa-user-shield"></i>
               <span>${command.permissions || 'Everyone'}</span>
             </span>

@@ -129,11 +129,11 @@ async function initStatsPage() {
         if (!data) throw new Error('No data received');
 
         const totalCard = document.getElementById('stats-total-characters');
-        const totalCardHeader = totalCard.closest('.stats-card')?.querySelector('h3');
+        const totalCardHeader = totalCard.closest('.stats-card-wide')?.querySelector('h3');
         if (totalCardHeader) totalCardHeader.textContent = 'Character Stats';
         totalCard.textContent = '';
 
-        const totalCardParent = totalCard.closest('.stats-card');
+        const totalCardParent = totalCard.closest('.stats-card-wide');
         if (totalCardParent) {
             let extraStats = totalCardParent.querySelector('.extra-stats');
             if (extraStats) extraStats.remove();
@@ -142,33 +142,263 @@ async function initStatsPage() {
             extraStats.className = 'extra-stats';
             extraStats.style.marginTop = '1.5rem';
             extraStats.innerHTML = `
-                <ul style="list-style:none; padding:0; margin:0; color:#ccc; font-size:1.05rem;">
-                    <li><strong>Total Characters:</strong> ${data.totalCharacters || 0}</li>
-                    <li><strong>KO'd:</strong> ${data.kodCount || 0}</li>
-                    <li><strong>Blighted:</strong> ${data.blightedCount || 0}</li>
-                    <li><strong>Most Stamina:</strong> ${(data.mostStaminaChar?.names?.join(', ') || '—')} (${data.mostStaminaChar?.value || 0})</li>
-                    <li><strong>Most Hearts:</strong> ${(data.mostHeartsChar?.names?.join(', ') || '—')} (${data.mostHeartsChar?.value || 0})</li>
-                    <li><strong>Most Spirit Orbs:</strong> ${(data.mostOrbsChar?.names?.join(', ') || '—')} (${data.mostOrbsChar?.value || 0})</li>
-                </ul>
-                <div style="margin-top:1.2rem;">
-                    <strong>Upcoming Birthdays:</strong>
-                    <ul style="list-style:none; padding:0; margin:0; color:#ccc;">
-                        ${(data.upcomingBirthdays || []).length
-                            ? data.upcomingBirthdays.map(b => `<li>${b.name} <span style='color:#aaa;'>(${b.birthday})</span></li>`).join('')
-                            : '<li>None in next 30 days</li>'
-                        }
-                    </ul>
+                <div class="stats-table-section">
+                  <h4 class="stats-section-header"><i class="fas fa-users"></i> General</h4>
+                  <div class="stats-table-container">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th colspan="2">Character Statistics</th>
+                            </tr>
+                            <tr>
+                                <th>Stat</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Total Characters</strong></td>
+                                <td>${data.totalCharacters || 0}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th colspan="2">Upcoming Birthdays</th>
+                            </tr>
+                            <tr>
+                                <th>Character</th>
+                                <th>Birthday</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(data.upcomingBirthdays || []).length
+                                ? data.upcomingBirthdays.map(b => `<tr><td>${b.name}</td><td>${b.birthday}</td></tr>`).join('')
+                                : '<tr><td colspan="2">None in next 30 days</td></tr>'
+                            }
+                        </tbody>
+                    </table>
+                  </div>
                 </div>
-                <div style="margin-top:1.2rem;">
-                    <strong>Visiting:</strong>
-                    <ul style="list-style:none; padding:0; margin:0; color:#ccc;">
-                        <li>Inariko: ${data.visitingCounts?.inariko || 0}</li>
-                        <li>Rudania: ${data.visitingCounts?.rudania || 0}</li>
-                        <li>Vhintl: ${data.visitingCounts?.vhintl || 0}</li>
-                    </ul>
+                <div class="stats-table-section">
+                  <h4 class="stats-section-header"><i class="fas fa-exclamation-triangle"></i> Status Effects</h4>
+                  <div class="stats-table-container">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th colspan="2">KO'd Characters</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(data.kodCharacters && data.kodCharacters.length > 0)
+                                ? data.kodCharacters.map(char => `
+                                    <tr>
+                                        <td colspan="2">${char.name}</td>
+                                    </tr>
+                                `).join('')
+                                : '<tr><td colspan="2">None</td></tr>'
+                            }
+                        </tbody>
+                    </table>
+                    
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th colspan="2">Blighted Characters</th>
+                            </tr>
+                            <tr>
+                                <th>Character</th>
+                                <th>Blighted At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(data.blightedCharacters && data.blightedCharacters.length > 0)
+                                ? data.blightedCharacters.map(char => `
+                                    <tr>
+                                        <td>${char.name}</td>
+                                        <td>${char.blightedAt ? new Date(char.blightedAt).toLocaleString() : '—'}</td>
+                                    </tr>
+                                `).join('')
+                                : '<tr><td colspan="2">None</td></tr>'
+                            }
+                        </tbody>
+                    </table>
+                    
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th colspan="2">Debuffed Characters</th>
+                            </tr>
+                            <tr>
+                                <th>Character</th>
+                                <th>Debuff Ends</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(data.debuffedCharacters && data.debuffedCharacters.length > 0)
+                                ? data.debuffedCharacters.map(char => `
+                                    <tr>
+                                        <td>${char.name}</td>
+                                        <td>${char.debuff && char.debuff.endDate ? new Date(char.debuff.endDate).toLocaleString() : '—'}</td>
+                                    </tr>
+                                `).join('')
+                                : '<tr><td colspan="2">None</td></tr>'
+                            }
+                        </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="stats-table-section">
+                  <h4 class="stats-section-header"><i class="fas fa-trophy"></i> Top Stats</h4>
+                  <div class="stats-table-container">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th colspan="2">Most Stamina</th>
+                            </tr>
+                            <tr>
+                                <th>Character</th>
+                                <th>Stamina</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(data.mostStaminaChar?.names || []).length > 0
+                                ? data.mostStaminaChar.names.map(name => `
+                                    <tr>
+                                        <td>${name}</td>
+                                        <td>${data.mostStaminaChar.value || 0}</td>
+                                    </tr>
+                                `).join('')
+                                : '<tr><td colspan="2">No data</td></tr>'
+                            }
+                        </tbody>
+                    </table>
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th colspan="2">Most Hearts</th>
+                            </tr>
+                            <tr>
+                                <th>Character</th>
+                                <th>Hearts</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(data.mostHeartsChar?.names || []).length > 0
+                                ? data.mostHeartsChar.names.map(name => `
+                                    <tr>
+                                        <td>${name}</td>
+                                        <td>${data.mostHeartsChar.value || 0}</td>
+                                    </tr>
+                                `).join('')
+                                : '<tr><td colspan="2">No data</td></tr>'
+                            }
+                        </tbody>
+                    </table>
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th colspan="2">Most Spirit Orbs</th>
+                            </tr>
+                            <tr>
+                                <th>Character</th>
+                                <th>Spirit Orbs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(data.mostOrbsChar?.names || []).length > 0
+                                ? data.mostOrbsChar.names.map(name => `
+                                    <tr>
+                                        <td>${name}</td>
+                                        <td>${data.mostOrbsChar.value || 0}</td>
+                                    </tr>
+                                `).join('')
+                                : '<tr><td colspan="2">No data</td></tr>'
+                            }
+                        </tbody>
+                    </table>
+                  </div>
                 </div>
             `;
             totalCardParent.appendChild(extraStats);
+        }
+
+        // Add debuffed characters section
+        let debuffedSection = document.querySelector('.debuffed-characters-section');
+        if (debuffedSection) debuffedSection.remove();
+        
+        if (data.debuffedCount > 0) {
+            debuffedSection = document.createElement('div');
+            debuffedSection.className = 'stats-card-wide debuffed-characters-section';
+            debuffedSection.innerHTML = `
+                <h3>Debuffed Characters</h3>
+                <div class="stats-table-container">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Character</th>
+                                <th>Debuff Ends</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.debuffedCharacters.map(char => `
+                                <tr>
+                                    <td>${char.name}</td>
+                                    <td>${char.debuff.endDate ? new Date(char.debuff.endDate).toLocaleDateString() : 'Unknown'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // Insert after the first stats card
+            const firstStatsCard = document.querySelector('#stats-section .stats-card-wide');
+            if (firstStatsCard) {
+                firstStatsCard.parentNode.insertBefore(debuffedSection, firstStatsCard.nextSibling);
+            }
+        }
+
+        // Add visiting characters section
+        let visitingSection = document.querySelector('.visiting-characters-section');
+        if (visitingSection) visitingSection.remove();
+        
+        visitingSection = document.createElement('div');
+        visitingSection.className = 'stats-card-wide visiting-characters-section';
+        visitingSection.innerHTML = `
+            <h3>Visiting Characters</h3>
+            <div class="visiting-villages-grid">
+                ${Object.entries(data.visitingDetails || {}).map(([village, characters]) => `
+                    <div class="visiting-village ${village.toLowerCase()}">
+                        <h4>${village.charAt(0).toUpperCase() + village.slice(1)} (${characters.length})</h4>
+                        ${characters.length > 0 ? `
+                            <table class="stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Character</th>
+                                        <th>Home Village</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${characters.map(char => `
+                                        <tr>
+                                            <td>${char.name}</td>
+                                            <td>${char.homeVillage.charAt(0).toUpperCase() + char.homeVillage.slice(1)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<p style="color: #aaa; text-align: center; margin: 1rem 0;">No visitors</p>'}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+        // Insert after the debuffed section or first stats card
+        const insertAfter = document.querySelector('.debuffed-characters-section') || document.querySelector('#stats-section .stats-card-wide');
+        if (insertAfter) {
+            insertAfter.parentNode.insertBefore(visitingSection, insertAfter.nextSibling);
         }
 
         if (villageChart) villageChart.destroy();

@@ -13,6 +13,12 @@
     onload="console.log('CSS loaded successfully')"
     onerror="console.error('Failed to load CSS')"
   />
+  <link
+    rel="stylesheet"
+    href="css/commands.css"
+    id="commands-css-link"
+    media="(max-width: 0px)"
+  />
   <script src="https://kit.fontawesome.com/262000d25d.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -154,8 +160,130 @@
           </section>
         </div>
 
+        <div class="dashboard-divider"></div>
+
+        <!-- Dashboard Countdown Section -->
+        <section id="countdown-section" class="countdown-section">
+          <div class="countdown-header">
+            <h2><i class="fas fa-clock"></i> System Countdown</h2>
+            <p>Time until next scheduled events</p>
+          </div>
+          
+          <div class="countdown-grid">
+            <!-- Daily Reset Countdown -->
+            <div class="countdown-card primary">
+              <div class="countdown-icon">
+                <i class="fas fa-sun"></i>
+              </div>
+              <div class="countdown-content">
+                <h3>Daily Reset</h3>
+                <div class="countdown-timer" id="daily-reset-timer">
+                  <span class="time-unit">
+                    <span class="time-value" id="daily-reset-hours">--</span>
+                    <span class="time-label">Hours</span>
+                  </span>
+                  <span class="time-separator">:</span>
+                  <span class="time-unit">
+                    <span class="time-value" id="daily-reset-minutes">--</span>
+                    <span class="time-label">Minutes</span>
+                  </span>
+                  <span class="time-separator">:</span>
+                  <span class="time-unit">
+                    <span class="time-value" id="daily-reset-seconds">--</span>
+                    <span class="time-label">Seconds</span>
+                  </span>
+                </div>
+                <p class="countdown-description">Weather updates, stamina recovery, daily rolls reset</p>
+              </div>
+            </div>
+
+            <!-- Blood Moon Countdown -->
+            <div class="countdown-card warning">
+              <div class="countdown-icon">
+                <i class="fas fa-moon"></i>
+              </div>
+              <div class="countdown-content">
+                <h3>Blood Moon</h3>
+                <div class="countdown-timer" id="blood-moon-timer">
+                  <span class="time-unit">
+                    <span class="time-value" id="blood-moon-days">--</span>
+                    <span class="time-label">Days</span>
+                  </span>
+                  <span class="time-separator">:</span>
+                  <span class="time-unit">
+                    <span class="time-value" id="blood-moon-hours">--</span>
+                    <span class="time-label">Hours</span>
+                  </span>
+                </div>
+                <p class="countdown-description">Next Blood Moon (26-day cycle) - Channel renaming, Blood Moon announcements</p>
+              </div>
+            </div>
+
+            <!-- Blight Roll Call Countdown -->
+            <div class="countdown-card danger">
+              <div class="countdown-icon">
+                <i class="fas fa-dice-d20"></i>
+              </div>
+              <div class="countdown-content">
+                <h3>Blight Roll Call</h3>
+                <div class="countdown-timer" id="blight-roll-timer">
+                  <span class="time-unit">
+                    <span class="time-value" id="blight-roll-hours">--</span>
+                    <span class="time-label">Hours</span>
+                  </span>
+                  <span class="time-separator">:</span>
+                  <span class="time-unit">
+                    <span class="time-value" id="blight-roll-minutes">--</span>
+                    <span class="time-label">Minutes</span>
+                  </span>
+                  <span class="time-separator">:</span>
+                  <span class="time-unit">
+                    <span class="time-value" id="blight-roll-seconds">--</span>
+                    <span class="time-label">Seconds</span>
+                  </span>
+                </div>
+                <p class="countdown-description">Blight roll submissions and missed rolls check</p>
+              </div>
+            </div>
+
+            <!-- Midnight Cleanup Countdown -->
+            <div class="countdown-card info">
+              <div class="countdown-icon">
+                <i class="fas fa-broom"></i>
+              </div>
+              <div class="countdown-content">
+                <h3>Midnight Cleanup</h3>
+                <div class="countdown-timer" id="cleanup-timer">
+                  <span class="time-unit">
+                    <span class="time-value" id="cleanup-hours">--</span>
+                    <span class="time-label">Hours</span>
+                  </span>
+                  <span class="time-separator">:</span>
+                  <span class="time-unit">
+                    <span class="time-value" id="cleanup-minutes">--</span>
+                    <span class="time-label">Minutes</span>
+                  </span>
+                  <span class="time-separator">:</span>
+                  <span class="time-unit">
+                    <span class="time-value" id="cleanup-seconds">--</span>
+                    <span class="time-label">Seconds</span>
+                  </span>
+                </div>
+                <p class="countdown-description">Jail releases, debuff expiry, request cleanup</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="dashboard-divider"></div>
+
         <!-- Weather Section -->
         <section id="weather-section" class="weather-section">
+          <div class="weather-header">
+            <div class="weather-header-info">
+              <h2>Today's Weather</h2>
+            </div>
+          </div>
           <!-- Weather content will be dynamically loaded here -->
         </section>
 
@@ -255,16 +383,14 @@
           <h1>Stats</h1>
           <div class="dashboard-divider"></div>
         </div>
-        <div class="stats-cards-grid">
-          <div class="stats-card">
-            <h3>Total Characters</h3>
-            <p id="stats-total-characters">Loading...</p>
-          </div>
-          <div class="stats-card">
-            <h3>Characters per Village</h3>
-            <div class="chart-container">
-              <canvas id="villageDistributionChart"></canvas>
-            </div>
+        <div class="stats-card-wide">
+          <h3>Character Stats</h3>
+          <p id="stats-total-characters">Loading...</p>
+        </div>
+        <div class="stats-card-wide">
+          <h3>Characters per Village</h3>
+          <div class="chart-container">
+            <canvas id="villageDistributionChart"></canvas>
           </div>
         </div>
         <div class="stats-card-wide">
@@ -395,11 +521,11 @@
           <!-- Commands Overview -->
           <div class="commands-overview">
             <div class="commands-stats">
-              <div class="stat-item">
+              <div class="command-stat-item">
                 <span class="stat-label">Total Commands</span>
                 <span class="stat-value" id="total-commands">Loading...</span>
               </div>
-              <div class="stat-item">
+              <div class="command-stat-item">
                 <span class="stat-label">Categories</span>
                 <span class="stat-value" id="category-count">Loading...</span>
               </div>
@@ -473,6 +599,33 @@
         console.log('🔍 Module script:', script.src);
       });
     });
+
+    // Dynamically enable commands.css when commands section is shown
+    window.addEventListener('DOMContentLoaded', function() {
+      const commandsLink = document.getElementById('commands-css-link');
+      if (!commandsLink) return;
+      function enableCommandsCSS() {
+        commandsLink.media = 'all';
+      }
+      function disableCommandsCSS() {
+        commandsLink.media = '(max-width: 0px)';
+      }
+      // Listen for section changes
+      const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (link.getAttribute('data-section') === 'commands-section') {
+            enableCommandsCSS();
+          } else {
+            disableCommandsCSS();
+          }
+        });
+      });
+      // Also enable if page loads directly to commands-section
+      if (window.location.hash === '#commands') {
+        enableCommandsCSS();
+      }
+    });
   </script>
   <script type="module" src="js/ui.js"></script>
   <script type="module" src="js/auth.js"></script>
@@ -484,6 +637,7 @@
   <script type="module" src="js/guilds.js"></script>
   <script type="module" src="js/commands.js"></script>
   <script type="module" src="js/index.js"></script>
+  <script src="js/countdown.js"></script>
   <script src="js/debug.js"></script>
 </body>
 </html>
