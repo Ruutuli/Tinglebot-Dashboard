@@ -8,6 +8,9 @@
 // Register ChartDataLabels plugin if available
 if (typeof ChartDataLabels !== 'undefined') {
     Chart.register(ChartDataLabels);
+    console.log('ChartDataLabels plugin registered successfully');
+} else {
+    console.warn('ChartDataLabels plugin not found');
 }
 
 // ============================================================================
@@ -181,12 +184,16 @@ function createPieChart(ctx, data, options = {}) {
 
     // Add datalabels plugin if available
     if (typeof ChartDataLabels !== 'undefined') {
+      console.log('Adding datalabels to pie chart');
       chartConfig.options.plugins.datalabels = {
-        color: '#FFFFFF',
+        color: '#000000',
         font: {
           weight: 'bold',
-          size: 12
+          size: 18
         },
+        anchor: 'center',
+        align: 'center',
+        offset: 0,
         formatter: (value, context) => {
           const total = context.dataset.data.reduce((a, b) => a + b, 0);
           const percentage = ((value / total) * 100).toFixed(1);
@@ -194,6 +201,9 @@ function createPieChart(ctx, data, options = {}) {
         }
       };
       chartConfig.plugins = [ChartDataLabels];
+      console.log('Datalabels configuration:', chartConfig.options.plugins.datalabels);
+    } else {
+      console.warn('ChartDataLabels not available for pie chart');
     }
   
     return new Chart(ctx, chartConfig);
@@ -507,7 +517,8 @@ async function initStatsPage() {
             colors: [
                 '#FF9999', '#FFD27A', '#FFF066', '#A6F29A', '#6EEEDD', '#8FCBFF',
                 '#B89CFF', '#F78CD2', '#8CE6C0', '#FFDB66', '#BFBFBF'
-              ]
+              ],
+            yMax: 25
         });
 
         // --- Chart: Job Distribution ---

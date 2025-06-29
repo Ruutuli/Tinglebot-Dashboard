@@ -891,6 +891,7 @@ function showDashboardSection() {
     const welcomeBox = dashboardSection.querySelector('.dashboard-welcome-box');
     const modelGrid = dashboardSection.querySelector('.model-grid');
     const linksSection = dashboardSection.querySelector('.dashboard-links-section');
+    const countdownSection = dashboardSection.querySelector('#countdown-section');
     
     console.log('🔍 Dashboard content check:', {
       welcomeBox: !!welcomeBox,
@@ -899,6 +900,8 @@ function showDashboardSection() {
       modelGridDisplay: modelGrid?.style.display,
       linksSection: !!linksSection,
       linksSectionDisplay: linksSection?.style.display,
+      countdownSection: !!countdownSection,
+      countdownSectionDisplay: countdownSection?.style.display,
       dashboardSectionDisplay: dashboardSection.style.display
     });
     
@@ -906,6 +909,7 @@ function showDashboardSection() {
     if (welcomeBox) welcomeBox.style.display = 'block';
     if (modelGrid) modelGrid.style.display = 'grid';
     if (linksSection) linksSection.style.display = 'flex';
+    if (countdownSection) countdownSection.style.display = 'block';
     
     console.log('🔧 Fixed dashboard content visibility');
     
@@ -918,6 +922,14 @@ function showDashboardSection() {
       loadingStatesCount: loadingStates.length,
       loadingStatesDisplay: Array.from(loadingStates).map(el => el.style.display)
     });
+    
+    // Always destroy and re-create the countdown manager (after content is visible)
+    setTimeout(() => {
+      if (window.countdownManager && typeof window.countdownManager.destroy === 'function') {
+        window.countdownManager.destroy();
+      }
+      window.countdownManager = new window.CountdownManager();
+    }, 0);
     
     // Always clear and reload the weather section
     const weatherSection = document.getElementById('weather-section');

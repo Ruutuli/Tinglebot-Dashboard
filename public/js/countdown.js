@@ -270,4 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // Export for module usage
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = CountdownManager;
-} 
+}
+// Expose CountdownManager globally for browser usage
+window.CountdownManager = CountdownManager; 

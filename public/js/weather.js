@@ -608,4 +608,6 @@ function getWeatherDayBadgeText() {
   } else {
     return 'Today';
   }
-} 
+}
+
+window.renderWeatherSection = renderWeatherSection; 
