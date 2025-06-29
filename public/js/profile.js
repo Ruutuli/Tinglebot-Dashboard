@@ -268,6 +268,12 @@ function createProfileCharacterCard(character) {
     statusIcon = 'fas fa-heart';
   }
   
+  // Check if character has rolled today
+  const hasRolledToday = checkIfCharacterRolledToday(character);
+  const rollStatus = hasRolledToday ? 
+    '<div class="profile-character-roll-status rolled"><i class="fas fa-dice"></i> Rolled today</div>' :
+    '<div class="profile-character-roll-status not-rolled"><i class="fas fa-clock"></i> Has not rolled today</div>';
+  
   // Format character icon URL
   const iconUrl = formatCharacterIconUrl(character.icon);
   
@@ -314,6 +320,8 @@ function createProfileCharacterCard(character) {
       <i class="${statusIcon}"></i>
       <span>${statusText}</span>
     </div>
+    
+    ${rollStatus}
   `;
   
   // Add click handler to show character details modal
@@ -750,6 +758,25 @@ function showProfileError(message) {
 // ------------------- Section: Helper Functions -------------------
 // Utility functions for character display
 // ============================================================================
+
+// ------------------- Function: checkIfCharacterRolledToday -------------------
+// Checks if a character has rolled today based on their dailyRoll data
+function checkIfCharacterRolledToday(character) {
+  try {
+    if (!character.dailyRoll || !(character.dailyRoll instanceof Map)) {
+      return false;
+    }
+    
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const dailyRollData = character.dailyRoll.get(today);
+    
+    // Check if there's any roll data for today
+    return dailyRollData && Object.keys(dailyRollData).length > 0;
+  } catch (error) {
+    console.error('[profile.js]: ❌ Error checking daily roll status:', error);
+    return false;
+  }
+}
 
 // ------------------- Function: capitalize -------------------
 // Capitalizes the first letter of a string safely
