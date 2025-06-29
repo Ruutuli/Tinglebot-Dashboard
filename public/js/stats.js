@@ -111,7 +111,93 @@ function createBarChart(ctx, data, options = {}) {
   
     return new Chart(ctx, chartConfig);
   }
+
+// ------------------- Function: createPieChart -------------------
+// Creates a pie chart with modern styling and labels
+function createPieChart(ctx, data, options = {}) {
+    const {
+      labelTransform = v => v,
+      colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+    } = options;
   
+    const labels = Object.keys(data).map(labelTransform);
+    const values = Object.values(data);
+  
+    const chartConfig = {
+      type: 'pie',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: colors,
+          borderWidth: 2,
+          borderColor: '#1a1a1a'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: { top: 10, bottom: 10 }
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              color: '#FFFFFF',
+              font: { size: 12 },
+              padding: 15,
+              usePointStyle: true,
+              pointStyle: 'circle'
+            }
+          },
+          title: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: '#333',
+            titleColor: '#fff',
+            bodyColor: '#ddd',
+            borderColor: '#555',
+            borderWidth: 1,
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.parsed;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 800,
+          easing: 'easeOutQuart'
+        }
+      }
+    };
+
+    // Add datalabels plugin if available
+    if (typeof ChartDataLabels !== 'undefined') {
+      chartConfig.options.plugins.datalabels = {
+        color: '#FFFFFF',
+        font: {
+          weight: 'bold',
+          size: 12
+        },
+        formatter: (value, context) => {
+          const total = context.dataset.data.reduce((a, b) => a + b, 0);
+          const percentage = ((value / total) * 100).toFixed(1);
+          return `${value}\n(${percentage}%)`;
+        }
+      };
+      chartConfig.plugins = [ChartDataLabels];
+    }
+  
+    return new Chart(ctx, chartConfig);
+  }
 
 // ============================================================================
 // ------------------- Initialization: Stats Page -------------------
@@ -408,7 +494,7 @@ async function initStatsPage() {
         // --- Chart: Village Distribution ---
         const villageCtx = document.getElementById('villageDistributionChart').getContext('2d');
         const villageData = data.charactersPerVillage || {};
-        villageChart = createBarChart(villageCtx, villageData, {
+        villageChart = createPieChart(villageCtx, villageData, {
             labelTransform: v => v.charAt(0).toUpperCase() + v.slice(1),
             colors: ['#EF9A9A', '#9FB7F2', '#98D8A7']
         });
