@@ -763,15 +763,23 @@ function showProfileError(message) {
 // Checks if a character has rolled today based on their dailyRoll data
 function checkIfCharacterRolledToday(character) {
   try {
-    if (!character.dailyRoll || !(character.dailyRoll instanceof Map)) {
+    if (!character.dailyRoll || typeof character.dailyRoll !== 'object') {
       return false;
     }
     
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    const dailyRollData = character.dailyRoll.get(today);
     
-    // Check if there's any roll data for today
-    return dailyRollData && Object.keys(dailyRollData).length > 0;
+    // Check if any of the dailyRoll entries have today's date
+    for (const [rollType, timestamp] of Object.entries(character.dailyRoll)) {
+      if (timestamp) {
+        const rollDate = new Date(timestamp).toISOString().split('T')[0];
+        if (rollDate === today) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
   } catch (error) {
     console.error('[profile.js]: ❌ Error checking daily roll status:', error);
     return false;
