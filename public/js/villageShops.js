@@ -11,7 +11,7 @@ import { scrollToTop } from './ui.js';
 // ============================================================================
 
 // ------------------- Function: renderVillageShopCards -------------------
-// Renders all village shop item cards with pagination and detail sections
+// Renders village shop item cards in a grid layout
 function renderVillageShopCards(items, page = 1, totalItems = null) {
     // ------------------- Sort Items Alphabetically by Default -------------------
     const sortedItems = [...items].sort((a, b) => {
@@ -20,11 +20,10 @@ function renderVillageShopCards(items, page = 1, totalItems = null) {
       return nameA.localeCompare(nameB);
     });
 
-    console.log('🏪 Starting village shop rendering:', { 
+    console.log('🎨 renderVillageShopCards called:', {
       itemsLength: sortedItems?.length,
       page,
-      totalItems,
-      firstItem: sortedItems?.[0]?.itemName
+      totalItems
     });
 
     // Scroll to top of the page
@@ -49,7 +48,7 @@ function renderVillageShopCards(items, page = 1, totalItems = null) {
     console.log('✅ Village shop items sorted alphabetically');
     
     // Get items per page setting
-    const itemsPerPageSelect = document.getElementById('items-per-page');
+    const itemsPerPageSelect = document.getElementById('village-shop-items-per-page');
     const itemsPerPage = itemsPerPageSelect ? 
       (itemsPerPageSelect.value === 'all' ? sortedItems.length : parseInt(itemsPerPageSelect.value)) : 
       12;
@@ -186,115 +185,64 @@ function renderVillageShopCards(items, page = 1, totalItems = null) {
               <div class="item-detail-row modern-item-detail-row">
                 <strong>Stock:</strong> <span>${item.stock || 0}</span>
               </div>
-              <div class="item-detail-row modern-item-detail-row">
-                <strong>Stackable:</strong> <span>${item.stackable ? `Yes (Max: ${item.maxStackSize || 10})` : 'No'}</span>
-              </div>
             </div>
           </div>
           
-          <div class="item-section modern-item-section">
-            <div class="item-section-label modern-item-section-label"><i class="fas fa-route"></i> Sources</div>
-            <div class="item-tag-list modern-item-tag-list">
-              ${obtainTags && obtainTags.filter(Boolean).length ? renderTags(obtainTags) : '<span class="item-tag">None</span>'}
-            </div>
-          </div>
-          
-          <div class="item-section modern-item-section">
-            <div class="item-section-label modern-item-section-label"><i class="fas fa-map-marker-alt"></i> Locations</div>
-            <div class="item-tag-list modern-item-tag-list">
-              ${locationsTags && locationsTags.filter(Boolean).length ? renderLocationTags(locationsTags) : '<span class="item-tag">None</span>'}
-            </div>
-          </div>
-          
-          <div class="item-section modern-item-section">
-            <div class="item-section-label modern-item-section-label"><i class="fas fa-user"></i> Jobs</div>
-            <div class="item-tag-list modern-item-tag-list">
-              ${jobsTags && jobsTags.filter(Boolean).length ? renderTags(jobsTags) : '<span class="item-tag">None</span>'}
-            </div>
-          </div>
-          
-          <div class="item-section modern-item-section">
-            <div class="item-section-label modern-item-section-label"><i class="fas fa-tools"></i> Crafting Materials</div>
-            <div class="item-crafting-list modern-item-crafting-list">
-              ${craftingMaterials ? craftingMaterials : '<div class="item-crafting-row"><span class="item-tag">Not Craftable</span></div>'}
-            </div>
-          </div>
-          
-          <div class="item-section modern-item-section">
-            <div class="item-section-label modern-item-section-label"><i class="fas fa-cloud-sun"></i> Special Weather</div>
-            <div class="item-tag-list modern-item-tag-list">
-              ${weatherTags ? weatherTags : '<span class="item-tag">None</span>'}
-            </div>
-          </div>
-          
-          ${isCraftable ? `
+          ${(item.modifierHearts > 0 || item.staminaRecovered > 0 || item.staminaToCraft !== null) ? `
           <div class="item-section modern-item-section">
             <div class="item-section-label modern-item-section-label"><i class="fas fa-chart-bar"></i> Stats</div>
             <div class="item-stats-row modern-item-stats-row">
-              ${isRecipe ? `
+              ${item.modifierHearts > 0 ? `
                 <span class="item-stat-pill modern-item-stat-pill">
                   <i class="fas fa-heart"></i>
-                  <span class="stat-label">Hearts Recovered:</span>
-                  <span class="stat-value">${item.modifierHearts ?? 0}</span>
+                  <span>+${item.modifierHearts}</span>
                 </span>
+              ` : ''}
+              ${item.staminaRecovered > 0 ? `
                 <span class="item-stat-pill modern-item-stat-pill">
-                  <i class="fas fa-bolt"></i>
-                  <span class="stat-label">Stamina Recovered:</span>
-                  <span class="stat-value">${item.staminaRecovered ?? 0}</span>
+                  <i class="fas fa-battery-three-quarters"></i>
+                  <span>+${item.staminaRecovered}</span>
                 </span>
-                ${item.staminaToCraft !== null && item.staminaToCraft !== undefined ? `
-                  <span class="item-stat-pill modern-item-stat-pill">
-                    <i class="fas fa-fire"></i>
-                    <span class="stat-label">Stamina to Craft:</span>
-                    <span class="stat-value">${item.staminaToCraft}</span>
-                  </span>
-                ` : ''}
-              ` : (isArmor || isWeapon) ? `
+              ` : ''}
+              ${item.staminaToCraft !== null ? `
                 <span class="item-stat-pill modern-item-stat-pill">
-                  <i class="fas fa-heart"></i>
-                  <span class="stat-label">Modifier:</span>
-                  <span class="stat-value">${item.modifierHearts ?? 0}</span>
+                  <i class="fas fa-tools"></i>
+                  <span>${item.staminaToCraft}</span>
                 </span>
-                ${item.staminaToCraft !== null && item.staminaToCraft !== undefined ? `
-                  <span class="item-stat-pill modern-item-stat-pill">
-                    <i class="fas fa-fire"></i>
-                    <span class="stat-label">Stamina to Craft:</span>
-                    <span class="stat-value">${item.staminaToCraft}</span>
-                  </span>
-                ` : ''}
-              ` : `
-                <span class="item-stat-pill modern-item-stat-pill">
-                  <i class="fas fa-heart"></i>
-                  <span class="stat-label">Hearts Recovered:</span>
-                  <span class="stat-value">${item.modifierHearts ?? 0}</span>
-                </span>
-                <span class="item-stat-pill modern-item-stat-pill">
-                  <i class="fas fa-bolt"></i>
-                  <span class="stat-label">Stamina Recovered:</span>
-                  <span class="stat-value">${item.staminaRecovered ?? 0}</span>
-                </span>
-                ${item.staminaToCraft !== null && item.staminaToCraft !== undefined ? `
-                  <span class="item-stat-pill modern-item-stat-pill">
-                    <i class="fas fa-fire"></i>
-                    <span class="stat-label">Stamina to Craft:</span>
-                    <span class="stat-value">${item.staminaToCraft}</span>
-                  </span>
-                ` : ''}
-              `}
+              ` : ''}
+            </div>
+          </div>
+          ` : ''}
+          
+          ${craftingMaterials ? `
+          <div class="item-section modern-item-section">
+            <div class="item-section-label modern-item-section-label"><i class="fas fa-hammer"></i> Crafting</div>
+            <div class="item-crafting-list modern-item-crafting-list">
+              ${craftingMaterials}
             </div>
           </div>
           ` : ''}
         </div>
       `;
     }).join('');
-    console.log('✅ Village shop item cards rendered');
+
+    // Update pagination
+    if (totalPages > 1) {
+      updateVillageShopPagination(page, totalPages, itemsForPagination);
+    } else {
+      const pagination = document.getElementById('village-shop-pagination');
+      if (pagination) pagination.innerHTML = '';
+    }
 
     // Update results info
     const resultsInfo = document.querySelector('.village-shop-results-info p');
     if (resultsInfo) {
-      const totalPages = Math.ceil(itemsForPagination / itemsPerPage);
-      resultsInfo.textContent = `Showing ${startIndex + 1}-${endIndex} of ${itemsForPagination} village shop items (Page ${page} of ${totalPages})`;
+      const startItem = startIndex + 1;
+      const endItem = Math.min(endIndex, itemsForPagination);
+      resultsInfo.textContent = `Showing ${startItem}-${endItem} of ${itemsForPagination} village shop items`;
     }
+
+    console.log('✅ Village shop cards rendered successfully');
   }
   
   // ============================================================================
@@ -386,8 +334,10 @@ async function fetchAllVillageShopItemsForFilters() {
 }
 
 // ------------------- Function: populateFilterOptions -------------------
-// Populates dropdowns for category, type, subtype, jobs, and locations based on unique values
+// Populates filter dropdowns with available values
 async function populateFilterOptions(items) {
+  console.log('📄 Populating village shop filter options...');
+  
   // Always load from JSON file first
   await loadFilterOptionsFromJSON();
   
@@ -395,6 +345,8 @@ async function populateFilterOptions(items) {
   if (items?.length) {
     console.log(`[Filter Debug] Village shop items available (${items.length}), but using JSON file for filter options`);
   }
+  
+  console.log('✅ Village shop filter options populated');
 }
 
 // ------------------- Function: loadFilterOptionsFromJSON -------------------
@@ -411,12 +363,8 @@ async function loadFilterOptionsFromJSON() {
     const filterOptions = await response.json();
     console.log('✅ Loaded filter options from JSON:', filterOptions);
     
-    populateSelect('filter-category', filterOptions.categories || []);
-    populateSelect('filter-type', filterOptions.types || []);
-    populateSelect('filter-subtype', filterOptions.subtypes || []);
-    populateSelect('filter-jobs', filterOptions.jobs || []);
-    populateSelect('filter-locations', filterOptions.locations || []);
-    populateSelect('filter-sources', filterOptions.sources || []);
+    populateSelect('village-shop-filter-category', filterOptions.categories || []);
+    populateSelect('village-shop-filter-type', filterOptions.types || []);
     
     console.log('✅ Filter options populated from JSON file');
   } catch (error) {
@@ -444,12 +392,125 @@ function populateSelect(id, values) {
   });
 }
 
+// ------------------- Function: updateVillageShopPagination -------------------
+// Updates the pagination controls for village shop items
+function updateVillageShopPagination(currentPage, totalPages, totalItems) {
+  const paginationContainer = document.getElementById('village-shop-pagination');
+  if (!paginationContainer) {
+    console.error('❌ Village shop pagination container not found');
+    return;
+  }
+
+  // Clear existing pagination
+  paginationContainer.innerHTML = '';
+
+  // Only show pagination if there are multiple pages
+  if (totalPages > 1) {
+    console.log('📄 Setting up pagination for village shops:', { currentPage, totalPages, totalItems });
+    
+    const handlePageChange = (pageNum) => {
+      console.log(`🔄 Village shop page change requested to page ${pageNum}`);
+      window.filterVillageShopItems(pageNum);
+    };
+
+    // Create pagination
+    const paginationDiv = document.createElement('div');
+    paginationDiv.className = 'pagination';
+    
+    // Add previous button
+    if (currentPage > 1) {
+      const prevButton = document.createElement('button');
+      prevButton.className = 'pagination-button';
+      prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
+      prevButton.title = 'Previous Page';
+      prevButton.addEventListener('click', () => handlePageChange(currentPage - 1));
+      paginationDiv.appendChild(prevButton);
+    }
+
+    // Add page numbers
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+
+    if (startPage > 1) {
+      const firstButton = document.createElement('button');
+      firstButton.className = 'pagination-button';
+      firstButton.textContent = '1';
+      firstButton.addEventListener('click', () => handlePageChange(1));
+      paginationDiv.appendChild(firstButton);
+
+      if (startPage > 2) {
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'pagination-ellipsis';
+        ellipsis.textContent = '...';
+        paginationDiv.appendChild(ellipsis);
+      }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      const pageButton = document.createElement('button');
+      pageButton.className = `pagination-button ${i === currentPage ? 'active' : ''}`;
+      pageButton.textContent = i.toString();
+      pageButton.addEventListener('click', () => handlePageChange(i));
+      paginationDiv.appendChild(pageButton);
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'pagination-ellipsis';
+        ellipsis.textContent = '...';
+        paginationDiv.appendChild(ellipsis);
+      }
+
+      const lastButton = document.createElement('button');
+      lastButton.className = 'pagination-button';
+      lastButton.textContent = totalPages.toString();
+      lastButton.addEventListener('click', () => handlePageChange(totalPages));
+      paginationDiv.appendChild(lastButton);
+    }
+
+    // Add next button
+    if (currentPage < totalPages) {
+      const nextButton = document.createElement('button');
+      nextButton.className = 'pagination-button';
+      nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
+      nextButton.title = 'Next Page';
+      nextButton.addEventListener('click', () => handlePageChange(currentPage + 1));
+      paginationDiv.appendChild(nextButton);
+    }
+
+    paginationContainer.appendChild(paginationDiv);
+    console.log('✅ Village shop pagination created successfully');
+  }
+}
+
 // ------------------- Function: setupVillageShopFilters -------------------
-// Adds listeners to filter UI and re-renders items on change
+// Sets up simple filters for village shop items
 async function setupVillageShopFilters(items) {
   console.log('Setting up village shop filters...');
 
-  window.allVillageShopItems = items;
+  // Fetch all village shop items for proper pagination
+  try {
+    console.log('🔄 Fetching all village shop items for initial setup...');
+    const response = await fetch('/api/models/villageShops?all=true');
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const { data: allVillageShopItems } = await response.json();
+    
+    // Sort items alphabetically by name
+    const sortedItems = [...allVillageShopItems].sort((a, b) => {
+      const nameA = (a.itemName || '').toLowerCase();
+      const nameB = (b.itemName || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+    
+    // Update the global village shop list with all items
+    window.allVillageShopItems = sortedItems;
+    console.log('✅ Set global village shop list to', sortedItems.length, 'items (sorted alphabetically)');
+  } catch (error) {
+    console.error('❌ Error fetching all village shop items:', error);
+    // Fallback to using the provided items
+    window.allVillageShopItems = items;
+  }
 
   if (window.villageShopFiltersInitialized) {
     console.log('Filters already initialized, skipping setup');
@@ -460,28 +521,51 @@ async function setupVillageShopFilters(items) {
   // Show the filters container
   const filtersContainer = document.querySelector('.village-shop-filters');
   if (filtersContainer) {
+    console.log('✅ Found village shop filters container');
+    console.log('✅ Filter container children:', filtersContainer.children.length);
     filtersContainer.style.display = 'flex';
+  } else {
+    console.error('❌ Village shop filters container not found');
   }
 
-  const searchInput = document.getElementById('village-shop-search-input');
-  const categorySelect = document.getElementById('filter-category');
-  const typeSelect = document.getElementById('filter-type');
-  const subtypeSelect = document.getElementById('filter-subtype');
-  const jobsSelect = document.getElementById('filter-jobs');
-  const locationsSelect = document.getElementById('filter-locations');
-  const sourcesSelect = document.getElementById('filter-sources');
-  const sortSelect = document.getElementById('sort-by');
-  const itemsPerPageSelect = document.getElementById('items-per-page');
-  const clearFiltersBtn = document.getElementById('clear-filters');
+  // Wait longer for the DOM to update
+  await new Promise(resolve => setTimeout(resolve, 200));
 
-  const missing = [searchInput, categorySelect, typeSelect, subtypeSelect, jobsSelect, locationsSelect, sourcesSelect, sortSelect, itemsPerPageSelect, clearFiltersBtn].some(el => !el);
-  if (missing) {
+  const searchInput = document.getElementById('village-shop-search-input');
+  const categorySelect = document.getElementById('village-shop-filter-category');
+  const typeSelect = document.getElementById('village-shop-filter-type');
+  const sortSelect = document.getElementById('village-shop-sort-by');
+  const itemsPerPageSelect = document.getElementById('village-shop-items-per-page');
+  const clearFiltersBtn = document.getElementById('village-shop-clear-filters');
+
+  console.log('🔍 Filter elements found:', {
+    searchInput: !!searchInput,
+    categorySelect: !!categorySelect,
+    typeSelect: !!typeSelect,
+    sortSelect: !!sortSelect,
+    itemsPerPageSelect: !!itemsPerPageSelect,
+    clearFiltersBtn: !!clearFiltersBtn
+  });
+
+  // Check which elements are missing for better debugging
+  const missingElements = [];
+  if (!searchInput) missingElements.push('village-shop-search-input');
+  if (!categorySelect) missingElements.push('village-shop-filter-category');
+  if (!typeSelect) missingElements.push('village-shop-filter-type');
+  if (!sortSelect) missingElements.push('village-shop-sort-by');
+  if (!itemsPerPageSelect) missingElements.push('village-shop-items-per-page');
+  if (!clearFiltersBtn) missingElements.push('village-shop-clear-filters');
+
+  if (missingElements.length > 0) {
+    console.warn('Missing filter elements:', missingElements);
     if (!window.filterSetupRetried) {
       console.warn('Retrying filter setup once...');
       window.filterSetupRetried = true;
       requestAnimationFrame(() => setupVillageShopFilters(items));
     } else {
       console.error('❌ Failed to initialize village shop filters. Please refresh.');
+      // Continue without filters - render the items anyway
+      renderVillageShopCards(items, 1);
     }
     return;
   }
@@ -496,34 +580,24 @@ async function setupVillageShopFilters(items) {
   if (savedFilterState.searchTerm) searchInput.value = savedFilterState.searchTerm;
   if (savedFilterState.categoryFilter) categorySelect.value = savedFilterState.categoryFilter;
   if (savedFilterState.typeFilter) typeSelect.value = savedFilterState.typeFilter;
-  if (savedFilterState.subtypeFilter) subtypeSelect.value = savedFilterState.subtypeFilter;
-  if (savedFilterState.jobsFilter) jobsSelect.value = savedFilterState.jobsFilter;
-  if (savedFilterState.locationsFilter) locationsSelect.value = savedFilterState.locationsFilter;
-  if (savedFilterState.sourcesFilter) sourcesSelect.value = savedFilterState.sourcesFilter;
   if (savedFilterState.sortBy) sortSelect.value = savedFilterState.sortBy;
 
+  console.log('✅ All filter elements found and initialized');
+
   // ------------------- Function: filterVillageShopItems -------------------
-  // Main filtering function that handles both server-side and client-side filtering
+  // Main filtering function
   window.filterVillageShopItems = async function (page = 1) {
     const searchTerm = searchInput.value.toLowerCase();
     const categoryFilter = categorySelect.value.toLowerCase();
     const typeFilter = typeSelect.value.toLowerCase();
-    const subtypeFilter = subtypeSelect.value.toLowerCase();
-    const jobsFilter = jobsSelect.value.toLowerCase();
-    const locationsFilter = locationsSelect.value.toLowerCase();
-    const sourcesFilter = sourcesSelect.value.toLowerCase();
     const sortBy = sortSelect.value;
-    const itemsPerPage = itemsPerPageSelect.value;
+    const itemsPerPage = itemsPerPageSelect.value === 'all' ? 999999 : parseInt(itemsPerPageSelect.value);
 
     console.log('🔍 filterVillageShopItems called:', {
       page,
       searchTerm,
       categoryFilter,
       typeFilter,
-      subtypeFilter,
-      jobsFilter,
-      locationsFilter,
-      sourcesFilter,
       sortBy,
       itemsPerPage
     });
@@ -533,10 +607,6 @@ async function setupVillageShopFilters(items) {
       searchTerm: searchInput.value,
       categoryFilter,
       typeFilter,
-      subtypeFilter,
-      jobsFilter,
-      locationsFilter,
-      sourcesFilter,
       sortBy,
       itemsPerPage
     };
@@ -544,22 +614,16 @@ async function setupVillageShopFilters(items) {
     // Check if any filters are active
     const hasActiveFilters = searchTerm || 
       categoryFilter !== 'all' || 
-      typeFilter !== 'all' || 
-      subtypeFilter !== 'all' || 
-      jobsFilter !== 'all' || 
-      locationsFilter !== 'all' || 
-      sourcesFilter !== 'all';
+      typeFilter !== 'all';
 
     console.log('🔍 Filter analysis:', {
       hasActiveFilters,
       itemsPerPage,
-      willUseServerSide: hasActiveFilters || itemsPerPage !== 'all'
+      willUseServerSide: hasActiveFilters || itemsPerPage !== 999999
     });
 
     // Always use server-side filtering when filters are active OR when items per page is not 'all'
-    // This ensures we have all the data needed for proper pagination
-    if (hasActiveFilters || itemsPerPage !== 'all') {
-      // When filters are active or pagination is needed, always fetch all items and filter client-side
+    if (hasActiveFilters || itemsPerPage !== 999999) {
       console.log('🔍 Using server-side filtering (filterVillageShopItemsWithAllData)');
       await filterVillageShopItemsWithAllData(page);
     } else {
@@ -574,10 +638,6 @@ async function setupVillageShopFilters(items) {
     const searchTerm = searchInput.value.toLowerCase();
     const categoryFilter = categorySelect.value.toLowerCase();
     const typeFilter = typeSelect.value.toLowerCase();
-    const subtypeFilter = subtypeSelect.value.toLowerCase();
-    const jobsFilter = jobsSelect.value.toLowerCase();
-    const locationsFilter = locationsSelect.value.toLowerCase();
-    const sourcesFilter = sourcesSelect.value.toLowerCase();
     const sortBy = sortSelect.value;
     const itemsPerPage = itemsPerPageSelect.value === 'all' ? 999999 : parseInt(itemsPerPageSelect.value);
 
@@ -597,12 +657,12 @@ async function setupVillageShopFilters(items) {
       // Always fetch ALL village shop items from the database
       const response = await fetch('/api/models/villageShops?all=true');
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const { data: allItems } = await response.json();
+      const { data: allVillageShopItems } = await response.json();
 
-      console.log('🔍 Fetched village shop items from database:', allItems.length);
+      console.log('🔍 Fetched village shop items from database:', allVillageShopItems.length);
 
       // Apply filtering and sorting to ALL items
-      const filteredAndSorted = applyFiltersAndSort(allItems);
+      const filteredAndSorted = applyVillageShopFiltersAndSort(allVillageShopItems);
 
       console.log('🔍 After filtering and sorting:', filteredAndSorted.length);
 
@@ -635,35 +695,21 @@ async function setupVillageShopFilters(items) {
       // Render the paginated filtered items
       renderVillageShopCards(paginatedItems, page, filteredAndSorted.length);
 
-      // Update pagination for filtered results
+      // Update pagination
       if (itemsPerPageSelect.value !== 'all' && filteredAndSorted.length > itemsPerPage) {
-        updateFilteredPagination(page, totalPages, filteredAndSorted.length);
+        updateVillageShopPagination(page, totalPages, filteredAndSorted.length);
       } else {
-        const contentDiv = document.getElementById('model-details-data');
-        if (contentDiv) {
-          const existingPagination = contentDiv.querySelector('.pagination');
-          if (existingPagination) {
-            existingPagination.remove();
-          }
+        const paginationContainer = document.getElementById('village-shop-pagination');
+        if (paginationContainer) {
+          paginationContainer.innerHTML = '';
         }
       }
 
-      // Ensure pagination is created after a short delay to avoid conflicts
-      setTimeout(() => {
-        const contentDiv = document.getElementById('model-details-data');
-        if (contentDiv && !contentDiv.querySelector('.pagination')) {
-          console.log('🔄 Recreating filtered pagination due to timing conflict');
-          if (itemsPerPageSelect.value !== 'all' && filteredAndSorted.length > itemsPerPage) {
-            updateFilteredPagination(page, totalPages, filteredAndSorted.length);
-          }
-        }
-      }, 100);
-
     } catch (error) {
-      console.error('❌ Error fetching all village shop items for filtering:', error);
-      // Fallback to client-side filtering on current items
-      console.log('🔄 Falling back to client-side filtering on current page...');
-      filterVillageShopItemsClientSide(page);
+      console.error('❌ Error filtering village shop items:', error);
+      if (resultsInfo) {
+        resultsInfo.textContent = 'Error loading filtered village shop items';
+      }
     }
   }
 
@@ -673,10 +719,6 @@ async function setupVillageShopFilters(items) {
     const searchTerm = searchInput.value.toLowerCase();
     const categoryFilter = categorySelect.value.toLowerCase();
     const typeFilter = typeSelect.value.toLowerCase();
-    const subtypeFilter = subtypeSelect.value.toLowerCase();
-    const jobsFilter = jobsSelect.value.toLowerCase();
-    const locationsFilter = locationsSelect.value.toLowerCase();
-    const sourcesFilter = sourcesSelect.value.toLowerCase();
     const sortBy = sortSelect.value;
     const itemsPerPage = itemsPerPageSelect.value === 'all' ? window.allVillageShopItems.length : parseInt(itemsPerPageSelect.value);
 
@@ -689,73 +731,19 @@ async function setupVillageShopFilters(items) {
     const filtered = window.allVillageShopItems.filter(item => {
       const matchesSearch = !searchTerm ||
         item.itemName?.toLowerCase().includes(searchTerm) ||
-        splitValues(item.category).some(cat => cat.toLowerCase().includes(searchTerm)) ||
-        splitValues(item.type).some(type => type.toLowerCase().includes(searchTerm)) ||
-        splitValues(item.subtype).some(subtype => subtype.toLowerCase().includes(searchTerm)) ||
-        splitValues(item.obtainTags || item.obtain).some(source => source.toLowerCase().includes(searchTerm)) ||
-        splitValues(item.allJobsTags || item.allJobs).some(job => job.toLowerCase().includes(searchTerm)) ||
-        splitValues(item.locationsTags || item.locations).some(location => location.toLowerCase().includes(searchTerm));
+        (item.category && item.category.toLowerCase().includes(searchTerm)) ||
+        (item.type && item.type.some(type => type.toLowerCase().includes(searchTerm)));
 
-      const itemCategories = splitValues(item.category);
       const matchesCategory = categoryFilter === 'all' || 
-        itemCategories.some(cat => cat.toLowerCase() === categoryFilter);
+        (item.category && item.category.toLowerCase() === categoryFilter);
       
-      const itemTypes = splitValues(item.type);
       const matchesType = typeFilter === 'all' || 
-        itemTypes.some(type => type.toLowerCase() === typeFilter);
-      
-      const itemSubtypes = splitValues(item.subtype);
-      const matchesSubtype = subtypeFilter === 'all' || 
-        itemSubtypes.some(subtype => subtype.toLowerCase() === subtypeFilter);
-      
-      const jobsTags = item.allJobsTags?.length ? item.allJobsTags : item.allJobs;
-      const itemJobs = splitValues(jobsTags);
-      const matchesJobs = jobsFilter === 'all' || 
-        itemJobs.some(job => job.toLowerCase() === jobsFilter);
-      
-      const locationsTags = item.locationsTags?.length ? item.locationsTags : item.locations;
-      const itemLocations = splitValues(locationsTags);
-      const matchesLocations = locationsFilter === 'all' || 
-        itemLocations.some(location => location.toLowerCase() === locationsFilter);
+        (item.type && item.type.some(type => type.toLowerCase() === typeFilter));
 
-      const sourcesTags = item.obtainTags?.length ? item.obtainTags : item.obtain;
-      const itemSources = splitValues(sourcesTags);
-      const matchesSources = sourcesFilter === 'all' || 
-        itemSources.some(source => source.toLowerCase() === sourcesFilter);
-
-      return matchesSearch && matchesCategory && matchesType && matchesSubtype && matchesJobs && matchesLocations && matchesSources;
+      return matchesSearch && matchesCategory && matchesType;
     });
 
-    const [field, direction] = sortBy.split('-');
-    const isAsc = direction === 'asc';
-
-    const sorted = [...filtered].sort((a, b) => {
-      let valA, valB;
-      
-      switch (field) {
-        case 'name':
-          valA = a.itemName ?? '';
-          valB = b.itemName ?? '';
-          break;
-        case 'price':
-          valA = a.buyPrice ?? 0;
-          valB = b.buyPrice ?? 0;
-          break;
-        case 'stock':
-          valA = a.stock ?? 0;
-          valB = b.stock ?? 0;
-          break;
-        default:
-          valA = a[field] ?? '';
-          valB = b[field] ?? '';
-      }
-      
-      return isAsc
-        ? (typeof valA === 'string' ? valA.localeCompare(valB) : valA - valB)
-        : (typeof valB === 'string' ? valB.localeCompare(valA) : valB - valA);
-    });
-
-    console.log('🔍 After filtering and sorting:', sorted.length);
+    const sorted = sortItems(filtered, sortBy);
 
     // Apply pagination
     const totalPages = Math.ceil(sorted.length / itemsPerPage);
@@ -786,203 +774,67 @@ async function setupVillageShopFilters(items) {
 
     // Update pagination
     if (itemsPerPageSelect.value !== 'all' && sorted.length > itemsPerPage) {
-      updateFilteredPagination(page, totalPages, sorted.length);
+      updateVillageShopPagination(page, totalPages, sorted.length);
     } else {
-      const contentDiv = document.getElementById('model-details-data');
-      if (contentDiv) {
-        const existingPagination = contentDiv.querySelector('.pagination');
-        if (existingPagination) {
-          existingPagination.remove();
-        }
+      const paginationContainer = document.getElementById('village-shop-pagination');
+      if (paginationContainer) {
+        paginationContainer.innerHTML = '';
       }
     }
   }
 
-  // ------------------- Function: applyFiltersAndSort -------------------
-  // Unified function to apply filters and sorting to items
-  function applyFiltersAndSort(items) {
+  // ------------------- Function: applyVillageShopFiltersAndSort -------------------
+  // Unified function to apply filters and sorting to village shop items
+  function applyVillageShopFiltersAndSort(items) {
     const searchTerm = searchInput.value.toLowerCase();
     const categoryFilter = categorySelect.value.toLowerCase();
     const typeFilter = typeSelect.value.toLowerCase();
-    const subtypeFilter = subtypeSelect.value.toLowerCase();
-    const jobsFilter = jobsSelect.value.toLowerCase();
-    const locationsFilter = locationsSelect.value.toLowerCase();
-    const sourcesFilter = sourcesSelect.value.toLowerCase();
     const sortBy = sortSelect.value;
 
     // Apply filters
     const filtered = items.filter(item => {
       const matchesSearch = !searchTerm ||
         item.itemName?.toLowerCase().includes(searchTerm) ||
-        splitValues(item.category).some(cat => cat.toLowerCase().includes(searchTerm)) ||
-        splitValues(item.type).some(type => type.toLowerCase().includes(searchTerm)) ||
-        splitValues(item.subtype).some(subtype => subtype.toLowerCase().includes(searchTerm)) ||
-        splitValues(item.obtainTags || item.obtain).some(source => source.toLowerCase().includes(searchTerm)) ||
-        splitValues(item.allJobsTags || item.allJobs).some(job => job.toLowerCase().includes(searchTerm)) ||
-        splitValues(item.locationsTags || item.locations).some(location => location.toLowerCase().includes(searchTerm));
+        (item.category && item.category.toLowerCase().includes(searchTerm)) ||
+        (item.type && item.type.some(type => type.toLowerCase().includes(searchTerm)));
 
-      const itemCategories = splitValues(item.category);
       const matchesCategory = categoryFilter === 'all' || 
-        itemCategories.some(cat => cat.toLowerCase() === categoryFilter);
+        (item.category && item.category.toLowerCase() === categoryFilter);
       
-      const itemTypes = splitValues(item.type);
       const matchesType = typeFilter === 'all' || 
-        itemTypes.some(type => type.toLowerCase() === typeFilter);
-      
-      const itemSubtypes = splitValues(item.subtype);
-      const matchesSubtype = subtypeFilter === 'all' || 
-        itemSubtypes.some(subtype => subtype.toLowerCase() === subtypeFilter);
-      
-      const jobsTags = item.allJobsTags?.length ? item.allJobsTags : item.allJobs;
-      const itemJobs = splitValues(jobsTags);
-      const matchesJobs = jobsFilter === 'all' || 
-        itemJobs.some(job => job.toLowerCase() === jobsFilter);
-      
-      const locationsTags = item.locationsTags?.length ? item.locationsTags : item.locations;
-      const itemLocations = splitValues(locationsTags);
-      const matchesLocations = locationsFilter === 'all' || 
-        itemLocations.some(location => location.toLowerCase() === locationsFilter);
+        (item.type && item.type.some(type => type.toLowerCase() === typeFilter));
 
-      const sourcesTags = item.obtainTags?.length ? item.obtainTags : item.obtain;
-      const itemSources = splitValues(sourcesTags);
-      const matchesSources = sourcesFilter === 'all' || 
-        itemSources.some(source => source.toLowerCase() === sourcesFilter);
-
-      return matchesSearch && matchesCategory && matchesType && matchesSubtype && matchesJobs && matchesLocations && matchesSources;
+      return matchesSearch && matchesCategory && matchesType;
     });
 
     // Apply sorting
-    const [field, direction] = sortBy.split('-');
-    const isAsc = direction === 'asc';
-
-    return [...filtered].sort((a, b) => {
-      let valA, valB;
-      
-      switch (field) {
-        case 'name':
-          valA = a.itemName ?? '';
-          valB = b.itemName ?? '';
-          break;
-        case 'price':
-          valA = a.buyPrice ?? 0;
-          valB = b.buyPrice ?? 0;
-          break;
-        case 'stock':
-          valA = a.stock ?? 0;
-          valB = b.stock ?? 0;
-          break;
-        default:
-          valA = a[field] ?? '';
-          valB = b[field] ?? '';
-      }
-      
-      return isAsc
-        ? (typeof valA === 'string' ? valA.localeCompare(valB) : valA - valB)
-        : (typeof valB === 'string' ? valB.localeCompare(valA) : valB - valA);
-    });
+    return sortItems(filtered, sortBy);
   }
 
-  // ------------------- Function: updateFilteredPagination -------------------
-  // Creates pagination for filtered results
-  function updateFilteredPagination(currentPage, totalPages, totalItems) {
-    const contentDiv = document.getElementById('model-details-data');
-    if (!contentDiv) {
-      console.error('❌ Content div not found');
-      return;
-    }
-
-    // Remove ALL existing pagination (both main and filtered)
-    const existingPagination = contentDiv.querySelector('.pagination');
-    if (existingPagination) {
-      existingPagination.remove();
-    }
-
-    // Only show pagination if there are multiple pages
-    if (totalPages > 1) {
-      console.log('📄 Setting up pagination for filtered results:', { currentPage, totalPages, totalItems });
-      
-      const handlePageChange = async (pageNum) => {
-        console.log(`🔄 Filtered page change requested to page ${pageNum}`);
-        // Call filterVillageShopItems with the new page number
-        window.filterVillageShopItems(pageNum);
-      };
-
-      // Create pagination manually since we can't import dynamically
-      const paginationDiv = document.createElement('div');
-      paginationDiv.className = 'pagination';
-      
-      // Add previous button
-      if (currentPage > 1) {
-        const prevButton = document.createElement('button');
-        prevButton.className = 'pagination-button';
-        prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
-        prevButton.title = 'Previous Page';
-        prevButton.addEventListener('click', () => handlePageChange(currentPage - 1));
-        paginationDiv.appendChild(prevButton);
-      }
-
-      // Add page numbers
-      const startPage = Math.max(1, currentPage - 2);
-      const endPage = Math.min(totalPages, currentPage + 2);
-
-      if (startPage > 1) {
-        const firstButton = document.createElement('button');
-        firstButton.className = 'pagination-button';
-        firstButton.textContent = '1';
-        firstButton.addEventListener('click', () => handlePageChange(1));
-        paginationDiv.appendChild(firstButton);
-
-        if (startPage > 2) {
-          const ellipsis = document.createElement('span');
-          ellipsis.className = 'pagination-ellipsis';
-          ellipsis.textContent = '...';
-          paginationDiv.appendChild(ellipsis);
-        }
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        const pageButton = document.createElement('button');
-        pageButton.className = `pagination-button ${i === currentPage ? 'active' : ''}`;
-        pageButton.textContent = i.toString();
-        pageButton.addEventListener('click', () => handlePageChange(i));
-        paginationDiv.appendChild(pageButton);
-      }
-
-      if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-          const ellipsis = document.createElement('span');
-          ellipsis.className = 'pagination-ellipsis';
-          ellipsis.textContent = '...';
-          paginationDiv.appendChild(ellipsis);
-        }
-
-        const lastButton = document.createElement('button');
-        lastButton.className = 'pagination-button';
-        lastButton.textContent = totalPages.toString();
-        lastButton.addEventListener('click', () => handlePageChange(totalPages));
-        paginationDiv.appendChild(lastButton);
-      }
-
-      // Add next button
-      if (currentPage < totalPages) {
-        const nextButton = document.createElement('button');
-        nextButton.className = 'pagination-button';
-        nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
-        nextButton.title = 'Next Page';
-        nextButton.addEventListener('click', () => handlePageChange(currentPage + 1));
-        paginationDiv.appendChild(nextButton);
-      }
-
-      contentDiv.appendChild(paginationDiv);
-      console.log('✅ Filtered pagination created successfully');
+  // ------------------- Function: sortItems -------------------
+  function sortItems(items, sortBy) {
+    const sorted = [...items];
+    
+    switch (sortBy) {
+      case 'name-asc':
+        return sorted.sort((a, b) => (a.itemName || '').localeCompare(b.itemName || ''));
+      case 'name-desc':
+        return sorted.sort((a, b) => (b.itemName || '').localeCompare(a.itemName || ''));
+      case 'price-asc':
+        return sorted.sort((a, b) => (a.buyPrice || 0) - (b.buyPrice || 0));
+      case 'price-desc':
+        return sorted.sort((a, b) => (b.buyPrice || 0) - (a.buyPrice || 0));
+      case 'stock-asc':
+        return sorted.sort((a, b) => (a.stock || 0) - (b.stock || 0));
+      case 'stock-desc':
+        return sorted.sort((a, b) => (b.stock || 0) - (a.stock || 0));
+      default:
+        return sorted;
     }
   }
 
   // Add event listeners to all filter elements
-  const filterElements = [
-    searchInput, categorySelect, typeSelect, subtypeSelect, 
-    jobsSelect, locationsSelect, sourcesSelect, sortSelect, itemsPerPageSelect
-  ];
+  const filterElements = [searchInput, categorySelect, typeSelect, sortSelect, itemsPerPageSelect];
 
   filterElements.forEach(element => {
     if (element) {
@@ -995,22 +847,73 @@ async function setupVillageShopFilters(items) {
 
   // Clear filters button
   if (clearFiltersBtn) {
-    clearFiltersBtn.addEventListener('click', () => {
+    clearFiltersBtn.addEventListener('click', async () => {
+      console.log('🔍 Clear filters button clicked');
+      
       searchInput.value = '';
       categorySelect.value = 'all';
       typeSelect.value = 'all';
-      subtypeSelect.value = 'all';
-      jobsSelect.value = 'all';
-      locationsSelect.value = 'all';
-      sourcesSelect.value = 'all';
       sortSelect.value = 'name-asc';
       itemsPerPageSelect.value = '12';
       
       // Clear saved state
       window.savedFilterState = {};
       
-      // Re-filter with cleared values
-      window.filterVillageShopItems(1);
+      // Reset the global village shop list to the original data
+      try {
+        console.log('🔄 Fetching all village shop items after clearing filters...');
+        const response = await fetch('/api/models/villageShops?all=true');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const { data: allVillageShopItems } = await response.json();
+        
+        // Sort items alphabetically by name
+        const sortedItems = [...allVillageShopItems].sort((a, b) => {
+          const nameA = (a.itemName || '').toLowerCase();
+          const nameB = (b.itemName || '').toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+        
+        // Update the global village shop list with all items
+        window.allVillageShopItems = sortedItems;
+        console.log('✅ Reset global village shop list to', sortedItems.length, 'items (sorted alphabetically)');
+        
+        // Get the selected items per page value
+        const itemsPerPage = itemsPerPageSelect.value === 'all' ? sortedItems.length : parseInt(itemsPerPageSelect.value);
+        
+        // Apply pagination - show only first page of items
+        const paginatedItems = sortedItems.slice(0, itemsPerPage);
+        
+        // Render paginated items
+        renderVillageShopCards(paginatedItems, 1, sortedItems.length);
+        
+        // Update results info
+        const resultsInfo = document.querySelector('.village-shop-results-info p');
+        if (resultsInfo) {
+          if (itemsPerPageSelect.value === 'all') {
+            resultsInfo.textContent = `Showing all ${sortedItems.length} village shop items`;
+          } else {
+            const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
+            resultsInfo.textContent = `Showing ${paginatedItems.length} of ${sortedItems.length} village shop items (Page 1 of ${totalPages})`;
+          }
+        }
+        
+        // Create pagination if needed
+        if (itemsPerPageSelect.value !== 'all' && sortedItems.length > itemsPerPage) {
+          const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
+          updateVillageShopPagination(1, totalPages, sortedItems.length);
+        } else {
+          // Clear pagination if not needed
+          const paginationContainer = document.getElementById('village-shop-pagination');
+          if (paginationContainer) {
+            paginationContainer.innerHTML = '';
+          }
+        }
+        
+      } catch (error) {
+        console.error('❌ Error resetting village shop list:', error);
+        // Fallback to just calling filterVillageShopItems
+        window.filterVillageShopItems(1);
+      }
     });
   }
 
@@ -1044,11 +947,69 @@ async function initializeVillageShopsPage(data, page, contentDiv) {
   });
 
   try {
+    // Clear the content div first
+    if (contentDiv) {
+      contentDiv.innerHTML = '';
+    }
+
+    // Create the filters container with proper structure
+    const filtersContainer = document.createElement('div');
+    filtersContainer.className = 'village-shop-filters';
+    filtersContainer.innerHTML = `
+      <div class="village-shop-results-info">
+        <p>Loading village shop items...</p>
+      </div>
+      <div class="village-shop-controls">
+        <input type="text" id="village-shop-search-input" placeholder="Search village shop items..." />
+        <select id="village-shop-filter-category">
+          <option value="all">All Categories</option>
+        </select>
+        <select id="village-shop-filter-type">
+          <option value="all">All Types</option>
+        </select>
+        <select id="village-shop-sort-by">
+          <option value="name-asc">Name (A-Z)</option>
+          <option value="name-desc">Name (Z-A)</option>
+          <option value="price-asc">Price (Low-High)</option>
+          <option value="price-desc">Price (High-Low)</option>
+          <option value="stock-asc">Stock (Low-High)</option>
+          <option value="stock-desc">Stock (High-Low)</option>
+        </select>
+        <select id="village-shop-items-per-page">
+          <option value="12">12 per page</option>
+          <option value="24">24 per page</option>
+          <option value="48">48 per page</option>
+          <option value="all">All items</option>
+        </select>
+        <button id="village-shop-clear-filters">Clear</button>
+      </div>
+    `;
+    contentDiv.appendChild(filtersContainer);
+
+    // Create the grid container
+    const gridContainer = document.createElement('div');
+    gridContainer.id = 'village-shops-container';
+    gridContainer.className = 'village-shops-grid';
+    contentDiv.appendChild(gridContainer);
+
+    // Create pagination container
+    const paginationContainer = document.createElement('div');
+    paginationContainer.id = 'village-shop-pagination';
+    paginationContainer.className = 'pagination';
+    contentDiv.appendChild(paginationContainer);
+
+    console.log('✅ Created village shop containers');
+
     // Set up filters first
-    await setupVillageShopFilters(data);
-    
-    // Render the village shop cards
-    renderVillageShopCards(data, page);
+    try {
+      await setupVillageShopFilters(data);
+      // Apply initial filtering
+      window.filterVillageShopItems(page);
+    } catch (filterError) {
+      console.warn('⚠️ Filter setup failed, continuing without filters:', filterError);
+      // Continue without filters - render the items anyway
+      renderVillageShopCards(data, page);
+    }
     
     console.log('✅ Village shops page initialized successfully');
   } catch (error) {

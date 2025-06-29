@@ -181,12 +181,18 @@ function setupModelCards() {
         const villageShopFiltersBar = document.querySelector('.village-shop-filters');
         if (modelName === 'villageShops' && villageShopFiltersBar) {
           console.log('🏪 Setting up village shop filters');
+          console.log('🏪 Filter container found:', villageShopFiltersBar);
+          console.log('🏪 Filter container children:', villageShopFiltersBar.children.length);
           if (contentDiv.firstChild !== villageShopFiltersBar) {
             contentDiv.insertBefore(villageShopFiltersBar, contentDiv.firstChild);
+            console.log('🏪 Moved filter container to content div');
           }
           villageShopFiltersBar.style.display = 'flex';
+          console.log('🏪 Made filter container visible');
         } else if (villageShopFiltersBar) {
           villageShopFiltersBar.style.display = 'none';
+        } else if (modelName === 'villageShops') {
+          console.error('❌ Village shop filters container not found in index.js');
         }
 
         console.log('🚀 Initializing model:', modelName);
@@ -256,6 +262,12 @@ function setupModelCards() {
           // Skip pagination for inventory as it uses its own efficient system
           if (modelName === 'inventory') {
             console.log('🎒 Skipping main pagination for inventory - uses efficient pagination system');
+            return;
+          }
+
+          // Skip pagination for village shops as it uses its own efficient system
+          if (modelName === 'villageShops') {
+            console.log('🏰 Skipping main pagination for village shops - uses efficient pagination system');
             return;
           }
 
@@ -351,11 +363,10 @@ function setupModelCards() {
             }
           };
 
-          // Fix the createPagination call to use correct parameter format
-          const paginationDiv = createPagination({ page: pagination.page, pages: pagination.pages }, handlePageChange);
-          
           // For characters, we need to create a pagination container if it doesn't exist
           if (modelName === 'character') {
+            // Fix the createPagination call to use correct parameter format
+            const paginationDiv = createPagination({ page: pagination.page, pages: pagination.pages }, handlePageChange);
             let paginationContainer = document.getElementById('character-pagination');
             if (!paginationContainer) {
               paginationContainer = document.createElement('div');
@@ -373,6 +384,8 @@ function setupModelCards() {
             // Skip creating main pagination container
             console.log('🏰 Skipping main pagination container creation for village shops');
           } else {
+            // Fix the createPagination call to use correct parameter format
+            const paginationDiv = createPagination({ page: pagination.page, pages: pagination.pages }, handlePageChange);
             contentDiv.appendChild(paginationDiv);
           }
         }

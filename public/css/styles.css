@@ -1915,6 +1915,15 @@
   padding: 1.5rem;
 }
 
+#village-shop-pagination {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  width: 100%;
+}
+
 
 /* ==========================================================================
    Component: Main Pagination Block
