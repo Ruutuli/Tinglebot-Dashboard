@@ -201,10 +201,18 @@ const initializeCacheCleanup = () => {
   // Clean up cache every hour
   setInterval(() => {
     const now = Date.now();
-    for (const [key, value] of Object.entries(cache)) {
+    
+    // Clean up inventoryCache (Map)
+    for (const [key, value] of inventoryCache.entries()) {
       if (now - value.timestamp > CACHE_DURATION) {
-        delete cache[key];
+        inventoryCache.delete(key);
       }
+    }
+    
+    // Clean up characterListCache (object)
+    if (characterListCache.data && now - characterListCache.timestamp > characterListCache.CACHE_DURATION) {
+      characterListCache.data = null;
+      characterListCache.timestamp = 0;
     }
   }, 60 * 60 * 1000); // Every hour
   
