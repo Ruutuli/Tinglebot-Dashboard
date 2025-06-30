@@ -761,19 +761,42 @@ function showProfileError(message) {
 
 // ------------------- Function: checkIfCharacterRolledToday -------------------
 // Checks if a character has rolled today based on their dailyRoll data
+// Uses 8am-8am rolling window logic
 function checkIfCharacterRolledToday(character) {
   try {
     if (!character.dailyRoll || typeof character.dailyRoll !== 'object') {
       return false;
     }
     
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    // Calculate the current 8am-8am rolling window
+    const now = new Date();
+    const currentHour = now.getHours();
     
-    // Check if any of the dailyRoll entries have today's date
+    let weatherDayStart, weatherDayEnd;
+    
+    if (currentHour >= 8) {
+      // If it's 8am or later, the weather day started at 8am today
+      weatherDayStart = new Date(now);
+      weatherDayStart.setHours(8, 0, 0, 0);
+      
+      weatherDayEnd = new Date(now);
+      weatherDayEnd.setDate(weatherDayEnd.getDate() + 1);
+      weatherDayEnd.setHours(8, 0, 0, 0);
+    } else {
+      // If it's before 8am, the weather day started at 8am yesterday
+      weatherDayStart = new Date(now);
+      weatherDayStart.setDate(weatherDayStart.getDate() - 1);
+      weatherDayStart.setHours(8, 0, 0, 0);
+      
+      weatherDayEnd = new Date(now);
+      weatherDayEnd.setHours(8, 0, 0, 0);
+    }
+    
+    // Check if any of the dailyRoll entries fall within the current rolling window
     for (const [rollType, timestamp] of Object.entries(character.dailyRoll)) {
       if (timestamp) {
-        const rollDate = new Date(timestamp).toISOString().split('T')[0];
-        if (rollDate === today) {
+        const rollDate = new Date(timestamp);
+        if (rollDate >= weatherDayStart && rollDate < weatherDayEnd) {
           return true;
         }
       }
