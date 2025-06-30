@@ -344,6 +344,32 @@ function viewCharacterProfile(characterId) {
   }
 }
 
+// ------------------- Function: triggerFirstCharacterOfWeek -------------------
+// Triggers the creation of the first character of the week if none exists
+async function triggerFirstCharacterOfWeek() {
+  try {
+    console.log('[characterOfWeek.js]: 🔧 Triggering first character of the week...');
+    const response = await fetch('/api/character-of-week/trigger-simple', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      console.log('[characterOfWeek.js]: ✅ First character created:', result.message);
+      // Reload the character of week display
+      loadCharacterOfWeek();
+    } else {
+      console.error('[characterOfWeek.js]: ❌ Error creating first character:', result.error);
+    }
+  } catch (error) {
+    console.error('[characterOfWeek.js]: ❌ Error triggering first character:', error);
+  }
+}
+
 // ------------------- Module Export -------------------
 // Export functions to global scope for use by other modules
 window.characterOfWeek = {

@@ -175,7 +175,7 @@
               <h2><i class="fas fa-star"></i> Character of the Week</h2>
               <p>Featured character spotlight</p>
             </div>
-            <button id="test-character-week-btn" style="position: absolute; top: 10px; right: 10px; background: #FFD700; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer; font-size: 12px;" onclick="triggerFirstCharacter()">
+            <button id="test-character-week-btn" style="position: absolute; top: 10px; right: 10px; background: #FFD700; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer; font-size: 12px;" onclick="triggerFirstCharacterOfWeek()">
               Create/Check Character
             </button>
           </div>
@@ -702,33 +702,6 @@
         console.log('❌ Character of week function not found');
       }
     });
-    
-    // Function to trigger first character of the week
-    async function triggerFirstCharacter() {
-      try {
-        console.log('🔧 Triggering first character of the week...');
-        const response = await fetch('/api/character-of-week/trigger-simple', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-          console.log('✅ First character created:', result.message);
-          // Reload the character of week display
-          if (typeof loadCharacterOfWeek === 'function') {
-            loadCharacterOfWeek();
-          }
-        } else {
-          console.error('❌ Error creating first character:', result.error);
-        }
-      } catch (error) {
-        console.error('❌ Error triggering first character:', error);
-      }
-    }
   </script>
   <script type="module" src="js/ui.js"></script>
   <script type="module" src="js/auth.js"></script>
