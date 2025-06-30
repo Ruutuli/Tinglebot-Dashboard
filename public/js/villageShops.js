@@ -80,20 +80,6 @@ function renderVillageShopCards(items, page = 1, totalItems = null) {
       const locationsTags = item.locationsTags?.length ? item.locationsTags : item.locations;
       const jobsTags = item.allJobsTags?.length ? item.allJobsTags : item.allJobs;
       
-      // Crafting materials
-      const craftingMaterials = Array.isArray(item.craftingMaterial) && item.craftingMaterial.length
-        ? item.craftingMaterial.map(mat => {
-            // Handle both string format and object format for backward compatibility
-            if (typeof mat === 'string') {
-              return `<div class="item-crafting-row"><span class="item-tag">${mat}</span></div>`;
-            } else if (mat && typeof mat === 'object' && mat.quantity && mat.itemName) {
-              return `<div class="item-crafting-row"><span class="item-crafting-qty">${mat.quantity} ×</span> <span class="item-tag">${mat.itemName}</span></div>`;
-            } else {
-              return `<div class="item-crafting-row"><span class="item-tag">${mat}</span></div>`;
-            }
-          }).join('')
-        : '';
-      
       // Special weather
       let weatherTags = '';
       if (item.specialWeather) {
@@ -210,15 +196,6 @@ function renderVillageShopCards(items, page = 1, totalItems = null) {
                   <span>${item.staminaToCraft}</span>
                 </span>
               ` : ''}
-            </div>
-          </div>
-          ` : ''}
-          
-          ${craftingMaterials ? `
-          <div class="item-section modern-item-section">
-            <div class="item-section-label modern-item-section-label"><i class="fas fa-hammer"></i> Crafting</div>
-            <div class="item-crafting-list modern-item-crafting-list">
-              ${craftingMaterials}
             </div>
           </div>
           ` : ''}
@@ -731,11 +708,11 @@ async function setupVillageShopFilters(items) {
     const filtered = window.allVillageShopItems.filter(item => {
       const matchesSearch = !searchTerm ||
         item.itemName?.toLowerCase().includes(searchTerm) ||
-        (item.category && item.category.toLowerCase().includes(searchTerm)) ||
+        (item.category && Array.isArray(item.category) && item.category.some(cat => cat.toLowerCase().includes(searchTerm))) ||
         (item.type && item.type.some(type => type.toLowerCase().includes(searchTerm)));
 
       const matchesCategory = categoryFilter === 'all' || 
-        (item.category && item.category.toLowerCase() === categoryFilter);
+        (item.category && Array.isArray(item.category) && item.category.some(cat => cat.toLowerCase() === categoryFilter));
       
       const matchesType = typeFilter === 'all' || 
         (item.type && item.type.some(type => type.toLowerCase() === typeFilter));
@@ -795,11 +772,11 @@ async function setupVillageShopFilters(items) {
     const filtered = items.filter(item => {
       const matchesSearch = !searchTerm ||
         item.itemName?.toLowerCase().includes(searchTerm) ||
-        (item.category && item.category.toLowerCase().includes(searchTerm)) ||
+        (item.category && Array.isArray(item.category) && item.category.some(cat => cat.toLowerCase().includes(searchTerm))) ||
         (item.type && item.type.some(type => type.toLowerCase().includes(searchTerm)));
 
       const matchesCategory = categoryFilter === 'all' || 
-        (item.category && item.category.toLowerCase() === categoryFilter);
+        (item.category && Array.isArray(item.category) && item.category.some(cat => cat.toLowerCase() === categoryFilter));
       
       const matchesType = typeFilter === 'all' || 
         (item.type && item.type.some(type => type.toLowerCase() === typeFilter));
