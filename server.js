@@ -49,6 +49,7 @@ const { VendingRequest } = require('./models/VendingModel');
 const { Village } = require('./models/VillageModel');
 const Party = require('./models/PartyModel');
 const Relic = require('./models/RelicModel');
+const CharacterOfWeek = require('./models/CharacterOfWeekModel');
 
 // ------------------- Section: App Configuration -------------------
 const app = express();
@@ -197,14 +198,17 @@ const characterListCache = {
 // ------------------- Function: initializeCacheCleanup -------------------
 // Sets up periodic cache cleanup to prevent memory leaks
 const initializeCacheCleanup = () => {
+  // Clean up cache every hour
   setInterval(() => {
     const now = Date.now();
-    for (const [key, { timestamp }] of inventoryCache.entries()) {
-      if (now - timestamp > CACHE_DURATION) {
-        inventoryCache.delete(key);
+    for (const [key, value] of Object.entries(cache)) {
+      if (now - value.timestamp > CACHE_DURATION) {
+        delete cache[key];
       }
     }
-  }, 5 * 60 * 1000); // Purge every 5 minutes
+  }, 60 * 60 * 1000); // Every hour
+  
+  console.log('[server.js]: ✅ Cache cleanup initialized');
 };
 
 // ------------------- Section: Database Initialization -------------------
@@ -1057,6 +1061,393 @@ app.get('/api/user/characters', requireAuth, async (req, res) => {
   }
 });
 
+// ------------------- Function: getCharacterOfWeek -------------------
+// Returns the current character of the week
+app.get('/api/character-of-week', async (req, res) => {
+  try {
+    console.log('[server.js]: 🔍 Fetching current character of the week');
+    
+    const currentCharacter = await CharacterOfWeek.findOne({ isActive: true })
+      .populate('characterId')
+      .sort({ startDate: -1 })
+      .lean();
+    
+    if (!currentCharacter) {
+      console.log('[server.js]: ⚠️ No active character of the week found');
+      return res.json({ 
+        data: null, 
+        message: 'No character of the week currently selected' 
+      });
+    }
+    
+    // Transform icon URL if needed
+    if (currentCharacter.characterId && currentCharacter.characterId.icon && 
+        currentCharacter.characterId.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
+      const filename = currentCharacter.characterId.icon.split('/').pop();
+      currentCharacter.characterId.icon = filename;
+    }
+    
+    console.log(`[server.js]: ✅ Found character of the week: ${currentCharacter.characterName}`);
+    res.json({ data: currentCharacter });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching character of the week:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: setCharacterOfWeek -------------------
+// Sets a new character of the week (admin only)
+app.post('/api/character-of-week', requireAuth, async (req, res) => {
+  try {
+    const { characterId, featuredReason } = req.body;
+    
+    if (!characterId) {
+      return res.status(400).json({ error: 'Character ID is required' });
+    }
+    
+    // Check if user has admin privileges (you can customize this logic)
+    const user = await User.findOne({ discordId: req.user.discordId });
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ error: 'Admin privileges required' });
+    }
+    
+    // Verify character exists
+    const character = await Character.findById(characterId);
+    if (!character) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+    
+    // Deactivate current character of the week
+    await CharacterOfWeek.updateMany(
+      { isActive: true },
+      { isActive: false }
+    );
+    
+    // Calculate end date (7 days from now)
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+    
+    // Create new character of the week
+    const newCharacterOfWeek = new CharacterOfWeek({
+      characterId: character._id,
+      characterName: character.name,
+      userId: character.userId,
+      startDate,
+      endDate,
+      isActive: true,
+      featuredReason: featuredReason || 'Admin selection'
+    });
+    
+    await newCharacterOfWeek.save();
+    
+    console.log(`[server.js]: ✅ Set new character of the week: ${character.name}`);
+    res.json({ 
+      data: newCharacterOfWeek,
+      message: `Character of the week set to ${character.name}` 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error setting character of the week:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: getRandomCharacterOfWeek -------------------
+// Automatically selects a random character for the week
+app.post('/api/character-of-week/random', requireAuth, async (req, res) => {
+  try {
+    // Check if user has admin privileges
+    const user = await User.findOne({ discordId: req.user.discordId });
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ error: 'Admin privileges required' });
+    }
+    
+    // Get all active characters
+    const characters = await Character.find({}).lean();
+    
+    if (characters.length === 0) {
+      return res.status(404).json({ error: 'No characters found' });
+    }
+    
+    // Get recently featured characters (last 4 weeks) to avoid repetition
+    const fourWeeksAgo = new Date(Date.now() - (28 * 24 * 60 * 60 * 1000));
+    const recentCharacters = await CharacterOfWeek.find({
+      startDate: { $gte: fourWeeksAgo }
+    }).distinct('characterId');
+    
+    // Filter out recently featured characters
+    const availableCharacters = characters.filter(char => 
+      !recentCharacters.includes(char._id.toString())
+    );
+    
+    // If all characters have been featured recently, use all characters
+    const characterPool = availableCharacters.length > 0 ? availableCharacters : characters;
+    
+    // Select random character
+    const randomCharacter = characterPool[Math.floor(Math.random() * characterPool.length)];
+    
+    // Deactivate current character of the week
+    await CharacterOfWeek.updateMany(
+      { isActive: true },
+      { isActive: false }
+    );
+    
+    // Calculate end date (7 days from now)
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+    
+    // Create new character of the week
+    const newCharacterOfWeek = new CharacterOfWeek({
+      characterId: randomCharacter._id,
+      characterName: randomCharacter.name,
+      userId: randomCharacter.userId,
+      startDate,
+      endDate,
+      isActive: true,
+      featuredReason: 'Random selection'
+    });
+    
+    await newCharacterOfWeek.save();
+    
+    console.log(`[server.js]: ✅ Randomly selected character of the week: ${randomCharacter.name}`);
+    res.json({ 
+      data: newCharacterOfWeek,
+      message: `Randomly selected ${randomCharacter.name} as character of the week` 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error selecting random character of the week:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: triggerFirstCharacterOfWeek -------------------
+// Manually triggers the first character of the week (for testing)
+app.post('/api/character-of-week/trigger-first', requireAuth, async (req, res) => {
+  try {
+    // Check if user has admin privileges
+    const user = await User.findOne({ discordId: req.user.discordId });
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ error: 'Admin privileges required' });
+    }
+    
+    // Check if there's already an active character of the week
+    const existingCharacter = await CharacterOfWeek.findOne({ isActive: true });
+    if (existingCharacter) {
+      return res.json({ 
+        data: existingCharacter,
+        message: `Character of the week already exists: ${existingCharacter.characterName}` 
+      });
+    }
+    
+    // Get all active characters
+    const characters = await Character.find({}).lean();
+    
+    if (characters.length === 0) {
+      return res.status(404).json({ error: 'No characters found' });
+    }
+    
+    // Select random character
+    const randomCharacter = characters[Math.floor(Math.random() * characters.length)];
+    
+    // Calculate end date (7 days from now)
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+    
+    // Create new character of the week
+    const newCharacterOfWeek = new CharacterOfWeek({
+      characterId: randomCharacter._id,
+      characterName: randomCharacter.name,
+      userId: randomCharacter.userId,
+      startDate,
+      endDate,
+      isActive: true,
+      featuredReason: 'Manual trigger for testing'
+    });
+    
+    await newCharacterOfWeek.save();
+    
+    console.log(`[server.js]: ✅ Manually triggered first character of the week: ${randomCharacter.name}`);
+    res.json({ 
+      data: newCharacterOfWeek,
+      message: `Manually triggered first character of the week: ${randomCharacter.name}` 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error triggering first character of the week:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: setupWeeklyCharacterRotation -------------------
+// Sets up the weekly character rotation scheduler and initializes on server start
+const setupWeeklyCharacterRotation = async () => {
+  console.log('[server.js]: 🔄 Setting up weekly character rotation scheduler...');
+  
+  // Check if there's already an active character of the week
+  const existingCharacter = await CharacterOfWeek.findOne({ isActive: true });
+  
+  if (existingCharacter) {
+    console.log(`[server.js]: ✅ Found existing character of the week: ${existingCharacter.characterName}`);
+    
+    // Check if the existing character has been active for more than 7 days
+    const now = new Date();
+    const daysActive = (now - existingCharacter.startDate) / (1000 * 60 * 60 * 24);
+    
+    if (daysActive >= 7) {
+      console.log(`[server.js]: ⏰ Existing character has been active for ${daysActive.toFixed(1)} days, rotating...`);
+      await rotateCharacterOfWeek();
+    } else {
+      console.log(`[server.js]: ⏰ Existing character has been active for ${daysActive.toFixed(1)} days, keeping current character`);
+    }
+  } else {
+    console.log('[server.js]: 🔍 No active character of the week found, creating first one...');
+    await rotateCharacterOfWeek();
+  }
+  
+  // Setup weekly scheduler
+  const scheduleNextRotation = () => {
+    const now = new Date();
+    const nextWeek = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));
+    
+    console.log(`[server.js]: ⏰ Next character rotation scheduled for: ${nextWeek.toLocaleString()}`);
+    
+    setTimeout(async () => {
+      try {
+        console.log('[server.js]: 🔄 Executing weekly character rotation...');
+        await rotateCharacterOfWeek();
+        
+        // Schedule next rotation
+        scheduleNextRotation();
+        
+      } catch (error) {
+        console.error('[server.js]: ❌ Error in weekly character rotation:', error);
+        // Schedule next rotation even if this one failed
+        scheduleNextRotation();
+      }
+    }, 7 * 24 * 60 * 60 * 1000); // 7 days
+  };
+  
+  // Start the scheduler
+  scheduleNextRotation();
+  
+  console.log('[server.js]: ✅ Weekly character rotation scheduler initialized');
+};
+
+// ------------------- Function: rotateCharacterOfWeek -------------------
+// Helper function to rotate the character of the week
+const rotateCharacterOfWeek = async () => {
+  try {
+    // Get all active characters
+    const characters = await Character.find({}).lean();
+    
+    if (characters.length === 0) {
+      console.log('[server.js]: ⚠️ No characters found for rotation');
+      return;
+    }
+    
+    // Get recently featured characters (last 4 weeks) to avoid repetition
+    const fourWeeksAgo = new Date(Date.now() - (28 * 24 * 60 * 60 * 1000));
+    const recentCharacters = await CharacterOfWeek.find({
+      startDate: { $gte: fourWeeksAgo }
+    }).distinct('characterId');
+    
+    // Filter out recently featured characters
+    const availableCharacters = characters.filter(char => 
+      !recentCharacters.includes(char._id.toString())
+    );
+    
+    // If all characters have been featured recently, use all characters
+    const characterPool = availableCharacters.length > 0 ? availableCharacters : characters;
+    
+    // Select random character
+    const randomCharacter = characterPool[Math.floor(Math.random() * characterPool.length)];
+    
+    // Deactivate current character of the week
+    await CharacterOfWeek.updateMany(
+      { isActive: true },
+      { isActive: false }
+    );
+    
+    // Calculate end date (7 days from now)
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+    
+    // Create new character of the week
+    const newCharacterOfWeek = new CharacterOfWeek({
+      characterId: randomCharacter._id,
+      characterName: randomCharacter.name,
+      userId: randomCharacter.userId,
+      startDate,
+      endDate,
+      isActive: true,
+      featuredReason: 'Weekly rotation'
+    });
+    
+    await newCharacterOfWeek.save();
+    
+    console.log(`[server.js]: ✅ Character rotation completed: ${randomCharacter.name} is now character of the week until ${endDate.toLocaleString()}`);
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Error rotating character of the week:', error);
+    throw error;
+  }
+};
+
+// ------------------- Function: triggerFirstCharacterOfWeekSimple -------------------
+// Simple trigger for first character of the week (no auth required for testing)
+app.post('/api/character-of-week/trigger-simple', async (req, res) => {
+  try {
+    console.log('[server.js]: 🔧 Simple character of week trigger requested');
+    
+    // Check if there's already an active character of the week
+    const existingCharacter = await CharacterOfWeek.findOne({ isActive: true });
+    if (existingCharacter) {
+      console.log(`[server.js]: ⚠️ Character of the week already exists: ${existingCharacter.characterName}`);
+      
+      // Check if the existing character has been active for more than 7 days
+      const now = new Date();
+      const daysActive = (now - existingCharacter.startDate) / (1000 * 60 * 60 * 24);
+      
+      if (daysActive >= 7) {
+        console.log(`[server.js]: ⏰ Existing character has been active for ${daysActive.toFixed(1)} days, rotating...`);
+        await rotateCharacterOfWeek();
+        const newCharacter = await CharacterOfWeek.findOne({ isActive: true }).populate('characterId');
+        return res.json({ 
+          data: newCharacter,
+          message: `Rotated character of the week: ${newCharacter.characterName}` 
+        });
+      } else {
+        return res.json({ 
+          data: existingCharacter,
+          message: `Character of the week already exists: ${existingCharacter.characterName} (${daysActive.toFixed(1)} days active)` 
+        });
+      }
+    }
+    
+    // Get all active characters
+    const characters = await Character.find({}).lean();
+    
+    if (characters.length === 0) {
+      console.log('[server.js]: ❌ No characters found in database');
+      return res.status(404).json({ error: 'No characters found' });
+    }
+    
+    console.log(`[server.js]: 🔍 Found ${characters.length} characters in database`);
+    
+    // Use the rotation function to create the first character
+    await rotateCharacterOfWeek();
+    
+    const newCharacter = await CharacterOfWeek.findOne({ isActive: true }).populate('characterId');
+    
+    console.log(`[server.js]: ✅ Simple trigger created character of the week: ${newCharacter.characterName}`);
+    res.json({ 
+      data: newCharacter,
+      message: `Created character of the week: ${newCharacter.characterName}` 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error in simple character of week trigger:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ------------------- Function: getGuildMemberInfo -------------------
 // Returns Discord guild member information including join date
 app.get('/api/user/guild-info', requireAuth, async (req, res) => {
@@ -1542,6 +1933,9 @@ const startServer = async () => {
     
     // Initialize databases
     await initializeDatabases();
+    
+    // Setup weekly character rotation
+    await setupWeeklyCharacterRotation();
     
     // Start server
     app.listen(PORT, () => {

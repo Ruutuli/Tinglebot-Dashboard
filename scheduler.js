@@ -22,6 +22,7 @@ const { loadBlightSubmissions, saveBlightSubmissions } = require('./handlers/bli
 const { connectToInventories } = require('./handlers/blightHandler');
 const { getCurrentWeather, saveWeather } = require('./modules/weatherModule');
 const Pet = require('./models/PetModel');
+const CharacterOfWeek = require('./models/CharacterOfWeekModel');
 
 // Load environment variables based on NODE_ENV
 const env = process.env.NODE_ENV || 'development';
@@ -336,6 +337,123 @@ function setupBlightScheduler(client) {
 }
 
 // ============================================================================
+// ---- Character of Week Functions ----
+// Handles automatic rotation of featured characters
+// ============================================================================
+
+// ---- Function: triggerFirstCharacterOfWeek ----
+// Manually triggers the first character of the week selection (for testing)
+async function triggerFirstCharacterOfWeek(client) {
+  try {
+    console.log('[scheduler.js]: 🎭 Manually triggering first character of the week selection');
+    
+    // Check if there's already an active character of the week
+    const existingCharacter = await CharacterOfWeek.findOne({ isActive: true });
+    if (existingCharacter) {
+      console.log('[scheduler.js]: ⚠️ Character of the week already exists:', existingCharacter.characterName);
+      return;
+    }
+    
+    // Call the rotation function
+    await rotateCharacterOfWeek(client);
+    console.log('[scheduler.js]: ✅ First character of the week manually triggered');
+  } catch (error) {
+    handleError(error, 'scheduler.js');
+    console.error('[scheduler.js]: ❌ Manual character of the week trigger failed:', error.message);
+  }
+}
+
+// ---- Function: rotateCharacterOfWeek ----
+// Automatically selects a new random character for the week
+async function rotateCharacterOfWeek(client) {
+  try {
+    console.log('[scheduler.js]: 🎭 Starting character of the week rotation');
+    
+    // Get all active characters
+    const characters = await Character.find({}).lean();
+    
+    if (characters.length === 0) {
+      console.log('[scheduler.js]: ⚠️ No characters found for rotation');
+      return;
+    }
+    
+    // Get recently featured characters (last 4 weeks) to avoid repetition
+    const fourWeeksAgo = new Date(Date.now() - (28 * 24 * 60 * 60 * 1000));
+    const recentCharacters = await CharacterOfWeek.find({
+      startDate: { $gte: fourWeeksAgo }
+    }).distinct('characterId');
+    
+    // Filter out recently featured characters
+    const availableCharacters = characters.filter(char => 
+      !recentCharacters.includes(char._id.toString())
+    );
+    
+    // If all characters have been featured recently, use all characters
+    const characterPool = availableCharacters.length > 0 ? availableCharacters : characters;
+    
+    // Select random character
+    const randomCharacter = characterPool[Math.floor(Math.random() * characterPool.length)];
+    
+    // Deactivate current character of the week
+    await CharacterOfWeek.updateMany(
+      { isActive: true },
+      { isActive: false }
+    );
+    
+    // Calculate end date (7 days from now)
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+    
+    // Create new character of the week
+    const newCharacterOfWeek = new CharacterOfWeek({
+      characterId: randomCharacter._id,
+      characterName: randomCharacter.name,
+      userId: randomCharacter.userId,
+      startDate,
+      endDate,
+      isActive: true,
+      featuredReason: 'Weekly rotation'
+    });
+    
+    await newCharacterOfWeek.save();
+    
+    console.log(`[scheduler.js]: ✅ Rotated character of the week to: ${randomCharacter.name}`);
+    
+    // Optional: Send announcement to a designated channel
+    const announcementChannelId = process.env.CHARACTER_OF_WEEK_CHANNEL;
+    if (announcementChannelId && client) {
+      try {
+        const channel = client.channels.cache.get(announcementChannelId);
+        if (channel) {
+          const embed = new EmbedBuilder()
+            .setColor('#FFD700')
+            .setTitle('🌟 Character of the Week 🌟')
+            .setDescription(`**${randomCharacter.name}** has been selected as this week's featured character!`)
+            .addFields(
+              { name: 'Race', value: randomCharacter.race || 'Unknown', inline: true },
+              { name: 'Job', value: randomCharacter.job || 'Unknown', inline: true },
+              { name: 'Village', value: randomCharacter.currentVillage || randomCharacter.homeVillage || 'Unknown', inline: true },
+              { name: 'Hearts', value: `${randomCharacter.currentHearts}/${randomCharacter.maxHearts}`, inline: true },
+              { name: 'Stamina', value: `${randomCharacter.currentStamina}/${randomCharacter.maxStamina}`, inline: true },
+              { name: 'Featured Until', value: endDate.toLocaleDateString(), inline: true }
+            )
+            .setThumbnail(randomCharacter.icon || DEFAULT_IMAGE_URL)
+            .setTimestamp();
+          
+          await channel.send({ embeds: [embed] });
+          console.log(`[scheduler.js]: ✅ Posted character of the week announcement`);
+        }
+      } catch (error) {
+        console.error('[scheduler.js]: ❌ Failed to post character of the week announcement:', error.message);
+      }
+    }
+  } catch (error) {
+    handleError(error, 'scheduler.js');
+    console.error('[scheduler.js]: ❌ Character of the week rotation failed:', error.message);
+  }
+}
+
+// ============================================================================
 // ---- Scheduler Initialization ----
 // Main initialization function for all scheduled tasks
 // ============================================================================
@@ -410,6 +528,9 @@ function initializeScheduler(client) {
   createCronJob('0 8 * * *', 'daily weather update', () => postWeatherUpdate(client));
   createCronJob('0 0 * * *', 'birthday announcements', () => executeBirthdayAnnouncements(client));
   
+  // Character of the week rotation (every Sunday at 8:45 PM EST)
+  createCronJob('50 20 * * 0', 'character of the week rotation', () => rotateCharacterOfWeek(client));
+  
   // Blood Moon tracking cleanup (daily at 1 AM EST)
   createCronJob('0 1 * * *', 'blood moon tracking cleanup', () => {
     console.log(`[scheduler.js]: 🧹 Starting Blood Moon tracking cleanup`);
@@ -467,6 +588,9 @@ function initializeScheduler(client) {
     
     console.log(`[scheduler.js]: ✅ Scheduled Blood Moon check completed`);
   }, 'America/New_York');
+
+  // Rotate character of the week
+  rotateCharacterOfWeek(client);
 }
 
 // Export all functions
@@ -478,7 +602,9 @@ module.exports = {
   handleJailRelease,
   handleDebuffExpiry,
   resetDailyRolls,
-  resetPetLastRollDates
+  resetPetLastRollDates,
+  rotateCharacterOfWeek,
+  triggerFirstCharacterOfWeek
 };
 
 

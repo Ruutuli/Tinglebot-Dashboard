@@ -168,6 +168,24 @@
 
         <div class="dashboard-divider"></div>
 
+        <!-- Character of the Week Section -->
+        <section id="character-of-week-section" class="character-of-week-section">
+          <div class="character-of-week-header">
+            <div class="character-of-week-header-info">
+              <h2><i class="fas fa-star"></i> Character of the Week</h2>
+              <p>Featured character spotlight</p>
+            </div>
+            <button id="test-character-week-btn" style="position: absolute; top: 10px; right: 10px; background: #FFD700; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer; font-size: 12px;" onclick="triggerFirstCharacter()">
+              Create/Check Character
+            </button>
+          </div>
+          <div id="character-of-week-content" class="character-of-week-content">
+            <!-- Character of the week content will be dynamically loaded here -->
+          </div>
+        </section>
+
+        <div class="dashboard-divider"></div>
+
         <!-- Dashboard Countdown Section -->
         <section id="countdown-section" class="countdown-section">
           <div class="countdown-header">
@@ -292,6 +310,8 @@
           </div>
           <!-- Weather content will be dynamically loaded here -->
         </section>
+
+        <div class="dashboard-divider"></div>
 
         <div class="dashboard-section-card dashboard-links-section">
           <span class="dashboard-links-icon"><i class="fas fa-link" aria-hidden="true"></i></span>
@@ -666,6 +686,49 @@
         enableCommandsCSS();
       }
     });
+
+    // Ensure character of week is loaded and available
+    window.addEventListener('load', function() {
+      console.log('🔍 Checking character of week function availability...');
+      console.log('loadCharacterOfWeek function:', typeof loadCharacterOfWeek);
+      
+      // If character of week function is available, trigger initial load
+      if (typeof loadCharacterOfWeek === 'function') {
+        console.log('✅ Character of week function found, triggering initial load');
+        setTimeout(() => {
+          loadCharacterOfWeek();
+        }, 1000); // Small delay to ensure everything is loaded
+      } else {
+        console.log('❌ Character of week function not found');
+      }
+    });
+    
+    // Function to trigger first character of the week
+    async function triggerFirstCharacter() {
+      try {
+        console.log('🔧 Triggering first character of the week...');
+        const response = await fetch('/api/character-of-week/trigger-simple', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          console.log('✅ First character created:', result.message);
+          // Reload the character of week display
+          if (typeof loadCharacterOfWeek === 'function') {
+            loadCharacterOfWeek();
+          }
+        } else {
+          console.error('❌ Error creating first character:', result.error);
+        }
+      } catch (error) {
+        console.error('❌ Error triggering first character:', error);
+      }
+    }
   </script>
   <script type="module" src="js/ui.js"></script>
   <script type="module" src="js/auth.js"></script>
@@ -679,5 +742,6 @@
   <script type="module" src="js/index.js"></script>
   <script src="js/countdown.js"></script>
   <script src="js/debug.js"></script>
+  <script src="js/characterOfWeek.js"></script>
 </body>
 </html>

@@ -390,6 +390,19 @@ function setupModelCards() {
           }
         }
 
+        // Load character of the week
+        if (typeof loadCharacterOfWeek === 'function') {
+          console.log('🌟 Loading character of the week...');
+          try {
+            loadCharacterOfWeek();
+          } catch (error) {
+            console.error('❌ Error loading character of the week:', error);
+          }
+        } else {
+          console.log('⚠️ Character of week function not available');
+          console.log('🔍 Available loadCharacterOfWeek:', typeof loadCharacterOfWeek);
+        }
+
       } catch (err) {
         console.error('❌ Error loading model data:', err);
         error.logError(err, 'Loading Model Data');
@@ -953,6 +966,13 @@ function showDashboardSection() {
     if (linksSection) linksSection.style.display = 'flex';
     if (countdownSection) countdownSection.style.display = 'block';
     
+    // Ensure character of the week section is visible
+    const characterOfWeekSection = document.getElementById('character-of-week-section');
+    if (characterOfWeekSection) {
+      characterOfWeekSection.style.display = 'block';
+      console.log('🔧 Made character of week section visible');
+    }
+    
     console.log('🔧 Fixed dashboard content visibility');
     
     // Check for any loading states that might be hiding content
@@ -984,6 +1004,20 @@ function showDashboardSection() {
       console.log('🌤️ Rendering weather section...');
       window.renderWeatherSection();
     }
+    
+    // Load character of the week
+    if (typeof loadCharacterOfWeek === 'function') {
+      console.log('🌟 Loading character of the week...');
+      try {
+        loadCharacterOfWeek();
+      } catch (error) {
+        console.error('❌ Error loading character of the week:', error);
+      }
+    } else {
+      console.log('⚠️ Character of week function not available');
+      console.log('🔍 Available loadCharacterOfWeek:', typeof loadCharacterOfWeek);
+    }
+    
     // The dashboard content (welcome message, links, model cards) is already in the HTML
     // No need to load data dynamically for the main dashboard view
   } else {
