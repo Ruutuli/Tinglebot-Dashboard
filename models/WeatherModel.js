@@ -75,9 +75,11 @@ WeatherSchema.statics.clearOldWeather = async function(daysToKeep = 7) {
   });
 };
 
-// Static method to get recent weather history for a village
-WeatherSchema.statics.getRecentWeather = async function(village, n = 3) {
-  return this.find({ village })
+// Static method to get recent weather history for a village, optionally filtered by season
+WeatherSchema.statics.getRecentWeather = async function(village, n = 3, season = null) {
+  const query = { village };
+  if (season) query.season = season;
+  return this.find(query)
     .sort({ date: -1 })
     .limit(n)
     .lean();

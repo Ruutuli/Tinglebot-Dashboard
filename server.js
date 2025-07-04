@@ -1982,15 +1982,19 @@ app.get('/api/weather/history/:village', async (req, res) => {
     const { village } = req.params;
     const days = parseInt(req.query.days) || 7;
     
-    console.log(`[server.js]: 🌤️ Fetching ${days} days of weather history for ${village}...`);
+    // Determine the current season
+    const currentSeason = calendarModule.getCurrentSeason();
+    console.log(`[server.js]: 🌤️ Fetching ${days} days of weather history for ${village} in season ${currentSeason}...`);
     
-    const history = await Weather.getRecentWeather(village, days);
+    // Only fetch weather for the current season
+    const history = await Weather.getRecentWeather(village, days, currentSeason);
     
-    console.log(`[server.js]: ✅ Successfully fetched ${history.length} days of weather history for ${village}`);
+    console.log(`[server.js]: ✅ Successfully fetched ${history.length} days of weather history for ${village} in season ${currentSeason}`);
     res.json({
       village,
       history,
-      days
+      days,
+      season: currentSeason
     });
   } catch (error) {
     console.error(`[server.js]: ❌ Error fetching weather history for ${req.params.village}:`, error);

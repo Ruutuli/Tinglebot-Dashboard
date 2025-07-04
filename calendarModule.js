@@ -101,6 +101,15 @@ function getBloodMoonCycleDay(hyruleanDate) {
     return cycleDay;
 }
 
+// ------------------- Get current season based on date -------------------
+function getCurrentSeason(date = new Date()) {
+    const month = (date instanceof Date ? date : new Date(date)).getMonth() + 1; // 1-12
+    if (month >= 3 && month <= 5) return 'spring';
+    if (month >= 6 && month <= 8) return 'summer';
+    if (month >= 9 && month <= 11) return 'fall';
+    return 'winter';
+}
+
 // ------------------- Export the functions and data -------------------
 module.exports = {
     hyruleanCalendar,
@@ -109,4 +118,5 @@ module.exports = {
     isBloodmoon,
     convertToHyruleanDate,
     getBloodMoonCycleDay,
+    getCurrentSeason,
 };

@@ -548,9 +548,6 @@ function renderWeatherCharts(analysis) {
   return `
     <div class="weather-charts-grid">
       <div class="weather-chart-card">
-        <canvas id="seasons-chart-${village.toLowerCase()}"></canvas>
-      </div>
-      <div class="weather-chart-card">
         <canvas id="temperatures-chart-${village.toLowerCase()}"></canvas>
       </div>
       <div class="weather-chart-card">
@@ -729,13 +726,6 @@ function createWeatherChartsForVillage(analysis, village) {
   ];
   
   // Create charts
-  if (Object.keys(seasons).length > 0) {
-    const seasonsCtx = document.getElementById(`seasons-chart-${village.toLowerCase()}`);
-    if (seasonsCtx) {
-      createWeatherPieChart(seasonsCtx, seasons, `${village} - Season Distribution`, seasonColors);
-    }
-  }
-  
   if (Object.keys(temperatures).length > 0) {
     const tempsCtx = document.getElementById(`temperatures-chart-${village.toLowerCase()}`);
     if (tempsCtx) {
@@ -779,8 +769,20 @@ async function initializeWeatherStatsPage() {
   // Scroll to top
   scrollToTop();
   
+  // Fetch weather history for all villages
+  const weatherData = await fetchWeatherHistory(30);
+  // Get the season from the first village's data (all should match)
+  const season = weatherData && Object.values(weatherData)[0]?.season || '';
+  
   // Render the page
   await renderWeatherStatsPage();
+  
+  // Render header with season
+  const header = document.createElement('div');
+  header.className = 'weather-stats-header';
+  header.innerHTML = `<h1>Weather Statistics</h1><p>Season: <strong>${season ? season.charAt(0).toUpperCase() + season.slice(1) : 'Unknown'}</strong></p>`;
+  const weatherStatsPage = document.querySelector('.weather-stats-page');
+  weatherStatsPage.insertBefore(header, weatherStatsPage.firstChild);
 }
 
 // ============================================================================
