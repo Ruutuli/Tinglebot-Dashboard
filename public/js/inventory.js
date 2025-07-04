@@ -670,14 +670,38 @@ function renderCharacterItems(items, characterName, renderFilterBar = true) {
   const filterState = window.characterItemFilters[characterName];
 
   // Populate filter options from this character's items
-  const allCategories = Array.from(new Set(filteredItems.flatMap(item => Array.isArray(item.category) ? item.category : [item.category]))).filter(Boolean).sort();
-  const allTypes = Array.from(new Set(filteredItems.flatMap(item => Array.isArray(item.type) ? item.type : [item.type]))).filter(Boolean).sort();
+  const allCategories = Array.from(new Set(
+    filteredItems.flatMap(item => {
+      if (Array.isArray(item.category)) return item.category;
+      if (typeof item.category === 'string' && item.category.includes(',')) return item.category.split(',').map(s => s.trim());
+      return [item.category];
+    })
+  )).filter(Boolean).sort();
+  const allTypes = Array.from(new Set(
+    filteredItems.flatMap(item => {
+      if (Array.isArray(item.type)) return item.type;
+      if (typeof item.type === 'string' && item.type.includes(',')) return item.type.split(',').map(s => s.trim());
+      return [item.type];
+    })
+  )).filter(Boolean).sort();
 
   // Apply filters
   filteredItems = filteredItems.filter(item => {
     const matchesSearch = !filterState.search || item.itemName.toLowerCase().includes(filterState.search.toLowerCase());
-    const matchesCategory = filterState.category === 'all' || (Array.isArray(item.category) ? item.category : [item.category]).includes(filterState.category);
-    const matchesType = filterState.type === 'all' || (Array.isArray(item.type) ? item.type : [item.type]).includes(filterState.type);
+    // Category filter: match if selected category is in item's category array or string
+    const itemCategories = Array.isArray(item.category)
+      ? item.category
+      : (typeof item.category === 'string' && item.category.includes(','))
+        ? item.category.split(',').map(s => s.trim())
+        : [item.category];
+    const matchesCategory = filterState.category === 'all' || itemCategories.includes(filterState.category);
+    // Type filter: match if selected type is in item's type array or string
+    const itemTypes = Array.isArray(item.type)
+      ? item.type
+      : (typeof item.type === 'string' && item.type.includes(','))
+        ? item.type.split(',').map(s => s.trim())
+        : [item.type];
+    const matchesType = filterState.type === 'all' || itemTypes.includes(filterState.type);
     return matchesSearch && matchesCategory && matchesType;
   });
 
@@ -842,8 +866,6 @@ function updateCharacterItemsGrid(items, characterName) {
 }
 
 // ------------------- Filter and Sort Functions -------------------
-
-
 
 /**
  * Sets up inventory filters with event listeners

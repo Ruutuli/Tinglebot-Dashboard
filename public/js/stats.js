@@ -360,10 +360,10 @@ async function initStatsPage() {
                         </thead>
                         <tbody>
                             ${(data.mostStaminaChar?.names || []).length > 0
-                                ? data.mostStaminaChar.names.map(name => `
+                                ? data.mostStaminaChar.names.map((name, index) => `
                                     <tr>
                                         <td>${name}</td>
-                                        <td>${data.mostStaminaChar.value || 0}</td>
+                                        <td>${data.mostStaminaChar.values ? data.mostStaminaChar.values[index] : data.mostStaminaChar.value || 0}</td>
                                     </tr>
                                 `).join('')
                                 : '<tr><td colspan="2">No data</td></tr>'
@@ -382,10 +382,10 @@ async function initStatsPage() {
                         </thead>
                         <tbody>
                             ${(data.mostHeartsChar?.names || []).length > 0
-                                ? data.mostHeartsChar.names.map(name => `
+                                ? data.mostHeartsChar.names.map((name, index) => `
                                     <tr>
                                         <td>${name}</td>
-                                        <td>${data.mostHeartsChar.value || 0}</td>
+                                        <td>${data.mostHeartsChar.values ? data.mostHeartsChar.values[index] : data.mostHeartsChar.value || 0}</td>
                                     </tr>
                                 `).join('')
                                 : '<tr><td colspan="2">No data</td></tr>'
@@ -404,10 +404,10 @@ async function initStatsPage() {
                         </thead>
                         <tbody>
                             ${(data.mostOrbsChar?.names || []).length > 0
-                                ? data.mostOrbsChar.names.map(name => `
+                                ? data.mostOrbsChar.names.map((name, index) => `
                                     <tr>
                                         <td>${name}</td>
-                                        <td>${data.mostOrbsChar.value || 0}</td>
+                                        <td>${data.mostOrbsChar.values ? data.mostOrbsChar.values[index] : data.mostOrbsChar.value || 0}</td>
                                     </tr>
                                 `).join('')
                                 : '<tr><td colspan="2">No data</td></tr>'

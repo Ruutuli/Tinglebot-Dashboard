@@ -681,11 +681,19 @@ app.get('/api/stats/characters', async (req, res) => {
 
     // Get top characters by various stats
     const getTop = async (field) => {
-      const top = await Character.find({ [field]: { $gt: 0 } }).sort({ [field]: -1 }).limit(1).lean();
+      const top = await Character.find({ [field]: { $gt: 0 } })
+        .sort({ [field]: -1 })
+        .limit(5)
+        .select({ name: 1, [field]: 1 })
+        .lean();
+      
       if (!top.length) return { names: [], value: 0 };
-      const val = top[0][field];
-      const names = (await Character.find({ [field]: val }, { name: 1 }).limit(5).lean()).map(c => c.name);
-      return { names, value: val };
+      
+      // Return all top characters with their individual values
+      const names = top.map(c => c.name);
+      const values = top.map(c => c[field]);
+      
+      return { names, values, value: top[0][field] }; // Keep 'value' for backward compatibility
     };
 
     const [mostStamina, mostHearts, mostOrbs] = await Promise.all([
