@@ -171,34 +171,25 @@ function renderVillageShopCards(items, page = 1, totalItems = null) {
               <div class="item-detail-row modern-item-detail-row">
                 <strong>Stock:</strong> <span>${item.stock || 0}</span>
               </div>
+              ${(item.modifierHearts > 0 && (isRecipe || isWeapon || isArmor)) ? `
+              <div class="item-detail-row modern-item-detail-row">
+                <strong>${isRecipe ? 'Hearts Healed' : 'Modifier'}:</strong> <span>${item.modifierHearts}</span>
+              </div>
+              ` : ''}
+              ${item.staminaRecovered > 0 ? `
+              <div class="item-detail-row modern-item-detail-row">
+                <strong>Stamina Recovered:</strong> <span>${item.staminaRecovered}</span>
+              </div>
+              ` : ''}
+              ${item.staminaToCraft !== null ? `
+              <div class="item-detail-row modern-item-detail-row">
+                <strong>Stamina to Craft:</strong> <span>${item.staminaToCraft}</span>
+              </div>
+              ` : ''}
             </div>
           </div>
           
-          ${(item.modifierHearts > 0 || item.staminaRecovered > 0 || item.staminaToCraft !== null) ? `
-          <div class="item-section modern-item-section">
-            <div class="item-section-label modern-item-section-label"><i class="fas fa-chart-bar"></i> Stats</div>
-            <div class="item-stats-row modern-item-stats-row">
-              ${item.modifierHearts > 0 ? `
-                <span class="item-stat-pill modern-item-stat-pill">
-                  <i class="fas fa-heart"></i>
-                  <span>+${item.modifierHearts}</span>
-                </span>
-              ` : ''}
-              ${item.staminaRecovered > 0 ? `
-                <span class="item-stat-pill modern-item-stat-pill">
-                  <i class="fas fa-battery-three-quarters"></i>
-                  <span>+${item.staminaRecovered}</span>
-                </span>
-              ` : ''}
-              ${item.staminaToCraft !== null ? `
-                <span class="item-stat-pill modern-item-stat-pill">
-                  <i class="fas fa-tools"></i>
-                  <span>${item.staminaToCraft}</span>
-                </span>
-              ` : ''}
-            </div>
-          </div>
-          ` : ''}
+
         </div>
       `;
     }).join('');
@@ -500,7 +491,7 @@ async function setupVillageShopFilters(items) {
   if (filtersContainer) {
     console.log('✅ Found village shop filters container');
     console.log('✅ Filter container children:', filtersContainer.children.length);
-    filtersContainer.style.display = 'flex';
+    filtersContainer.style.display = 'block';
   } else {
     console.error('❌ Village shop filters container not found');
   }
@@ -831,7 +822,7 @@ async function setupVillageShopFilters(items) {
       categorySelect.value = 'all';
       typeSelect.value = 'all';
       sortSelect.value = 'name-asc';
-      itemsPerPageSelect.value = '12';
+      itemsPerPageSelect.value = '32';
       
       // Clear saved state
       window.savedFilterState = {};
@@ -933,35 +924,49 @@ async function initializeVillageShopsPage(data, page, contentDiv) {
     const filtersContainer = document.createElement('div');
     filtersContainer.className = 'village-shop-filters';
     filtersContainer.innerHTML = `
-      <div class="village-shop-results-info">
-        <p>Loading village shop items...</p>
-      </div>
-      <div class="village-shop-controls">
-        <input type="text" id="village-shop-search-input" placeholder="Search village shop items..." />
-        <select id="village-shop-filter-category">
-          <option value="all">All Categories</option>
-        </select>
-        <select id="village-shop-filter-type">
-          <option value="all">All Types</option>
-        </select>
-        <select id="village-shop-sort-by">
-          <option value="name-asc">Name (A-Z)</option>
-          <option value="name-desc">Name (Z-A)</option>
-          <option value="price-asc">Price (Low-High)</option>
-          <option value="price-desc">Price (High-Low)</option>
-          <option value="stock-asc">Stock (Low-High)</option>
-          <option value="stock-desc">Stock (High-Low)</option>
-        </select>
-        <select id="village-shop-items-per-page">
-          <option value="12">12 per page</option>
-          <option value="24">24 per page</option>
-          <option value="48">48 per page</option>
-          <option value="all">All items</option>
-        </select>
-        <button id="village-shop-clear-filters">Clear</button>
+      <div class="search-filter-bar">
+        <div class="search-filter-control search-input">
+          <input type="text" id="village-shop-search-input" placeholder="Search village shop items...">
+        </div>
+        <div class="search-filter-control">
+          <select id="village-shop-filter-category">
+            <option value="all">All Categories</option>
+          </select>
+        </div>
+        <div class="search-filter-control">
+          <select id="village-shop-filter-type">
+            <option value="all">All Types</option>
+          </select>
+        </div>
+        <div class="search-filter-control">
+          <select id="village-shop-sort-by">
+            <option value="name-asc">Name (A-Z)</option>
+            <option value="name-desc">Name (Z-A)</option>
+            <option value="price-asc">Price (Low-High)</option>
+            <option value="price-desc">Price (High-Low)</option>
+            <option value="stock-asc">Stock (Low-High)</option>
+            <option value="stock-desc">Stock (High-Low)</option>
+          </select>
+        </div>
+        <div class="search-filter-control">
+          <select id="village-shop-items-per-page">
+            <option value="32">32 per page</option>
+            <option value="12">12 per page</option>
+            <option value="24">24 per page</option>
+            <option value="48">48 per page</option>
+            <option value="all">All items</option>
+          </select>
+        </div>
+        <button id="village-shop-clear-filters" class="clear-filters-btn">Clear Filters</button>
       </div>
     `;
     contentDiv.appendChild(filtersContainer);
+
+    // Add results info section
+    const resultsInfoSection = document.createElement('div');
+    resultsInfoSection.className = 'village-shop-results-info';
+    resultsInfoSection.innerHTML = '<p>Loading village shop items...</p>';
+    contentDiv.appendChild(resultsInfoSection);
 
     // Create the grid container
     const gridContainer = document.createElement('div');
@@ -972,7 +977,6 @@ async function initializeVillageShopsPage(data, page, contentDiv) {
     // Create pagination container
     const paginationContainer = document.createElement('div');
     paginationContainer.id = 'village-shop-pagination';
-    paginationContainer.className = 'pagination';
     contentDiv.appendChild(paginationContainer);
 
     console.log('✅ Created village shop containers');
@@ -986,6 +990,12 @@ async function initializeVillageShopsPage(data, page, contentDiv) {
       console.warn('⚠️ Filter setup failed, continuing without filters:', filterError);
       // Continue without filters - render the items anyway
       renderVillageShopCards(data, page);
+    }
+    
+    // Update results info
+    const resultsInfo = document.querySelector('.village-shop-results-info p');
+    if (resultsInfo) {
+      resultsInfo.textContent = `Showing ${data.length} village shop items`;
     }
     
     console.log('✅ Village shops page initialized successfully');

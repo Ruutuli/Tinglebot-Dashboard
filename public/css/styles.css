@@ -7316,15 +7316,17 @@
 }
 
 .village-shop-results-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0;
+  background: var(--glass-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 1rem 1.5rem;
+  padding: 1rem 1.5rem;
+  text-align: center;
 }
 
 .village-shop-results-info p {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
   margin: 0;
 }
 
@@ -7825,4 +7827,3 @@
     padding: 0.5rem;
   }
 }
-

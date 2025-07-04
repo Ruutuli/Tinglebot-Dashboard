@@ -579,19 +579,17 @@ function formatWeatherDayDisplay(weatherDayStart, weatherDayEnd) {
   const startDate = new Date(weatherDayStart);
   const endDate = new Date(weatherDayEnd);
   
+  // Format the dates to show 8am-8am regardless of timezone
+  // We'll use a more explicit format to ensure 8am is displayed as 8am
   const startFormatted = startDate.toLocaleDateString('en-US', { 
     month: 'short', 
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  });
+    day: 'numeric'
+  }) + ' 8:00 AM';
   
   const endFormatted = endDate.toLocaleDateString('en-US', { 
     month: 'short', 
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  });
+    day: 'numeric'
+  }) + ' 8:00 AM';
   
   return `${startFormatted} - ${endFormatted}`;
 }

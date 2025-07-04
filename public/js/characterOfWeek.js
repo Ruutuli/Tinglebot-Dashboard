@@ -9,56 +9,36 @@ let characterOfWeekData = null;
 // ------------------- Function: loadCharacterOfWeek -------------------
 // Loads the current character of the week from the API
 async function loadCharacterOfWeek() {
-  console.log('[characterOfWeek.js]: 🚀 loadCharacterOfWeek called');
-  
-  // Debug: Check section visibility
-  const section = document.getElementById('character-of-week-section');
-  console.log('[characterOfWeek.js]: 🔍 Section visibility check:', {
-    sectionExists: !!section,
-    sectionDisplay: section?.style.display,
-    sectionComputedDisplay: window.getComputedStyle(section)?.display,
-    sectionVisibility: section?.style.visibility,
-    sectionComputedVisibility: window.getComputedStyle(section)?.visibility
-  });
-  
   const container = document.getElementById('character-of-week-content');
   if (!container) {
-    console.error('[characterOfWeek.js]: ❌ Character of week content container not found');
+    console.error('[characterOfWeek.js]: Character of week content container not found');
     return;
   }
-  
-  console.log('[characterOfWeek.js]: ✅ Found content container:', container);
 
   // Show loading state
   showCharacterOfWeekLoading(container);
 
   try {
-    console.log('[characterOfWeek.js]: 🔍 Loading character of the week...');
-    
     const response = await fetch('/api/character-of-week');
-    console.log('[characterOfWeek.js]: 📡 API Response status:', response.status);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const result = await response.json();
-    console.log('[characterOfWeek.js]: 📦 API Response data:', result);
     
     if (!result.data) {
-      console.log('[characterOfWeek.js]: ⚠️ No character of week data found, showing no data state');
       showCharacterOfWeekNoData(container);
       return;
     }
     
     characterOfWeekData = result.data;
-    console.log('[characterOfWeek.js]: ✅ Character of the week loaded:', characterOfWeekData.characterName);
     
     // Display the character
     displayCharacterOfWeek(container, characterOfWeekData);
     
   } catch (error) {
-    console.error('[characterOfWeek.js]: ❌ Error loading character of the week:', error);
+    console.error('[characterOfWeek.js]: Error loading character of the week:', error);
     showCharacterOfWeekError(container, error);
   }
 }
@@ -143,21 +123,7 @@ function displayCharacterOfWeek(container, data) {
   `;
 
   // Render the card
-  console.log('[characterOfWeek.js]: 📝 Card HTML to render:', html);
   container.innerHTML = html;
-  
-  // Debug: Check if container and card are visible
-  const card = container.querySelector('.character-of-week-card');
-  console.log('[characterOfWeek.js]: 🔍 Container and card check:', {
-    containerExists: !!container,
-    containerDisplay: container?.style.display,
-    containerVisibility: container?.style.visibility,
-    cardExists: !!card,
-    cardDisplay: card?.style.display,
-    cardVisibility: card?.style.visibility,
-    containerComputedDisplay: window.getComputedStyle(container)?.display,
-    cardComputedDisplay: window.getComputedStyle(card)?.display
-  });
 }
 
 // ------------------- Function: showCharacterOfWeekLoading -------------------
@@ -228,51 +194,34 @@ function refreshCharacterOfWeek() {
 // ------------------- Function: initCharacterOfWeek -------------------
 // Initialize the character of week module
 function initCharacterOfWeek() {
-  console.log('[characterOfWeek.js]: 🚀 Initializing character of week module...');
-  
   // Load character of week when page loads
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', loadCharacterOfWeek);
   } else {
     loadCharacterOfWeek();
   }
-  
-  console.log('[characterOfWeek.js]: ✅ Character of week module initialized');
 }
 
 // ------------------- Event Listeners -------------------
 // Load character of the week when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('[characterOfWeek.js]: 🚀 DOM Content Loaded - checking dashboard section');
-  
   // Check if we're on the dashboard section
   const dashboardSection = document.getElementById('dashboard-section');
-  console.log('[characterOfWeek.js]: 🔍 Dashboard section check:', {
-    exists: !!dashboardSection,
-    display: dashboardSection?.style.display,
-    isVisible: dashboardSection && (dashboardSection.style.display !== 'none')
-  });
   
   if (dashboardSection && dashboardSection.style.display !== 'none') {
-    console.log('[characterOfWeek.js]: ✅ Dashboard section visible, loading character of the week');
     loadCharacterOfWeek();
-  } else {
-    console.log('[characterOfWeek.js]: ⚠️ Dashboard section not visible, skipping character of week load');
   }
 });
 
 // ------------------- Function: viewCharacterProfile -------------------
 // Opens the character profile in a modal or navigates to character details
 function viewCharacterProfile(characterId) {
-  console.log('[characterOfWeek.js]: 🔍 Viewing character profile:', characterId);
-  
   // Check if we're on the dashboard or character details page
   const dashboardSection = document.getElementById('dashboard-section');
   const modelDetailsPage = document.getElementById('model-details-page');
   
   if (dashboardSection && dashboardSection.style.display !== 'none') {
     // We're on dashboard, navigate to character details
-    console.log('[characterOfWeek.js]: 🚀 Navigating to character details...');
     
     // Find and click the character model card
     const characterCard = document.querySelector('.model-card[data-model="character"]');
@@ -293,7 +242,7 @@ function viewCharacterProfile(characterId) {
               }
             })
             .catch(error => {
-              console.error('[characterOfWeek.js]: ❌ Error fetching character:', error);
+              console.error('[characterOfWeek.js]: Error fetching character:', error);
             });
         }
       }, 1000);
@@ -314,7 +263,7 @@ function viewCharacterProfile(characterId) {
             }
           })
           .catch(error => {
-            console.error('[characterOfWeek.js]: ❌ Error fetching character:', error);
+            console.error('[characterOfWeek.js]: Error fetching character:', error);
           });
       }
     } else {
@@ -335,7 +284,7 @@ function viewCharacterProfile(characterId) {
                 }
               })
               .catch(error => {
-                console.error('[characterOfWeek.js]: ❌ Error fetching character:', error);
+                console.error('[characterOfWeek.js]: Error fetching character:', error);
               });
           }
         }, 1000);
@@ -348,7 +297,6 @@ function viewCharacterProfile(characterId) {
 // Triggers the creation of the first character of the week if none exists
 async function triggerFirstCharacterOfWeek() {
   try {
-    console.log('[characterOfWeek.js]: 🔧 Triggering first character of the week...');
     const response = await fetch('/api/character-of-week/trigger-simple', {
       method: 'POST',
       headers: {
@@ -359,14 +307,13 @@ async function triggerFirstCharacterOfWeek() {
     const result = await response.json();
     
     if (response.ok) {
-      console.log('[characterOfWeek.js]: ✅ First character created:', result.message);
       // Reload the character of week display
       loadCharacterOfWeek();
     } else {
-      console.error('[characterOfWeek.js]: ❌ Error creating first character:', result.error);
+      console.error('[characterOfWeek.js]: Error creating first character:', result.error);
     }
   } catch (error) {
-    console.error('[characterOfWeek.js]: ❌ Error triggering first character:', error);
+    console.error('[characterOfWeek.js]: Error triggering first character:', error);
   }
 }
 
@@ -388,5 +335,4 @@ window.viewCharacterProfile = viewCharacterProfile;
 
 // ------------------- Auto-Initialize -------------------
 // Initialize when script loads
-console.log('[characterOfWeek.js]: 🚀 Character of week script loaded');
 initCharacterOfWeek(); 

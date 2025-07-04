@@ -51,6 +51,9 @@ const Party = require('./models/PartyModel');
 const Relic = require('./models/RelicModel');
 const CharacterOfWeek = require('./models/CharacterOfWeekModel');
 
+// Import calendar module
+const calendarModule = require('./calendarModule');
+
 // ------------------- Section: App Configuration -------------------
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -735,6 +738,46 @@ app.get('/api/stats/characters', async (req, res) => {
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching character stats:', error);
     res.status(500).json({ error: 'Failed to fetch character stats' });
+  }
+});
+
+// ------------------- Function: getCalendarData -------------------
+// Returns calendar data including Hyrulean calendar and Blood Moon dates
+app.get('/api/calendar', async (req, res) => {
+  try {
+    console.log('[server.js]: 📅 Getting calendar data...');
+    
+    // Get data from calendar module
+    const hyruleanCalendar = calendarModule.hyruleanCalendar;
+    const bloodmoonDates = calendarModule.bloodmoonDates;
+    
+    // Get all birthdays for calendar display
+    const allBirthdays = await Character.find({ birthday: { $exists: true, $ne: '' } }, { name: 1, birthday: 1, icon: 1 }).lean();
+    const calendarBirthdays = allBirthdays.map(c => {
+      const mmdd = c.birthday.slice(-5);
+      return { name: c.name, birthday: mmdd, icon: c.icon };
+    });
+    
+    // Get current date info
+    const today = new Date();
+    const currentHyruleanMonth = calendarModule.getHyruleanMonth(today);
+    const isBloodmoonToday = calendarModule.isBloodmoon(today);
+    const hyruleanDate = calendarModule.convertToHyruleanDate(today);
+    
+    res.json({
+      hyruleanCalendar,
+      bloodmoonDates,
+      birthdays: calendarBirthdays,
+      currentDate: {
+        real: today.toISOString().split('T')[0],
+        hyrulean: hyruleanDate,
+        hyruleanMonth: currentHyruleanMonth,
+        isBloodmoon: isBloodmoonToday
+      }
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching calendar data:', error);
+    res.status(500).json({ error: 'Failed to fetch calendar data' });
   }
 });
 

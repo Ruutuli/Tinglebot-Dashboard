@@ -579,6 +579,8 @@ function setupSidebarNavigation() {
         showGuildSection();
       } else if (sectionId === 'commands-section') {
         commands.showCommandsSection();
+      } else if (sectionId === 'calendar-section') {
+        showCalendarSection();
       } else {
         // For other sections, use the existing showSection function
         showSection(sectionId);
@@ -601,6 +603,8 @@ function setupSidebarNavigation() {
       showGuildSection();
     } else if (section === 'commands-section') {
       commands.showCommandsSection();
+    } else if (section === 'calendar-section') {
+      showCalendarSection();
     } else {
       showSection(section);
     }
@@ -622,6 +626,8 @@ function setupSidebarNavigation() {
       showGuildSection();
     } else if (sectionId === 'commands-section') {
       commands.showCommandsSection();
+    } else if (sectionId === 'calendar-section') {
+      showCalendarSection();
     } else {
       showSection(sectionId);
     }
@@ -1146,6 +1152,58 @@ function showGuildSection() {
 }
 
 // ============================================================================
+// ------------------- Calendar Navigation -------------------
+// Handles calendar page navigation specifically
+// ============================================================================
+function showCalendarSection() {
+  console.log('📅 Showing calendar section...');
+  
+  // Hide all main content sections
+  const mainContent = document.querySelector('.main-content');
+  const sections = mainContent.querySelectorAll('section, #model-details-page');
+  
+  sections.forEach(section => {
+    section.style.display = 'none';
+  });
+  
+  // Show the calendar section
+  const calendarSection = document.getElementById('calendar-section');
+  if (calendarSection) {
+    calendarSection.style.display = 'block';
+    console.log('✅ Calendar section displayed');
+    
+    // Initialize calendar page if module is available
+    if (window.calendarModule) {
+      window.calendarModule.loadCalendarData();
+    } else {
+      console.log('⚠️ Calendar module not available yet');
+    }
+  } else {
+    console.error('❌ Calendar section not found');
+  }
+  
+  // Update active state in sidebar
+  const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+  sidebarLinks.forEach(link => {
+    const linkSection = link.getAttribute('data-section');
+    const listItem = link.closest('li');
+    if (listItem) {
+      if (linkSection === 'calendar-section') {
+        listItem.classList.add('active');
+      } else {
+        listItem.classList.remove('active');
+      }
+    }
+  });
+  
+  // Update breadcrumb
+  const breadcrumb = document.querySelector('.breadcrumb');
+  if (breadcrumb) {
+    breadcrumb.textContent = 'Calendar';
+  }
+}
+
+// ============================================================================
 // ------------------- Exports -------------------
 // Shared helpers and UI controls
 // ============================================================================
@@ -1163,5 +1221,6 @@ export {
   renderItemTypeIcon,
   loadModelData,
   showProfileSection,
-  showGuildSection
+  showGuildSection,
+  showCalendarSection
 };

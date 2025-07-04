@@ -25,6 +25,12 @@
     onload="console.log('Items CSS loaded successfully')"
     onerror="console.error('Failed to load Items CSS')"
   />
+  <link
+    rel="stylesheet"
+    href="css/calender.css"
+    onload="console.log('Calendar CSS loaded successfully')"
+    onerror="console.error('Failed to load Calendar CSS')"
+  />
   <script src="https://kit.fontawesome.com/262000d25d.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -135,6 +141,9 @@
             <a href="#commands" data-section="commands-section"><i class="fas fa-terminal"></i><span>Commands</span></a>
           </li>
           <li>
+            <a href="#calendar" data-section="calendar-section"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a>
+          </li>
+          <li>
             <a href="#logs" data-section="logs-section"><i class="fas fa-history"></i><span>Logs</span></a>
           </li>
           <li>
@@ -175,9 +184,7 @@
               <h2><i class="fas fa-star"></i> Character of the Week</h2>
               <p>Featured character spotlight</p>
             </div>
-            <button id="test-character-week-btn" style="position: absolute; top: 10px; right: 10px; background: #FFD700; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer; font-size: 12px;" onclick="triggerFirstCharacterOfWeek()">
-              Create/Check Character
-            </button>
+            
           </div>
           <div id="character-of-week-content" class="character-of-week-content">
             <!-- Character of the week content will be dynamically loaded here -->
@@ -571,6 +578,146 @@
         </div>
       </section>
 
+      <!-- Calendar Section -->
+      <section id="calendar-section" style="display:none;">
+        <div class="dashboard-header">
+          <h1>Calendar</h1>
+          <div class="dashboard-divider"></div>
+        </div>
+        <div class="calendar-container">
+          <!-- Calendar Overview -->
+          <div class="calendar-overview">
+            <div class="calendar-stats">
+              <div class="calendar-stat-item">
+                <span class="calendar-stat-label">Today's Date</span>
+                <span class="stat-value" id="today-date">Loading...</span>
+                <span class="stat-subtitle">Real-world calendar</span>
+              </div>
+              <div class="calendar-stat-item">
+                <span class="calendar-stat-label">Hyrulean Date</span>
+                <span class="stat-value" id="hyrulean-month">Loading...</span>
+                <span class="stat-subtitle">In World calendar of Hyrule</span>
+              </div>
+              <div class="calendar-stat-item">
+                <span class="calendar-stat-label">Blood Moon Cycle</span>
+                <span class="stat-value" id="blood-moon-cycle">Loading...</span>
+                <span class="stat-subtitle">26-day lunar cycle</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calendar Tabs -->
+          <div class="calendar-tabs">
+            <button class="calendar-tab active" data-tab="monthly">
+              <i class="fas fa-calendar-alt"></i>
+              <span>Monthly View</span>
+            </button>
+            <button class="calendar-tab" data-tab="birthdays">
+              <i class="fas fa-birthday-cake"></i>
+              <span>Birthdays</span>
+            </button>
+            <button class="calendar-tab" data-tab="hyrulean">
+              <i class="fas fa-moon"></i>
+              <span>Hyrulean Calendar</span>
+            </button>
+            <button class="calendar-tab" data-tab="bloodmoon">
+              <i class="fas fa-moon"></i>
+              <span>Blood Moon</span>
+            </button>
+          </div>
+
+          <!-- Calendar Content -->
+          <div class="calendar-content">
+            <!-- Monthly View Tab -->
+            <div class="calendar-tab-content active" id="monthly-tab">
+              <div class="monthly-calendar-container">
+                <div class="calendar-header">
+                  <div class="calendar-navigation">
+                    <button class="calendar-nav-btn" id="prev-month">
+                      <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="calendar-title">
+                      <h3 id="current-month-year">December 2024</h3>
+                      <p id="current-hyrulean-date">Loading...</p>
+                    </div>
+                    <button class="calendar-nav-btn" id="next-month">
+                      <i class="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                  <div class="calendar-controls">
+                    <button class="calendar-control-btn" id="today-btn">
+                      <i class="fas fa-home"></i>
+                      Today
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="calendar-grid">
+                  <div class="calendar-weekdays">
+                    <div class="weekday">Sun</div>
+                    <div class="weekday">Mon</div>
+                    <div class="weekday">Tue</div>
+                    <div class="weekday">Wed</div>
+                    <div class="weekday">Thu</div>
+                    <div class="weekday">Fri</div>
+                    <div class="weekday">Sat</div>
+                  </div>
+                  <div class="calendar-days" id="calendar-days">
+                    <!-- Calendar days will be dynamically generated here -->
+                  </div>
+                </div>
+                
+                <div class="calendar-events" id="calendar-events">
+                  <h4>Events This Month</h4>
+                  <div class="events-list">
+                    <!-- Events will be dynamically loaded here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Birthdays Tab -->
+            <div class="calendar-tab-content" id="birthdays-tab">
+              <div class="birthdays-container">
+                <div class="birthdays-header">
+                  <h3><i class="fas fa-birthday-cake"></i> Upcoming Birthdays</h3>
+                  <p>Celebrate with your fellow adventurers</p>
+                </div>
+                <div id="birthdays-list" class="birthdays-list">
+                  <!-- Birthdays will be dynamically loaded here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Hyrulean Calendar Tab -->
+            <div class="calendar-tab-content" id="hyrulean-tab">
+              <div class="hyrulean-container">
+                <div class="hyrulean-header">
+                  <h3><i class="fas fa-calendar-alt"></i> Hyrulean Calendar</h3>
+                  <p>In World calendar of Hyrule</p>
+                </div>
+                <div class="hyrulean-calendar-grid" id="hyrulean-calendar">
+                  <!-- Hyrulean calendar will be dynamically loaded here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Blood Moon Tab -->
+            <div class="calendar-tab-content" id="bloodmoon-tab">
+              <div class="bloodmoon-container">
+                <div class="bloodmoon-header">
+                  <h3><i class="fas fa-moon"></i> Blood Moon Cycle</h3>
+                  <p>Track the ominous Blood Moon</p>
+                </div>
+                <div class="bloodmoon-info" id="bloodmoon-info">
+                  <!-- Blood moon info will be dynamically loaded here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Commands Section -->
       <section id="commands-section" style="display:none;">
         <div class="dashboard-header">
@@ -712,6 +859,7 @@
   <script type="module" src="js/weather.js"></script>
   <script type="module" src="js/guilds.js"></script>
   <script type="module" src="js/commands.js"></script>
+  <script type="module" src="js/calendar.js"></script>
   <script type="module" src="js/index.js"></script>
   <script src="js/countdown.js"></script>
   <script src="js/debug.js"></script>
