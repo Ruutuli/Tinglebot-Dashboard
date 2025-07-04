@@ -12,6 +12,7 @@ import * as inventory from './inventory.js';
 import * as items from './items.js';
 import * as characters from './characters.js';
 import * as stats from './stats.js';
+import * as weatherStats from './weatherStats.js';
 import * as error from './error.js';
 import * as auth from './auth.js';
 import * as guilds from './guilds.js';
@@ -21,6 +22,9 @@ import { createPagination, setupBackToTopButton, scrollToTop } from './ui.js';
 
 // Import specific functions from characters module
 const { renderCharacterCards } = characters;
+
+// Make weatherStats available globally
+window.weatherStats = weatherStats;
 
 // Test commands module import
 // console.log('🔍 Testing commands module import...');
@@ -32,6 +36,7 @@ export {
   items,
   characters,
   stats,
+  weatherStats,
   error,
   auth,
   guilds,
@@ -200,6 +205,10 @@ function setupModelCards() {
           case 'character':
             console.log('👥 Initializing character page');
             await characters.initializeCharacterPage(data, pagination.page, contentDiv);
+            break;
+          case 'weather':
+            console.log('🌤️ Initializing weather statistics page');
+            await weatherStats.initializeWeatherStatsPage();
             break;
           case 'item':
             console.log('📦 Initializing item page');

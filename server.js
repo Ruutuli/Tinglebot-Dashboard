@@ -1998,6 +1998,34 @@ app.get('/api/weather/history/:village', async (req, res) => {
   }
 });
 
+// ------------------- Function: getWeatherStats -------------------
+// Returns weather statistics for all villages
+app.get('/api/weather/stats', async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    
+    console.log(`[server.js]: 📊 Fetching weather statistics for ${days} days...`);
+    
+    const villages = ['Rudania', 'Inariko', 'Vhintl'];
+    const statsData = {};
+    
+    for (const village of villages) {
+      const history = await Weather.getRecentWeather(village, days);
+      statsData[village] = history;
+    }
+    
+    console.log(`[server.js]: ✅ Successfully fetched weather statistics for ${villages.length} villages`);
+    res.json({
+      days,
+      villages: statsData,
+      totalRecords: Object.values(statsData).reduce((sum, data) => sum + data.length, 0)
+    });
+  } catch (error) {
+    console.error(`[server.js]: ❌ Error fetching weather statistics:`, error);
+    res.status(500).json({ error: 'Failed to fetch weather statistics', details: error.message });
+  }
+});
+
 // ------------------- Section: Utility Functions -------------------
 
 // ------------------- Function: formatUptime -------------------

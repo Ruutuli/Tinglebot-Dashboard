@@ -31,6 +31,12 @@
     onload="console.log('Calendar CSS loaded successfully')"
     onerror="console.error('Failed to load Calendar CSS')"
   />
+  <link
+    rel="stylesheet"
+    href="css/weatherStats.css"
+    onload="console.log('Weather Stats CSS loaded successfully')"
+    onerror="console.error('Failed to load Weather Stats CSS')"
+  />
   <script src="https://kit.fontawesome.com/262000d25d.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -330,9 +336,6 @@
         <section class="model-grid">
           <button type="button" class="model-card" data-model="character">
             <i class="fas fa-user" aria-hidden="true"></i><span>Characters</span>
-          </button>
-          <button type="button" class="model-card" data-model="weather">
-            <i class="fas fa-cloud-sun" aria-hidden="true"></i><span>Weather</span>
           </button>
           <button type="button" class="model-card" data-model="monster">
             <i class="fas fa-dragon" aria-hidden="true"></i><span>Monsters</span>
@@ -857,6 +860,7 @@
   <script type="module" src="js/inventory.js"></script>
   <script type="module" src="js/stats.js"></script>
   <script type="module" src="js/weather.js"></script>
+  <script type="module" src="js/weatherStats.js"></script>
   <script type="module" src="js/guilds.js"></script>
   <script type="module" src="js/commands.js"></script>
   <script type="module" src="js/calendar.js"></script>

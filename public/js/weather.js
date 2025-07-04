@@ -493,6 +493,12 @@ async function renderWeatherSection() {
             <span>${weatherDayText}</span>
           </div>
         </div>
+        <div class="weather-header-actions">
+          <button class="weather-stats-button" onclick="showWeatherStats()">
+            <i class="fas fa-chart-bar"></i>
+            <span>View Statistics</span>
+          </button>
+        </div>
       </div>
       <div class="weather-grid">
         ${weatherCards}
@@ -608,4 +614,56 @@ function getWeatherDayBadgeText() {
   }
 }
 
-window.renderWeatherSection = renderWeatherSection; 
+// ============================================================================
+// Global Functions for Weather Statistics
+// ============================================================================
+
+/**
+ * Shows the weather statistics page
+ */
+async function showWeatherStats() {
+  try {
+    console.log('[weather.js]: 📊 Showing weather statistics page...');
+    
+    // Hide dashboard, show model details view
+    const dashboardSection = document.getElementById('dashboard-section');
+    const modelDetailsPage = document.getElementById('model-details-page');
+    const title = document.getElementById('model-details-title');
+    const contentDiv = document.getElementById('model-details-data');
+    const backButton = document.querySelector('.back-button');
+
+    if (!dashboardSection || !modelDetailsPage || !title || !contentDiv || !backButton) {
+      throw new Error('Required DOM elements not found');
+    }
+
+    dashboardSection.style.display = 'none';
+    modelDetailsPage.style.display = 'block';
+    title.textContent = 'Weather Statistics';
+    contentDiv.innerHTML = '';
+
+    // Setup back button handler
+    backButton.onclick = () => {
+      console.log('🔙 Back button clicked - returning to dashboard');
+      modelDetailsPage.style.display = 'none';
+      dashboardSection.style.display = 'block';
+    };
+
+    // Initialize weather statistics page
+    if (window.weatherStats && window.weatherStats.initializeWeatherStatsPage) {
+      await window.weatherStats.initializeWeatherStatsPage();
+    } else {
+      console.error('[weather.js]: ❌ Weather stats module not available');
+      contentDiv.innerHTML = `
+        <div class="weather-stats-error">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>Weather statistics module not available</p>
+        </div>
+      `;
+    }
+  } catch (error) {
+    console.error('[weather.js]: ❌ Error showing weather statistics:', error);
+  }
+}
+
+window.renderWeatherSection = renderWeatherSection;
+window.showWeatherStats = showWeatherStats; 
