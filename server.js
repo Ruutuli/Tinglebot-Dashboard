@@ -1750,7 +1750,18 @@ app.get('/api/inventory/characters', async (req, res) => {
       try {
         const col = await getCharacterInventoryCollection(characterName);
         const inv = await col.find().toArray();
-        inventoryData.push(...inv.map(item => ({ ...item, characterName })));
+        // Fetch all item names in this inventory
+        const itemNames = inv.map(item => item.itemName);
+        // Fetch all item docs in one go
+        const itemDocs = await Item.find({ itemName: { $in: itemNames } }, { itemName: 1, image: 1 }).lean();
+        const itemImageMap = {};
+        itemDocs.forEach(doc => { itemImageMap[doc.itemName] = doc.image; });
+        // Attach image to each inventory item
+        inventoryData.push(...inv.map(item => ({
+          ...item,
+          characterName,
+          image: itemImageMap[item.itemName] || 'No Image'
+        })));
       } catch (error) {
         console.warn(`[server.js]: ⚠️ Error fetching inventory for character ${characterName}:`, error.message);
         continue;
@@ -1765,10 +1776,44 @@ app.get('/api/inventory/characters', async (req, res) => {
   }
 });
 
+// ------------------- Function: getCharacterList -------------------
+// Returns basic character info without inventory data (fast loading)
+app.get('/api/characters/list', async (req, res) => {
+  try {
+    console.log('[server.js]: 👥 Fetching character list...');
+    
+    const characters = await Character.find({}, {
+      name: 1,
+      icon: 1,
+      race: 1,
+      job: 1,
+      homeVillage: 1,
+      currentVillage: 1
+    }).lean();
+    
+    const characterList = characters.map(char => ({
+      characterName: char.name,
+      icon: char.icon,
+      race: char.race,
+      job: char.job,
+      homeVillage: char.homeVillage,
+      currentVillage: char.currentVillage
+    }));
+    
+    console.log(`[server.js]: ✅ Successfully fetched ${characterList.length} characters`);
+    res.json({ data: characterList });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching character list:', error);
+    res.status(500).json({ error: 'Failed to fetch character list', details: error.message });
+  }
+});
+
 // ------------------- Function: getInventorySummary -------------------
 // Returns inventory summary (counts) for all characters
 app.get('/api/inventory/summary', async (req, res) => {
   try {
+    console.log('[server.js]: 📊 Fetching inventory summary...');
+    
     const characters = await fetchAllCharacters();
     const summary = [];
 
@@ -1782,6 +1827,7 @@ app.get('/api/inventory/summary', async (req, res) => {
         
         summary.push({
           characterName: char.name,
+          icon: char.icon,
           totalItems,
           uniqueItems,
           categories: [...new Set(items.map(item => item.category).filter(Boolean))],
@@ -1792,6 +1838,7 @@ app.get('/api/inventory/summary', async (req, res) => {
         // Add character with zero items
         summary.push({
           characterName: char.name,
+          icon: char.icon,
           totalItems: 0,
           uniqueItems: 0,
           categories: [],

@@ -155,23 +155,17 @@ function createFilterHTML() {
       <input type="text" id="inventory-search" placeholder="Search characters...">
     </div>
     <div class="search-filter-control">
-      <select id="inventory-category-filter">
-        <option value="all">All Categories</option>
-      </select>
-    </div>
-    <div class="search-filter-control">
-      <select id="inventory-type-filter">
-        <option value="all">All Types</option>
+      <select id="inventory-village-filter">
+        <option value="all">All Villages</option>
+        <option value="Rudania">Rudania</option>
+        <option value="Inariko">Inariko</option>
+        <option value="Vhintl">Vhintl</option>
       </select>
     </div>
     <div class="search-filter-control">
       <select id="inventory-sort">
         <option value="character-asc">Character (A-Z)</option>
         <option value="character-desc">Character (Z-A)</option>
-        <option value="items-asc">Items (Low-High)</option>
-        <option value="items-desc">Items (High-Low)</option>
-        <option value="quantity-asc">Quantity (Low-High)</option>
-        <option value="quantity-desc">Quantity (High-Low)</option>
       </select>
     </div>
     <div class="search-filter-control">
@@ -205,14 +199,6 @@ function applySorting(items, sortBy) {
         valA = a.characterName ?? '';
         valB = b.characterName ?? '';
         break;
-      case 'items':
-        valA = a.uniqueItems ?? 0;
-        valB = b.uniqueItems ?? 0;
-        break;
-      case 'quantity':
-        valA = a.totalItems ?? 0;
-        valB = b.totalItems ?? 0;
-        break;
       default:
         valA = a[field] ?? '';
         valB = b[field] ?? '';
@@ -230,8 +216,7 @@ let expandedCharacters = new Set();
 let loadedCharacterInventories = new Map(); // Cache for loaded inventory data
 let currentFilters = {
   search: '',
-  category: 'all',
-  type: 'all',
+  village: 'all',
   sortBy: 'character-asc'
 };
 
@@ -314,17 +299,54 @@ async function loadCharacterSummaries() {
   try {
     console.log('📊 Loading character summaries...');
     
-    const response = await fetch('/api/inventory/summary');
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const { data: summaries } = await response.json();
+    // First, load basic character info (fast) and show immediately
+    const characterResponse = await fetch('/api/characters/list');
+    if (!characterResponse.ok) throw new Error(`HTTP error! status: ${characterResponse.status}`);
+    const { data: characters } = await characterResponse.json();
     
-    console.log('📊 Loaded character summaries:', summaries.length);
+    console.log('📊 Loaded character list:', characters.length);
     
-    // Store summaries globally
-    currentCharacterSummaries = summaries;
+    // Show characters immediately with placeholder data
+    const initialSummaries = characters.map(char => ({
+      ...char,
+      totalItems: 0,
+      uniqueItems: 0,
+      categories: [],
+      types: [],
+      loading: true
+    }));
     
-    // Apply current filters and render
+    currentCharacterSummaries = initialSummaries;
     applyFiltersAndRender(currentPage);
+    
+    // Then, load inventory summary data in the background
+    try {
+      const summaryResponse = await fetch('/api/inventory/summary');
+      if (!summaryResponse.ok) throw new Error(`HTTP error! status: ${summaryResponse.status}`);
+      const { data: summaries } = await summaryResponse.json();
+      
+      console.log('📊 Loaded inventory summaries:', summaries.length);
+      
+      // Update with real inventory data
+      const updatedSummaries = characters.map(char => {
+        const summary = summaries.find(s => s.characterName === char.characterName);
+        return {
+          ...char,
+          totalItems: summary?.totalItems || 0,
+          uniqueItems: summary?.uniqueItems || 0,
+          categories: summary?.categories || [],
+          types: summary?.types || [],
+          loading: false
+        };
+      });
+      
+      currentCharacterSummaries = updatedSummaries;
+      applyFiltersAndRender(currentPage);
+      
+    } catch (summaryError) {
+      console.warn('⚠️ Error loading inventory summaries, showing characters without inventory data:', summaryError);
+      // Keep the initial character list even if inventory loading fails
+    }
     
   } catch (error) {
     console.error('❌ Error loading character summaries:', error);
@@ -383,21 +405,19 @@ async function loadCharacterInventory(characterName) {
  */
 function applyFiltersAndRender(page = 1) {
   const searchTerm = document.getElementById('inventory-search')?.value.toLowerCase() || '';
-  const categoryFilter = document.getElementById('inventory-category-filter')?.value || 'all';
-  const typeFilter = document.getElementById('inventory-type-filter')?.value || 'all';
+  const villageFilter = document.getElementById('inventory-village-filter')?.value || 'all';
   const sortBy = document.getElementById('inventory-sort')?.value || 'character-asc';
   const charactersPerPageSelect = document.getElementById('inventory-characters-per-page');
   const charactersPerPage = charactersPerPageSelect ? 
     (charactersPerPageSelect.value === 'all' ? currentCharacterSummaries.length : parseInt(charactersPerPageSelect.value)) : 
     12;
 
-  console.log('🔍 Applying filters:', { searchTerm, categoryFilter, typeFilter, sortBy, page, charactersPerPage });
+  console.log('🔍 Applying filters:', { searchTerm, villageFilter, sortBy, page, charactersPerPage });
 
   // Save current filter state
   window.savedInventoryFilterState = {
     searchTerm: document.getElementById('inventory-search')?.value || '',
-    categoryFilter,
-    typeFilter,
+    villageFilter,
     sortBy,
     charactersPerPage: charactersPerPageSelect?.value || '12'
   };
@@ -407,13 +427,10 @@ function applyFiltersAndRender(page = 1) {
     const matchesSearch = !searchTerm || 
       summary.characterName.toLowerCase().includes(searchTerm);
     
-    const matchesCategory = categoryFilter === 'all' || 
-      summary.categories.includes(categoryFilter);
+    const matchesVillage = villageFilter === 'all' || 
+      summary.currentVillage === villageFilter;
     
-    const matchesType = typeFilter === 'all' || 
-      summary.types.includes(typeFilter);
-    
-    return matchesSearch && matchesCategory && matchesType;
+    return matchesSearch && matchesVillage;
   });
 
   // Apply sorting
@@ -469,19 +486,22 @@ function renderCharacterCards(summaries) {
   if (summaries.length === 0) {
     // Get current search term for better user feedback
     const searchInput = document.getElementById('inventory-search');
+    const villageFilter = document.getElementById('inventory-village-filter');
     const searchTerm = searchInput?.value || '';
-    const categoryFilter = document.getElementById('inventory-category-filter')?.value || 'all';
-    const typeFilter = document.getElementById('inventory-type-filter')?.value || 'all';
+    const selectedVillage = villageFilter?.value || 'all';
     
     let emptyMessage = 'No characters found';
-    let emptyDetails = 'Try adjusting your filters or check back later.';
+    let emptyDetails = 'Try adjusting your search or check back later.';
     
-    if (searchTerm) {
+    if (searchTerm && selectedVillage !== 'all') {
+      emptyMessage = `No characters found for "${searchTerm}" in ${selectedVillage}`;
+      emptyDetails = `Try a different search term or select a different village.`;
+    } else if (searchTerm) {
       emptyMessage = `No characters found for "${searchTerm}"`;
       emptyDetails = `Try a different search term or check your spelling.`;
-    } else if (categoryFilter !== 'all' || typeFilter !== 'all') {
-      emptyMessage = 'No characters found with current filters';
-      emptyDetails = `Try clearing your filters or selecting different options.`;
+    } else if (selectedVillage !== 'all') {
+      emptyMessage = `No characters found in ${selectedVillage}`;
+      emptyDetails = `Try selecting a different village or check back later.`;
     }
     
     container.innerHTML = `
@@ -489,16 +509,15 @@ function renderCharacterCards(summaries) {
         <i class="fas fa-search"></i>
         <h3>${emptyMessage}</h3>
         <p>${emptyDetails}</p>
-        ${searchTerm || categoryFilter !== 'all' || typeFilter !== 'all' ? `
+        ${searchTerm || selectedVillage !== 'all' ? `
           <div class="empty-state-filters">
             <p><strong>Current filters:</strong></p>
             <ul>
               ${searchTerm ? `<li>Search: "${searchTerm}"</li>` : ''}
-              ${categoryFilter !== 'all' ? `<li>Category: ${categoryFilter}</li>` : ''}
-              ${typeFilter !== 'all' ? `<li>Type: ${typeFilter}</li>` : ''}
+              ${selectedVillage !== 'all' ? `<li>Village: ${selectedVillage}</li>` : ''}
             </ul>
             <button onclick="document.getElementById('inventory-clear-filters').click()" class="clear-filters-btn">
-              <i class="fas fa-times"></i> Clear All Filters
+              <i class="fas fa-times"></i> Clear Filters
             </button>
           </div>
         ` : ''}
@@ -509,6 +528,7 @@ function renderCharacterCards(summaries) {
 
   const cardsHTML = summaries.map(summary => {
     const isExpanded = expandedCharacters.has(summary.characterName);
+    console.log(`🎭 Character ${summary.characterName} icon:`, summary.icon);
     return `
       <div class="character-inventory-card" data-character="${summary.characterName}">
         <div class="character-inventory-scroll">
@@ -516,19 +536,41 @@ function renderCharacterCards(summaries) {
                onclick="toggleCharacterInventory('${summary.characterName}')">
             <div class="character-inventory-info">
               <div class="character-avatar">
-                <i class="fas fa-user-circle"></i>
+                ${summary.icon && summary.icon.startsWith('http')
+                  ? `<img src="${summary.icon}" alt="${summary.characterName} avatar" style="width:100%;height:100%;object-fit:cover;" />`
+                  : `<i class="fas fa-user-circle"></i>`
+                }
               </div>
               <div class="character-inventory-details">
                 <h3 class="character-inventory-name">${summary.characterName}</h3>
                 <div class="character-inventory-stats">
-                  <span class="inventory-stat-item">
-                    <i class="fas fa-box"></i>
-                    ${summary.uniqueItems} items
-                  </span>
-                  <span class="inventory-stat-item">
-                    <i class="fas fa-layer-group"></i>
-                    ${summary.totalItems} total
-                  </span>
+                  ${summary.loading ? `
+                    <span class="inventory-stat-item loading">
+                      <i class="fas fa-spinner fa-spin"></i>
+                      Loading...
+                    </span>
+                  ` : `
+                    <span class="inventory-stat-item">
+                      <i class="fas fa-box"></i>
+                      ${summary.uniqueItems} items
+                    </span>
+                    <span class="inventory-stat-item">
+                      <i class="fas fa-layer-group"></i>
+                      ${summary.totalItems} total
+                    </span>
+                  `}
+                  ${summary.job ? `
+                    <span class="inventory-stat-item">
+                      <i class="fas fa-briefcase"></i>
+                      ${summary.job}
+                    </span>
+                  ` : ''}
+                  ${summary.currentVillage ? `
+                    <span class="inventory-stat-item">
+                      <i class="fas fa-map-marker-alt"></i>
+                      ${summary.currentVillage}
+                    </span>
+                  ` : ''}
                 </div>
               </div>
             </div>
@@ -590,9 +632,11 @@ function updateInventoryPagination(currentPage, totalPages, totalItems) {
 /**
  * Renders items for a specific character
  * @param {Array} items - Character's items
+ * @param {string} characterName - Name of the character
+ * @param {boolean} renderFilterBar - Whether to render the filter bar (default: true)
  * @returns {string} HTML for character items
  */
-function renderCharacterItems(items) {
+function renderCharacterItems(items, characterName, renderFilterBar = true) {
   if (!items || items.length === 0) {
     return `
       <div class="character-inventory-empty">
@@ -601,20 +645,93 @@ function renderCharacterItems(items) {
       </div>
     `;
   }
-  
-  // Sort items by quantity (descending) then by name
-  const sortedItems = items.sort((a, b) => {
-    const quantityDiff = (b.quantity || 0) - (a.quantity || 0);
-    if (quantityDiff !== 0) return quantityDiff;
-    return (a.itemName || '').localeCompare(b.itemName || '');
+
+  // Filter out items with 0 quantity
+  let filteredItems = items.filter(item => (item.quantity || 0) > 0);
+  if (filteredItems.length === 0) {
+    return `
+      <div class="character-inventory-empty">
+        <i class="fas fa-inbox"></i>
+        <p>No items found for this character</p>
+      </div>
+    `;
+  }
+
+  // --- Per-character filter state ---
+  if (!window.characterItemFilters) window.characterItemFilters = {};
+  if (!window.characterItemFilters[characterName]) {
+    window.characterItemFilters[characterName] = {
+      search: '',
+      category: 'all',
+      type: 'all',
+      sort: 'name-asc'
+    };
+  }
+  const filterState = window.characterItemFilters[characterName];
+
+  // Populate filter options from this character's items
+  const allCategories = Array.from(new Set(filteredItems.flatMap(item => Array.isArray(item.category) ? item.category : [item.category]))).filter(Boolean).sort();
+  const allTypes = Array.from(new Set(filteredItems.flatMap(item => Array.isArray(item.type) ? item.type : [item.type]))).filter(Boolean).sort();
+
+  // Apply filters
+  filteredItems = filteredItems.filter(item => {
+    const matchesSearch = !filterState.search || item.itemName.toLowerCase().includes(filterState.search.toLowerCase());
+    const matchesCategory = filterState.category === 'all' || (Array.isArray(item.category) ? item.category : [item.category]).includes(filterState.category);
+    const matchesType = filterState.type === 'all' || (Array.isArray(item.type) ? item.type : [item.type]).includes(filterState.type);
+    return matchesSearch && matchesCategory && matchesType;
   });
-  
-  return `
+
+  // Apply sort
+  filteredItems = [...filteredItems].sort((a, b) => {
+    switch (filterState.sort) {
+      case 'name-asc':
+        return (a.itemName || '').localeCompare(b.itemName || '');
+      case 'name-desc':
+        return (b.itemName || '').localeCompare(a.itemName || '');
+      case 'quantity-asc':
+        return (a.quantity || 0) - (b.quantity || 0);
+      case 'quantity-desc':
+        return (b.quantity || 0) - (a.quantity || 0);
+      default:
+        return 0;
+    }
+  });
+
+  // Only render filter bar if requested (first time or when options change)
+  let filterBar = '';
+  if (renderFilterBar) {
+    filterBar = `
+      <div class="character-item-filter-bar" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap;">
+        <input type="text" class="character-item-search" placeholder="Search items..." value="${filterState.search}" style="padding:0.3em 0.7em;border-radius:5px;border:1px solid #ccc;min-width:120px;" />
+        <select class="character-item-category">
+          <option value="all">All Categories</option>
+          ${allCategories.map(cat => `<option value="${cat}" ${filterState.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+        </select>
+        <select class="character-item-type">
+          <option value="all">All Types</option>
+          ${allTypes.map(type => `<option value="${type}" ${filterState.type === type ? 'selected' : ''}>${type}</option>`).join('')}
+        </select>
+        <select class="character-item-sort">
+          <option value="name-asc" ${filterState.sort === 'name-asc' ? 'selected' : ''}>Name (A-Z)</option>
+          <option value="name-desc" ${filterState.sort === 'name-desc' ? 'selected' : ''}>Name (Z-A)</option>
+          <option value="quantity-asc" ${filterState.sort === 'quantity-asc' ? 'selected' : ''}>Quantity (Low-High)</option>
+          <option value="quantity-desc" ${filterState.sort === 'quantity-desc' ? 'selected' : ''}>Quantity (High-Low)</option>
+        </select>
+        <button class="character-item-clear-filters" style="margin-left:0.5em;">Clear</button>
+      </div>
+    `;
+  }
+
+  // Items grid HTML
+  const itemsGrid = `
     <div class="character-items-grid">
-      ${sortedItems.map(item => `
+      ${filteredItems.map(item => `
         <div class="inventory-item-card" data-item="${item.itemName}">
           <div class="inventory-item-icon">
-            <i class="fas fa-box"></i>
+            ${item.image && item.image !== 'No Image'
+              ? `<img src="${item.image}" alt="${item.itemName} icon" style="width:100%;height:100%;object-fit:cover;" />`
+              : `<i class="fas fa-box"></i>`
+            }
           </div>
           <div class="inventory-item-details">
             <h4 class="inventory-item-name">${item.itemName}</h4>
@@ -641,44 +758,92 @@ function renderCharacterItems(items) {
       `).join('')}
     </div>
   `;
+
+  // Attach event listeners only if rendering filter bar
+  if (renderFilterBar) {
+    setTimeout(() => {
+      const container = document.querySelector(`[data-character="${characterName}"] .character-inventory-content.expanded`);
+      if (!container) return;
+      
+      const searchInput = container.querySelector('.character-item-search');
+      const categorySelect = container.querySelector('.character-item-category');
+      const typeSelect = container.querySelector('.character-item-type');
+      const sortSelect = container.querySelector('.character-item-sort');
+      const clearBtn = container.querySelector('.character-item-clear-filters');
+      
+      if (searchInput) {
+        searchInput.oninput = e => { 
+          filterState.search = e.target.value; 
+          updateCharacterItemsGrid(items, characterName); 
+        };
+      }
+      if (categorySelect) {
+        categorySelect.onchange = e => { 
+          filterState.category = e.target.value; 
+          updateCharacterItemsGrid(items, characterName); 
+        };
+      }
+      if (typeSelect) {
+        typeSelect.onchange = e => { 
+          filterState.type = e.target.value; 
+          updateCharacterItemsGrid(items, characterName); 
+        };
+      }
+      if (sortSelect) {
+        sortSelect.onchange = e => { 
+          filterState.sort = e.target.value; 
+          updateCharacterItemsGrid(items, characterName); 
+        };
+      }
+      if (clearBtn) {
+        clearBtn.onclick = () => { 
+          filterState.search = ''; 
+          filterState.category = 'all'; 
+          filterState.type = 'all'; 
+          filterState.sort = 'name-asc'; 
+          updateCharacterItemsGrid(items, characterName);
+          // Update the input value without re-rendering
+          if (searchInput) searchInput.value = '';
+          if (categorySelect) categorySelect.value = 'all';
+          if (typeSelect) typeSelect.value = 'all';
+          if (sortSelect) sortSelect.value = 'name-asc';
+        };
+      }
+    }, 0);
+  }
+
+  return filterBar + itemsGrid;
+}
+
+/**
+ * Updates only the items grid without re-rendering the filter bar
+ * @param {Array} items - Character's items
+ * @param {string} characterName - Name of the character
+ */
+function updateCharacterItemsGrid(items, characterName) {
+  const container = document.querySelector(`[data-character="${characterName}"] .character-inventory-content.expanded`);
+  if (!container) return;
+  
+  // Find the existing items grid
+  const existingGrid = container.querySelector('.character-items-grid');
+  if (!existingGrid) return;
+  
+  // Render only the items grid (without filter bar)
+  const itemsOnly = renderCharacterItems(items, characterName, false);
+  
+  // Extract just the items grid HTML (remove filter bar part)
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = itemsOnly;
+  const newItemsGrid = tempDiv.querySelector('.character-items-grid');
+  
+  if (newItemsGrid) {
+    existingGrid.innerHTML = newItemsGrid.innerHTML;
+  }
 }
 
 // ------------------- Filter and Sort Functions -------------------
 
-/**
- * Populates inventory filter options based on available data
- */
-function populateInventoryFilterOptions() {
-  console.log('🔧 Populating filter options from character summaries');
-  
-  // Extract unique values from all character summaries
-  const allCategories = new Set();
-  const allTypes = new Set();
-  
-  currentCharacterSummaries.forEach(summary => {
-    summary.categories.forEach(cat => allCategories.add(cat));
-    summary.types.forEach(type => allTypes.add(type));
-  });
-  
-  const categories = Array.from(allCategories).sort();
-  const types = Array.from(allTypes).sort();
-  
-  // Populate category filter
-  const catSelect = document.getElementById('inventory-category-filter');
-  if (catSelect) {
-    catSelect.innerHTML = '<option value="all">All Categories</option>' +
-      categories.map(c => `<option value="${c}">${c}</option>`).join('');
-  }
-  
-  // Populate type filter
-  const typeSelect = document.getElementById('inventory-type-filter');
-  if (typeSelect) {
-    typeSelect.innerHTML = '<option value="all">All Types</option>' +
-      types.map(t => `<option value="${t}">${t}</option>`).join('');
-  }
-  
-  console.log('✅ Filter options populated:', { categories: categories.length, types: types.length });
-}
+
 
 /**
  * Sets up inventory filters with event listeners
@@ -699,8 +864,7 @@ function setupInventoryFilters() {
   }
   
   const searchInput = document.getElementById('inventory-search');
-  const catSelect = document.getElementById('inventory-category-filter');
-  const typeSelect = document.getElementById('inventory-type-filter');
+  const villageFilter = document.getElementById('inventory-village-filter');
   const sortSelect = document.getElementById('inventory-sort');
   const charactersPerPageSelect = document.getElementById('inventory-characters-per-page');
   const clearBtn = document.getElementById('inventory-clear-filters');
@@ -708,8 +872,7 @@ function setupInventoryFilters() {
   // Restore filter state if it exists
   const savedFilterState = window.savedInventoryFilterState || {};
   if (savedFilterState.searchTerm && searchInput) searchInput.value = savedFilterState.searchTerm;
-  if (savedFilterState.categoryFilter && catSelect) catSelect.value = savedFilterState.categoryFilter;
-  if (savedFilterState.typeFilter && typeSelect) typeSelect.value = savedFilterState.typeFilter;
+  if (savedFilterState.villageFilter && villageFilter) villageFilter.value = savedFilterState.villageFilter;
   if (savedFilterState.sortBy && sortSelect) sortSelect.value = savedFilterState.sortBy;
   if (savedFilterState.charactersPerPage && charactersPerPageSelect) charactersPerPageSelect.value = savedFilterState.charactersPerPage;
   
@@ -730,23 +893,20 @@ function setupInventoryFilters() {
     });
   }
   
-  if (catSelect) catSelect.addEventListener('change', () => applyFiltersAndRender(1));
-  if (typeSelect) typeSelect.addEventListener('change', () => applyFiltersAndRender(1));
+  if (villageFilter) villageFilter.addEventListener('change', () => applyFiltersAndRender(1));
   if (sortSelect) sortSelect.addEventListener('change', () => applyFiltersAndRender(1));
   if (charactersPerPageSelect) charactersPerPageSelect.addEventListener('change', () => applyFiltersAndRender(1));
   
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
       if (searchInput) searchInput.value = '';
-      if (catSelect) catSelect.value = 'all';
-      if (typeSelect) typeSelect.value = 'all';
+      if (villageFilter) villageFilter.value = 'all';
       if (sortSelect) sortSelect.value = 'character-asc';
       if (charactersPerPageSelect) charactersPerPageSelect.value = '12';
       
       currentFilters = {
         search: '',
-        category: 'all',
-        type: 'all',
+        village: 'all',
         sortBy: 'character-asc'
       };
       
@@ -798,7 +958,7 @@ async function toggleCharacterInventory(characterName) {
       
       try {
         const items = await loadCharacterInventory(characterName);
-        content.innerHTML = renderCharacterItems(items);
+        content.innerHTML = renderCharacterItems(items, characterName);
       } catch (error) {
         console.error(`❌ Error loading inventory for ${characterName}:`, error);
         content.innerHTML = `
@@ -812,7 +972,7 @@ async function toggleCharacterInventory(characterName) {
     } else {
       // Use cached inventory data
       const items = loadedCharacterInventories.get(characterName);
-      content.innerHTML = renderCharacterItems(items);
+      content.innerHTML = renderCharacterItems(items, characterName);
     }
   }
 }
@@ -822,7 +982,6 @@ async function toggleCharacterInventory(characterName) {
 export {
   initializeInventoryPage,
   renderCharacterCards,
-  populateInventoryFilterOptions,
   setupInventoryFilters,
   toggleCharacterInventory,
   updateInventoryPagination

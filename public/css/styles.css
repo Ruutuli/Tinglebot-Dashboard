@@ -4398,9 +4398,7 @@
 /* Inventory-specific item styles */
 .inventory-item-icon {
   align-items: center;
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #4facfe 100%);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.2);
   display: flex;
   flex-shrink: 0;
   height: 48px;
@@ -7825,5 +7823,204 @@
   .character-of-week-featured-reason {
     font-size: 0.8rem;
     padding: 0.5rem;
+  }
+}
+
+/* ==========================================================================
+   Character Avatar Styles (Inventory Context)
+========================================================================== */
+
+/* Ensure character avatar works in inventory context - HIGH SPECIFICITY */
+.character-inventory-card .character-inventory-info .character-avatar {
+  align-items: center !important;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #4facfe 100%) !important;
+  border-radius: 50% !important;
+  box-shadow:
+    0 8px 24px rgba(79, 172, 254, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+  display: flex !important;
+  font-size: 2rem !important;
+  height: 80px !important;
+  width: 80px !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  position: relative !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  flex-shrink: 0 !important;
+}
+
+.character-inventory-card .character-inventory-info .character-avatar::before {
+  animation: shimmer 3s infinite !important;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+  content: '' !important;
+  height: 200% !important;
+  left: -50% !important;
+  position: absolute !important;
+  top: -50% !important;
+  width: 200% !important;
+}
+
+.character-inventory-card .character-inventory-info .character-avatar i {
+  color: #fff !important;
+  font-size: 2rem !important;
+  position: relative !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  z-index: 1 !important;
+}
+
+/* Ensure proper spacing in inventory layout */
+.character-inventory-info {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+}
+
+/* Responsive adjustments for character avatar in inventory */
+@media (max-width: 768px) {
+  .character-inventory-info .character-avatar {
+    height: 60px;
+    width: 60px;
+    font-size: 1.5rem;
+  }
+  
+  .character-inventory-info .character-avatar i {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .character-inventory-info .character-avatar {
+    height: 50px;
+    width: 50px;
+    font-size: 1.25rem;
+  }
+  
+  .character-inventory-info .character-avatar i {
+    font-size: 1.25rem;
+  }
+}
+
+.inventory-stat-item.loading {
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.2), rgba(255, 152, 0, 0.2));
+  border-color: rgba(255, 193, 7, 0.3);
+  color: #ffc107;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.inventory-stat-item.loading i {
+  color: #ffc107;
+}
+
+/* ============================================================================ */
+/* Character Item Filter Bar Styles                                             */
+/* ============================================================================ */
+
+.character-item-filter-bar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  backdrop-filter: blur(var(--frost-blur));
+  flex-wrap: wrap;
+}
+
+.character-item-filter-bar input,
+.character-item-filter-bar select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  background: var(--card-background);
+  color: var(--text-color);
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.character-item-filter-bar input:focus,
+.character-item-filter-bar select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 163, 218, 0.2);
+}
+
+.character-item-filter-bar input {
+  flex: 1;
+  min-width: 150px;
+}
+
+.character-item-filter-bar select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23AF966D' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+  appearance: none;
+}
+
+.character-item-filter-bar .character-item-clear-filters {
+  padding: 0.5rem 1rem;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.character-item-filter-bar .character-item-clear-filters:hover {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--text-color);
+  transform: translateY(-1px);
+}
+
+.character-item-filter-bar .character-item-clear-filters:active {
+  transform: translateY(0);
+}
+
+/* Responsive adjustments for character item filter bar */
+@media (max-width: 768px) {
+  .character-item-filter-bar {
+    gap: 0.5rem;
+    padding: 0.75rem;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .character-item-filter-bar input,
+  .character-item-filter-bar select {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .character-item-filter-bar .character-item-clear-filters {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .character-item-filter-bar {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  .character-item-filter-bar input,
+  .character-item-filter-bar select {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+  }
+  
+  .character-item-filter-bar .character-item-clear-filters {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
   }
 }
