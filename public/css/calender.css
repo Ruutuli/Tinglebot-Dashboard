@@ -108,7 +108,7 @@
   }
   
   /* Keep the original stat-label for backward compatibility */
-  .calendar-stat-item .stat-label {
+  .calendar-stat-item {
     align-items: center;
     color: var(--text-secondary);
     display: flex;
@@ -119,7 +119,7 @@
     text-transform: uppercase;
   }
   
-  .calendar-stat-item .stat-label::before {
+  .calendar-stat-item::before {
     background: var(--primary-color);
     border-radius: 50%;
     content: '';

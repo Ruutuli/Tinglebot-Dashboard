@@ -98,17 +98,6 @@
   margin-bottom: 0;
 }
 
-.stat-label {
-  color: #b8b8b8;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.stat-value {
-  color: #e1b382;
-  font-size: 0.9rem;
-  font-weight: bold;
-}
 
 /* ============================================================================
    Tier Colors
@@ -538,17 +527,6 @@
   margin-bottom: 0.5rem;
 }
 
-.stat-label {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.stat-value {
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
 
 .stat-value.tier-1 { color: #4CAF50; }
 .stat-value.tier-2 { color: #2196F3; }

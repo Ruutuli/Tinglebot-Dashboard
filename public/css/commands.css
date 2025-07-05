@@ -582,8 +582,8 @@
   transition: color 0.2s ease !important;
 }
 
-.commands-stats .command-stat-item .stat-label,
-.command-stats .command-stat-item .stat-label {
+.commands-stats .command-stat-item ,
+.command-stats .command-stat-item  {
   color: var(--text-secondary) !important;
   font-weight: 500 !important;
   font-size: 0.8rem !important;

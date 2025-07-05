@@ -19,6 +19,7 @@ import * as guilds from './guilds.js';
 import * as commands from './commands.js';
 import * as villageShops from './villageShops.js';
 import * as monsters from './monsters.js';
+import * as starterGear from './starterGear.js';
 import { createPagination, setupBackToTopButton, scrollToTop } from './ui.js';
 
 // Import specific functions from characters module
@@ -44,6 +45,7 @@ export {
   commands,
   villageShops,
   monsters,
+  starterGear,
 };
 
 // ============================================================================
@@ -138,7 +140,6 @@ function setupModelCards() {
         modelDetailsPage.style.display = 'block';
         title.textContent = modelName.charAt(0).toUpperCase() + modelName.slice(1);
         contentDiv.innerHTML = '';
-        console.log('📱 UI elements updated');
 
         // Setup back button handler
         backButton.onclick = () => {
@@ -159,8 +160,12 @@ function setupModelCards() {
         // Ensure back to top button is set up for model pages
         setupBackToTopButton();
 
-        console.log('🌐 Fetching model data:', modelName);
-        const response = await fetch(`/api/models/${modelName}`);
+        let fetchUrl = `/api/models/${modelName}`;
+        if (modelName === 'starterGear') {
+          fetchUrl = '/api/models/item?all=true';
+        }
+   
+        const response = await fetch(fetchUrl);
         console.log('📥 Response status:', response.status);
         
         if (!response.ok) {
@@ -231,6 +236,11 @@ function setupModelCards() {
               }
             }
             await items.initializeItemPage(data, pagination.page, contentDiv);
+            break;
+          case 'starterGear':
+            console.log('🥾 Initializing starter gear page');
+            title.textContent = 'Starter Gear';
+            await starterGear.initializeStarterGearPage(data, pagination.page, contentDiv);
             break;
           case 'monster':
             console.log('👹 Initializing monster page');

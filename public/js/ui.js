@@ -12,9 +12,6 @@
  * Configures the scroll-to-top button visibility and click behavior.
  */
 function setupBackToTopButton() {
-    console.log('🔝 Setting up back to top button...');
-    console.log('🔝 Document ready state:', document.readyState);
-    console.log('🔝 Window scroll position:', window.pageYOffset);
     
     let button = document.getElementById('backToTop');
     if (!button) {
@@ -32,17 +29,8 @@ function setupBackToTopButton() {
       button.setAttribute('aria-label', 'Back to top');
       button.innerHTML = '<i class="fas fa-arrow-up" aria-hidden="true"></i>';
       document.body.appendChild(button);
-      console.log('✅ Created back-to-top button:', button);
     }
     
-    console.log('✅ Back to top button found:', button);
-    console.log('✅ Button current styles:', {
-      display: button.style.display,
-      opacity: button.style.opacity,
-      visibility: button.style.visibility,
-      position: button.style.position,
-      zIndex: button.style.zIndex
-    });
     
     // Ensure button is always visible
     console.log('🔝 Making button always visible...');
