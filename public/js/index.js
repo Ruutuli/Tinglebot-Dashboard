@@ -18,6 +18,7 @@ import * as auth from './auth.js';
 import * as guilds from './guilds.js';
 import * as commands from './commands.js';
 import * as villageShops from './villageShops.js';
+import * as monsters from './monsters.js';
 import { createPagination, setupBackToTopButton, scrollToTop } from './ui.js';
 
 // Import specific functions from characters module
@@ -42,6 +43,7 @@ export {
   guilds,
   commands,
   villageShops,
+  monsters,
 };
 
 // ============================================================================
@@ -230,6 +232,10 @@ function setupModelCards() {
             }
             await items.initializeItemPage(data, pagination.page, contentDiv);
             break;
+          case 'monster':
+            console.log('👹 Initializing monster page');
+            await monsters.initializeMonsterPage(data, pagination.page, contentDiv);
+            break;
           case 'inventory':
             console.log('🎒 Initializing inventory page');
             // Inventory uses its own efficient pagination system
@@ -341,6 +347,11 @@ function setupModelCards() {
                   // Skip the main pagination handling
                   console.log('🎒 Skipping main pagination handling for inventory');
                   return;
+                case 'monster':
+                  // For monsters, we need to update the global data and re-render
+                  window.allMonsters = data;
+                  await monsters.renderMonsterCards(data, pagination.page, pagination.total);
+                  break;
                 case 'villageShops':
                   // Village shops uses its own efficient pagination system
                   // Skip the main pagination handling
@@ -461,6 +472,9 @@ function handleModelDataError(modelName, contentDiv) {
             break;
           case 'inventory':
             await inventory.initializeInventoryPage(data, pagination.page, contentDiv);
+            break;
+          case 'monster':
+            await monsters.initializeMonsterPage(data, pagination.page, contentDiv);
             break;
           case 'villageShops':
             await villageShops.initializeVillageShopsPage(data, pagination.page, contentDiv);

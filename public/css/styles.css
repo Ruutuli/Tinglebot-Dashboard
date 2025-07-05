@@ -964,7 +964,7 @@
   .search-filter-control.search-input::after {
     content: '\f002';
     font-size: 0.9rem;
-    left: 1rem;
+    left: 0.7rem;
   }
   
 

@@ -921,7 +921,7 @@ app.get('/api/models/:modelType', async (req, res) => {
     console.log(`[server.js]: 🔍 Fetching ${modelType} data...`);
     
     const page = parseInt(req.query.page) || 1;
-    const limit = 12; // Items per page
+    const limit = 15; // Items per page
     const skip = (page - 1) * limit;
     const allItems = req.query.all === 'true';
 
@@ -933,7 +933,27 @@ app.get('/api/models/:modelType', async (req, res) => {
       req.query.subtype || 
       req.query.jobs || 
       req.query.locations ||
-      req.query.sources
+      req.query.sources ||
+      // Check for monster boolean fields
+      Object.keys(req.query).some(key => 
+        ['bokoblin', 'blackBokoblin', 'blueBokoblin', 'cursedBokoblin', 'goldenBokoblin', 'silverBokoblin',
+         'chuchuLarge', 'electricChuchuLarge', 'fireChuchuLarge', 'iceChuchuLarge',
+         'chuchuMedium', 'electricChuchuMedium', 'fireChuchuMedium', 'iceChuchuMedium',
+         'chuchuSmall', 'electricChuchuSmall', 'fireChuchuSmall', 'iceChuchuSmall',
+         'hinox', 'blackHinox', 'blueHinox',
+         'keese', 'electricKeese', 'fireKeese', 'iceKeese',
+         'lizalfos', 'blackLizalfos', 'blueLizalfos', 'cursedLizalfos', 'electricLizalfos', 
+         'fireBreathLizalfos', 'goldenLizalfos', 'iceBreathLizalfos', 'silverLizalfos',
+         'lynel', 'blueManedLynel', 'goldenLynel', 'silverLynel', 'whiteManedLynel',
+         'moblin', 'blackMoblin', 'blueMoblin', 'cursedMoblin', 'goldenMoblin', 'silverMoblin',
+         'molduga', 'molduking',
+         'forestOctorok', 'rockOctorok', 'skyOctorok', 'snowOctorok', 'treasureOctorok', 'waterOctorok',
+         'frostPebblit', 'igneoPebblit', 'stonePebblit',
+         'stalizalfos', 'stalkoblin', 'stalmoblin', 'stalnox',
+         'frostTalus', 'igneoTalus', 'luminousTalus', 'rareTalus', 'stoneTalus',
+         'blizzardWizzrobe', 'electricWizzrobe', 'fireWizzrobe', 'iceWizzrobe', 'meteoWizzrobe', 'thunderWizzrobe',
+         'likeLike', 'evermean', 'gibdo', 'horriblin', 'gloomHands', 'bossBokoblin', 'mothGibdo', 'littleFrox'].includes(key)
+      )
     );
 
     let Model, query = {};
@@ -948,7 +968,7 @@ app.get('/api/models/:modelType', async (req, res) => {
         break;
       case 'monster':
         Model = Monster;
-        query = { isActive: true };
+        query = {};
         break;
       case 'pet':
         Model = Pet;
@@ -998,12 +1018,45 @@ app.get('/api/models/:modelType', async (req, res) => {
 
     // For filtered item requests or all=true requests, return all items
     if (isFilteredRequest || allItems) {
-      console.log(`[server.js]: 🔍 ${allItems ? 'All items' : 'Filtered'} request detected, returning all items`);
+      console.log(`[server.js]: 🔍 ${allItems ? 'All items' : 'Filtered'} request detected, processing filters`);
+      
+      // Build query for item filtering
+      if (modelType === 'item') {
+        // Handle monster boolean fields
+        const monsterFields = [
+          'bokoblin', 'blackBokoblin', 'blueBokoblin', 'cursedBokoblin', 'goldenBokoblin', 'silverBokoblin',
+          'chuchuLarge', 'electricChuchuLarge', 'fireChuchuLarge', 'iceChuchuLarge',
+          'chuchuMedium', 'electricChuchuMedium', 'fireChuchuMedium', 'iceChuchuMedium',
+          'chuchuSmall', 'electricChuchuSmall', 'fireChuchuSmall', 'iceChuchuSmall',
+          'hinox', 'blackHinox', 'blueHinox',
+          'keese', 'electricKeese', 'fireKeese', 'iceKeese',
+          'lizalfos', 'blackLizalfos', 'blueLizalfos', 'cursedLizalfos', 'electricLizalfos', 
+          'fireBreathLizalfos', 'goldenLizalfos', 'iceBreathLizalfos', 'silverLizalfos',
+          'lynel', 'blueManedLynel', 'goldenLynel', 'silverLynel', 'whiteManedLynel',
+          'moblin', 'blackMoblin', 'blueMoblin', 'cursedMoblin', 'goldenMoblin', 'silverMoblin',
+          'molduga', 'molduking',
+          'forestOctorok', 'rockOctorok', 'skyOctorok', 'snowOctorok', 'treasureOctorok', 'waterOctorok',
+          'frostPebblit', 'igneoPebblit', 'stonePebblit',
+          'stalizalfos', 'stalkoblin', 'stalmoblin', 'stalnox',
+          'frostTalus', 'igneoTalus', 'luminousTalus', 'rareTalus', 'stoneTalus',
+          'blizzardWizzrobe', 'electricWizzrobe', 'fireWizzrobe', 'iceWizzrobe', 'meteoWizzrobe', 'thunderWizzrobe',
+          'likeLike', 'evermean', 'gibdo', 'horriblin', 'gloomHands', 'bossBokoblin', 'mothGibdo', 'littleFrox'
+        ];
+        
+        // Add monster field filters to query
+        monsterFields.forEach(field => {
+          if (req.query[field] === 'true') {
+            query[field] = true;
+            console.log(`[server.js]: 🔍 Adding filter: ${field} = true`);
+          }
+        });
+      }
+      
       const allItemsData = await Model.find(query)
         .sort({ itemName: 1 })
         .lean();
       
-      console.log(`[server.js]: ✅ Successfully fetched ${allItemsData.length} ${modelType} records (all items)`);
+      console.log(`[server.js]: ✅ Successfully fetched ${allItemsData.length} ${modelType} records (filtered)`);
       res.json({
         data: allItemsData,
         pagination: {
