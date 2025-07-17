@@ -416,41 +416,9 @@ async function initStatsPage() {
             totalCardParent.appendChild(extraStats);
         }
 
-        // Add debuffed characters section
+        // Remove any existing standalone debuffed characters section
         let debuffedSection = document.querySelector('.debuffed-characters-section');
         if (debuffedSection) debuffedSection.remove();
-        
-        if (data.debuffedCount > 0) {
-            debuffedSection = document.createElement('div');
-            debuffedSection.className = 'stats-card-wide debuffed-characters-section';
-            debuffedSection.innerHTML = `
-                <h3>Debuffed Characters</h3>
-                <div class="stats-table-container">
-                    <table class="stats-table">
-                        <thead>
-                            <tr>
-                                <th>Character</th>
-                                <th>Debuff Ends</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.debuffedCharacters.map(char => `
-                                <tr>
-                                    <td>${char.name}</td>
-                                    <td>${char.debuff.endDate ? new Date(char.debuff.endDate).toLocaleDateString() : 'Unknown'}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            
-            // Insert after the first stats card
-            const firstStatsCard = document.querySelector('#stats-section .stats-card-wide');
-            if (firstStatsCard) {
-                firstStatsCard.parentNode.insertBefore(debuffedSection, firstStatsCard.nextSibling);
-            }
-        }
 
         // Add visiting characters section
         let visitingSection = document.querySelector('.visiting-characters-section');
@@ -487,10 +455,10 @@ async function initStatsPage() {
             </div>
         `;
         
-        // Insert after the debuffed section or first stats card
-        const insertAfter = document.querySelector('.debuffed-characters-section') || document.querySelector('#stats-section .stats-card-wide');
-        if (insertAfter) {
-            insertAfter.parentNode.insertBefore(visitingSection, insertAfter.nextSibling);
+        // Insert after the first stats card
+        const firstStatsCard = document.querySelector('#stats-section .stats-card-wide');
+        if (firstStatsCard) {
+            firstStatsCard.parentNode.insertBefore(visitingSection, firstStatsCard.nextSibling);
         }
 
         if (villageChart) villageChart.destroy();

@@ -64,6 +64,8 @@ select:focus {
 .command-filters {
   background: var(--glass-bg);
   padding: 1rem;
+  align-items: center;
+  flex-direction: row;
 }
 
 .command-filters {
@@ -81,15 +83,17 @@ select:focus {
    Filter Controls
 ============================================================================ */
 .search-filter-control {
-  flex: 1;
+  flex: 0 1 auto;
   max-width: 220px;
   position: relative;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .search-filter-control.search-input {
   max-width: 260px;
+  flex: 0 1 auto;
 }
 
 .search-filter-control input {

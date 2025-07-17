@@ -330,7 +330,15 @@ async function loadCharacterSummaries() {
       });
       
       currentCharacterSummaries = updatedSummaries;
-      applyFiltersAndRender(currentPage);
+      
+      // Only re-render if no characters are currently expanded
+      // This prevents losing loaded inventory content
+      if (expandedCharacters.size === 0) {
+        applyFiltersAndRender(currentPage);
+      } else {
+        // Update only the character stats without re-rendering the cards
+        updateCharacterStatsOnly(updatedSummaries);
+      }
       
     } catch (summaryError) {
       console.warn('⚠️ Error loading inventory summaries, showing characters without inventory data:', summaryError);
@@ -353,6 +361,45 @@ async function loadCharacterSummaries() {
       `;
     }
   }
+}
+
+/**
+ * Updates only the character stats without re-rendering the entire cards
+ * This preserves expanded inventory content
+ * @param {Array} updatedSummaries - Updated character summaries
+ */
+function updateCharacterStatsOnly(updatedSummaries) {
+  updatedSummaries.forEach(summary => {
+    const card = document.querySelector(`[data-character="${summary.characterName}"]`);
+    if (!card) return;
+    
+    const statsContainer = card.querySelector('.character-inventory-stats');
+    if (!statsContainer) return;
+    
+    // Update the stats HTML
+    statsContainer.innerHTML = `
+      <span class="inventory-stat-item">
+        <i class="fas fa-box"></i>
+        ${summary.uniqueItems} items
+      </span>
+      <span class="inventory-stat-item">
+        <i class="fas fa-layer-group"></i>
+        ${summary.totalItems} total
+      </span>
+      ${summary.job ? `
+        <span class="inventory-stat-item">
+          <i class="fas fa-briefcase"></i>
+          ${summary.job}
+        </span>
+      ` : ''}
+      ${summary.currentVillage ? `
+        <span class="inventory-stat-item">
+          <i class="fas fa-map-marker-alt"></i>
+          ${summary.currentVillage}
+        </span>
+      ` : ''}
+    `;
+  });
 }
 
 /**
@@ -504,6 +551,21 @@ function renderCharacterCards(summaries) {
 
   const cardsHTML = summaries.map(summary => {
     const isExpanded = expandedCharacters.has(summary.characterName);
+    const hasLoadedInventory = loadedCharacterInventories.has(summary.characterName);
+    
+    // Determine what content to show for expanded characters
+    let expandedContent = '';
+    if (isExpanded) {
+      if (hasLoadedInventory) {
+        // Use cached inventory data to render the content
+        const items = loadedCharacterInventories.get(summary.characterName);
+        expandedContent = renderCharacterItems(items, summary.characterName);
+      } else {
+        // Show loading message
+        expandedContent = '<div class="loading-inventory"><i class="fas fa-spinner fa-spin"></i> Loading inventory...</div>';
+      }
+    }
+    
     return `
       <div class="character-inventory-card" data-character="${summary.characterName}">
         <div class="character-inventory-scroll">
@@ -556,7 +618,7 @@ function renderCharacterCards(summaries) {
             </div>
           </div>
           <div class="character-inventory-content ${isExpanded ? 'expanded' : ''}">
-            ${isExpanded ? '<div class="loading-inventory"><i class="fas fa-spinner fa-spin"></i> Loading inventory...</div>' : ''}
+            ${expandedContent}
           </div>
         </div>
       </div>
@@ -696,23 +758,31 @@ function renderCharacterItems(items, characterName, renderFilterBar = true) {
   let filterBar = '';
   if (renderFilterBar) {
     filterBar = `
-      <div class="character-item-filter-bar" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap;">
-        <input type="text" class="character-item-search" placeholder="Search items..." value="${filterState.search}" style="padding:0.3em 0.7em;border-radius:5px;border:1px solid #ccc;min-width:120px;" />
-        <select class="character-item-category">
-          <option value="all">All Categories</option>
-          ${allCategories.map(cat => `<option value="${cat}" ${filterState.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
-        </select>
-        <select class="character-item-type">
-          <option value="all">All Types</option>
-          ${allTypes.map(type => `<option value="${type}" ${filterState.type === type ? 'selected' : ''}>${type}</option>`).join('')}
-        </select>
-        <select class="character-item-sort">
-          <option value="name-asc" ${filterState.sort === 'name-asc' ? 'selected' : ''}>Name (A-Z)</option>
-          <option value="name-desc" ${filterState.sort === 'name-desc' ? 'selected' : ''}>Name (Z-A)</option>
-          <option value="quantity-asc" ${filterState.sort === 'quantity-asc' ? 'selected' : ''}>Quantity (Low-High)</option>
-          <option value="quantity-desc" ${filterState.sort === 'quantity-desc' ? 'selected' : ''}>Quantity (High-Low)</option>
-        </select>
-        <button class="character-item-clear-filters" style="margin-left:0.5em;">Clear</button>
+      <div class="character-item-filter-bar">
+        <div class="search-filter-control search-input">
+          <input type="text" class="character-item-search" placeholder="Search items..." value="${filterState.search}">
+        </div>
+        <div class="search-filter-control">
+          <select class="character-item-category">
+            <option value="all">All Categories</option>
+            ${allCategories.map(cat => `<option value="${cat}" ${filterState.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+          </select>
+        </div>
+        <div class="search-filter-control">
+          <select class="character-item-type">
+            <option value="all">All Types</option>
+            ${allTypes.map(type => `<option value="${type}" ${filterState.type === type ? 'selected' : ''}>${type}</option>`).join('')}
+          </select>
+        </div>
+        <div class="search-filter-control">
+          <select class="character-item-sort">
+            <option value="name-asc" ${filterState.sort === 'name-asc' ? 'selected' : ''}>Name (A-Z)</option>
+            <option value="name-desc" ${filterState.sort === 'name-desc' ? 'selected' : ''}>Name (Z-A)</option>
+            <option value="quantity-asc" ${filterState.sort === 'quantity-asc' ? 'selected' : ''}>Quantity (Low-High)</option>
+            <option value="quantity-desc" ${filterState.sort === 'quantity-desc' ? 'selected' : ''}>Quantity (High-Low)</option>
+          </select>
+        </div>
+        <button class="character-item-clear-filters">Clear</button>
       </div>
     `;
   }
@@ -756,7 +826,8 @@ function renderCharacterItems(items, characterName, renderFilterBar = true) {
 
   // Attach event listeners only if rendering filter bar
   if (renderFilterBar) {
-    setTimeout(() => {
+    // Use requestAnimationFrame instead of setTimeout for better timing
+    requestAnimationFrame(() => {
       const container = document.querySelector(`[data-character="${characterName}"] .character-inventory-content.expanded`);
       if (!container) return;
       
@@ -766,32 +837,54 @@ function renderCharacterItems(items, characterName, renderFilterBar = true) {
       const sortSelect = container.querySelector('.character-item-sort');
       const clearBtn = container.querySelector('.character-item-clear-filters');
       
+      // Ensure filter state is initialized
+      if (!window.characterItemFilters) window.characterItemFilters = {};
+      if (!window.characterItemFilters[characterName]) {
+        window.characterItemFilters[characterName] = {
+          search: '',
+          category: 'all',
+          type: 'all',
+          sort: 'name-asc'
+        };
+      }
+      const filterState = window.characterItemFilters[characterName];
+      
       if (searchInput) {
-        searchInput.oninput = e => { 
+        // Remove existing listeners to prevent duplicates
+        searchInput.removeEventListener('input', searchInput._filterHandler);
+        searchInput._filterHandler = e => { 
           filterState.search = e.target.value; 
           updateCharacterItemsGrid(items, characterName); 
         };
+        searchInput.addEventListener('input', searchInput._filterHandler);
       }
       if (categorySelect) {
-        categorySelect.onchange = e => { 
+        categorySelect.removeEventListener('change', categorySelect._filterHandler);
+        categorySelect._filterHandler = e => { 
           filterState.category = e.target.value; 
           updateCharacterItemsGrid(items, characterName); 
         };
+        categorySelect.addEventListener('change', categorySelect._filterHandler);
       }
       if (typeSelect) {
-        typeSelect.onchange = e => { 
+        typeSelect.removeEventListener('change', typeSelect._filterHandler);
+        typeSelect._filterHandler = e => { 
           filterState.type = e.target.value; 
           updateCharacterItemsGrid(items, characterName); 
         };
+        typeSelect.addEventListener('change', typeSelect._filterHandler);
       }
       if (sortSelect) {
-        sortSelect.onchange = e => { 
+        sortSelect.removeEventListener('change', sortSelect._filterHandler);
+        sortSelect._filterHandler = e => { 
           filterState.sort = e.target.value; 
           updateCharacterItemsGrid(items, characterName); 
         };
+        sortSelect.addEventListener('change', sortSelect._filterHandler);
       }
       if (clearBtn) {
-        clearBtn.onclick = () => { 
+        clearBtn.removeEventListener('click', clearBtn._filterHandler);
+        clearBtn._filterHandler = () => { 
           filterState.search = ''; 
           filterState.category = 'all'; 
           filterState.type = 'all'; 
@@ -803,8 +896,9 @@ function renderCharacterItems(items, characterName, renderFilterBar = true) {
           if (typeSelect) typeSelect.value = 'all';
           if (sortSelect) sortSelect.value = 'name-asc';
         };
+        clearBtn.addEventListener('click', clearBtn._filterHandler);
       }
-    }, 0);
+    });
   }
 
   return filterBar + itemsGrid;
@@ -823,17 +917,96 @@ function updateCharacterItemsGrid(items, characterName) {
   const existingGrid = container.querySelector('.character-items-grid');
   if (!existingGrid) return;
   
-  // Render only the items grid (without filter bar)
-  const itemsOnly = renderCharacterItems(items, characterName, false);
+  // Get the current filter state
+  const filterState = window.characterItemFilters[characterName] || {
+    search: '',
+    category: 'all',
+    type: 'all',
+    sort: 'name-asc'
+  };
   
-  // Extract just the items grid HTML (remove filter bar part)
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = itemsOnly;
-  const newItemsGrid = tempDiv.querySelector('.character-items-grid');
-  
-  if (newItemsGrid) {
-    existingGrid.innerHTML = newItemsGrid.innerHTML;
+  // Filter out items with 0 quantity
+  let filteredItems = items.filter(item => (item.quantity || 0) > 0);
+  if (filteredItems.length === 0) {
+    existingGrid.innerHTML = `
+      <div class="character-inventory-empty">
+        <i class="fas fa-inbox"></i>
+        <p>No items found for this character</p>
+      </div>
+    `;
+    return;
   }
+
+  // Apply filters
+  filteredItems = filteredItems.filter(item => {
+    const matchesSearch = !filterState.search || item.itemName.toLowerCase().includes(filterState.search.toLowerCase());
+    // Category filter: match if selected category is in item's category array or string
+    const itemCategories = Array.isArray(item.category)
+      ? item.category
+      : (typeof item.category === 'string' && item.category.includes(','))
+        ? item.category.split(',').map(s => s.trim())
+        : [item.category];
+    const matchesCategory = filterState.category === 'all' || itemCategories.includes(filterState.category);
+    // Type filter: match if selected type is in item's type array or string
+    const itemTypes = Array.isArray(item.type)
+      ? item.type
+      : (typeof item.type === 'string' && item.type.includes(','))
+        ? item.type.split(',').map(s => s.trim())
+        : [item.type];
+    const matchesType = filterState.type === 'all' || itemTypes.includes(filterState.type);
+    return matchesSearch && matchesCategory && matchesType;
+  });
+
+  // Apply sort
+  filteredItems = [...filteredItems].sort((a, b) => {
+    switch (filterState.sort) {
+      case 'name-asc':
+        return (a.itemName || '').localeCompare(b.itemName || '');
+      case 'name-desc':
+        return (b.itemName || '').localeCompare(a.itemName || '');
+      case 'quantity-asc':
+        return (a.quantity || 0) - (b.quantity || 0);
+      case 'quantity-desc':
+        return (b.quantity || 0) - (a.quantity || 0);
+      default:
+        return 0;
+    }
+  });
+
+  // Update only the items grid HTML
+  existingGrid.innerHTML = `
+    ${filteredItems.map(item => `
+      <div class="inventory-item-card" data-item="${item.itemName}">
+        <div class="inventory-item-icon">
+          ${item.image && item.image !== 'No Image'
+            ? `<img src="${item.image}" alt="${item.itemName} icon" style="width:100%;height:100%;object-fit:cover;" />`
+            : `<i class="fas fa-box"></i>`
+          }
+        </div>
+        <div class="inventory-item-details">
+          <h4 class="inventory-item-name">${item.itemName}</h4>
+          <div class="inventory-item-meta">
+            <span class="inventory-item-quantity">
+              <i class="fas fa-layer-group"></i>
+              ${item.quantity}
+            </span>
+            ${item.category ? `
+              <span class="inventory-item-category">
+                <i class="fas fa-tag"></i>
+                ${item.category}
+              </span>
+            ` : ''}
+            ${item.type ? `
+              <span class="inventory-item-type">
+                <i class="fas fa-cube"></i>
+                ${item.type}
+              </span>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `).join('')}
+  `;
 }
 
 // ------------------- Filter and Sort Functions -------------------
@@ -945,6 +1118,17 @@ async function toggleCharacterInventory(characterName) {
     content.classList.add('expanded');
     expandButton.className = 'fas fa-chevron-up';
     
+    // Ensure filter state is initialized for this character
+    if (!window.characterItemFilters) window.characterItemFilters = {};
+    if (!window.characterItemFilters[characterName]) {
+      window.characterItemFilters[characterName] = {
+        search: '',
+        category: 'all',
+        type: 'all',
+        sort: 'name-asc'
+      };
+    }
+    
     // Load inventory items if not already loaded
     if (!loadedCharacterInventories.has(characterName)) {
       content.innerHTML = '<div class="loading-inventory"><i class="fas fa-spinner fa-spin"></i> Loading inventory...</div>';
@@ -977,7 +1161,8 @@ export {
   renderCharacterCards,
   setupInventoryFilters,
   toggleCharacterInventory,
-  updateInventoryPagination
+  updateInventoryPagination,
+  updateCharacterStatsOnly
 };
 
 // Make toggleCharacterInventory globally available for HTML onclick

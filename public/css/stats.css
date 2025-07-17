@@ -502,22 +502,8 @@
 
 
 /* ============================================================================
-   Debuffed Characters Section
+   Debuffed Characters Section (Removed - now part of Status Effects)
 ============================================================================ */
-
-.debuffed-characters-section {
-  margin-top: 2rem;
-}
-
-.debuffed-characters-section h3 {
-  color: #ff6b6b;
-  margin-bottom: 1rem;
-}
-
-.debuffed-characters-section .stats-table th {
-  background: rgba(255, 107, 107, 0.1);
-  color: #ff6b6b;
-}
 
 
 /* ============================================================================
