@@ -4,6 +4,7 @@
 /* ====================================================================== */
 
 import { scrollToTop } from './ui.js';
+import { capitalize } from './utils.js';
 
 // ============================================================================
 // ------------------- Rendering: Item Cards -------------------
@@ -341,12 +342,6 @@ function renderDetail(label, value) {
       <div class="item-detail-value">${value}</div>
     </div>
   `;
-}
-
-// ------------------- Function: capitalize -------------------
-// Capitalizes the first letter of a string safely
-function capitalize(str) {
-  return typeof str === 'string' ? str.charAt(0).toUpperCase() + str.slice(1) : '';
 }
 
 // ------------------- Function: formatItemImageUrl -------------------

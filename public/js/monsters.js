@@ -3,6 +3,7 @@
 // ============================================================================
 
 import { scrollToTop } from './ui.js';
+import { capitalize } from './utils.js';
 
 // ------------------- Function: renderMonsterCards -------------------
 // Renders all monster cards with pagination
@@ -66,17 +67,11 @@ function renderMonsterCards(monsters, page = 1, totalMonsters = null) {
   grid.innerHTML = monstersToRender.map(monster => {
     // Format locations properly
     const locations = Array.isArray(monster.locations) ? monster.locations : [];
-    const formattedLocations = locations
-      .filter(loc => loc && loc.trim())
-      .map(loc => loc.replace(/([A-Z])/g, ' $1').trim()) // Add spaces before capitals
-      .filter(loc => loc.length > 0);
+    const formattedLocations = locations.filter(loc => loc && loc.trim()).map(loc => capitalize(loc)).filter(loc => loc.length > 0);
 
     // Format jobs properly
     const jobs = Array.isArray(monster.job) ? monster.job : [];
-    const formattedJobs = jobs
-      .filter(job => job && job.trim())
-      .map(job => job.replace(/([A-Z])/g, ' $1').trim()) // Add spaces before capitals
-      .filter(job => job.length > 0);
+    const formattedJobs = jobs.filter(job => job && job.trim()).map(job => capitalize(job)).filter(job => job.length > 0);
 
     // Get species from name if not set
     const species = monster.species || getSpeciesFromName(monster.name);

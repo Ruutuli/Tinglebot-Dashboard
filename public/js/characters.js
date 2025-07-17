@@ -3,7 +3,7 @@
 /* Handles character card rendering, filtering, pagination, avatar logic */
 /* ====================================================================== */
 
-import { getVillageCrestUrl } from './utils.js';
+import { getVillageCrestUrl, capitalize } from './utils.js';
 import { scrollToTop } from './ui.js';
 
 // ============================================================================
@@ -444,12 +444,6 @@ function renderStatRow(label, value, barClass, percent) {
         <div class="character-detail-value">${value}</div>
       </div>
     `;
-  }
-  
-  // ------------------- Function: capitalize -------------------
-  // Capitalizes the first letter of a string safely
-  function capitalize(str) {
-    return typeof str === 'string' ? str.charAt(0).toUpperCase() + str.slice(1) : '';
   }
   
   // ------------------- Function: getGearStat -------------------

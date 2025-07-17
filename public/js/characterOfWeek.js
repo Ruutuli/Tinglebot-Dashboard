@@ -3,6 +3,8 @@
 // Handles loading and displaying the featured character of the week
 // ============================================================================
 
+import { capitalize } from './utils.js';
+
 // ------------------- Global Variables -------------------
 let characterOfWeekData = null;
 
@@ -204,13 +206,6 @@ function formatCharacterIconUrl(icon) {
   } else {
     return `https://storage.googleapis.com/tinglebot/${icon}`;
   }
-}
-
-// ------------------- Function: capitalize -------------------
-// Capitalizes the first letter of a string
-function capitalize(str) {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
 // ------------------- Function: refreshCharacterOfWeek -------------------

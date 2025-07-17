@@ -5,6 +5,7 @@
 
 import { currentUser, isAuthenticated } from './auth.js';
 import { renderCharacterCards } from './characters.js';
+import { capitalize } from './utils.js';
 
 // ============================================================================
 // ------------------- Section: Profile Page Initialization -------------------
@@ -790,12 +791,6 @@ function checkIfCharacterRolledToday(character) {
 
     return false;
   }
-}
-
-// ------------------- Function: capitalize -------------------
-// Capitalizes the first letter of a string safely
-function capitalize(str) {
-  return typeof str === 'string' ? str.charAt(0).toUpperCase() + str.slice(1) : '';
 }
 
 // ------------------- Function: formatCharacterIconUrl -------------------
