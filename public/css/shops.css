@@ -1,0 +1,96 @@
+/* ============================================================================
+   Village Shop Controls
+============================================================================ */
+
+.village-shop-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.village-shop-controls input,
+.village-shop-controls select {
+  min-width: 120px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  background: var(--card-background);
+  color: var(--text-color);
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.village-shop-controls input:focus,
+.village-shop-controls select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 163, 218, 0.2);
+}
+
+.village-shop-controls input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.village-shop-controls button {
+  padding: 0.5rem 1rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.village-shop-controls button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+
+/* ============================================================================
+   Village Shops Grid
+============================================================================ */
+
+.village-shops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+
+/* ============================================================================
+   Stock Badge
+============================================================================ */
+
+.stock-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  background: rgba(73, 213, 156, 0.15);
+  border: 1px solid rgba(73, 213, 156, 0.3);
+  color: var(--totk-light-green);
+  transition: all 0.2s ease;
+}
+
+.stock-badge:hover {
+  background: rgba(73, 213, 156, 0.25);
+  border-color: rgba(73, 213, 156, 0.5);
+  transform: scale(1.05);
+}
+
+.stock-badge i {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.stock-count {
+  font-weight: 600;
+  color: var(--totk-light-green);
+}

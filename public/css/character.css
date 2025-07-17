@@ -1,0 +1,939 @@
+/* ==========================================================================
+   Character Visual Components
+========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Avatar Styles
+--------------------------------------------------------------------------- */
+.character-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  font-size: 2rem;
+  color: #fff;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #4facfe 100%);
+  box-shadow:
+    0 8px 24px rgba(79, 172, 254, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.character-avatar::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 3s infinite;
+}
+
+.character-avatar i {
+  position: relative;
+  z-index: 1;
+  font-size: 2rem;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   Character Header
+--------------------------------------------------------------------------- */
+.character-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem;
+
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px 10px 0 0;
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(var(--frost-blur));
+  transition: all 0.3s ease;
+}
+
+/* --------------------------------------------------------------------------
+   Character Name & Title Sections
+--------------------------------------------------------------------------- */
+.character-name {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #fff 0%, #e0e7ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.character-section {
+  margin: 1.2rem 0 0.8rem;
+}
+
+.character-section-title {
+  margin: 0 0 0.6rem;
+  padding-bottom: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--botw-blue);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* --------------------------------------------------------------------------
+   Character Content Area
+--------------------------------------------------------------------------- */
+.character-content {
+  flex: 1;
+  padding: 1.5rem 1.8rem 1.8rem;
+  background: rgba(22, 22, 25, 0.7);
+  border-radius: 0 0 10px 10px;
+  position: relative;
+}
+
+/* --------------------------------------------------------------------------
+   Characters Grid Layout
+--------------------------------------------------------------------------- */
+.characters-grid {
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  width: 100%;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+}
+
+/* --------------------------------------------------------------------------
+   Expand Button
+--------------------------------------------------------------------------- */
+.expand-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: var(--text-primary);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.expand-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--botw-blue);
+  color: var(--botw-blue);
+}
+
+/* --------------------------------------------------------------------------
+   Character Links
+--------------------------------------------------------------------------- */
+.character-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.character-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.character-link:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.character-link i {
+  font-size: 0.75rem;
+}
+
+/* --------------------------------------------------------------------------
+   Character Race & Job Row
+--------------------------------------------------------------------------- */
+.character-race-job-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0.15em 0 0.4em 0;
+
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+
+/* --------------------------------------------------------------------------
+   Character Loading States
+--------------------------------------------------------------------------- */
+.character-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 250px;
+  padding: 3rem;
+  text-align: center;
+
+  background: rgba(20, 20, 25, 0.7);
+  border: 1px solid rgba(75, 75, 75, 0.3);
+  border-radius: var(--card-radius);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  color: var(--botw-blue);
+  animation: pulse 1.5s infinite;
+}
+
+.character-loading.error {
+  background: rgba(25, 15, 20, 0.7);
+  color: var(--blight-border);
+  animation: none;
+}
+
+.character-loading i {
+  font-size: 1.5rem;
+  margin-right: 0.8rem;
+  animation: spin 1s linear infinite;
+}
+
+/* Loading Inventory Fallback */
+.loading-inventory {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  gap: 1rem;
+  color: var(--text-secondary);
+}
+
+.loading-inventory i {
+  font-size: 1.5rem;
+  animation: spin 1s linear infinite;
+  color: var(--botw-blue);
+}
+
+.loading-inventory p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   Character Results Info
+--------------------------------------------------------------------------- */
+.character-results-info {
+  margin: 1rem 1.5rem;
+  padding: 1rem 1.5rem;
+  text-align: center;
+
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.character-results-info p {
+  margin: 0;
+}
+
+
+/* ==========================================================================
+   Character Inventory Styles
+========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Card Container
+--------------------------------------------------------------------------- */
+.character-inventory-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.character-inventory-card:hover {
+  border-color: var(--botw-blue);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+/* --------------------------------------------------------------------------
+   Header Section
+--------------------------------------------------------------------------- */
+.character-inventory-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--glass-border);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.character-inventory-header:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.character-inventory-header.expanded {
+  background: rgba(79, 172, 254, 0.1);
+  border-bottom-color: var(--botw-blue);
+}
+
+/* --------------------------------------------------------------------------
+   Info Row
+--------------------------------------------------------------------------- */
+.character-inventory-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.character-inventory-controls {
+  display: flex;
+  align-items: center;
+}
+
+/* --------------------------------------------------------------------------
+   Character Avatar
+--------------------------------------------------------------------------- */
+.character-inventory-info .character-avatar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  width: 80px !important;
+  height: 80px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #4facfe 100%) !important;
+  box-shadow: 
+    0 8px 24px rgba(79, 172, 254, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+  font-size: 2rem !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+.character-avatar::before {
+  content: '' !important;
+  position: absolute !important;
+  top: -50% !important;
+  left: -50% !important;
+  width: 200% !important;
+  height: 200% !important;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+  animation: shimmer 3s infinite !important;
+}
+
+.character-avatar i {
+  position: relative !important;
+  z-index: 1 !important;
+  color: #fff !important;
+  font-size: 2rem !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Name and Stats
+--------------------------------------------------------------------------- */
+.character-inventory-name {
+  color: var(--text-primary);
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.character-inventory-stats {
+  display: flex;
+  gap: 1rem;
+}
+
+.character-inventory-details {
+  flex: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Expandable Content Section
+--------------------------------------------------------------------------- */
+.character-inventory-content {
+  background: rgba(30, 30, 35, 0.8);
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.character-inventory-content.expanded {
+  max-height: 500px;
+  padding: 1.5rem 1.5rem 2rem;
+  overflow-y: auto;
+}
+
+/* Scrollbar styling for expanded content */
+.character-inventory-content.expanded::-webkit-scrollbar,
+.character-inventory-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.character-inventory-content.expanded::-webkit-scrollbar-thumb,
+.character-inventory-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--totk-light-green), var(--botw-blue));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.character-inventory-content.expanded::-webkit-scrollbar-thumb:hover,
+.character-inventory-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--botw-blue), var(--totk-light-green));
+  box-shadow: 0 0 8px rgba(73, 213, 156, 0.3);
+}
+
+.character-inventory-content.expanded::-webkit-scrollbar-track,
+.character-inventory-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.character-inventory-content.expanded::-webkit-scrollbar-corner,
+.character-inventory-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   Empty Inventory State
+--------------------------------------------------------------------------- */
+.character-inventory-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.character-inventory-empty i {
+  font-size: 2rem;
+  opacity: 0.5;
+  color: var(--text-secondary);
+}
+
+.character-inventory-empty p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.character-inventory-empty small {
+  color: var(--error-color);
+  font-size: 0.9rem;
+}
+
+/* --------------------------------------------------------------------------
+   Scroll Container (Non-Scrollable by Default)
+--------------------------------------------------------------------------- */
+.character-inventory-scroll {
+  height: 100%;
+}
+
+/* ==========================================================================
+   Character Items Styles
+========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Items Grid Layout
+--------------------------------------------------------------------------- */
+.character-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  padding-bottom: 1rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* --------------------------------------------------------------------------
+   Item Card
+--------------------------------------------------------------------------- */
+.character-item-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  border-radius: 16px;
+  overflow: hidden;
+
+  background: linear-gradient(
+    145deg,
+    rgba(35, 35, 45, 0.9),
+    rgba(50, 50, 65, 0.9)
+  );
+  border: 2px solid rgba(120, 140, 200, 0.15);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideInRight 0.4s ease-out;
+}
+
+.character-item-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0;
+  pointer-events: none;
+
+  background: linear-gradient(
+    135deg,
+    rgba(79, 172, 254, 0.05),
+    rgba(0, 242, 254, 0.05)
+  );
+  transition: opacity 0.3s ease;
+}
+
+.character-item-card:hover {
+  border-color: rgba(79, 172, 254, 0.4);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(79, 172, 254, 0.2);
+  transform: translateY(-6px) scale(1.02);
+}
+
+.character-item-card:hover::before {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   Character Stats Styles
+========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Stats Container
+--------------------------------------------------------------------------- */
+.character-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   Individual Stat Row
+--------------------------------------------------------------------------- */
+.character-stat-row {
+  display: flex;
+  align-items: center;
+  height: 20px;
+  margin-bottom: 0.6rem;
+}
+
+/* --------------------------------------------------------------------------
+   Stat Bar (Background)
+--------------------------------------------------------------------------- */
+.character-stat-bar {
+  background: rgba(255, 255, 255, 0.1);
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 0.3rem;
+}
+
+/* --------------------------------------------------------------------------
+   Stat Fill (Foreground)
+--------------------------------------------------------------------------- */
+.character-stat-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+/* ==========================================================================
+   Character Status Styles
+========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Status Container
+--------------------------------------------------------------------------- */
+.character-status {
+  display: flex;
+  align-items: center;
+  margin-top: 0.4rem;
+}
+
+/* --------------------------------------------------------------------------
+   Status Indicator Dot
+--------------------------------------------------------------------------- */
+.character-status-icon {
+  width: 8px;
+  height: 8px;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+}
+
+/* --------------------------------------------------------------------------
+   Status Text Label
+--------------------------------------------------------------------------- */
+.character-status-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+
+/* ==========================================================================
+   Character Modal Styles
+========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Modal Overlay Container
+--------------------------------------------------------------------------- */
+.character-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  animation: fadeIn 0.3s ease;
+}
+
+/* --------------------------------------------------------------------------
+   Modal Body Padding
+--------------------------------------------------------------------------- */
+.character-modal-body {
+  padding: 2rem;
+}
+
+/* --------------------------------------------------------------------------
+   Modal Content Container
+--------------------------------------------------------------------------- */
+.character-modal-content {
+  position: relative;
+  width: 90%;
+  max-width: 800px;
+  max-height: 85vh;
+  overflow-y: auto;
+
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--totk-light-green) rgba(255, 255, 255, 0.05);
+}
+
+/* Scrollbar styling */
+.character-modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.character-modal-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--totk-light-green), var(--botw-blue));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.character-modal-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--botw-blue), var(--totk-light-green));
+  box-shadow: 0 0 8px rgba(73, 213, 156, 0.3);
+}
+
+.character-modal-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.character-modal-content::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   Modal Header
+--------------------------------------------------------------------------- */
+.character-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 1rem 1rem 0 0;
+  backdrop-filter: blur(8px);
+}
+
+/* --------------------------------------------------------------------------
+   Modal Sections
+--------------------------------------------------------------------------- */
+.character-modal-section {
+  margin-bottom: 2rem;
+}
+
+.character-modal-section:last-child {
+  margin-bottom: 0;
+}
+
+.character-modal-section h3 {
+  position: relative;
+  margin: 0 0 1rem;
+  padding-bottom: 0.5rem;
+  font-size: 1.3rem;
+  color: var(--text-color);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.character-modal-section h3::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 50px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--totk-light-green);
+}
+
+/* --------------------------------------------------------------------------
+   Modal Grid Layout
+--------------------------------------------------------------------------- */
+.character-modal-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* --------------------------------------------------------------------------
+   Modal Item Entry
+--------------------------------------------------------------------------- */
+.character-modal-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.5rem;
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+
+.character-modal-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--totk-light-green);
+  box-shadow: 0 4px 12px rgba(73, 213, 156, 0.1);
+  transform: translateY(-1px);
+}
+
+.character-modal-item .label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.character-modal-item .value {
+  max-width: 60%;
+  font-weight: 600;
+  text-align: right;
+  word-break: break-word;
+  color: var(--text-color);
+}
+
+/* --------------------------------------------------------------------------
+   Modal Links Section
+--------------------------------------------------------------------------- */
+.character-modal-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.character-modal-links a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.5rem;
+  color: var(--totk-light-green);
+  font-weight: 500;
+  text-decoration: none;
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+
+.character-modal-links a:hover {
+  background: rgba(73, 213, 156, 0.1);
+  border-color: var(--totk-light-green);
+  box-shadow: 0 6px 20px rgba(73, 213, 156, 0.2);
+  transform: translateY(-2px);
+}
+
+.character-modal-links a i {
+  width: 20px;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+/* ==========================================================================
+   Character Detail Styles
+========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Character Detail Container
+--------------------------------------------------------------------------- */
+.character-detail {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-bottom: 0;
+  padding-top: 4px;
+  border-radius: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Detail Label
+--------------------------------------------------------------------------- */
+.character-detail-label {
+  color: #B99F65;
+  font-size: 0.8em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Detail Value
+--------------------------------------------------------------------------- */
+.character-detail-value {
+  background: #7569505e;
+  color: #fff;
+  font-size: 0.9em;
+  font-weight: 600;
+  margin-top: 0.05em;
+  padding: 0.2em 0.8em;
+  border-radius: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: break-word;
+}
+
+/* --------------------------------------------------------------------------
+   Detail List Grid
+--------------------------------------------------------------------------- */
+.character-detail-list {
+  display: grid;
+  gap: 0.4rem 1.2rem;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 1.2rem;
+}
+
+/* --------------------------------------------------------------------------
+   Details Grid Wrapper
+--------------------------------------------------------------------------- */
+.character-details-grid {
+  display: grid;
+  gap: 1.8rem;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  margin-bottom: 2rem;
+  animation: fadeInUp 0.6s ease;
+}
+
+/* --------------------------------------------------------------------------
+   Flex Utility for Individual Panels
+--------------------------------------------------------------------------- */
+.character-details {
+  flex: 1;
+}
+
+/* ==========================================================================
+   Character Card Layouts
+========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Base Card Styling
+--------------------------------------------------------------------------- */
+.character-card {
+  position: relative;
+  border: 2px solid var(--botw-beige);
+  border-radius: 10px;
+  animation: cardAppear 0.5s ease backwards;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
+}
+
+/* --------------------------------------------------------------------------
+   Card Hover Effects
+--------------------------------------------------------------------------- */
+.character-card:hover {
+  border-color: var(--botw-blue);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+  transform: translateY(-5px);
+}
+
+.character-card:hover::before {
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Card Highlight Overlay
+--------------------------------------------------------------------------- */
+.character-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  z-index: -1;
+  opacity: 0;
+  background: linear-gradient(to bottom, rgba(0, 120, 180, 0.2), transparent);
+  transition: opacity 0.4s ease;
+}
+
+/* --------------------------------------------------------------------------
+   Conditional Card States
+--------------------------------------------------------------------------- */
+.character-card.blighted {
+  border-color: var(--blight-border);
+  box-shadow: 0 8px 20px rgba(173, 20, 87, 0.2);
+}
+
+.character-card.ko {
+  border-color: #ffa000;
+  box-shadow: 0 8px 20px rgba(255, 160, 0, 0.2);
+}
+
+

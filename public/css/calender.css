@@ -1,1004 +1,849 @@
-/* ============================================================================ */
-/* Calendar Section Styles                                                      */
-/* ============================================================================ */
+/* ============================================================================
+   📆 CALENDAR MAIN STYLES
+============================================================================ */
 
+/* Container */
 .calendar-container {
-    padding: 1rem 0;
-  }
-  
-  .calendar-overview {
-    background: var(--card-background);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
-    padding: 2rem;
-  }
-  
-  .calendar-stats {
-    display: grid;
-    gap: 2rem;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    margin-bottom: 0;
-  }
-  
-  .calendar-stat-item {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 120px;
-    overflow: hidden;
-    padding: 1.5rem 1.25rem;
-    position: relative;
-    text-align: left;
-    transition: all 0.3s ease;
-  }
-  
-  /* ============================================================================ */
-  /* Stat Item Variants                                                           */
-  /* ============================================================================ */
-  
-  .calendar-stat-item.blighted,
-  .calendar-stat-item.bloodmoon {
-    background: rgba(80, 120, 255, 0.08);
-    color: var(--text-primary);
-  }
-  
-  .calendar-stat-item.blighted .stat-value,
-  .calendar-stat-item.bloodmoon .stat-value {
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
-  }
-  
-  @media (max-width: 768px) {
-    .calendar-stat-item {
-      min-height: 100px;
-      padding: 1.25rem 1rem;
-    }
-  }
-  
-  /* Hover animation line effect */
-  .calendar-stat-item::before {
-    background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
-    content: '';
-    height: 3px;
-    left: 0;
-    position: absolute;
-    right: 0;
-    top: 0;
-    transform: scaleX(0);
-    transition: transform 0.3s ease;
-  }
-  
-  .calendar-stat-item:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    transform: translateY(-3px);
-  }
-  
-  .calendar-stat-item:hover::before {
-    transform: scaleX(1);
-  }
-  
-  /* ============================================================================ */
-  /* Stat Labels                                                                  */
-  /* ============================================================================ */
-  
-  .calendar-stat-item .calendar-stat-label {
-    align-items: center;
-    color: var(--text-secondary);
-    display: flex;
-    font-size: 0.85rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.75rem;
-    text-transform: uppercase;
-  }
-  
-  .calendar-stat-item .calendar-stat-label::before {
-    background: var(--primary-color);
-    border-radius: 50%;
-    content: '';
-    flex-shrink: 0;
-    height: 4px;
-    margin-right: 0.5rem;
-    width: 4px;
-  }
-  
-  /* Keep the original stat-label for backward compatibility */
-  .calendar-stat-item {
-    align-items: center;
-    color: var(--text-secondary);
-    display: flex;
-    font-size: 0.85rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.75rem;
-    text-transform: uppercase;
-  }
-  
-  .calendar-stat-item::before {
-    background: var(--primary-color);
-    border-radius: 50%;
-    content: '';
-    flex-shrink: 0;
-    height: 4px;
-    margin-right: 0.5rem;
-    width: 4px;
-  }
-  
-  .calendar-stat-item .stat-value {
-    color: var(--text-primary);
-    display: block;
-    font-size: 1.4rem;
-    font-weight: 700;
-    line-height: 1.2;
-    margin-bottom: 0.25rem;
-  }
-  
-  .calendar-stat-item .stat-subtitle {
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    font-weight: 500;
-    opacity: 0.8;
-  }
-  
-  /* ============================================================================ */
-  /* Tabs                                                                         */
-  /* ============================================================================ */
-  
-  .calendar-tabs {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
-    overflow-x: auto;
-    padding-bottom: 0.5rem;
-  }
-  
-  .calendar-tab {
-    align-items: center;
-    background: var(--card-background);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    color: var(--text-secondary);
-    cursor: pointer;
-    display: flex;
-    font-size: 0.9rem;
-    font-weight: 500;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-  }
-  
-  .calendar-tab:hover {
-    border-color: var(--primary-color);
-    color: var(--text-primary);
-  }
-  
-  .calendar-tab.active {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: var(--text-primary);
-  }
-  
-  .calendar-tab i {
-    font-size: 1rem;
-  }
-  
-  /* ============================================================================ */
-/* Calendar Content                                                             */
-/* ============================================================================ */
+  padding: 1rem 0;
+}
 
+/* Overview Card */
+.calendar-overview {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* Tabbed Content Wrapper */
 .calendar-content {
-    position: relative;
+  position: relative;
+}
+
+.calendar-tab-content {
+  display: none;
+}
+
+.calendar-tab-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ============================================================================
+   📅 MONTHLY CALENDAR HEADER & CONTROLS
+============================================================================ */
+
+.monthly-calendar-container {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  padding: 2rem;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.calendar-navigation {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.calendar-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  font-size: 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.calendar-nav-btn:hover {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+}
+
+.calendar-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.calendar-control-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: var(--primary-color);
+  border: none;
+  border-radius: var(--card-radius);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.calendar-control-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+/* ============================================================================
+   🗓️ CALENDAR TITLE & GRID
+============================================================================ */
+
+.calendar-title {
+  text-align: center;
+}
+
+.calendar-title h3 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.calendar-title p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.calendar-grid {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+/* ============================================================================
+   📑 CALENDAR TAB STYLES
+============================================================================ */
+
+/* Tab Container */
+.calendar-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+/* Individual Tab Button */
+.calendar-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Hover */
+.calendar-tab:hover {
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+}
+
+/* Active Tab */
+.calendar-tab.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+}
+
+/* Optional Icon in Tab */
+.calendar-tab i {
+  font-size: 1rem;
+}
+
+/* ============================================================================
+   📊 CALENDAR STATS STYLES
+============================================================================ */
+
+/* Stats Grid Layout */
+.calendar-stats {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  margin-bottom: 0;
+}
+
+/* Individual Stat Card */
+.calendar-stat-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  min-height: 120px;
+  padding: 1.5rem 1.25rem;
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+  transition: all 0.3s ease;
+}
+
+/* Hover Interaction */
+.calendar-stat-item:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+}
+
+.calendar-stat-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.calendar-stat-item:hover::before {
+  transform: scaleX(1);
+}
+
+/* Blighted / Bloodmoon Variant */
+.calendar-stat-item.blighted,
+.calendar-stat-item.bloodmoon {
+  background: rgba(80, 120, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.calendar-stat-item.blighted,
+.calendar-stat-item.bloodmoon  {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .calendar-stat-item {
+    min-height: 100px;
+    padding: 1.25rem 1rem;
   }
-  
-  .calendar-tab-content {
-    display: none;
-  }
-  
-  .calendar-tab-content.active {
-    animation: fadeIn 0.3s ease;
-    display: block;
-  }
-  
-  /* ============================================================================ */
-  /* Birthdays Tab                                                                */
-  /* ============================================================================ */
-  
-  .birthdays-container {
-    background: var(--card-background);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    padding: 2rem;
-  }
-  
-  .birthdays-header {
-    margin-bottom: 2rem;
-    text-align: center;
-  }
-  
-  .birthdays-header h3 {
-    color: var(--text-primary);
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-  }
-  
-  .birthdays-header h3 i {
-    color: var(--primary-color);
-    margin-right: 0.5rem;
-  }
-  
-  .birthdays-header p {
-    color: var(--text-secondary);
-    font-size: 1rem;
-  }
-  
-  .birthdays-list {
-    display: grid;
-    gap: 1rem;
-  }
-  
-  .birthday-item {
-    align-items: center;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    display: flex;
-    gap: 1rem;
-    padding: 1rem;
-    transition: all 0.3s ease;
-  }
-  
-  .birthday-item:hover {
-    border-color: var(--primary-color);
-    transform: translateX(5px);
-  }
-  
-  .birthday-item.today {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-    border-color: var(--primary-color);
-    color: var(--text-primary);
-  }
-  
-  /* ============================================================================ */
-  /* Birthday Details                                                             */
-  /* ============================================================================ */
-  
-  .birthday-avatar {
-    background: var(--bg-primary);
-    border-radius: 50%;
-    height: 50px;
-    overflow: hidden;
-    width: 50px;
-  }
-  
-  .birthday-avatar img {
-    height: 100%;
-    object-fit: cover;
-    width: 100%;
-  }
-  
-  .birthday-avatar i {
-    align-items: center;
-    color: var(--text-secondary);
-    display: flex;
-    font-size: 1.5rem;
-    height: 100%;
-    justify-content: center;
-    width: 100%;
-  }
-  
-  .birthday-info {
-    flex: 1;
-  }
-  
-  .birthday-name {
-    color: var(--text-primary);
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-  }
-  
-  .birthday-date {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-  }
-  
-  .birthday-hyrulean-date {
-    color: var(--primary-color);
-    font-size: 0.8rem;
-    font-weight: 500;
-    margin-top: 0.25rem;
-  }
-  
-  .birthday-item.today .birthday-name,
-  .birthday-item.today .birthday-date,
-  .birthday-item.today .birthday-hyrulean-date {
-    color: var(--text-primary);
-  }
-  
-  .birthday-days {
-    background: var(--bg-primary);
-    border-radius: var(--card-radius);
-    color: var(--text-primary);
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 0.5rem 1rem;
-    text-align: center;
-  }
-  
-  .birthday-item.today .birthday-days {
-    background: rgba(255, 255, 255, 0.2);
-    color: var(--text-primary);
-  }
-  
-  .birthdays-empty {
-    color: var(--text-secondary);
-    padding: 3rem;
-    text-align: center;
-  }
-  
-  .birthdays-empty i {
-    color: var(--text-secondary);
-    font-size: 3rem;
-    margin-bottom: 1rem;
-  }
-  
-  .birthdays-empty h4 {
-    color: var(--text-primary);
-    font-size: 1.2rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .birthdays-empty p {
-    color: var(--text-secondary);
-    font-size: 1rem;
-  }
-  
-  /* ============================================================================ */
-  /* Hyrulean Calendar Tab                                                        */
-  /* ============================================================================ */
-  
-  .hyrulean-container {
-    background: var(--card-background);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    padding: 2rem;
-  }
-  
-  .hyrulean-header {
-    margin-bottom: 2rem;
-    text-align: center;
-  }
-  
-  .hyrulean-header h3 {
-    color: var(--text-primary);
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-  }
-  
-  .hyrulean-header h3 i {
-    color: var(--primary-color);
-    margin-right: 0.5rem;
-  }
-  
-  .hyrulean-header p {
-    color: var(--text-secondary);
-    font-size: 1rem;
-  }
-  
-  .hyrulean-calendar-grid {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  }
-  
-  /* ============================================================================ */
-/* Hyrulean Calendar: Month Cards                                               */
-/* ============================================================================ */
+}
+
+/* ============================================================================
+   📌 STAT CONTENT STYLES
+============================================================================ */
+
+/* Label */
+.calendar-stat-label {
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.calendar-stat-label::before {
+  content: '';
+  background: var(--primary-color);
+  border-radius: 50%;
+  flex-shrink: 0;
+  width: 4px;
+  height: 4px;
+  margin-right: 0.5rem;
+}
+
+/* Subtitle */
+.stat-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+/* ============================================================================
+   🎂 CALENDAR: BIRTHDAYS SECTION
+============================================================================ */
+
+/* === Container & Header === */
+.birthdays-container {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  padding: 2rem;
+}
+
+.birthdays-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.birthdays-header h3 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.birthdays-header h3 i {
+  color: var(--primary-color);
+  margin-right: 0.5rem;
+}
+
+.birthdays-header p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+/* === Birthday List & Items === */
+.birthdays-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.birthday-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.birthday-item:hover {
+  border-color: var(--primary-color);
+  transform: translateX(5px);
+}
+
+.birthday-item.today {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+}
+
+/* === Avatar Icon === */
+.birthday-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.birthday-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.birthday-avatar i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+}
+
+/* === Info Block === */
+.birthday-info {
+  flex: 1;
+}
+
+.birthday-name {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.birthday-date {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.birthday-hyrulean-date {
+  color: var(--primary-color);
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+/* Override text colors when marked 'today' */
+.birthday-item.today .birthday-name,
+.birthday-item.today .birthday-date,
+.birthday-item.today .birthday-hyrulean-date {
+  color: var(--text-primary);
+}
+
+/* === Days Counter Tag === */
+.birthday-days {
+  background: var(--bg-primary);
+  border-radius: var(--card-radius);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  text-align: center;
+}
+
+.birthday-item.today .birthday-days {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+}
+
+/* === Empty State === */
+.birthdays-empty {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+}
+
+.birthdays-empty i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+}
+
+.birthdays-empty h4 {
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.birthdays-empty p {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+/* ============================================================================
+   🌿 CALENDAR: HYRULEAN CALENDAR VIEW
+============================================================================ */
+
+/* === Container & Header === */
+.hyrulean-container {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  padding: 2rem;
+}
+
+.hyrulean-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.hyrulean-header h3 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.hyrulean-header h3 i {
+  color: var(--primary-color);
+  margin-right: 0.5rem;
+}
+
+.hyrulean-header p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+/* === Grid Layout for Months === */
+.hyrulean-calendar-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* ============================================================================
+   🗓️ MONTH CARDS
+============================================================================ */
 
 .hyrulean-month-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-  }
-  
-  .hyrulean-month-card:hover {
-    border-color: var(--primary-color);
-    transform: translateY(-2px);
-  }
-  
-  .hyrulean-month-card.current {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-    border-color: var(--primary-color);
-    color: var(--text-primary);
-  }
-  
-  .hyrulean-month-header {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-  }
-  
-  .hyrulean-month-name {
-    color: var(--text-primary);
-    font-size: 1.2rem;
-    font-weight: 600;
-  }
-  
-  .hyrulean-month-card.current .hyrulean-month-name {
-    color: var(--text-primary);
-  }
-  
-  .hyrulean-month-id {
-    background: var(--bg-primary);
-    border-radius: 50%;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    font-weight: 600;
-    height: 30px;
-    line-height: 30px;
-    text-align: center;
-    width: 30px;
-  }
-  
-  .hyrulean-month-card.current .hyrulean-month-id {
-    background: rgba(255, 255, 255, 0.2);
-    color: var(--text-primary);
-  }
-  
-  .hyrulean-month-dates {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-  }
-  
-  .hyrulean-month-card.current .hyrulean-month-dates {
-    color: var(--text-primary);
-  }
-  
-  /* ============================================================================ */
-  /* Blood Moon Tab Styles                                                        */
-  /* ============================================================================ */
-  
-  .bloodmoon-container {
-    background: var(--card-background);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    padding: 2rem;
-  }
-  
-  .bloodmoon-header {
-    margin-bottom: 2rem;
-    text-align: center;
-  }
-  
-  .bloodmoon-header h3 {
-    color: var(--text-primary);
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-  }
-  
-  .bloodmoon-header h3 i {
-    color: var(--blight-border);
-    margin-right: 0.5rem;
-  }
-  
-  .bloodmoon-header p {
-    color: var(--text-secondary);
-    font-size: 1rem;
-  }
-  
-  .bloodmoon-info {
-    display: grid;
-    gap: 2rem;
-  }
-  
-  .bloodmoon-cycle-info {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    padding: 2rem;
-    text-align: center;
-  }
-  
-  .bloodmoon-cycle-info.current {
-    background: linear-gradient(135deg, var(--blight-border) 0%, var(--blight-glow) 100%);
-    border-color: var(--blight-border);
-    color: var(--text-primary);
-  }
-  
-  .bloodmoon-cycle-day {
-    color: var(--text-primary);
-    font-size: 3rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-  }
-  
-  .bloodmoon-cycle-info.current .bloodmoon-cycle-day {
-    color: var(--text-primary);
-  }
-  
-  .bloodmoon-cycle-label {
-    color: var(--text-secondary);
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    text-transform: uppercase;
-  }
-  
-  .bloodmoon-cycle-info.current .bloodmoon-cycle-label {
-    color: var(--text-primary);
-  }
-  
-  .bloodmoon-cycle-description {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-  
-  .bloodmoon-cycle-info.current .bloodmoon-cycle-description {
-    color: var(--text-primary);
-  }
-  
-  /* ============================================================================ */
-  /* Blood Moon Dates List                                                        */
-  /* ============================================================================ */
-  
-  .bloodmoon-dates-list {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    padding: 2rem;
-  }
-  
-  .bloodmoon-dates-header {
-    color: var(--text-primary);
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-    text-align: center;
-  }
-  
-  .bloodmoon-date-item {
-    align-items: center;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    gap: 1rem;
-    padding: 1rem 0;
-  }
-  
-  .bloodmoon-date-item:last-child {
-    border-bottom: none;
-  }
-  
-  .bloodmoon-date-item.today {
-    background: linear-gradient(135deg, var(--blight-border) 0%, var(--blight-glow) 100%);
-    border-radius: var(--card-radius);
-    margin: 0.5rem 0;
-    padding: 1rem;
-  }
-  
-  .bloodmoon-date-icon {
-    background: var(--bg-primary);
-    border-radius: 50%;
-    color: var(--blight-border);
-    font-size: 1.2rem;
-    height: 40px;
-    line-height: 40px;
-    text-align: center;
-    width: 40px;
-  }
-  
-  .bloodmoon-date-item.today .bloodmoon-date-icon {
-    background: rgba(255, 255, 255, 0.2);
-    color: var(--text-primary);
-  }
-  
-  /* ============================================================================ */
-/* Blood Moon Date Info                                                         */
-/* ============================================================================ */
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
 
-.bloodmoon-date-info {
-    flex: 1;
-  }
-  
-  .bloodmoon-date-real {
-    color: var(--text-primary);
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-  }
-  
-  .bloodmoon-date-hyrulean {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-  }
-  
-  .bloodmoon-date-item.today .bloodmoon-date-real,
-  .bloodmoon-date-item.today .bloodmoon-date-hyrulean {
-    color: var(--text-primary);
-  }
-  
-  .bloodmoon-date-cycle {
-    background: var(--bg-primary);
-    border-radius: var(--card-radius);
-    color: var(--text-primary);
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 0.5rem 1rem;
-    text-align: center;
-  }
-  
-  .bloodmoon-date-item.today .bloodmoon-date-cycle {
-    background: rgba(255, 255, 255, 0.2);
-    color: var(--text-primary);
-  }
-  
-  /* ============================================================================ */
-  /* Monthly Calendar View                                                        */
-  /* ============================================================================ */
-  
-  .monthly-calendar-container {
-    background: var(--card-background);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    padding: 2rem;
-  }
-  
-  .calendar-header {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 2rem;
-  }
-  
-  .calendar-navigation {
-    align-items: center;
-    display: flex;
-    gap: 1rem;
-  }
-  
-  .calendar-nav-btn {
-    align-items: center;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    color: var(--text-secondary);
-    cursor: pointer;
-    display: flex;
-    font-size: 1rem;
-    height: 40px;
-    justify-content: center;
-    transition: all 0.3s ease;
-    width: 40px;
-  }
-  
-  .calendar-nav-btn:hover {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: var(--text-primary);
-  }
-  
-  .calendar-title {
-    text-align: center;
-  }
-  
-  .calendar-title h3 {
-    color: var(--text-primary);
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-  }
-  
-  .calendar-title p {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-  }
-  
-  .calendar-controls {
-    display: flex;
-    gap: 0.5rem;
-  }
-  
-  .calendar-control-btn {
-    align-items: center;
-    background: var(--primary-color);
-    border: none;
-    border-radius: var(--card-radius);
-    color: var(--text-primary);
-    cursor: pointer;
-    display: flex;
-    font-size: 0.9rem;
-    font-weight: 500;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    transition: all 0.3s ease;
-  }
-  
-  .calendar-control-btn:hover {
-    background: var(--primary-hover);
-    transform: translateY(-1px);
-  }
-  
-  /* ============================================================================ */
-  /* Calendar Grid                                                                */
-  /* ============================================================================ */
-  
-  .calendar-grid {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    margin-bottom: 2rem;
-    overflow: hidden;
-  }
-  
-  .calendar-weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-  }
-  
-  .weekday {
-    background: var(--bg-primary);
-    border-bottom: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 1rem 0.5rem;
-    text-align: center;
-    text-transform: uppercase;
-  }
-  
-  .calendar-days {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-  }
-  
-  .calendar-day {
-    align-items: flex-start;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    min-height: 120px;
-    padding: 0.5rem;
-    position: relative;
-    transition: all 0.3s ease;
-  }
-  
-  .calendar-day:nth-child(7n) {
-    border-right: none;
-  }
-  
+.hyrulean-month-card:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+}
 
-  .calendar-day:hover {
-    background: var(--primary-color);
-    color: var(--text-primary);
-  }
-  
-  .calendar-day.other-month {
-    background: var(--bg-primary);
-    color: var(--text-secondary);
-    opacity: 0.5;
-  }
-  
-  .calendar-day.today {
-    background: linear-gradient(135deg, rgba(100, 149, 237, 0.3) 50%, rgba(70, 130, 180, 0.3) 100%);
-    color: var(--text-primary);
-    font-weight: 600;
-  }
-  
-  .calendar-day.has-event {
-    background: linear-gradient(135deg, var(--blight-border) 0%, var(--blight-glow) 100%);
-    color: var(--text-primary);
-  }
-  
-  .calendar-day.has-birthday {
-    background: linear-gradient(135deg, rgba(255, 182, 193, 0.3) 0%, rgba(255, 105, 180, 0.3) 100%);
-    color: var(--text-primary);
-  }
-  
-  .calendar-day.has-bloodmoon {
-    background: linear-gradient(135deg, rgba(139, 0, 0, 0.3) 0%, rgba(220, 20, 60, 0.3) 100%);
-    color: var(--text-primary);
-  }
-  
-  .day-number {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.125rem;
-  }
-  
-  .hyrulean-date {
-    color: var(--text-secondary);
-    font-size: 0.7rem;
-    line-height: 1.2;
-    opacity: 0.7;
-    position: absolute;
-    right: 0.25rem;
-    text-align: right;
-    top: 0.25rem;
-  }
-  
-  .day-events {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-    width: 100%;
-  }
-  
-  .day-event {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
-    font-size: 0.7rem;
-    padding: 0.125rem 0.25rem;
-    text-align: center;
-  }
-  
-  .day-event.birthday {
-    background: rgba(255, 182, 193, 0.4);
-    color: var(--text-primary);
-    font-weight: 500;
-  }
-  
-  .day-event.bloodmoon {
-    background: rgba(173, 20, 87, 0.3);
-  }
-  
-  /* ============================================================================ */
-  /* Calendar Events List                                                         */
-  /* ============================================================================ */
-  
-  .calendar-events {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    padding: 1.5rem;
-  }
-  
-  .calendar-events h4 {
-    color: var(--text-primary);
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-  }
-  
-  .events-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .event-item {
-    align-items: center;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    display: flex;
-    gap: 0.75rem;
-    padding: 0.75rem;
-  }
-  
-  .event-item.birthday {
-    border-left: 4px solid rgba(255, 182, 193, 0.8);
-  }
-  
-  .event-item.bloodmoon {
-    border-left: 4px solid var(--blight-border);
-  }
-  
-  .event-icon {
-    background: var(--bg-secondary);
-    border-radius: 50%;
-    color: var(--text-secondary);
-    font-size: 1rem;
-    height: 32px;
-    line-height: 32px;
-    text-align: center;
-    width: 32px;
-  }
-  
-  .event-item.birthday .event-icon {
-    background: rgba(255, 182, 193, 0.8);
-    color: var(--text-primary);
-  }
-  
-  .event-item.bloodmoon .event-icon {
-    background: var(--blight-border);
-    color: var(--text-primary);
-  }
-  
-  .event-details {
-    flex: 1;
-  }
-  
-  .event-title {
-    color: var(--text-primary);
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-  }
-  
-  .event-date {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-  }
-  
-  /* ============================================================================ */
-  /* Loading & Error States                                                       */
-  /* ============================================================================ */
-  
-  .calendar-loading,
-  .calendar-error {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 3rem;
-    text-align: center;
-  }
-  
-  .calendar-loading {
-    color: var(--text-secondary);
-  }
-  
-  .calendar-loading .loading-spinner {
-    animation: spin 1s linear infinite;
-    border: 3px solid var(--border-color);
-    border-radius: 50%;
-    border-top: 3px solid var(--primary-color);
-    height: 40px;
-    margin-bottom: 1rem;
-    width: 40px;
-  }
-  
-  .calendar-loading p {
-    color: var(--text-secondary);
-    font-size: 1rem;
-  }
-  
-  .calendar-error {
-    color: var(--error-color);
-  }
-  
-  .calendar-error i {
-    color: var(--error-color);
-    font-size: 3rem;
-    margin-bottom: 1rem;
-  }
-  
-  .calendar-error p {
-    color: var(--error-color);
-    font-size: 1rem;
-    margin-bottom: 1rem;
-  }
-  
-  .calendar-retry-btn {
-    background: var(--primary-color);
-    border: none;
-    border-radius: var(--card-radius);
-    color: var(--text-primary);
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 0.75rem 1.5rem;
-    transition: all 0.3s ease;
-  }
-  
-  .calendar-retry-btn:hover {
-    background: var(--primary-hover);
-    transform: translateY(-1px);
-  }
-  
+.hyrulean-month-card.current {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+}
+
+/* === Header Layout Inside Month Card === */
+.hyrulean-month-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+/* === Month Name === */
+.hyrulean-month-name {
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.hyrulean-month-card.current .hyrulean-month-name {
+  color: var(--text-primary);
+}
+
+/* === Month ID Bubble === */
+.hyrulean-month-id {
+  width: 30px;
+  height: 30px;
+  background: var(--bg-primary);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 30px;
+}
+
+.hyrulean-month-card.current .hyrulean-month-id {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+}
+
+/* === Month Date Range === */
+.hyrulean-month-dates {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.hyrulean-month-card.current .hyrulean-month-dates {
+  color: var(--text-primary);
+}
+
+/* === Hyrulean Date Overlay (Used in Day Grid Too) === */
+.hyrulean-date {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  text-align: right;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  line-height: 1.2;
+  opacity: 0.7;
+}
+
+    
+/* ============================================================================
+   🧩 CALENDAR: DAY GRID STYLES
+============================================================================ */
+
+/* === Weekday Headers === */
+.weekday {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 1rem 0.5rem;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* === Day Grid Layout === */
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+/* === Individual Day Cell === */
+.calendar-day {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  position: relative;
+  min-height: 120px;
+  padding: 0.5rem;
+  cursor: pointer;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.calendar-day:nth-child(7n) {
+  border-right: none;
+}
+
+/* === Hover State === */
+.calendar-day:hover {
+  background: var(--primary-color);
+  color: var(--text-primary);
+}
+
+/* === Day States === */
+.calendar-day.other-month {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+.calendar-day.today {
+  background: linear-gradient(
+    135deg,
+    rgba(100, 149, 237, 0.3) 50%,
+    rgba(70, 130, 180, 0.3) 100%
+  );
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.calendar-day.has-event {
+  background: linear-gradient(
+    135deg,
+    var(--blight-border) 0%,
+    var(--blight-glow) 100%
+  );
+  color: var(--text-primary);
+}
+
+.calendar-day.has-birthday {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 182, 193, 0.3) 0%,
+    rgba(255, 105, 180, 0.3) 100%
+  );
+  color: var(--text-primary);
+}
+
+.calendar-day.has-bloodmoon {
+  background: linear-gradient(
+    135deg,
+    rgba(139, 0, 0, 0.3) 0%,
+    rgba(220, 20, 60, 0.3) 100%
+  );
+  color: var(--text-primary);
+}
+
+/* === Day Number === */
+.day-number {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.125rem;
+}
+
+/* === Events Block === */
+.day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  width: 100%;
+}
+
+.day-event {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  font-size: 0.7rem;
+  padding: 0.125rem 0.25rem;
+  text-align: center;
+}
+
+.day-event.birthday {
+  background: rgba(255, 182, 193, 0.4);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.day-event.bloodmoon {
+  background: rgba(173, 20, 87, 0.3);
+}
+
+/* ============================================================================
+   📋 CALENDAR: EVENT LIST STYLES
+============================================================================ */
+
+/* === Container & Header === */
+.calendar-events {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  padding: 1.5rem;
+}
+
+.calendar-events h4 {
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* === Event List Layout === */
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* === Individual Event Item === */
+.event-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  padding: 0.75rem;
+}
+
+/* === Event Type Indicators === */
+.event-item.birthday {
+  border-left: 4px solid rgba(255, 182, 193, 0.8);
+}
+
+.event-item.bloodmoon {
+  border-left: 4px solid var(--blight-border);
+}
+
+/* === Event Icon === */
+.event-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--bg-secondary);
+  border-radius: 50%;
+  font-size: 1rem;
+  line-height: 32px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.event-item.birthday .event-icon {
+  background: rgba(255, 182, 193, 0.8);
+  color: var(--text-primary);
+}
+
+.event-item.bloodmoon .event-icon {
+  background: var(--blight-border);
+  color: var(--text-primary);
+}
+
+/* === Event Text Details === */
+.event-details {
+  flex: 1;
+}
+
+.event-title {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.event-date {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* ============================================================================
+   ⚠️ CALENDAR: LOADING & ERROR STATES
+============================================================================ */
+
+/* Shared Container Styles */
+.calendar-loading,
+.calendar-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem;
+}
+
+/* === Loading State === */
+.calendar-loading {
+  color: var(--text-secondary);
+}
+
+.calendar-loading .loading-spinner {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 1rem;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.calendar-loading p {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+/* === Error State === */
+.calendar-error {
+  color: var(--error-color);
+}
+
+.calendar-error i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--error-color);
+}
+
+.calendar-error p {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  color: var(--error-color);
+}
+
+/* === Retry Button === */
+.calendar-retry-btn {
+  background: var(--primary-color);
+  border: none;
+  border-radius: var(--card-radius);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.calendar-retry-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}

@@ -1,0 +1,92 @@
+/* ============================================================================ */
+/* Location Colors                                                              */
+/* ============================================================================ */
+
+.location-eldin {
+  background-color: #d9534f !important;
+  color: #ffffff !important;
+}
+.location-eldin:hover {
+  background-color: #f76d6a !important;
+}
+
+.location-faron {
+  background-color: #5cb85c !important;
+  color: #ffffff !important;
+}
+.location-faron:hover {
+  background-color: #76d276 !important;
+}
+
+.location-gerudo {
+  background-color: #f0ad4e !important;
+  color: #ffffff !important;
+}
+.location-gerudo:hover {
+  background-color: #ffc766 !important;
+}
+
+.location-hebra {
+  background-color: #b39ddb !important;
+  color: #ffffff !important;
+}
+.location-hebra:hover {
+  background-color: #c9b4ef !important;
+}
+
+.location-lanayru {
+  background-color: #337ab7 !important;
+  color: #ffffff !important;
+}
+.location-lanayru:hover {
+  background-color: #4f94d4 !important;
+}
+
+.location-leafdew {
+  background-color: #20cfcf !important;
+  color: #ffffff !important;
+}
+.location-leafdew:hover {
+  background-color: #45e5e5 !important;
+}
+
+.location-scarletleaves {
+  background-color: #a259e6 !important;
+  color: #ffffff !important;
+}
+.location-scarletleaves:hover {
+  background-color: #be78ff !important;
+}
+
+.location-central-hyrule {
+  background-color: #17a2b8 !important;
+  color: #ffffff !important;
+}
+.location-central-hyrule:hover {
+  background-color: #38bcd2 !important;
+}
+
+
+/* ============================================================================ */
+/* Village Crest Display                                                        */
+/* ============================================================================ */
+
+.village-crest {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  z-index: 2;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.village-crest-img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  padding: 2px;
+}

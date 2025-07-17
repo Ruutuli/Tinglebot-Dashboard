@@ -234,14 +234,14 @@ class CountdownManager {
       const displayTime = event.id === 'blood-moon' ? `${dateString} at ${timeString}` : timeString;
       
       return `
-        <div class="event-item">
-          <div class="event-icon">
+        <div class="countdown-event-item">
+          <div class="countdown-event-icon">
             <i class="${event.icon}"></i>
           </div>
-          <div class="event-details">
-            <div class="event-name">${event.name}</div>
-            <div class="event-time">${displayTime} EST</div>
-            <div class="event-description">${event.description}</div>
+          <div class="countdown-event-details">
+            <div class="countdown-event-name">${event.name}</div>
+            <div class="countdown-event-time">${displayTime} EST</div>
+            <div class="countdown-event-description">${event.description}</div>
           </div>
         </div>
       `;

@@ -5,6 +5,7 @@
 
 // Import UI functions
 import { setupBackToTopButton } from './ui.js';
+import { showError } from './error.js';
 
 // Commands page functionality
 let allCommands = [];
@@ -85,7 +86,22 @@ async function loadCommands() {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    allCommands = await response.json();
+    const data = await response.json();
+    
+    // Handle the API response structure: { commands: [...] }
+    let commandsArray = [];
+    if (data && data.commands && Array.isArray(data.commands)) {
+      commandsArray = data.commands;
+    } else if (Array.isArray(data)) {
+      commandsArray = data;
+    } else {
+      console.error('❌ API response is not in expected format:', data);
+      allCommands = [];
+      filteredCommands = [];
+      return;
+    }
+    
+    allCommands = commandsArray;
     filteredCommands = [...allCommands];
     
     displayCommands();
@@ -96,7 +112,10 @@ async function loadCommands() {
     
   } catch (err) {
     console.error('❌ Error loading commands:', err);
-    showError('Failed to load commands');
+    const commandsContainer = document.getElementById('commands-container');
+    if (commandsContainer) {
+      showError('Failed to load commands', commandsContainer);
+    }
   }
 }
 
@@ -109,6 +128,12 @@ function displayCommands() {
   if (!commandsContainer) {
     console.error('❌ Commands container not found');
     return;
+  }
+
+  // Ensure filteredCommands is an array
+  if (!Array.isArray(filteredCommands)) {
+    console.error('❌ filteredCommands is not an array:', filteredCommands);
+    filteredCommands = [];
   }
 
   if (filteredCommands.length === 0) {
@@ -265,6 +290,9 @@ function updateCommandsStats(commands) {
 // ============================================================================
 
 function getCategoryIcon(category) {
+  // Convert category to lowercase for consistent matching
+  const categoryLower = category ? category.toLowerCase() : '';
+  
   const iconMap = {
     character: 'fas fa-user',
     economy: 'fas fa-coins',
@@ -275,10 +303,17 @@ function getCategoryIcon(category) {
     utility: 'fas fa-tools',
     moderation: 'fas fa-shield-alt',
     admin: 'fas fa-crown',
-    world: 'fas fa-globe'
+    world: 'fas fa-globe',
+    general: 'fas fa-terminal',
+    weather: 'fas fa-cloud-sun',
+    items: 'fas fa-box',
+    monsters: 'fas fa-dragon',
+    calendar: 'fas fa-calendar-alt',
+    statistics: 'fas fa-chart-bar',
+    guild: 'fas fa-users'
   };
   
-  return iconMap[category] || 'fas fa-terminal';
+  return iconMap[categoryLower] || 'fas fa-terminal';
 }
 
 function capitalizeFirstLetter(string) {
@@ -1032,6 +1067,12 @@ function filterCommands() {
     return;
   }
   
+  // Ensure allCommands is an array
+  if (!Array.isArray(allCommands)) {
+    console.error('❌ allCommands is not an array:', allCommands);
+    allCommands = [];
+  }
+  
   const searchTerm = searchInput.value.toLowerCase().trim();
   const categoryFilterValue = categoryFilter.value;
   
@@ -1042,7 +1083,8 @@ function filterCommands() {
                          command.description.toLowerCase().includes(searchTerm) ||
                          command.usage.toLowerCase().includes(searchTerm);
     
-    const matchesCategory = categoryFilterValue === 'all' || command.category === categoryFilterValue;
+    const matchesCategory = categoryFilterValue === 'all' || 
+                           (command.category && command.category.toLowerCase() === categoryFilterValue.toLowerCase());
     
     return matchesSearch && matchesCategory;
   });
@@ -1070,6 +1112,12 @@ function updateClearFiltersButton() {
 
 // Update statistics
 function updateStats() {
+  // Ensure filteredCommands is an array
+  if (!Array.isArray(filteredCommands)) {
+    console.error('❌ filteredCommands is not an array in updateStats:', filteredCommands);
+    filteredCommands = [];
+  }
+  
   const totalCommands = document.getElementById('total-commands');
   const categoryCount = document.getElementById('category-count');
   

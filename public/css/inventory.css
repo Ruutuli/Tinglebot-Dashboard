@@ -1,0 +1,286 @@
+/* ==========================================================================
+   INVENTORY ITEM CARD
+   ========================================================================== */
+
+   .inventory-item-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    border: 2px solid rgba(120, 140, 200, 0.15);
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(35, 35, 45, 0.9), rgba(50, 50, 65, 0.9));
+    overflow: hidden;
+    position: relative;
+    animation: slideInTop 0.4s ease-out;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .inventory-item-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(79, 172, 254, 0.05), rgba(0, 242, 254, 0.05));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+  }
+  
+  .inventory-item-card:hover {
+    border-color: rgba(79, 172, 254, 0.4);
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.2),
+      0 4px 16px rgba(79, 172, 254, 0.2);
+    transform: translateY(-6px) scale(1.02);
+  }
+  
+  .inventory-item-card:hover::before {
+    opacity: 1;
+  }
+  
+  
+  /* -------------------- Stat Item Badge -------------------- */
+  .inventory-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #e0e7ff;
+    background: linear-gradient(135deg, rgba(79, 172, 254, 0.2), rgba(0, 242, 254, 0.2));
+    border: 1px solid rgba(79, 172, 254, 0.3);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 8px rgba(79, 172, 254, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .inventory-stat-item i {
+    font-size: 0.8rem;
+    color: #4facfe;
+  }
+  
+  
+  /* -------------------- Icon -------------------- */
+  .inventory-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+  }
+  
+  .inventory-item-icon i {
+    font-size: 1.2rem;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  
+  /* -------------------- Details -------------------- */
+  .inventory-item-details {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .inventory-item-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  
+  .inventory-item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  
+  .inventory-item-quantity,
+  .inventory-item-category,
+  .inventory-item-type {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #b8c5d6;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+  }
+  
+  .inventory-item-quantity:hover,
+  .inventory-item-category:hover,
+  .inventory-item-type:hover {
+    background: rgba(79, 172, 254, 0.15);
+    border-color: rgba(79, 172, 254, 0.3);
+    color: #e0e7ff;
+  }
+  
+  .inventory-item-quantity i,
+  .inventory-item-category i,
+  .inventory-item-type i {
+    font-size: 0.7rem;
+    color: #4facfe;
+  }
+  
+
+  
+  /* ==========================================================================
+     INVENTORY GRID CONTAINER
+     ========================================================================== */
+  
+  .inventory-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 90%;
+    margin: 0 auto;
+  }
+  
+  
+  /* ==========================================================================
+     INVENTORY LOADING STATE
+     ========================================================================== */
+  
+  .inventory-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    min-height: 250px;
+    padding: 3rem;
+    text-align: center;
+    background: rgba(20, 20, 25, 0.7);
+    border: 1px solid rgba(75, 75, 75, 0.3);
+    border-radius: var(--card-radius);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    color: var(--botw-blue);
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .inventory-loading i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    animation: spin 1s linear infinite;
+  }
+  
+  .inventory-loading p {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+  
+  
+  /* ==========================================================================
+     INVENTORY EMPTY STATE
+     ========================================================================== */
+  
+  .inventory-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    min-height: 200px;
+    padding: 3rem;
+    text-align: center;
+    background: rgba(20, 20, 25, 0.7);
+    border: 1px solid rgba(75, 75, 75, 0.3);
+    border-radius: var(--card-radius);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    color: var(--text-secondary);
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .inventory-empty-state i {
+    font-size: 3rem;
+    opacity: 0.5;
+    color: var(--text-secondary);
+  }
+  
+  .inventory-empty-state h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  
+  .inventory-empty-state p {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 400px;
+  }
+  
+  .inventory-empty-state small {
+    font-size: 0.9rem;
+    color: var(--error-color);
+    margin-top: 0.5rem;
+  }
+  
+  
+  /* -------------------- Empty State Filter Tips -------------------- */
+  .empty-state-filters {
+    margin-top: 1rem;
+    padding: 1.5rem;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+  }
+  
+  .empty-state-filters p {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+  
+  .empty-state-filters ul {
+    list-style: none;
+    margin: 0 0 1rem 0;
+    padding: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+  
+  .empty-state-filters li {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  
+  /* ==========================================================================
+     INVENTORY RESULTS INFO
+     ========================================================================== */
+  
+  .inventory-results-info {
+    background: var(--glass-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-align: center;
+    margin: 1rem 1.5rem;
+    padding: 1rem 1.5rem;
+  }
+  
+  .inventory-results-info p {
+    margin: 0;
+  }
+  

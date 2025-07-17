@@ -1,8 +1,12 @@
-/* ============================================================================
+
+/* ==========================================================================
    commands.css
    Purpose: Styles specific to the Commands page and its components
-============================================================================ */
+========================================================================== */
 
+/* --------------------------------------------------------------------------
+   Containers & Layout
+--------------------------------------------------------------------------- */
 .commands-container {
   display: flex;
   flex-direction: column;
@@ -10,7 +14,9 @@
   max-width: 100%;
 }
 
-.commands-overview {
+.commands-overview,
+.command-categories,
+.commands-list-container {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--card-radius);
@@ -24,175 +30,18 @@
   gap: 1.5rem;
 }
 
-.command-categories {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--card-radius);
-  padding: 1.5rem;
-  backdrop-filter: blur(var(--frost-blur));
-}
-
-.category-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.category-filter {
-  align-items: center;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 0.75rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: flex;
-  font-size: 0.9rem;
-  font-weight: 500;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  transition: all 0.2s ease;
-}
-
-.category-filter:hover {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--text-primary);
-  transform: translateY(-1px);
-}
-
-.category-filter.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--text-primary);
-  box-shadow: 0 4px 12px rgba(0, 163, 218, 0.3);
-}
-
-.category-filter i {
-  font-size: 1rem;
-}
-
-.commands-list-container {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--card-radius);
-  padding: 1.5rem;
-  backdrop-filter: blur(var(--frost-blur));
-}
-
 .commands-search {
-  align-items: center;
   display: flex;
+  align-items: center;
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
-.search-input-wrapper {
-  background: var(--glass-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  display: flex;
-  flex: 1;
-  max-width: 400px;
-  position: relative;
-  transition: border-color 0.3s ease;
-}
 
-.search-input-wrapper:focus-within {
-  border-color: var(--accent);
-}
 
-.search-input-wrapper i {
-  color: var(--text-secondary);
-  left: 1rem;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-#commands-search {
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  outline: none;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  width: 100%;
-  border-radius: 8px;
-}
-
-#commands-search::placeholder {
-  color: var(--text-secondary);
-}
-
-/* Command Filters - Consolidated Styles */
-.command-filters {
-  display: flex;
-  gap: 1.5rem;
-  margin: 2rem auto;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: center;
-  max-width: 800px;
-  padding: 1.5rem;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  backdrop-filter: blur(var(--frost-blur));
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.filter-controls {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-#category-filter {
-  background: var(--glass-bg);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  min-width: 180px;
-  outline: none;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-#category-filter:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 163, 218, 0.1);
-  transform: translateY(-1px);
-}
-
-#category-filter:hover {
-  border-color: var(--accent);
-  transform: translateY(-1px);
-}
-
-#search-input {
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  outline: none;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  border-radius: 8px;
-  min-width: 0;
-}
-
-#search-input::placeholder {
-  color: var(--text-secondary);
-}
-
-/* Command Cards */
+/* --------------------------------------------------------------------------
+   Command Cards Grid
+--------------------------------------------------------------------------- */
 .commands-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -200,20 +49,24 @@
   margin-bottom: 2rem;
 }
 
+/* --------------------------------------------------------------------------
+   Command Card
+--------------------------------------------------------------------------- */
 .command-card {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem;
+  min-height: 200px;
+
   background: var(--glass-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 1.5rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
   transform-style: preserve-3d;
   perspective: 1000px;
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
+  transition: all 0.3s ease;
 }
 
 .command-card:hover {
@@ -226,6 +79,9 @@
   transform: rotateY(180deg);
 }
 
+/* --------------------------------------------------------------------------
+   Card Content
+--------------------------------------------------------------------------- */
 .command-header {
   display: flex;
   justify-content: space-between;
@@ -234,41 +90,41 @@
 }
 
 .command-name {
-  color: var(--accent);
+  font-family: 'Courier New', monospace;
   font-size: 1.2rem;
   font-weight: 600;
+  color: var(--accent);
   margin: 0;
-  font-family: 'Courier New', monospace;
 }
 
 .command-category {
   background: var(--accent);
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
 }
 
 .command-description {
   color: var(--text-secondary);
   font-size: 0.9rem;
   line-height: 1.5;
-  margin-bottom: 1rem;
   flex-grow: 1;
+  margin-bottom: 1rem;
 }
 
 .command-usage {
   background: rgba(0, 0, 0, 0.1);
+  border-left: 3px solid var(--accent);
   border-radius: 8px;
   padding: 0.75rem;
-  margin-bottom: 1rem;
   font-family: 'Courier New', monospace;
   font-size: 0.85rem;
   color: var(--text-primary);
-  border-left: 3px solid var(--accent);
+  margin-bottom: 1rem;
 }
 
 .command-details-toggle {
@@ -278,36 +134,212 @@
   color: var(--accent);
   font-size: 0.85rem;
   font-weight: 500;
-  margin-top: auto;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);
+  margin-top: auto;
 }
 
 .command-details-toggle i {
   font-size: 1rem;
 }
 
-/* Command Modal */
+/* --------------------------------------------------------------------------
+   Modal
+--------------------------------------------------------------------------- */
 .command-modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+
+  background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(5px);
 }
+
+.command-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Stats Items (Used in multiple areas)
+--------------------------------------------------------------------------- */
+.command-stat-item,
+.commands-stats .command-stat-item,
+.command-stats .command-stat-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding: 0.75rem 1rem !important;
+
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: var(--text-primary) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  backdrop-filter: blur(10px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease !important;
+  transform: none !important;
+  text-transform: uppercase !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.5px !important;
+  color: var(--text-secondary) !important;
+}
+
+.command-stat-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--accent) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.command-stat-item i {
+  font-size: 1.1rem !important;
+  color: var(--accent) !important;
+  opacity: 0.9 !important;
+  filter: none !important;
+  transition: opacity 0.2s ease !important;
+}
+
+.command-stat-item:hover i {
+  opacity: 1 !important;
+}
+
+.command-stat-item .stat-value {
+  font-weight: 600 !important;
+  color: var(--accent) !important;
+  transition: color 0.2s ease !important;
+}
+
+/* --------------------------------------------------------------------------
+   Results Info Banner
+--------------------------------------------------------------------------- */
+.commands-results-info {
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+
+  background: linear-gradient(135deg, rgba(0, 163, 218, 0.1), rgba(0, 242, 254, 0.1));
+  border: 1px solid rgba(0, 163, 218, 0.2);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 163, 218, 0.1);
+  animation: slideInDown 0.3s ease-out;
+}
+
+.commands-results-info p {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.commands-results-info i {
+  font-size: 1.1rem;
+  color: var(--accent);
+  background: rgba(0, 163, 218, 0.15);
+  padding: 0.5rem;
+  border-radius: 8px;
+  backdrop-filter: blur(5px);
+}
+
+/* ==========================================================================
+   CATEGORY SECTION - Base Styling
+   ========================================================================== */
+
+   .category-section {
+    margin-bottom: 3rem;
+  }
+  
+  /* -------------------- CATEGORY HEADER -------------------- */
+  
+  .category-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    padding: 1.5rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    backdrop-filter: blur(var(--frost-blur));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .category-header:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    border-color: var(--accent);
+  }
+  
+  .category-header h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    flex-grow: 1;
+    letter-spacing: -0.5px;
+  }
+  
+  .category-header i {
+    font-size: 1.5rem;
+    color: var(--accent);
+    background: rgba(0, 163, 218, 0.1);
+    padding: 0.75rem;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 8px rgba(0, 163, 218, 0.2);
+  }
+  
+  /* -------------------- CATEGORY COUNT & DESCRIPTION -------------------- */
+  
+  .category-count {
+    background: var(--accent);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 163, 218, 0.3);
+  }
+  
+  .category-description {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+    letter-spacing: 0.3px;
+  }
+  
+/* ==========================================================================
+   MODAL COMPONENT
+   ========================================================================== */
 
 .modal-content {
   background: var(--glass-bg);
   border: 1px solid var(--border-color);
   border-radius: 16px;
-  max-width: 600px;
   width: 90%;
+  max-width: 600px;
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
@@ -343,6 +375,10 @@
   font-family: 'Courier New', monospace;
 }
 
+.modal-body {
+  padding: 1.5rem;
+}
+
 .close-btn {
   background: none;
   border: none;
@@ -351,12 +387,12 @@
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 50%;
-  transition: all 0.2s ease;
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .close-btn:hover {
@@ -364,28 +400,23 @@
   color: var(--text-primary);
 }
 
-.modal-body {
-  padding: 1.5rem;
-}
 
-.command-info {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
+/* ==========================================================================
+   INFO SECTION / USAGE EXAMPLES
+   ========================================================================== */
 
 .info-section {
   background: rgba(0, 0, 0, 0.05);
+  border-left: 4px solid var(--accent);
   border-radius: 12px;
   padding: 1.25rem;
-  border-left: 4px solid var(--accent);
 }
 
 .info-section h3 {
   color: var(--text-primary);
   font-size: 1.1rem;
   font-weight: 600;
-  margin: 0 0 0.75rem 0;
+  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -399,18 +430,36 @@
   border-radius: 2px;
 }
 
-.info-section p {
+.info-section p,
+.info-section li {
   color: var(--text-secondary);
   line-height: 1.6;
   margin: 0;
+  margin-bottom: 0.5rem;
 }
 
+.info-section ul {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.info-section code,
+.info-section li code {
+  color: var(--accent);
+  background: rgba(0, 0, 0, 0.1);
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+}
+
+/* -------------------- Usage Examples -------------------- */
 .usage-example {
   background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 1rem;
   margin: 0.75rem 0;
-  border: 1px solid var(--border-color);
 }
 
 .usage-example code {
@@ -428,9 +477,9 @@
 
 .example {
   background: rgba(0, 0, 0, 0.05);
+  border-left: 3px solid var(--accent);
   border-radius: 8px;
   padding: 0.75rem;
-  border-left: 3px solid var(--accent);
 }
 
 .example strong {
@@ -449,275 +498,9 @@
   border-radius: 4px;
 }
 
-.info-section ul {
-  margin: 0.75rem 0;
-  padding-left: 1.5rem;
-}
-
-.info-section li {
-  color: var(--text-secondary);
-  line-height: 1.6;
-  margin-bottom: 0.5rem;
-}
-
-.info-section li code {
-  color: var(--accent);
-  font-family: 'Courier New', monospace;
-  font-size: 0.85rem;
-  background: rgba(0, 0, 0, 0.1);
-  padding: 0.2rem 0.4rem;
-  border-radius: 3px;
-}
-
-/* Mobile Responsiveness for Commands */
-@media (max-width: 768px) {
-  .commands-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  .command-card {
-    padding: 1.25rem;
-    min-height: 180px;
-  }
-  .command-header {
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: flex-start;
-  }
-  .command-category {
-    align-self: flex-start;
-  }
-  .modal-content {
-    width: 95%;
-    max-height: 90vh;
-  }
-  .modal-header {
-    padding: 1.25rem;
-  }
-  .modal-body {
-    padding: 1.25rem;
-  }
-  .info-section {
-    padding: 1rem;
-  }
-  .command-filters {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  #category-filter,
-  #search-input {
-    min-width: auto;
-    width: 100%;
-  }
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .command-card {
-    transform: none;
-  }
-  .command-card:hover {
-    transform: none;
-  }
-  .command-card:active {
-    transform: scale(0.98);
-  }
-  .command-card.tapped {
-    transform: scale(0.95);
-  }
-}
-
-/* Command Stats - for both overview and individual command cards */
-.commands-stats .command-stat-item,
-.command-stats .command-stat-item {
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.75rem !important;
-  font-size: 0.875rem !important;
-  color: var(--text-primary) !important;
-  padding: 0.75rem 1rem !important;
-  border-radius: 8px !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  margin-bottom: 0.5rem !important;
-  font-weight: 500 !important;
-  transition: all 0.2s ease !important;
-  backdrop-filter: blur(10px) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-  /* Override main styles.css .stat-item styles */
-  transform: none !important;
-}
-
-.commands-stats .command-stat-item:hover,
-.command-stats .command-stat-item:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border-color: var(--accent) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-}
-
-.commands-stats .command-stat-item:last-child,
-.command-stats .command-stat-item:last-child {
-  margin-bottom: 0 !important;
-}
-
-.commands-stats .command-stat-item i,
-.command-stats .command-stat-item i {
-  color: var(--accent) !important;
-  font-size: 1.1rem !important;
-  filter: none !important;
-  opacity: 0.9 !important;
-  transition: opacity 0.2s ease !important;
-}
-
-.commands-stats .command-stat-item:hover i,
-.command-stats .command-stat-item:hover i {
-  opacity: 1 !important;
-}
-
-/* Add subtle animation for the stat values */
-.commands-stats .command-stat-item .stat-value,
-.command-stats .command-stat-item .stat-value {
-  font-weight: 600 !important;
-  color: var(--accent) !important;
-  transition: color 0.2s ease !important;
-}
-
-.commands-stats .command-stat-item ,
-.command-stats .command-stat-item  {
-  color: var(--text-secondary) !important;
-  font-weight: 500 !important;
-  font-size: 0.8rem !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-}
-
-/* Category Section Styling */
-.category-section {
-  margin-bottom: 3rem;
-}
-
-.category-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-  padding: 1.5rem;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  backdrop-filter: blur(var(--frost-blur));
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.category-header:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-  border-color: var(--accent);
-}
-
-.category-header i {
-  font-size: 1.5rem;
-  color: var(--accent);
-  background: rgba(0, 163, 218, 0.1);
-  padding: 0.75rem;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 8px rgba(0, 163, 218, 0.2);
-}
-
-.category-header h2 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
-  flex-grow: 1;
-  letter-spacing: -0.5px;
-}
-
-.category-count {
-  background: var(--accent);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(0, 163, 218, 0.3);
-}
-
-.category-description {
-  color: var(--text-secondary);
-  font-size: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-left: 4px solid var(--accent);
-  border-radius: 0 8px 8px 0;
-  font-style: italic;
-  letter-spacing: 0.3px;
-}
-
-/* Mobile responsiveness for category headers */
-@media (max-width: 768px) {
-  .category-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1.25rem;
-  }
-  
-  .category-header h2 {
-    font-size: 1.5rem;
-  }
-  
-  .category-header i {
-    font-size: 1.25rem;
-    padding: 0.5rem;
-  }
-  
-  .category-count {
-    align-self: flex-start;
-  }
-  
-  .category-description {
-    font-size: 0.9rem;
-    padding: 0.5rem 1rem;
-  }
-}
-
-/* Commands Results Info Styling */
-.commands-results-info {
-  margin: 1.5rem 0;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, rgba(0, 163, 218, 0.1), rgba(0, 242, 254, 0.1));
-  border: 1px solid rgba(0, 163, 218, 0.2);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 15px rgba(0, 163, 218, 0.1);
-  animation: slideInDown 0.3s ease-out;
-}
-
-.commands-results-info p {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 0.95rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  line-height: 1.5;
-}
-
-.commands-results-info i {
-  color: var(--accent);
-  font-size: 1.1rem;
-  background: rgba(0, 163, 218, 0.15);
-  padding: 0.5rem;
-  border-radius: 8px;
-  backdrop-filter: blur(5px);
-}
-
+/* --------------------------------------------------------------------------
+   Animation
+--------------------------------------------------------------------------- */
 @keyframes slideInDown {
   from {
     opacity: 0;
@@ -729,22 +512,86 @@
   }
 }
 
-/* Mobile responsiveness for results info */
+/* ==========================================================================
+   MOBILE RESPONSIVENESS
+   ========================================================================== */
+   
 @media (max-width: 768px) {
-  .commands-results-info {
-    margin: 1rem 0;
-    padding: 0.75rem 1rem;
+  .commands-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
-  
-  .commands-results-info p {
-    font-size: 0.875rem;
+
+  .command-card {
+    padding: 1.25rem;
+    min-height: 180px;
+  }
+
+  .command-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .command-category {
+    align-self: flex-start;
+  }
+
+  .modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .modal-header,
+  .modal-body,
+  .info-section {
+    padding: 1.25rem;
+  }
+}
+
+/* Pointer Coarse Devices (e.g., touch) */
+@media (hover: none) and (pointer: coarse) {
+  .command-card {
+    transform: none;
+  }
+
+  .command-card:hover {
+    transform: none;
+  }
+
+  .command-card:active {
+    transform: scale(0.98);
+  }
+
+  .command-card.tapped {
+    transform: scale(0.95);
+  }
+}
+
+
+@media (max-width: 768px) {
+  .category-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    padding: 1.25rem;
   }
-  
-  .commands-results-info i {
-    font-size: 1rem;
-    padding: 0.4rem;
+
+  .category-header h2 {
+    font-size: 1.5rem;
   }
-} 
+
+  .category-header i {
+    font-size: 1.25rem;
+    padding: 0.5rem;
+  }
+
+  .category-count {
+    align-self: flex-start;
+  }
+
+  .category-description {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+  }
+}

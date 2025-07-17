@@ -1,0 +1,529 @@
+
+/* ==========================================================================
+   Section Header & Character Status
+========================================================================== */
+
+.stats-section-header {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--botw-blue);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.profile-character-status.online {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  color: #4caf50;
+}
+
+
+/* ==========================================================================
+   Visual: Stat Bars
+========================================================================== */
+
+.stat-bar-container {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.stat-bar {
+  border-radius: 3px;
+  height: 100%;
+  width: auto;
+  transition: width 0.3s ease;
+}
+
+
+/* ==========================================================================
+   Inline Display: Stat Labels & Values
+========================================================================== */
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+  margin-right: 0.2em;
+  text-transform: uppercase;
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.stat-value {
+  color: var(--botw-white);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-right: 15px;
+}
+
+
+/* ==========================================================================
+   Inline Display: Stat Entry
+========================================================================== */
+
+.stat {
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  gap: 0.5rem;
+}
+
+.stat i {
+  color: var(--accent-color);
+}
+
+
+/* ==========================================================================
+   Stat Icon & Info Display
+========================================================================== */
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--text-primary);
+  border-radius: 50%;
+  width: var(--stat-icon-size);
+  height: var(--stat-icon-size);
+}
+
+.stat-info h3 {
+  color: var(--stat-label);
+  font-size: var(--stat-label-size);
+  margin-bottom: 0.25rem;
+}
+
+
+/* ==========================================================================
+   Base Stat Item Styles (Shared)
+========================================================================== */
+
+.stat-item,
+.stat-item-vertical {
+  align-items: center;
+  display: flex;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.stat-item i,
+.stat-item-vertical i {
+  font-size: 0.9rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+
+/* ==========================================================================
+   Stat Item: Decorative Horizontal Blocks
+========================================================================== */
+
+.stat-item {
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.2), rgba(0, 242, 254, 0.2));
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(79, 172, 254, 0.3);
+  border-radius: 25px;
+  box-shadow: 0 2px 8px rgba(79, 172, 254, 0.2);
+  color: #e0e7ff;
+  font-size: 0.95rem;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+}
+
+.stat-item:hover {
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.3), rgba(0, 242, 254, 0.3));
+  box-shadow: 0 4px 16px rgba(79, 172, 254, 0.3);
+  transform: translateY(-2px);
+}
+
+.stat-item i {
+  color: #4facfe;
+}
+
+
+/* ==========================================================================
+   Stat Item: Vertical Stat Block
+========================================================================== */
+
+.stat-item-vertical {
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.stat-item-vertical:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.stat-item-vertical .stat-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.stat-item-vertical .stat-value {
+  color: var(--totk-light-green);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   Elements: Stat Bars & Fill Variants
+========================================================================== */
+
+.attack-bar,
+.attack-fill {
+  background: linear-gradient(90deg, #ff8a65 0%, #ff5722 100%);
+}
+
+.defense-bar,
+.defense-fill {
+  background: linear-gradient(90deg, #64b5f6 0%, #2196f3 100%);
+}
+
+.heart-bar,
+.heart-fill {
+  background: linear-gradient(90deg, #e57373 0%, #ff5252 100%);
+}
+
+.stamina-bar,
+.stamina-fill {
+  background: linear-gradient(90deg, #81c784 0%, #4caf50 100%);
+}
+
+/* ==========================================================================
+   Layout: Stats Cards Grid
+========================================================================== */
+
+.stats-cards-grid {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: repeat(2, 1fr);
+  margin: 2rem 0;
+}
+
+
+/* ==========================================================================
+   Shared Card Styles
+========================================================================== */
+
+.stats-card,
+.stats-card-wide,
+.stat-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  display: flex;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.stats-card h3,
+.stats-card-wide h3 {
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.stats-card p,
+.stats-card ul,
+.stats-card-wide p,
+.stats-card-wide ul {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.stats-card ul,
+.stats-card-wide ul {
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.stats-card ul li,
+.stats-card-wide ul li {
+  border-left: 3px solid var(--accent);
+  font-size: 1.05rem;
+  margin-bottom: 0.3rem;
+  padding-left: 0.5rem;
+}
+
+
+/* ==========================================================================
+   Stats Card – Standard
+========================================================================== */
+
+.stats-card {
+  align-items: flex-start;
+  flex-direction: column;
+  font-size: 1.25rem;
+  min-height: 350px;
+  padding: 3rem 2.5rem;
+}
+
+.stats-card.full-width {
+  grid-column: 1 / -1;
+  margin-top: 1rem;
+}
+
+
+/* ==========================================================================
+   Stats Card – Wide
+========================================================================== */
+
+.stats-card-wide {
+  align-items: flex-start;
+  flex-direction: column;
+  margin: 2rem 0 0;
+  padding: 3rem 2.5rem;
+}
+
+.stats-card-wide .chart-container {
+  height: 400px;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+
+/* ==========================================================================
+   Stat Card – Icon-Based
+========================================================================== */
+
+.stat-card {
+  align-items: center;
+  flex-direction: row;
+  gap: 1rem;
+  padding: 1.5rem;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ============================================================================
+   Stats Tables & Enhanced Layout
+============================================================================ */
+
+.stats-table-container {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  align-items: stretch;
+  justify-items: stretch;
+  width: 100%;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.stats-table,
+.visiting-village .stats-table {
+  background: rgba(32,36,44,0.85);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-collapse: collapse;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.10);
+  font-size: 0.85rem;
+  min-width: 0 !important;
+  max-width: none !important;
+  table-layout: fixed;
+  transition: box-shadow 0.2s;
+  width: 100% !important;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.stats-table:hover {
+  box-shadow: 0 4px 24px 0 rgba(0,163,218,0.10), 0 2px 8px 0 rgba(0,0,0,0.13);
+  border-color: var(--botw-blue);
+}
+
+.stats-table th,
+.visiting-village .stats-table th {
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--botw-blue);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.stats-table th[colspan="2"] {
+  background: linear-gradient(90deg, #1f5d50 0%, #00A3DA 100%);
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.08);
+  color: #fff;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+}
+
+.stats-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.stats-table tr:last-child td {
+  border-bottom: none;
+}
+
+.stats-table tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.stats-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+
+/* ============================================================================
+   Visiting Villages Grid & Cards
+============================================================================ */
+
+.visiting-villages-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.visiting-village {
+  flex: 1;
+  min-width: 300px;
+  max-width: calc(33.333% - 1.33rem);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.visiting-village h4 {
+  color: var(--botw-blue);
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+
+/* ============================================================================
+   Village Theming Overrides
+============================================================================ */
+
+.visiting-village.rudania {
+  border-color: rgba(255, 107, 107, 0.3);
+  background: rgba(255, 107, 107, 0.05);
+}
+.visiting-village.rudania h4 {
+  color: #ff6b6b;
+  border-bottom-color: rgba(255, 107, 107, 0.3);
+}
+.visiting-village.rudania .stats-table {
+  border-color: rgba(255, 107, 107, 0.2);
+}
+.visiting-village.rudania .stats-table th {
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+  border-bottom-color: rgba(255, 107, 107, 0.2);
+}
+.visiting-village.rudania .stats-table tr:hover {
+  background: rgba(255, 107, 107, 0.05);
+}
+
+.visiting-village.inariko {
+  border-color: rgba(79, 172, 254, 0.3);
+  background: rgba(79, 172, 254, 0.05);
+}
+.visiting-village.inariko h4 {
+  color: #4facfe;
+  border-bottom-color: rgba(79, 172, 254, 0.3);
+}
+.visiting-village.inariko .stats-table {
+  border-color: rgba(79, 172, 254, 0.2);
+}
+.visiting-village.inariko .stats-table th {
+  background: rgba(79, 172, 254, 0.1);
+  color: #4facfe;
+  border-bottom-color: rgba(79, 172, 254, 0.2);
+}
+.visiting-village.inariko .stats-table tr:hover {
+  background: rgba(79, 172, 254, 0.05);
+}
+
+.visiting-village.vhintl {
+  border-color: rgba(73, 213, 156, 0.3);
+  background: rgba(73, 213, 156, 0.05);
+}
+.visiting-village.vhintl h4 {
+  color: #49d59c;
+  border-bottom-color: rgba(73, 213, 156, 0.3);
+}
+.visiting-village.vhintl .stats-table {
+  border-color: rgba(73, 213, 156, 0.2);
+}
+.visiting-village.vhintl .stats-table th {
+  background: rgba(73, 213, 156, 0.1);
+  color: #49d59c;
+  border-bottom-color: rgba(73, 213, 156, 0.2);
+}
+.visiting-village.vhintl .stats-table tr:hover {
+  background: rgba(73, 213, 156, 0.05);
+}
+
+
+/* ============================================================================
+   Debuffed Characters Section
+============================================================================ */
+
+.debuffed-characters-section {
+  margin-top: 2rem;
+}
+
+.debuffed-characters-section h3 {
+  color: #ff6b6b;
+  margin-bottom: 1rem;
+}
+
+.debuffed-characters-section .stats-table th {
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+}
+
+
+/* ============================================================================
+   Character Styles
+============================================================================ */
+
+.stats-table-section {
+  margin-bottom: 2.5rem;
+}

@@ -1,0 +1,367 @@
+/* ============================================================================
+   Base Variables & Theme Colors
+============================================================================ */
+:root {
+  --input-bg: rgba(15, 15, 15, 0.8);
+  --input-focus-bg: rgba(22, 22, 22, 0.95);
+  --dropdown-bg: rgba(20, 20, 20, 0.95);
+  --dropdown-hover-bg: rgba(60, 60, 60, 0.5);
+  --select-icon-blue: '%23006CAA';
+  --select-icon-gold: '%23AF966D';
+}
+
+/* ============================================================================
+   Shared Input & Select Styles
+============================================================================ */
+input,
+select {
+  appearance: none;
+  background: var(--input-bg);
+  border: 1px solid rgba(75, 75, 75, 0.5);
+  border-radius: 0.5rem;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  padding: 0.85rem 1.2rem;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+input:focus,
+select:focus {
+  background-color: var(--input-focus-bg);
+  border-color: var(--botw-blue);
+  box-shadow: 0 0 0 2px rgba(0, 163, 218, 0.25);
+  outline: none;
+}
+
+/* ============================================================================
+   Filter Bar Containers
+============================================================================ */
+.search-filter-bar,
+.character-item-filter-bar,
+.village-shop-filters,
+.command-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  backdrop-filter: blur(var(--frost-blur));
+  margin-bottom: 1.5rem;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.search-filter-bar {
+  align-items: center;
+  background: rgba(20, 20, 20, 0.95);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  padding: 0.9rem;
+}
+
+.character-item-filter-bar,
+.village-shop-filters,
+.command-filters {
+  background: var(--glass-bg);
+  padding: 1rem;
+}
+
+.command-filters {
+  flex-direction: column;
+  justify-content: center;
+  max-width: 800px;
+  margin: 2rem auto;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================================
+   Filter Controls
+============================================================================ */
+.search-filter-control {
+  flex: 1;
+  max-width: 220px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-filter-control.search-input {
+  max-width: 260px;
+}
+
+.search-filter-control input {
+  padding-left: 2.5rem;
+}
+
+.search-filter-control select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='var(--select-icon-blue)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.search-filter-control::after {
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--botw-blue);
+}
+
+.search-filter-control:not(.search-input)::after {
+  content: '\f078';
+  right: 1rem;
+  font-size: 0.8rem;
+}
+
+.search-filter-control.search-input::after {
+  content: '\f002';
+  left: 0.7rem;
+  font-size: 0.9rem;
+}
+
+/* ============================================================================
+   Dropdown Filter Menu
+============================================================================ */
+.filter-dropdown {
+  background: var(--dropdown-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.3rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.3rem;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 101;
+}
+
+.filter-dropdown.show {
+  display: block;
+}
+
+.filter-option {
+  padding: 0.75rem 1rem;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.filter-option:hover {
+  background: var(--dropdown-hover-bg);
+  color: var(--text-primary);
+}
+
+.filter-option.active {
+  background: var(--botw-dark-blue);
+  color: #fff;
+}
+
+.filter-option.selected {
+  background: rgba(0, 163, 218, 0.2);
+}
+
+/* ============================================================================
+   Clear Filter Buttons
+============================================================================ */
+.clear-filters-btn,
+.character-item-clear-filters {
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.clear-filters-btn {
+  background: var(--botw-blue);
+  border: none;
+  color: #fff;
+  padding: 0.85rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.clear-filters-btn:hover {
+  background: var(--botw-dark-blue);
+  transform: translateY(-2px);
+}
+
+.character-item-clear-filters {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 0.5rem 1rem;
+}
+
+.character-item-clear-filters:hover {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--text-color);
+  transform: translateY(-1px);
+}
+
+.character-item-clear-filters:active {
+  transform: translateY(0);
+}
+
+/* ============================================================================
+   Category Filter Tags
+============================================================================ */
+.category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.category-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.category-filter:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.category-filter.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-primary);
+  box-shadow: 0 4px 12px rgba(0, 163, 218, 0.3);
+}
+
+.category-filter i {
+  font-size: 1rem;
+}
+
+/* ============================================================================
+   Search Input Wrapper
+============================================================================ */
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 400px;
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  transition: border-color 0.3s ease;
+}
+
+.search-input-wrapper:focus-within {
+  border-color: var(--accent);
+}
+
+.search-input-wrapper i {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+#commands-search,
+#search-input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  width: 100%;
+  border-radius: 8px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+#commands-search::placeholder,
+#search-input::placeholder {
+  color: var(--text-secondary);
+}
+
+/* ============================================================================
+   Results Info Blocks
+============================================================================ */
+.village-shop-results-info,
+.commands-results-info,
+.monster-results-info {
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem 1.5rem;
+  margin: 1rem 1.5rem;
+  border-radius: 8px;
+}
+
+.village-shop-results-info,
+.commands-results-info {
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.monster-results-info {
+  background: #e74c3c;
+  border: 1px solid #e74c3c;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.08);
+}
+
+/* ============================================================================
+   Monster-Specific Overrides
+============================================================================ */
+.monster-search-input {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.monster-search-input input[type="text"] {
+  width: 100%;
+  padding-left: 3.2rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #23272e;
+  color: #fff;
+  font-size: 0.9rem;
+  transition: border 0.2s;
+}
+
+.monster-search-input input[type="text"]:focus {
+  border-color: #e74c3c;
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
+}
+
+.monster-search-input input[type="text"]::placeholder {
+  color: #888;
+}
+
+.monster-loading {
+  color: #b8b8b8;
+  font-size: 1.1rem;
+  text-align: center;
+  padding: 32px 0;
+}

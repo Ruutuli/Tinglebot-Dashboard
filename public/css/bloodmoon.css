@@ -1,0 +1,178 @@
+/* ============================================================================ */
+  /* Blood Moon Tab Styles                                                        */
+  /* ============================================================================ */
+  
+  .bloodmoon-container {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    padding: 2rem;
+  }
+  
+  .bloodmoon-header {
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  .bloodmoon-header h3 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .bloodmoon-header h3 i {
+    color: var(--blight-border);
+    margin-right: 0.5rem;
+  }
+  
+  .bloodmoon-header p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+  }
+  
+  .bloodmoon-info {
+    display: grid;
+    gap: 2rem;
+  }
+  
+  .bloodmoon-cycle-info {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    padding: 2rem;
+    text-align: center;
+  }
+  
+  .bloodmoon-cycle-info.current {
+    background: linear-gradient(135deg, var(--blight-border) 0%, var(--blight-glow) 100%);
+    border-color: var(--blight-border);
+    color: var(--text-primary);
+  }
+  
+  .bloodmoon-cycle-day {
+    color: var(--text-primary);
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  
+  .bloodmoon-cycle-info.current .bloodmoon-cycle-day {
+    color: var(--text-primary);
+  }
+  
+  .bloodmoon-cycle-label {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+  
+  .bloodmoon-cycle-info.current .bloodmoon-cycle-label {
+    color: var(--text-primary);
+  }
+  
+  .bloodmoon-cycle-description {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  
+  .bloodmoon-cycle-info.current .bloodmoon-cycle-description {
+    color: var(--text-primary);
+  }
+  
+  /* ============================================================================ */
+  /* Blood Moon Dates List                                                        */
+  /* ============================================================================ */
+  
+  .bloodmoon-dates-list {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    padding: 2rem;
+  }
+  
+  .bloodmoon-dates-header {
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  
+  .bloodmoon-date-item {
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    gap: 1rem;
+    padding: 1rem 0;
+  }
+  
+  .bloodmoon-date-item:last-child {
+    border-bottom: none;
+  }
+  
+  .bloodmoon-date-item.today {
+    background: linear-gradient(135deg, var(--blight-border) 0%, var(--blight-glow) 100%);
+    border-radius: var(--card-radius);
+    margin: 0.5rem 0;
+    padding: 1rem;
+  }
+  
+  .bloodmoon-date-icon {
+    background: var(--bg-primary);
+    border-radius: 50%;
+    color: var(--blight-border);
+    font-size: 1.2rem;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    width: 40px;
+  }
+  
+  .bloodmoon-date-item.today .bloodmoon-date-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+  }
+  
+  /* ============================================================================ */
+/* Blood Moon Date Info                                                         */
+/* ============================================================================ */
+
+.bloodmoon-date-info {
+    flex: 1;
+  }
+  
+  .bloodmoon-date-real {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+  
+  .bloodmoon-date-hyrulean {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+  
+  .bloodmoon-date-item.today .bloodmoon-date-real,
+  .bloodmoon-date-item.today .bloodmoon-date-hyrulean {
+    color: var(--text-primary);
+  }
+  
+  .bloodmoon-date-cycle {
+    background: var(--bg-primary);
+    border-radius: var(--card-radius);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    text-align: center;
+  }
+  
+  .bloodmoon-date-item.today .bloodmoon-date-cycle {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+  }

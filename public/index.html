@@ -7,62 +7,71 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Tinglebot 2.0 Dashboard</title>
-  <link
-    rel="stylesheet"
-    href="css/styles.css"
-    onload="console.log('CSS loaded successfully')"
-    onerror="console.error('Failed to load CSS')"
-  />
-  <link
-    rel="stylesheet"
-    href="css/commands.css"
-    id="commands-css-link"
-    media="(max-width: 0px)"
-  />
-  <link
-    rel="stylesheet"
-    href="css/items.css"
-    onload="console.log('Items CSS loaded successfully')"
-    onerror="console.error('Failed to load Items CSS')"
-  />
-  <link
-    rel="stylesheet"
-    href="css/calender.css"
-    onload="console.log('Calendar CSS loaded successfully')"
-    onerror="console.error('Failed to load Calendar CSS')"
-  />
-  <link
-    rel="stylesheet"
-    href="css/weatherStats.css"
-    onload="console.log('Weather Stats CSS loaded successfully')"
-    onerror="console.error('Failed to load Weather Stats CSS')"
-  />
-  <link rel="stylesheet" href="/css/monsters.css">
+  
+  <!-- SEO & Social Meta -->
+  <meta name="description" content="Tinglebot 2.0 Dashboard: Manage, explore, and analyze your Tinglebot data models, stats, and more." />
+  <meta property="og:title" content="Tinglebot 2.0 Dashboard" />
+  <meta property="og:description" content="Manage, explore, and analyze your Tinglebot data models, stats, and more." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="http://localhost:5001/" />
+  <meta property="og:image" content="/images/tingleicon.png" />
+  <link rel="icon" type="image/png" href="/images/tingleicon.png" />
+  <meta name="theme-color" content="#00A3DA" />
+  
+  <!-- Resource Preloading for Critical Assets -->
+  <link rel="preload" href="css/styles.css" as="style">
+  <link rel="preload" href="js/ui.js" as="script" crossorigin="anonymous">
+  <link rel="preload" href="js/auth.js" as="script" crossorigin="anonymous">
+  <link rel="dns-prefetch" href="https://kit.fontawesome.com">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  
+  <!-- Critical CSS - Load immediately -->
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/buttons.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/charts.css" />
+  <link rel="stylesheet" href="css/character.css" />
+  <link rel="stylesheet" href="css/characterOfTheWeek.css" />
+  <link rel="stylesheet" href="css/commands.css" />
+  <link rel="stylesheet" href="css/countdown.css" />
+  <link rel="stylesheet" href="css/discord.css" />
+  <link rel="stylesheet" href="css/inventory.css" />
+  <link rel="stylesheet" href="css/items.css" />
+  <link rel="stylesheet" href="css/model.css" />
+  <link rel="stylesheet" href="css/monsters.css" />
+  <link rel="stylesheet" href="css/pagination.css" />
+  <link rel="stylesheet" href="css/profile.css" />
+  <link rel="stylesheet" href="css/searchFilter.css" />
+  <link rel="stylesheet" href="css/shops.css" />
+  <link rel="stylesheet" href="css/stats.css" />
+  <link rel="stylesheet" href="css/users.css" />
+  <link rel="stylesheet" href="css/village.css" />
+  <link rel="stylesheet" href="css/weather.css" />
+  <link rel="stylesheet" href="css/calender.css" />
+  <link rel="stylesheet" href="css/bloodmoon.css" />
+  
+  <!-- External Scripts with Integrity -->
   <script src="https://kit.fontawesome.com/262000d25d.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      const styles = document.styleSheets;
-      for (let i = 0; i < styles.length; i++) {
-        try {
-          // Access stylesheet href for potential future use
-        } catch (e) {
-          // Handle cross-origin stylesheet access errors
-        }
-      }
-    });
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js" crossorigin="anonymous"></script>
+  <!--
+    NOTE: In a real app, hardcoded values like the dashboard title, URLs, and Open Graph image should be made dynamic via server-side rendering or a build process.
+  -->
 </head>
 
 <!-- ========================================================================== -->
 <!-- 02-global-resources — CSS, Fonts, Icons, Scripts                          -->
 <!-- ========================================================================== -->
 <body>
+  <!-- Skip Links for Accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#sidebar-navigation" class="skip-link">Skip to navigation</a>
+  
   <!-- ========================================================================== -->
   <!-- 03-header — Topbar / Navbar / Notifications                               -->
   <!-- ========================================================================== -->
-  <header class="topbar">
+  <header class="topbar" role="banner">
     <div class="topbar-left">
       <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle Sidebar">
         <i class="fas fa-bars" aria-hidden="true"></i>
@@ -128,7 +137,7 @@
     <!-- ========================================================================== -->
     <!-- 05-sidebar — Sidebar Navigation Layout                                    -->
     <!-- ========================================================================== -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar-navigation" role="navigation" aria-label="Main sidebar navigation">
       <div class="sidebar-header">
         <img src="/images/tingleicon.png" alt="Tinglebot Logo" class="bot-logo" />
         <h1>Tinglebot</h1>
@@ -166,7 +175,7 @@
     <!-- ========================================================================== -->
     <!-- 06-main-content — Dashboard, Panels, and Primary UI Content               -->
     <!-- ========================================================================== -->
-    <main class="main-content">
+    <main class="main-content" id="main-content" role="main" tabindex="-1">
       <section id="dashboard-section">
         <div class="dashboard-header">
           <h1>Dashboard</h1>
@@ -788,64 +797,7 @@
     <i class="fas fa-arrow-up" aria-hidden="true"></i>
   </button>
 
-  <!-- Scripts -->
-  <script>
-    // Add error handling for module loading
-    window.addEventListener('error', function(event) {
-      console.error('❌ Script Error:', event.error);
-    });
-
-    // Add module loading error handling
-    window.addEventListener('unhandledrejection', function(event) {
-      console.error('❌ Module Loading Error:', event.reason);
-    });
-
-    // Log when the page is fully loaded
-    window.addEventListener('load', function() {
-      // Check if modules are loaded
-      const scripts = document.querySelectorAll('script[type="module"]');
-      scripts.forEach(script => {
-        // Module script info could be handled here
-      });
-    });
-
-    // Dynamically enable commands.css when commands section is shown
-    window.addEventListener('DOMContentLoaded', function() {
-      const commandsLink = document.getElementById('commands-css-link');
-      if (!commandsLink) return;
-      function enableCommandsCSS() {
-        commandsLink.media = 'all';
-      }
-      function disableCommandsCSS() {
-        commandsLink.media = '(max-width: 0px)';
-      }
-      // Listen for section changes
-      const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
-      sidebarLinks.forEach(link => {
-        link.addEventListener('click', function() {
-          if (link.getAttribute('data-section') === 'commands-section') {
-            enableCommandsCSS();
-          } else {
-            disableCommandsCSS();
-          }
-        });
-      });
-      // Also enable if page loads directly to commands-section
-      if (window.location.hash === '#commands') {
-        enableCommandsCSS();
-      }
-    });
-
-    // Ensure character of week is loaded and available
-    window.addEventListener('load', function() {
-      // If character of week function is available, trigger initial load
-      if (typeof loadCharacterOfWeek === 'function') {
-        setTimeout(() => {
-          loadCharacterOfWeek();
-        }, 1000); // Small delay to ensure everything is loaded
-      }
-    });
-  </script>
+  <!-- All Scripts Loaded at Bottom for Performance -->
   <script type="module" src="js/ui.js"></script>
   <script type="module" src="js/auth.js"></script>
   <script type="module" src="js/characters.js"></script>
@@ -860,7 +812,10 @@
   <script type="module" src="js/index.js"></script>
   <script src="js/countdown.js"></script>
   <script src="js/debug.js"></script>
-  <script src="js/characterOfWeek.js"></script>
-  <script type="module" src="/js/monsters.js"></script>
+  <script type="module" src="js/characterOfWeek.js"></script>
+  <script type="module" src="js/monsters.js"></script>
+  
+  <!-- Performance and Error Handling Script -->
+  <script src="js/performance.js"></script>
 </body>
 </html>
