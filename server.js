@@ -601,11 +601,28 @@ app.get('/api/stats/characters', async (req, res) => {
       return { names, values, value: top[0][field] }; // Keep 'value' for backward compatibility
     };
 
-    const [mostStamina, mostHearts, mostOrbs] = await Promise.all([
+    // Get top characters by stamina and hearts (from character model)
+    const [mostStamina, mostHearts] = await Promise.all([
       getTop('maxStamina'),
-      getTop('maxHearts'),
-      getTop('spiritOrbs')
+      getTop('maxHearts')
     ]);
+
+    // Get top characters by spirit orbs (from inventory)
+    const allCharacters = await Character.find({}, { name: 1 }).lean();
+    const characterNames = allCharacters.map(c => c.name);
+    const spiritOrbCounts = await countSpiritOrbsBatch(characterNames);
+    
+    // Sort characters by spirit orb count and get top 5
+    const charactersWithOrbs = Object.entries(spiritOrbCounts)
+      .filter(([_, count]) => count > 0)
+      .sort(([_, a], [__, b]) => b - a)
+      .slice(0, 5);
+    
+    const mostOrbs = charactersWithOrbs.length > 0 ? {
+      names: charactersWithOrbs.map(([name, _]) => name),
+      values: charactersWithOrbs.map(([_, count]) => count),
+      value: charactersWithOrbs[0][1]
+    } : { names: [], values: [], value: 0 };
 
     // Get special character counts
     const [kodCount, blightedCount, debuffedCount] = await Promise.all([
@@ -922,7 +939,7 @@ app.get('/api/models/:modelType', async (req, res) => {
     }
 
     // For filtered item requests or all=true requests, return all items
-    console.log(`[server.js]: DEBUG - Model: ${modelType}, allItems: ${allItems}, isFilteredRequest: ${isFilteredRequest}`);
+
     if (isFilteredRequest || allItems) {
 
       
@@ -961,32 +978,26 @@ app.get('/api/models/:modelType', async (req, res) => {
         .sort(modelType === 'item' ? { itemName: 1 } : {})
         .lean();
       
-      console.log(`[server.js]: DEBUG - Returning all items for ${modelType}, count: ${allItemsData.length}`);
+
       
       // For characters, we need to populate user information even for all=true requests
       let finalData = allItemsData;
       if (modelType === 'character') {
-        console.log(`[server.js]: DEBUG - 🚀 CHARACTER PROCESSING STARTED (all=true)`);
-        console.log(`[server.js]: DEBUG - Processing ${allItemsData.length} characters for user population`);
-        
-        // Get unique user IDs from characters
-        const userIds = [...new Set(allItemsData.map(char => char.userId))];
-        console.log(`[server.js]: DEBUG - Found ${userIds.length} unique userIds:`, userIds);
-        
-        // Fetch user information for all unique user IDs
-        const users = await User.find({ discordId: { $in: userIds } }, { 
-          discordId: 1, 
-          username: 1, 
-          discriminator: 1 
-        }).lean();
-        
-        console.log(`[server.js]: DEBUG - Found ${users.length} users in database`);
-        
-        // Create a map for quick lookup
-        const userMap = {};
-        users.forEach(user => {
-          userMap[user.discordId] = user;
-        });
+              // Get unique user IDs from characters
+      const userIds = [...new Set(allItemsData.map(char => char.userId))];
+      
+      // Fetch user information for all unique user IDs
+      const users = await User.find({ discordId: { $in: userIds } }, { 
+        discordId: 1, 
+        username: 1, 
+        discriminator: 1 
+      }).lean();
+      
+      // Create a map for quick lookup
+      const userMap = {};
+      users.forEach(user => {
+        userMap[user.discordId] = user;
+      });
         
         // Transform character data
         finalData = allItemsData.map(character => {
@@ -1004,24 +1015,30 @@ app.get('/api/models/:modelType', async (req, res) => {
               discriminator: user.discriminator,
               displayName: user.username || 'Unknown User'
             };
-            console.log(`[server.js]: DEBUG - ✅ Added owner for character ${character.name}: ${character.owner.displayName}`);
           } else {
             character.owner = {
               username: 'Unknown',
               discriminator: null,
               displayName: 'Unknown User'
             };
-            console.log(`[server.js]: DEBUG - ❌ No user found for character ${character.name}, userId: ${character.userId}`);
           }
+          
+          // Count spirit orbs from inventory (replace character model field)
+          character.spiritOrbs = 0; // Will be updated with actual count from inventory
+          
           return character;
         });
         
-        console.log(`[server.js]: DEBUG - 📤 Sample final data being sent (all=true):`, finalData.slice(0, 1).map(char => ({
-          name: char.name,
-          userId: char.userId,
-          hasOwner: !!char.owner,
-          owner: char.owner
-        })));
+        // Get spirit orb counts for all characters
+        const characterNames = finalData.map(char => char.name);
+        const spiritOrbCounts = await countSpiritOrbsBatch(characterNames);
+        
+        // Update spirit orb counts
+        finalData.forEach(character => {
+          character.spiritOrbs = spiritOrbCounts[character.name] || 0;
+        });
+        
+
       }
       
       res.json({
@@ -1040,7 +1057,7 @@ app.get('/api/models/:modelType', async (req, res) => {
     const total = await Model.countDocuments(query);
     const pages = Math.ceil(total / limit);
 
-    console.log(`[server.js]: DEBUG - Using pagination for ${modelType}, total: ${total}, page: ${page}, limit: ${limit}`);
+
 
     // Fetch paginated data
     const data = await Model.find(query)
@@ -1053,19 +1070,8 @@ app.get('/api/models/:modelType', async (req, res) => {
 
     // Transform icon URLs for characters and populate user information
     if (modelType === 'character') {
-      console.log(`[server.js]: DEBUG - 🚀 CHARACTER PROCESSING STARTED`);
-      console.log(`[server.js]: DEBUG - Processing ${data.length} characters for user population`);
-      
       // Get unique user IDs from characters
       const userIds = [...new Set(data.map(char => char.userId))];
-      console.log(`[server.js]: DEBUG - Found ${userIds.length} unique userIds:`, userIds);
-      
-      // Log some sample characters to see their userId values
-      console.log(`[server.js]: DEBUG - Sample characters:`, data.slice(0, 3).map(char => ({
-        name: char.name,
-        userId: char.userId,
-        hasUserId: !!char.userId
-      })));
       
       // Fetch user information for all unique user IDs
       const users = await User.find({ discordId: { $in: userIds } }, { 
@@ -1074,34 +1080,11 @@ app.get('/api/models/:modelType', async (req, res) => {
         discriminator: 1 
       }).lean();
       
-      console.log(`[server.js]: DEBUG - Found ${users.length} users in database`);
-      console.log(`[server.js]: DEBUG - Users found:`, users.map(u => ({
-        discordId: u.discordId,
-        username: u.username,
-        discriminator: u.discriminator
-      })));
-      
-      // Test direct lookup for one of the userIds
-      if (userIds.length > 0) {
-        const testUserId = userIds[0];
-        const testUser = await User.findOne({ discordId: testUserId });
-        console.log(`[server.js]: DEBUG - Test lookup for userId ${testUserId}:`, testUser ? 'Found' : 'Not found');
-        if (testUser) {
-          console.log(`[server.js]: DEBUG - Test user data:`, {
-            discordId: testUser.discordId,
-            username: testUser.username,
-            discriminator: testUser.discriminator
-          });
-        }
-      }
-      
       // Create a map for quick lookup
       const userMap = {};
       users.forEach(user => {
         userMap[user.discordId] = user;
       });
-      
-      console.log(`[server.js]: DEBUG - User map keys:`, Object.keys(userMap));
       
       // Transform character data
       data.forEach(character => {
@@ -1119,25 +1102,28 @@ app.get('/api/models/:modelType', async (req, res) => {
             discriminator: user.discriminator,
             displayName: user.username || 'Unknown User'
           };
-          console.log(`[server.js]: DEBUG - ✅ Added owner for character ${character.name}: ${character.owner.displayName}`);
         } else {
           character.owner = {
             username: 'Unknown',
             discriminator: null,
             displayName: 'Unknown User'
           };
-          console.log(`[server.js]: DEBUG - ❌ No user found for character ${character.name}, userId: ${character.userId}`);
-          console.log(`[server.js]: DEBUG - ❌ Available user IDs in map:`, Object.keys(userMap));
         }
+        
+        // Count spirit orbs from inventory (replace character model field)
+        character.spiritOrbs = 0; // Will be updated with actual count from inventory
       });
       
-      // Log sample of final data being sent
-      console.log(`[server.js]: DEBUG - 📤 Sample final data being sent:`, data.slice(0, 1).map(char => ({
-        name: char.name,
-        userId: char.userId,
-        hasOwner: !!char.owner,
-        owner: char.owner
-      })));
+      // Get spirit orb counts for all characters
+      const characterNames = data.map(char => char.name);
+      const spiritOrbCounts = await countSpiritOrbsBatch(characterNames);
+      
+      // Update spirit orb counts
+      data.forEach(character => {
+        character.spiritOrbs = spiritOrbCounts[character.name] || 0;
+      });
+      
+
     }
 
     
@@ -1205,12 +1191,24 @@ app.get('/api/user/characters', requireAuth, async (req, res) => {
     
     const characters = await Character.find({ userId }).lean();
     
-    // Transform icon URLs for characters (same as in the main character endpoint)
+    // Transform icon URLs for characters and count spirit orbs from inventory
     characters.forEach(character => {
       if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
         const filename = character.icon.split('/').pop();
         character.icon = filename;
       }
+      
+      // Count spirit orbs from inventory (replace character model field)
+      character.spiritOrbs = 0; // Will be updated with actual count from inventory
+    });
+    
+    // Get spirit orb counts for all characters
+    const characterNames = characters.map(char => char.name);
+    const spiritOrbCounts = await countSpiritOrbsBatch(characterNames);
+    
+    // Update spirit orb counts
+    characters.forEach(character => {
+      character.spiritOrbs = spiritOrbCounts[character.name] || 0;
     });
     
     
@@ -1772,11 +1770,11 @@ app.get('/api/images/*', async (req, res) => {
     // Get the full path after /api/images/
     const fullPath = req.params[0];
     const url = `https://storage.googleapis.com/tinglebot/${fullPath}`;
-    console.log(`[server.js]: DEBUG - Image proxy request: ${fullPath} -> ${url}`);
+
     
     const response = await fetch(url);
     if (!response.ok) {
-      console.log(`[server.js]: DEBUG - Image not found at: ${url}`);
+
       throw new Error('Image not found');
     }
     
@@ -1788,7 +1786,7 @@ app.get('/api/images/*', async (req, res) => {
     
     response.body.pipe(res);
   } catch (error) {
-    console.log(`[server.js]: DEBUG - Image proxy error: ${error.message}`);
+
     res.status(404).send('Image not found');
   }
 });
@@ -2198,3 +2196,39 @@ process.on('SIGTERM', gracefulShutdown);
 
 // Start the server
 startServer();
+
+// ------------------- Function: countSpiritOrbs -------------------
+// Counts spirit orbs from a character's inventory
+async function countSpiritOrbs(characterName) {
+  try {
+    const col = await getCharacterInventoryCollection(characterName);
+    const spiritOrbItem = await col.findOne({ 
+      itemName: { $regex: /^spirit\s*orb$/i } 
+    });
+    return spiritOrbItem ? spiritOrbItem.quantity || 0 : 0;
+  } catch (error) {
+    console.warn(`[server.js]: ⚠️ Error counting spirit orbs for ${characterName}:`, error.message);
+    return 0;
+  }
+}
+
+// ------------------- Function: countSpiritOrbsBatch -------------------
+// Counts spirit orbs for multiple characters efficiently
+async function countSpiritOrbsBatch(characterNames) {
+  const spiritOrbCounts = {};
+  
+  for (const characterName of characterNames) {
+    try {
+      const col = await getCharacterInventoryCollection(characterName);
+      const spiritOrbItem = await col.findOne({ 
+        itemName: { $regex: /^spirit\s*orb$/i } 
+      });
+      spiritOrbCounts[characterName] = spiritOrbItem ? spiritOrbItem.quantity || 0 : 0;
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error counting spirit orbs for ${characterName}:`, error.message);
+      spiritOrbCounts[characterName] = 0;
+    }
+  }
+  
+  return spiritOrbCounts;
+}

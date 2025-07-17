@@ -23,6 +23,15 @@ let jobChart = null;
 // ------------------- Chart Creation Functions -------------------
 // ============================================================================
 
+// Helper: Format debuff end date as next midnight
+function formatDebuffEndMidnight(dateStr) {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() + 1);
+    date.setHours(0, 0, 0, 0);
+    return date.toLocaleString();
+}
+
 // ------------------- Function: createBarChart -------------------
 // Creates a bar chart with modern styling and rounded bars
 function createBarChart(ctx, data, options = {}) {
@@ -332,7 +341,7 @@ async function initStatsPage() {
                                 ? data.debuffedCharacters.map(char => `
                                     <tr>
                                         <td>${char.name}</td>
-                                        <td>${char.debuff && char.debuff.endDate ? new Date(char.debuff.endDate).toLocaleString() : '—'}</td>
+                                        <td>${char.debuff && char.debuff.endDate ? formatDebuffEndMidnight(char.debuff.endDate) : '—'}</td>
                                     </tr>
                                 `).join('')
                                 : '<tr><td colspan="2">None</td></tr>'
