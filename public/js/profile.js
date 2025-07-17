@@ -84,7 +84,17 @@ function updateProfileDisplay(userData) {
   }
   
   // Update avatar
-  const avatarUrl = userData.avatarUrl || '/images/ankleicon.png';
+  let avatarUrl = '/images/ankleicon.png';
+  
+  if (userData.avatar) {
+    // If avatar is a Discord avatar hash, construct the Discord CDN URL
+    if (userData.avatar && !userData.avatar.startsWith('http')) {
+      avatarUrl = `https://cdn.discordapp.com/avatars/${userData.discordId}/${userData.avatar}.png`;
+    } else if (userData.avatar) {
+      avatarUrl = userData.avatar;
+    }
+  }
+  
   profileAvatar.src = avatarUrl;
   
   // Update user info
