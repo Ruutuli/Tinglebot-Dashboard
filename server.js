@@ -284,7 +284,15 @@ app.get('/dashboard', (req, res) => {
 
 // ------------------- Function: initiateDiscordAuth -------------------
 // Initiates Discord OAuth flow
-app.get('/auth/discord', passport.authenticate('discord'));
+app.get('/auth/discord', (req, res, next) => {
+  console.log('[server.js]: 🔐 Discord authentication initiated');
+  console.log('[server.js]: 📊 Request details:', {
+    userAgent: req.headers['user-agent'],
+    referer: req.headers.referer,
+    origin: req.headers.origin
+  });
+  passport.authenticate('discord')(req, res, next);
+});
 
 // ------------------- Function: handleDiscordCallback -------------------
 // Handles Discord OAuth callback
@@ -294,8 +302,14 @@ app.get('/auth/discord/callback',
     failureFlash: true 
   }), 
   (req, res) => {
-    // Successful authentication
+    console.log('[server.js]: ✅ Discord authentication successful');
+    console.log('[server.js]: 👤 Authenticated user:', {
+      username: req.user?.username,
+      discordId: req.user?.discordId,
+      id: req.user?._id
+    });
     
+    // Successful authentication
     res.redirect('/?login=success');
   }
 );
@@ -303,10 +317,19 @@ app.get('/auth/discord/callback',
 // ------------------- Function: logout -------------------
 // Handles user logout
 app.get('/auth/logout', (req, res) => {
+  console.log('[server.js]: 🚪 Logout requested');
+  console.log('[server.js]: 👤 User before logout:', {
+    username: req.user?.username,
+    discordId: req.user?.discordId,
+    sessionId: req.session?.id
+  });
+  
   req.logout((err) => {
     if (err) {
+      console.log('[server.js]: ❌ Logout error:', err);
       return res.redirect('/login');
     }
+    console.log('[server.js]: ✅ Logout successful');
     res.redirect('/login');
   });
 });
@@ -376,12 +399,26 @@ app.get('/api/health', (req, res) => {
 
 // ------------------- User Authentication Status -------------------
 app.get('/api/user', (req, res) => {
+  console.log('[server.js]: 🔍 /api/user endpoint called');
+  console.log('[server.js]: 📊 Authentication status:', {
+    isAuthenticated: req.isAuthenticated(),
+    hasUser: !!req.user,
+    hasSession: !!req.session,
+    sessionId: req.session?.id,
+    userAgent: req.headers['user-agent']
+  });
+  
   const authInfo = {
     isAuthenticated: req.isAuthenticated(),
     user: req.user ? {
       username: req.user.username,
       discordId: req.user.discordId,
-      id: req.user._id
+      id: req.user._id,
+      email: req.user.email,
+      avatar: req.user.avatar,
+      discriminator: req.user.discriminator,
+      tokens: req.user.tokens,
+      characterSlot: req.user.characterSlot
     } : null,
     session: req.session ? {
       id: req.session.id,
@@ -389,6 +426,7 @@ app.get('/api/user', (req, res) => {
     } : null
   };
   
+  console.log('[server.js]: 📤 Sending auth info:', authInfo);
   res.json(authInfo);
 });
 
