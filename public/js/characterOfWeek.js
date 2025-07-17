@@ -74,6 +74,32 @@ function displayCharacterOfWeek(container, data) {
     timeRemainingText = 'Expired';
   }
   
+  // Get rotation information if available
+  let rotationInfoHtml = '';
+  if (data.rotationInfo) {
+    const { daysUntilRotation, hoursUntilRotation, isSunday } = data.rotationInfo;
+    let rotationText = '';
+    
+    if (isSunday) {
+      rotationText = 'Next rotation: Today (Sunday)';
+    } else if (daysUntilRotation > 0) {
+      rotationText = `Next rotation: ${daysUntilRotation} day${daysUntilRotation > 1 ? 's' : ''} (Sunday)`;
+    } else {
+      rotationText = `Next rotation: ${hoursUntilRotation} hour${hoursUntilRotation > 1 ? 's' : ''} (Sunday)`;
+    }
+    
+    rotationInfoHtml = `
+      <div class="character-of-week-rotation-info">
+        <i class="fas fa-calendar-alt"></i>
+        <span>${rotationText}</span>
+        <div class="rotation-schedule-note">
+          <i class="fas fa-info-circle"></i>
+          <span>Resets every Sunday at midnight</span>
+        </div>
+      </div>
+    `;
+  }
+  
   // Determine character status
   let statusClass = '';
   let statusText = '';
@@ -112,6 +138,8 @@ function displayCharacterOfWeek(container, data) {
           ${character.currentVillage ? capitalize(character.currentVillage) : (character.homeVillage ? capitalize(character.homeVillage) : 'Unknown Village')}
         </div>
       </div>
+      
+      ${rotationInfoHtml}
       
       <div class="character-of-week-links">
         <a href="${character.appLink || '#'}" class="character-of-week-link" target="_blank" rel="noopener noreferrer">
