@@ -238,12 +238,9 @@
 .calendar-stat-item.bloodmoon {
   background: rgba(80, 120, 255, 0.08);
   color: var(--text-primary);
-}
-
-.calendar-stat-item.blighted,
-.calendar-stat-item.bloodmoon  {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
+
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
@@ -810,8 +807,8 @@
 
 .calendar-loading p {
   font-size: 1rem;
-  color: var(--text-secondary);
 }
+
 
 /* === Error State === */
 .calendar-error {

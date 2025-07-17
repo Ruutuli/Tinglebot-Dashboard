@@ -922,6 +922,7 @@ app.get('/api/models/:modelType', async (req, res) => {
     }
 
     // For filtered item requests or all=true requests, return all items
+    console.log(`[server.js]: DEBUG - Model: ${modelType}, allItems: ${allItems}, isFilteredRequest: ${isFilteredRequest}`);
     if (isFilteredRequest || allItems) {
 
       
@@ -957,17 +958,79 @@ app.get('/api/models/:modelType', async (req, res) => {
       }
       
       const allItemsData = await Model.find(query)
-        .sort({ itemName: 1 })
+        .sort(modelType === 'item' ? { itemName: 1 } : {})
         .lean();
       
+      console.log(`[server.js]: DEBUG - Returning all items for ${modelType}, count: ${allItemsData.length}`);
+      
+      // For characters, we need to populate user information even for all=true requests
+      let finalData = allItemsData;
+      if (modelType === 'character') {
+        console.log(`[server.js]: DEBUG - 🚀 CHARACTER PROCESSING STARTED (all=true)`);
+        console.log(`[server.js]: DEBUG - Processing ${allItemsData.length} characters for user population`);
+        
+        // Get unique user IDs from characters
+        const userIds = [...new Set(allItemsData.map(char => char.userId))];
+        console.log(`[server.js]: DEBUG - Found ${userIds.length} unique userIds:`, userIds);
+        
+        // Fetch user information for all unique user IDs
+        const users = await User.find({ discordId: { $in: userIds } }, { 
+          discordId: 1, 
+          username: 1, 
+          discriminator: 1 
+        }).lean();
+        
+        console.log(`[server.js]: DEBUG - Found ${users.length} users in database`);
+        
+        // Create a map for quick lookup
+        const userMap = {};
+        users.forEach(user => {
+          userMap[user.discordId] = user;
+        });
+        
+        // Transform character data
+        finalData = allItemsData.map(character => {
+          // Transform icon URL
+          if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
+            const filename = character.icon.split('/').pop();
+            character.icon = filename;
+          }
+          
+          // Add user information
+          const user = userMap[character.userId];
+          if (user) {
+            character.owner = {
+              username: user.username,
+              discriminator: user.discriminator,
+              displayName: user.username || 'Unknown User'
+            };
+            console.log(`[server.js]: DEBUG - ✅ Added owner for character ${character.name}: ${character.owner.displayName}`);
+          } else {
+            character.owner = {
+              username: 'Unknown',
+              discriminator: null,
+              displayName: 'Unknown User'
+            };
+            console.log(`[server.js]: DEBUG - ❌ No user found for character ${character.name}, userId: ${character.userId}`);
+          }
+          return character;
+        });
+        
+        console.log(`[server.js]: DEBUG - 📤 Sample final data being sent (all=true):`, finalData.slice(0, 1).map(char => ({
+          name: char.name,
+          userId: char.userId,
+          hasOwner: !!char.owner,
+          owner: char.owner
+        })));
+      }
       
       res.json({
-        data: allItemsData,
+        data: finalData,
         pagination: {
           page: 1,
           pages: 1,
-          total: allItemsData.length,
-          limit: allItemsData.length
+          total: finalData.length,
+          limit: finalData.length
         }
       });
       return;
@@ -977,6 +1040,8 @@ app.get('/api/models/:modelType', async (req, res) => {
     const total = await Model.countDocuments(query);
     const pages = Math.ceil(total / limit);
 
+    console.log(`[server.js]: DEBUG - Using pagination for ${modelType}, total: ${total}, page: ${page}, limit: ${limit}`);
+
     // Fetch paginated data
     const data = await Model.find(query)
       .sort(modelType === 'item' ? { itemName: 1 } : {})
@@ -984,16 +1049,93 @@ app.get('/api/models/:modelType', async (req, res) => {
       .limit(limit)
       .lean();
 
-    // Transform icon URLs for characters
+    // Transform icon URLs for characters and populate user information
     if (modelType === 'character') {
+      console.log(`[server.js]: DEBUG - 🚀 CHARACTER PROCESSING STARTED`);
+      console.log(`[server.js]: DEBUG - Processing ${data.length} characters for user population`);
+      
+      // Get unique user IDs from characters
+      const userIds = [...new Set(data.map(char => char.userId))];
+      console.log(`[server.js]: DEBUG - Found ${userIds.length} unique userIds:`, userIds);
+      
+      // Log some sample characters to see their userId values
+      console.log(`[server.js]: DEBUG - Sample characters:`, data.slice(0, 3).map(char => ({
+        name: char.name,
+        userId: char.userId,
+        hasUserId: !!char.userId
+      })));
+      
+      // Fetch user information for all unique user IDs
+      const users = await User.find({ discordId: { $in: userIds } }, { 
+        discordId: 1, 
+        username: 1, 
+        discriminator: 1 
+      }).lean();
+      
+      console.log(`[server.js]: DEBUG - Found ${users.length} users in database`);
+      console.log(`[server.js]: DEBUG - Users found:`, users.map(u => ({
+        discordId: u.discordId,
+        username: u.username,
+        discriminator: u.discriminator
+      })));
+      
+      // Test direct lookup for one of the userIds
+      if (userIds.length > 0) {
+        const testUserId = userIds[0];
+        const testUser = await User.findOne({ discordId: testUserId });
+        console.log(`[server.js]: DEBUG - Test lookup for userId ${testUserId}:`, testUser ? 'Found' : 'Not found');
+        if (testUser) {
+          console.log(`[server.js]: DEBUG - Test user data:`, {
+            discordId: testUser.discordId,
+            username: testUser.username,
+            discriminator: testUser.discriminator
+          });
+        }
+      }
+      
+      // Create a map for quick lookup
+      const userMap = {};
+      users.forEach(user => {
+        userMap[user.discordId] = user;
+      });
+      
+      console.log(`[server.js]: DEBUG - User map keys:`, Object.keys(userMap));
+      
+      // Transform character data
       data.forEach(character => {
+        // Transform icon URL
         if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-          // Extract the filename from the Google Cloud Storage URL
           const filename = character.icon.split('/').pop();
-          // Replace with our proxy URL
           character.icon = filename;
         }
+        
+        // Add user information
+        const user = userMap[character.userId];
+        if (user) {
+          character.owner = {
+            username: user.username,
+            discriminator: user.discriminator,
+            displayName: user.username || 'Unknown User'
+          };
+          console.log(`[server.js]: DEBUG - ✅ Added owner for character ${character.name}: ${character.owner.displayName}`);
+        } else {
+          character.owner = {
+            username: 'Unknown',
+            discriminator: null,
+            displayName: 'Unknown User'
+          };
+          console.log(`[server.js]: DEBUG - ❌ No user found for character ${character.name}, userId: ${character.userId}`);
+          console.log(`[server.js]: DEBUG - ❌ Available user IDs in map:`, Object.keys(userMap));
+        }
       });
+      
+      // Log sample of final data being sent
+      console.log(`[server.js]: DEBUG - 📤 Sample final data being sent:`, data.slice(0, 1).map(char => ({
+        name: char.name,
+        userId: char.userId,
+        hasOwner: !!char.owner,
+        owner: char.owner
+      })));
     }
 
     

@@ -129,24 +129,7 @@ const villageCrests = {
   'Vhintl': '/images/icons/[RotW] village crest_vhintl_.png'
 };
 
-// Village colors for styling
-const villageColors = {
-  'Rudania': {
-    primary: '#FF6B6B',
-    secondary: '#FF8E8E',
-    background: 'rgba(255, 107, 107, 0.1)'
-  },
-  'Inariko': {
-    primary: '#4ECDC4',
-    secondary: '#6EDDD6',
-    background: 'rgba(78, 205, 196, 0.1)'
-  },
-  'Vhintl': {
-    primary: '#45B7D1',
-    secondary: '#67C7DD',
-    background: 'rgba(69, 183, 209, 0.1)'
-  }
-};
+
 
 // ============================================================================
 // Weather Data Functions
@@ -273,7 +256,7 @@ function createWeatherCard(village, weatherData) {
   
   if (!weatherData) {
     return `
-      <div class="weather-card weather-card-${village.toLowerCase()}" style="--village-color: ${villageColors[village]?.primary || '#666'}">
+      <div class="weather-card weather-card-${village.toLowerCase()}">
         <div class="weather-card-header new-header-layout weather-header-has-bg">
           ${bannerImg ? `<img src="${bannerImg}" class="weather-header-banner" alt="${village} banner" />` : ''}
           ${overlayImg ? `<img src="${overlayImg}" class="weather-header-overlay" alt="Weather overlay" />` : ''}
@@ -307,7 +290,7 @@ function createWeatherCard(village, weatherData) {
     : getWeatherOverlay(precipitation?.label, 'precipitation') || getWeatherOverlay(temperature?.label, 'temperature');
 
   return `
-    <div class="weather-card weather-card-${village.toLowerCase()}" style="--village-color: ${villageColors[village]?.primary || '#666'}">
+    <div class="weather-card weather-card-${village.toLowerCase()}">
       ${cardOverlay ? `<img src="${cardOverlay}" alt="Weather overlay" class="weather-card-overlay" />` : ''}
       <div class="weather-card-header new-header-layout weather-header-has-bg">
         ${bannerImg ? `<img src="${bannerImg}" class="weather-header-banner" alt="${village} banner" />` : ''}

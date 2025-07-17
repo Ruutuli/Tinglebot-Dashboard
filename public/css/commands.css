@@ -220,41 +220,7 @@
   transition: color 0.2s ease !important;
 }
 
-/* --------------------------------------------------------------------------
-   Results Info Banner
---------------------------------------------------------------------------- */
-.commands-results-info {
-  margin: 1.5rem 0;
-  padding: 1rem 1.5rem;
 
-  background: linear-gradient(135deg, rgba(0, 163, 218, 0.1), rgba(0, 242, 254, 0.1));
-  border: 1px solid rgba(0, 163, 218, 0.2);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 15px rgba(0, 163, 218, 0.1);
-  animation: slideInDown 0.3s ease-out;
-}
-
-.commands-results-info p {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  line-height: 1.5;
-}
-
-.commands-results-info i {
-  font-size: 1.1rem;
-  color: var(--accent);
-  background: rgba(0, 163, 218, 0.15);
-  padding: 0.5rem;
-  border-radius: 8px;
-  backdrop-filter: blur(5px);
-}
 
 /* ==========================================================================
    CATEGORY SECTION - Base Styling

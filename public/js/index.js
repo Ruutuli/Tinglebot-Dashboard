@@ -369,9 +369,23 @@ function setupModelCards() {
 // ------------------- Function: loadModelData -------------------
 // Fetches paginated model data by type
 async function loadModelData(modelName, page = 1) {
-  const response = await fetch(`/api/models/${modelName}?page=${page}`);
+  // For characters, always load all characters to enable proper filtering and search
+  const url = modelName === 'character' 
+    ? `/api/models/${modelName}?all=true`
+    : `/api/models/${modelName}?page=${page}`;
+  
+  const response = await fetch(url);
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-  return response.json();
+  const result = await response.json();
+  
+  console.log('🔍 DEBUG - loadModelData:', {
+    modelName,
+    url,
+    dataLength: result.data?.length,
+    pagination: result.pagination
+  });
+  
+  return result;
 }
 
 // ------------------- Function: handleModelDataError -------------------

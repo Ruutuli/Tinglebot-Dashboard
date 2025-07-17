@@ -302,10 +302,11 @@ select:focus {
 #search-input::placeholder {
   color: var(--text-secondary);
 }
+/* =============================================================================
+   Component: Results Info Blocks & Banners
+============================================================================= */
 
-/* ============================================================================
-   Results Info Blocks
-============================================================================ */
+/* Shared Styles */
 .village-shop-results-info,
 .commands-results-info,
 .monster-results-info {
@@ -316,6 +317,7 @@ select:focus {
   border-radius: 8px;
 }
 
+/* Shared Enhancements (Glass, Color, Shadow) */
 .village-shop-results-info,
 .commands-results-info {
   background: var(--glass-bg);
@@ -323,11 +325,57 @@ select:focus {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* ---------------------------------------------------------------------------
+   Banner: Commands Results Info
+--------------------------------------------------------------------------- */
+.commands-results-info {
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+
+  background: linear-gradient(135deg, rgba(0, 163, 218, 0.1), rgba(0, 242, 254, 0.1));
+  border: 1px solid rgba(0, 163, 218, 0.2);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 163, 218, 0.1);
+  animation: slideInDown 0.3s ease-out;
+}
+
+/* Banner Text */
+.commands-results-info p {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* Banner Icon */
+.commands-results-info i {
+  font-size: 1.1rem;
+  color: var(--accent);
+  background: rgba(0, 163, 218, 0.15);
+  padding: 0.5rem;
+  border-radius: 8px;
+  backdrop-filter: blur(5px);
+}
+
 .monster-results-info {
-  background: #e74c3c;
-  border: 1px solid #e74c3c;
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.08);
+  margin: 1rem 1.5rem;
+  padding: 1rem 1.5rem;
+  text-align: center;
+
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.monster-results-info p {
+  margin: 0;
 }
 
 /* ============================================================================

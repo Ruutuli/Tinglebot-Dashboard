@@ -136,7 +136,7 @@ function handleMobileOrientationChange() {
       // Re-render character cards with new layout
       if (window.allCharacters) {
         const currentPage = 1; // Reset to first page on orientation change
-        renderCharacterCards(window.allCharacters, currentPage, true);
+        renderCharacterCards(window.allCharacters, currentPage, true, false);
       }
     }, 300);
   };
@@ -224,7 +224,7 @@ function closeModal(modal) {
 
 // ------------------- Function: renderCharacterCards -------------------
 // Renders all character cards with pagination and stat sections
-function renderCharacterCards(characters, page = 1, enableModals = true) {
+function renderCharacterCards(characters, page = 1, enableModals = true, isFromFiltering = false) {
 
 
     // Apply mobile optimizations
@@ -262,17 +262,31 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
     const endIndex = Math.min(startIndex + charactersPerPage, characters.length);
   
     // ------------------- Render Character Cards -------------------
+    console.log(`[characters.js]: DEBUG - 🎯 RENDERING CHARACTERS`);
+    console.log(`[characters.js]: DEBUG - Rendering ${characters.length} characters`);
+    console.log(`[characters.js]: DEBUG - Page: ${page}, isFromFiltering: ${isFromFiltering}`);
+    console.log(`[characters.js]: DEBUG - Sample character data:`, characters.slice(0, 2).map(char => ({
+      name: char.name,
+      userId: char.userId,
+      owner: char.owner,
+      hasOwner: !!char.owner,
+      ownerKeys: char.owner ? Object.keys(char.owner) : null
+    })));
+    
+    // Log the raw API response
+    console.log(`[characters.js]: DEBUG - Raw API response sample:`, JSON.stringify(characters.slice(0, 1), null, 2));
+    
     grid.innerHTML = characters.map(character => {
       let statusClass = '';
       let statusText = '';
       let cardStatusClass = '';
   
       if (character.blighted) {
-        statusClass = 'status-blighted';
+        statusClass = 'status-blighted fas fa-skull-crossbones';
         statusText = 'Blighted';
         cardStatusClass = 'blighted';
       } else if (character.ko) {
-        statusClass = 'status-ko';
+        statusClass = 'status-ko fas fa-skull';
         statusText = 'KO\'d';
         cardStatusClass = 'ko';
       }
@@ -307,17 +321,30 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
             </div>
   
             <div class="character-title">
-              <h3 class="character-name">${character.name}</h3>
+              <div class="character-name-row">
+                <h3 class="character-name">${character.name}</h3>
+                              ${statusText ? `
+              <div class="character-status">
+                <i class="character-status-icon ${statusClass}"></i>
+                <span class="character-status-text">${statusText}</span>
+              </div>` : ''}
+              </div>
               <div class="character-race-job-row">
                 ${character.race ? capitalize(character.race) : ''}
                 ${character.race && character.job ? ' &bull; ' : ''}
                 ${character.job ? capitalize(character.job) : ''}
               </div>
-  
-              ${statusText ? `
-              <div class="character-status">
-                <span class="character-status-icon ${statusClass}"></span>
-                <span class="character-status-text">${statusText}</span>
+              
+              ${character.owner ? `
+              <div class="character-owner">
+                <i class="fab fa-discord"></i>
+                <span class="character-owner-name">@${character.owner.displayName}</span>
+              </div>` : ''}
+              
+              ${!character.owner ? `
+              <div class="character-owner">
+                <i class="fab fa-discord"></i>
+                <span class="character-owner-name">@No Owner Data</span>
               </div>` : ''}
   
               <div class="character-links">
@@ -408,12 +435,13 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
     // Setup mobile event handlers after rendering
     setupMobileEventHandlers();
 
-    // Update results info
+    // Update results info - only if we're not in a filtered state and not called from filtering
     const resultsInfo = document.querySelector('.character-results-info p');
-    if (resultsInfo) {
+    if (resultsInfo && !window.filteredCharacters && !isFromFiltering) {
       const totalPages = Math.ceil(characters.length / charactersPerPage);
       resultsInfo.textContent = `Showing ${startIndex + 1}-${endIndex} of ${characters.length} characters (Page ${page} of ${totalPages})`;
     }
+    // If we're in a filtered state or called from filtering, let the filtering functions handle the results info
   }
   
   // ============================================================================
@@ -710,6 +738,8 @@ async function populateFilterOptions(characters) {
       const sortBy = sortSelect.value;
       const charactersPerPage = charactersPerPageSelect.value;
 
+
+
       
       // Save current filter state
       window.savedFilterState = {
@@ -727,14 +757,18 @@ async function populateFilterOptions(characters) {
         raceFilter !== 'all' || 
         villageFilter !== 'all';
 
-      
-      // Always use server-side filtering when filters are active OR when characters per page is not 'all'
-      // This ensures we have all the data needed for proper pagination
-      if (hasActiveFilters || charactersPerPage !== 'all') {
-        // When filters are active or pagination is needed, always fetch all characters and filter client-side
-        await filterCharactersWithAllData(page);
-      } else {
+      // If we already have filtered results and we're just changing pages, use client-side filtering
+      if (window.filteredCharacters && page > 1) {
         filterCharactersClientSide(page);
+      } else {
+        // Always use server-side filtering when filters are active OR when characters per page is not 'all'
+        // This ensures we have all the data needed for proper pagination
+        if (hasActiveFilters || charactersPerPage !== 'all') {
+          // When filters are active or pagination is needed, always fetch all characters and filter client-side
+          await filterCharactersWithAllData(page);
+        } else {
+          filterCharactersClientSide(page);
+        }
       }
     };
 
@@ -763,6 +797,9 @@ async function populateFilterOptions(characters) {
         // Apply filtering and sorting to ALL characters
         const filteredAndSorted = applyFiltersAndSort(allCharacters);
 
+        // Store the filtered results for pagination
+        window.filteredCharacters = filteredAndSorted;
+
         // Apply pagination
         const totalPages = Math.ceil(filteredAndSorted.length / charactersPerPage);
         const startIndex = (page - 1) * charactersPerPage;    
@@ -779,12 +816,15 @@ async function populateFilterOptions(characters) {
           if (charactersPerPageSelect.value === 'all') {
             resultsInfo.textContent = `Showing all ${filteredAndSorted.length} filtered characters`;
           } else {
-            resultsInfo.textContent = `Showing ${paginatedCharacters.length} of ${filteredAndSorted.length} filtered characters (Page ${page} of ${totalPages})`;
+            const startIndex = (page - 1) * charactersPerPage + 1;
+            const endIndex = Math.min(startIndex + paginatedCharacters.length - 1, filteredAndSorted.length);
+
+            resultsInfo.textContent = `Showing ${startIndex}-${endIndex} of ${filteredAndSorted.length} characters (Page ${page} of ${totalPages})`;
           }
         }
 
         // Render the paginated filtered characters
-        renderCharacterCards(paginatedCharacters, page, false);
+        renderCharacterCards(paginatedCharacters, page, false, true);
 
         // Update pagination
         if (charactersPerPageSelect.value !== 'all' && filteredAndSorted.length > charactersPerPage) {
@@ -814,7 +854,10 @@ async function populateFilterOptions(characters) {
       const sortBy = sortSelect.value;
       const charactersPerPage = charactersPerPageSelect.value === 'all' ? window.allCharacters.length : parseInt(charactersPerPageSelect.value);
 
-      const filtered = window.allCharacters.filter(c => {
+      // Use stored filtered characters if available (for pagination)
+      const charactersToFilter = window.filteredCharacters || window.allCharacters;
+
+      const filtered = charactersToFilter.filter(c => {
         const matchesSearch = !searchTerm ||
           c.name?.toLowerCase().includes(searchTerm) ||
           c.race?.toLowerCase().includes(searchTerm) ||
@@ -849,11 +892,14 @@ async function populateFilterOptions(characters) {
         if (charactersPerPageSelect.value === 'all') {
           resultsInfo.textContent = `Showing all ${sorted.length} of ${window.allCharacters.length} characters`;
         } else {
-          resultsInfo.textContent = `Showing ${paginatedCharacters.length} of ${sorted.length} characters (Page ${page} of ${totalPages})`;
+          const startIndex = (page - 1) * charactersPerPage + 1;
+          const endIndex = Math.min(startIndex + paginatedCharacters.length - 1, sorted.length);
+
+          resultsInfo.textContent = `Showing ${startIndex}-${endIndex} of ${sorted.length} characters (Page ${page} of ${totalPages})`;
         }
       }
 
-      renderCharacterCards(paginatedCharacters, page, false);
+      renderCharacterCards(paginatedCharacters, page, false, true);
 
       // Update pagination
       if (charactersPerPageSelect.value !== 'all' && sorted.length > charactersPerPage) {
@@ -905,12 +951,11 @@ async function populateFilterOptions(characters) {
     // ------------------- Function: updateFilteredPagination -------------------
     // Updates pagination for filtered results
     function updateFilteredPagination(currentPage, totalPages, totalItems) {
-      const contentDiv = document.getElementById('model-details-data');
-      if (!contentDiv) return;
+      const paginationContainer = document.getElementById('character-pagination');
+      if (!paginationContainer) return;
 
       // Remove any existing pagination
-      const oldPagination = contentDiv.querySelector('.pagination');
-      if (oldPagination) oldPagination.remove();
+      paginationContainer.innerHTML = '';
 
       if (totalPages <= 1) return;
 
@@ -970,18 +1015,17 @@ async function populateFilterOptions(characters) {
         paginationDiv.appendChild(makeButton('>', currentPage + 1));
       }
 
-      contentDiv.appendChild(paginationDiv);
+      paginationContainer.appendChild(paginationDiv);
     }
 
     // ------------------- Function: createNormalPagination -------------------
     // Creates pagination controls (for unfiltered results)
     function createNormalPagination(currentPage, totalPages, handlePageChange) {
-      const contentDiv = document.getElementById('model-details-data');
-      if (!contentDiv) return;
+      const paginationContainer = document.getElementById('character-pagination');
+      if (!paginationContainer) return;
 
       // Remove any existing pagination
-      const oldPagination = contentDiv.querySelector('.pagination');
-      if (oldPagination) oldPagination.remove();
+      paginationContainer.innerHTML = '';
 
       if (totalPages <= 1) return;
 
@@ -1015,7 +1059,7 @@ async function populateFilterOptions(characters) {
         startPage = Math.max(1, endPage - maxVisiblePages + 1);
       }
       if (startPage > 1) {
-        paginationDiv.appendChild(makeButton('1', 1));
+        paginationContainer.appendChild(makeButton('1', 1));
         if (startPage > 2) {
           const ell = document.createElement('span');
           ell.className = 'pagination-ellipsis';
@@ -1041,7 +1085,7 @@ async function populateFilterOptions(characters) {
         paginationDiv.appendChild(makeButton('>', currentPage + 1));
       }
 
-      contentDiv.appendChild(paginationDiv);
+      paginationContainer.appendChild(paginationDiv);
     }
   
     // Add event listeners
@@ -1092,7 +1136,7 @@ async function populateFilterOptions(characters) {
         const paginatedCharacters = sortedCharacters.slice(0, charactersPerPage);
         
         // Render paginated characters
-        renderCharacterCards(paginatedCharacters, 1, false);
+        renderCharacterCards(paginatedCharacters, 1, false, false);
         
         // Update results info
         const resultsInfo = document.querySelector('.character-results-info p');
@@ -1101,7 +1145,9 @@ async function populateFilterOptions(characters) {
             resultsInfo.textContent = `Showing all ${sortedCharacters.length} characters`;
           } else {
             const totalPages = Math.ceil(sortedCharacters.length / charactersPerPage);
-            resultsInfo.textContent = `Showing ${paginatedCharacters.length} of ${sortedCharacters.length} characters (Page 1 of ${totalPages})`;
+            const startIndex = 1;
+            const endIndex = Math.min(charactersPerPage, sortedCharacters.length);
+            resultsInfo.textContent = `Showing ${startIndex}-${endIndex} of ${sortedCharacters.length} characters (Page 1 of ${totalPages})`;
           }
         }
         
@@ -1117,11 +1163,14 @@ async function populateFilterOptions(characters) {
               const endIndex = startIndex + charactersPerPage;
               const pageCharacters = sortedCharacters.slice(startIndex, endIndex);
               
-              renderCharacterCards(pageCharacters, pageNum, false);
+              renderCharacterCards(pageCharacters, pageNum, false, false);
               
               // Update results info
               if (resultsInfo) {
-                resultsInfo.textContent = `Showing ${pageCharacters.length} of ${sortedCharacters.length} characters (Page ${pageNum} of ${totalPages})`;
+                const startIndex = (pageNum - 1) * charactersPerPage + 1;
+                const endIndex = Math.min(startIndex + pageCharacters.length - 1, sortedCharacters.length);
+
+                resultsInfo.textContent = `Showing ${startIndex}-${endIndex} of ${sortedCharacters.length} characters (Page ${pageNum} of ${totalPages})`;
               }
               
               // Update pagination
@@ -1160,6 +1209,8 @@ async function populateFilterOptions(characters) {
 async function initializeCharacterPage(data, page = 1, contentDiv) {
     // Store characters globally for filtering
     window.allCharacters = data;
+    
+
 
     // Apply mobile optimizations early
     const { isMobile, isTouch } = optimizeForMobile();
@@ -1309,13 +1360,11 @@ async function initializeCharacterPage(data, page = 1, contentDiv) {
         await setupCharacterFilters(data);
     } else {
         // If filters are already initialized, just update the character display
-        renderCharacterCards(data, page, false);
+        renderCharacterCards(data, page, false, false);
     }
 
-    // Update results info
-    if (resultsInfo) {
-        resultsInfo.innerHTML = `<p>Showing ${data.length} characters</p>`;
-    }
+    // Don't override results info here - let the filtering functions handle it
+    // The results info will be updated by filterCharacters or renderCharacterCards
 }
   
 // ============================================================================

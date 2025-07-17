@@ -339,9 +339,15 @@
    VILLAGE-THEMED WEATHER COLORS (Card Classes)
    ========================================================================== */
 
+   /* Village color definitions */
    .weather-card-rudania { --village-color: #FF6B6B; }  /* Red */
    .weather-card-inariko { --village-color: #4E89CD; }  /* Blue */
    .weather-card-vhintl  { --village-color: #5AD145; }  /* Green */
+   
+   /* Additional village color variations for different contexts */
+   .weather-card-rudania { --village-primary: #FF6B6B; --village-secondary: #FF8E8E; }
+   .weather-card-inariko { --village-primary: #4E89CD; --village-secondary: #6E9DDD; }
+   .weather-card-vhintl  { --village-primary: #5AD145; --village-secondary: #7AD165; }
    
    
    /* ==========================================================================
