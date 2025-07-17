@@ -306,10 +306,44 @@
   border-radius: 16px;
   width: 90%;
   max-width: 600px;
-  max-height: 80vh;
+  max-height: 60vh; /* Reduced from 80vh to force scrolling */
   overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   animation: modalSlideIn 0.3s ease-out;
+  
+  /* Custom Scrollbar Styling */
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) rgba(255, 255, 255, 0.1);
+}
+
+/* Webkit Scrollbar Styling (Chrome, Safari, Edge) */
+.modal-content::-webkit-scrollbar {
+  width: 12px; /* Increased width for better visibility */
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  margin: 4px 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--accent) 0%, rgba(0, 163, 218, 0.8) 100%);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+  min-height: 40px; /* Ensure minimum height */
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--accent) 0%, rgba(0, 163, 218, 1) 100%);
+  box-shadow: 0 0 12px rgba(0, 163, 218, 0.4);
+  transform: scale(1.05);
+}
+
+.modal-content::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 @keyframes modalSlideIn {

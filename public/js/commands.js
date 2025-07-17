@@ -76,40 +76,99 @@ export function showCommandsSection() {
 
 // ============================================================================
 // ------------------- Commands Loading -------------------
-// Fetches and loads commands data from the server
+// Loads commands data locally (no longer fetches from server)
 // ============================================================================
 async function loadCommands() {
   try {
-    
-    const response = await fetch('/api/commands');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    // Handle the API response structure: { commands: [...] }
-    let commandsArray = [];
-    if (data && data.commands && Array.isArray(data.commands)) {
-      commandsArray = data.commands;
-    } else if (Array.isArray(data)) {
-      commandsArray = data;
-    } else {
-      console.error('❌ API response is not in expected format:', data);
-      allCommands = [];
-      filteredCommands = [];
-      return;
-    }
-    
+    // All command keys from getCommandUsageGuide
+    const allCommandKeys = [
+      'character', 'character create', 'character create inariko', 'character create rudania', 'character create vhintl', 'character create general',
+      'character edit', 'character view', 'character viewlist', 'character delete', 'character changejob', 'character setbirthday',
+      'economy', 'economy gift', 'economy shop-view', 'economy shop-buy', 'economy shop-sell', 'economy trade', 'economy transfer',
+      'inventory', 'inventory view', 'inventory sync', 'inventory test',
+      'gear', 'item', 'spiritorbs', 'spiritorbs check', 'spiritorbs exchange',
+      'gather', 'loot', 'crafting', 'heal', 'heal request', 'heal fulfill',
+      'lookup', 'tokens', 'tokens check', 'tokens setup', 'roll', 'cancelvoucher',
+      'travel', 'quest', 'quest join', 'quest leave', 'quest create', 'quest edit', 'quest delete', 'quest voucher', 'quest list',
+      'blight', 'blight roll', 'blight heal', 'blight submit', 'blight history', 'blight roster',
+      'specialweather', 'explore', 'explore setup', 'explore join', 'explore start', 'explore roll', 'viewmap'
+    ];
+    // Provide metadata for each command
+    const commandMeta = {
+      'character': { description: 'Manage your characters including creation, editing, viewing, and deletion.', usage: '/character [subcommand] [parameters]', category: 'character' },
+      'character create': { description: 'Create a new character.', usage: '/character create [village]', category: 'character' },
+      'character create inariko': { description: 'Create a character with an Inariko exclusive job.', usage: '/character create inariko [parameters]', category: 'character' },
+      'character create rudania': { description: 'Create a character with a Rudania exclusive job.', usage: '/character create rudania [parameters]', category: 'character' },
+      'character create vhintl': { description: 'Create a character with a Vhintl exclusive job.', usage: '/character create vhintl [parameters]', category: 'character' },
+      'character create general': { description: 'Create a character with a general job.', usage: '/character create general [parameters]', category: 'character' },
+      'character edit': { description: 'Edit an existing character.', usage: '/character edit [parameters]', category: 'character' },
+      'character view': { description: 'View character details.', usage: '/character view [parameters]', category: 'character' },
+      'character viewlist': { description: 'View a list of characters.', usage: '/character viewlist [parameters]', category: 'character' },
+      'character delete': { description: 'Delete a character.', usage: '/character delete [parameters]', category: 'character' },
+      'character changejob': { description: 'Change character\'s job.', usage: '/character changejob [parameters]', category: 'character' },
+      'character setbirthday': { description: 'Set character\'s birthday.', usage: '/character setbirthday [parameters]', category: 'character' },
+      'economy': { description: 'Manage the economy system.', usage: '/economy [subcommand] [parameters]', category: 'economy' },
+      'economy gift': { description: 'Gift items from your character to another character.', usage: '/economy gift [parameters]', category: 'economy' },
+      'economy shop-view': { description: 'View items available in the shop.', usage: '/economy shop-view', category: 'economy' },
+      'economy shop-buy': { description: 'Buy items from the shop.', usage: '/economy shop-buy [parameters]', category: 'economy' },
+      'economy shop-sell': { description: 'Sell items to the shop.', usage: '/economy shop-sell [parameters]', category: 'economy' },
+      'economy trade': { description: 'Trade items between two characters.', usage: '/economy trade [parameters]', category: 'economy' },
+      'economy transfer': { description: 'Transfer items between your own characters.', usage: '/economy transfer [parameters]', category: 'economy' },
+      'inventory': { description: 'Manage your character inventory.', usage: '/inventory [subcommand] [parameters]', category: 'inventory' },
+      'inventory view': { description: 'View your character inventory.', usage: '/inventory view [parameters]', category: 'inventory' },
+      'inventory sync': { description: 'Sync your inventory from Google Sheets.', usage: '/inventory sync [parameters]', category: 'inventory' },
+      'inventory test': { description: 'Test your inventory setup.', usage: '/inventory test [parameters]', category: 'inventory' },
+      'gear': { description: 'Manage your character equipment and gear.', usage: '/gear [parameters]', category: 'inventory' },
+      'item': { description: 'Use items for various purposes.', usage: '/item [parameters]', category: 'inventory' },
+      'spiritorbs': { description: 'Manage Spirit Orbs.', usage: '/spiritorbs [subcommand] [parameters]', category: 'character' },
+      'spiritorbs check': { description: 'Check how many Spirit Orbs your character has.', usage: '/spiritorbs check [parameters]', category: 'character' },
+      'spiritorbs exchange': { description: 'Exchange Spirit Orbs for upgrades.', usage: '/spiritorbs exchange [parameters]', category: 'character' },
+      'gather': { description: 'Gather resources from the environment.', usage: '/gather [parameters]', category: 'exploration' },
+      'loot': { description: 'Search for loot in various locations.', usage: '/loot [parameters]', category: 'exploration' },
+      'crafting': { description: 'Craft items using materials from your inventory.', usage: '/crafting [parameters]', category: 'jobs' },
+      'heal': { description: 'Manage healing requests and fulfill healing services.', usage: '/heal [subcommand] [parameters]', category: 'jobs' },
+      'heal request': { description: 'Request healing from a healer.', usage: '/heal request [parameters]', category: 'jobs' },
+      'heal fulfill': { description: 'Fulfill a healing request as a healer.', usage: '/heal fulfill [parameters]', category: 'jobs' },
+      'lookup': { description: 'Look up information about items and ingredients.', usage: '/lookup [parameters]', category: 'utility' },
+      'tokens': { description: 'Manage your token balance and tracker.', usage: '/tokens [subcommand] [parameters]', category: 'economy' },
+      'tokens check': { description: 'Check your current token balance.', usage: '/tokens check', category: 'economy' },
+      'tokens setup': { description: 'Set up your token tracker.', usage: '/tokens setup [parameters]', category: 'economy' },
+      'roll': { description: 'Roll dice for various purposes.', usage: '/roll [parameters]', category: 'utility' },
+      'cancelvoucher': { description: 'Cancel a job voucher.', usage: '/cancelvoucher [parameters]', category: 'jobs' },
+      'travel': { description: 'Travel between villages in Hyrule.', usage: '/travel [parameters]', category: 'exploration' },
+      'quest': { description: 'Manage quests.', usage: '/quest [subcommand] [parameters]', category: 'quests' },
+      'quest join': { description: 'Join a quest with your character.', usage: '/quest join [parameters]', category: 'quests' },
+      'quest leave': { description: 'Leave a quest you are participating in.', usage: '/quest leave [parameters]', category: 'quests' },
+      'quest create': { description: 'Create a new quest (Admin only).', usage: '/quest create [parameters]', category: 'quests' },
+      'quest edit': { description: 'Edit an existing quest (Admin only).', usage: '/quest edit [parameters]', category: 'quests' },
+      'quest delete': { description: 'Delete a quest (Admin only).', usage: '/quest delete [parameters]', category: 'quests' },
+      'quest voucher': { description: 'Use a quest voucher.', usage: '/quest voucher [parameters]', category: 'quests' },
+      'quest list': { description: 'List available quests.', usage: '/quest list [parameters]', category: 'quests' },
+      'blight': { description: 'Manage blight progression, healing, and submissions.', usage: '/blight [subcommand] [parameters]', category: 'character' },
+      'blight roll': { description: 'Roll for blight progression.', usage: '/blight roll [parameters]', category: 'character' },
+      'blight heal': { description: 'Request blight healing from a Mod Character.', usage: '/blight heal [parameters]', category: 'character' },
+      'blight submit': { description: 'Submit a completed task for blight healing.', usage: '/blight submit [parameters]', category: 'character' },
+      'blight history': { description: 'View the blight history for a character.', usage: '/blight history [parameters]', category: 'character' },
+      'blight roster': { description: 'View all currently blighted characters.', usage: '/blight roster [parameters]', category: 'character' },
+      'specialweather': { description: 'Gather special items during special weather conditions.', usage: '/specialweather [parameters]', category: 'weather' },
+      'explore': { description: 'Manage exploration parties and expeditions.', usage: '/explore [subcommand] [parameters]', category: 'exploration' },
+      'explore setup': { description: 'Create a new exploration party.', usage: '/explore setup [parameters]', category: 'exploration' },
+      'explore join': { description: 'Join an existing expedition party.', usage: '/explore join [parameters]', category: 'exploration' },
+      'explore start': { description: 'Start the expedition.', usage: '/explore start [parameters]', category: 'exploration' },
+      'explore roll': { description: 'Roll for random encounters during exploration.', usage: '/explore roll [parameters]', category: 'exploration' },
+      'viewmap': { description: 'View the exploration map.', usage: '/viewmap [parameters]', category: 'exploration' }
+    };
+    const commandsArray = allCommandKeys.map(key => ({
+      name: key,
+      description: commandMeta[key]?.description || key,
+      usage: commandMeta[key]?.usage || `/${key} [parameters]`,
+      category: commandMeta[key]?.category || 'general'
+    }));
     allCommands = commandsArray;
     filteredCommands = [...allCommands];
-    
     displayCommands();
     updateStats();
-    
-    // Initialize filters after loading commands
     initializeFilters();
-    
   } catch (err) {
     console.error('❌ Error loading commands:', err);
     const commandsContainer = document.getElementById('commands-container');
@@ -346,7 +405,7 @@ function showCommandDetails(commandName) {
             <div class="usage-example">
               <code>${command.usage}</code>
             </div>
-            ${getCommandUsageGuide(command)}
+            ${getCommandUsageGuide(command.name)}
           </div>
         </div>
       </div>
@@ -469,6 +528,77 @@ function getCommandUsageGuide(command) {
         <li><code>icon</code> - Upload an icon image of the character</li>
       </ul>
       <p><strong>Example:</strong> <code>/character create general name:Impa age:28 height:160 hearts:9 stamina:110 pronouns:she/her race:Sheikah village:Inariko job:Farmer inventory:https://docs.google.com/spreadsheets/d/example applink:https://example.com/application icon:https://example.com/icon.png</code></p>
+    `,
+    'character edit': `
+      <p>Edit an existing character's information. You can modify various aspects of your character.</p>
+      <p><strong>Required Parameters:</strong></p>
+      <ul>
+        <li><code>charactername</code> - The name of the character to edit</li>
+      </ul>
+      <p><strong>Optional Parameters:</strong></p>
+      <ul>
+        <li><code>age</code> - New age for the character</li>
+        <li><code>height</code> - New height for the character</li>
+        <li><code>hearts</code> - New number of hearts</li>
+        <li><code>stamina</code> - New stamina value</li>
+        <li><code>pronouns</code> - New pronouns</li>
+        <li><code>race</code> - New race</li>
+        <li><code>job</code> - New job</li>
+        <li><code>inventory</code> - New Google Sheets link</li>
+        <li><code>applink</code> - New application link</li>
+        <li><code>icon</code> - New icon image</li>
+      </ul>
+      <p><strong>Example:</strong> <code>/character edit charactername:Link age:26 hearts:12</code></p>
+    `,
+    'character view': `
+      <p>View detailed information about a specific character.</p>
+      <p><strong>Required Parameters:</strong></p>
+      <ul>
+        <li><code>charactername</code> - The name of the character to view</li>
+      </ul>
+      <p><strong>Example:</strong> <code>/character view charactername:Link</code></p>
+    `,
+    'character viewlist': `
+      <p>View a list of all characters. You can filter by various criteria.</p>
+      <p><strong>Optional Parameters:</strong></p>
+      <ul>
+        <li><code>village</code> - Filter by village (Inariko, Rudania, Vhintl)</li>
+        <li><code>job</code> - Filter by job</li>
+        <li><code>race</code> - Filter by race</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <ul>
+        <li><code>/character viewlist</code></li>
+        <li><code>/character viewlist village:Inariko</code></li>
+        <li><code>/character viewlist job:Ranger</code></li>
+      </ul>
+    `,
+    'character delete': `
+      <p>Delete a character permanently. This action cannot be undone.</p>
+      <p><strong>Required Parameters:</strong></p>
+      <ul>
+        <li><code>charactername</code> - The name of the character to delete</li>
+      </ul>
+      <p><strong>Example:</strong> <code>/character delete charactername:Link</code></p>
+      <p><strong>Warning:</strong> This action is permanent and cannot be undone.</p>
+    `,
+    'character changejob': `
+      <p>Change a character's job to a new one.</p>
+      <p><strong>Required Parameters:</strong></p>
+      <ul>
+        <li><code>charactername</code> - The name of the character</li>
+        <li><code>newjob</code> - The new job for the character</li>
+      </ul>
+      <p><strong>Example:</strong> <code>/character changejob charactername:Link newjob:Blacksmith</code></p>
+    `,
+    'character setbirthday': `
+      <p>Set a character's birthday.</p>
+      <p><strong>Required Parameters:</strong></p>
+      <ul>
+        <li><code>charactername</code> - The name of the character</li>
+        <li><code>birthday</code> - The birthday in MM/DD format</li>
+      </ul>
+      <p><strong>Example:</strong> <code>/character setbirthday charactername:Link birthday:12/25</code></p>
     `,
     'economy': `
       <p>Manage the economy system including gifts, shops, trades, and transfers between characters.</p>
@@ -824,6 +954,67 @@ function getCommandUsageGuide(command) {
       </ul>
       <p><strong>Example:</strong> <code>/quest leave questid:ABC123</code></p>
     `,
+    'quest create': `
+      <p>Create a new quest (Admin only). This creates a new timed task for players to complete.</p>
+      <p><strong>Required Parameters:</strong></p>
+      <ul>
+        <li><code>title</code> - The title of the quest</li>
+        <li><code>description</code> - Description of the quest</li>
+        <li><code>duration</code> - Duration in hours</li>
+        <li><code>reward</code> - Reward for completing the quest</li>
+      </ul>
+      <p><strong>Example:</strong> <code>/quest create title:Gather Herbs description:Collect 10 herbs from the forest duration:24 reward:50 tokens</code></p>
+    `,
+    'quest edit': `
+      <p>Edit an existing quest (Admin only).</p>
+      <p><strong>Required Parameters:</strong></p>
+      <ul>
+        <li><code>questid</code> - The ID of the quest to edit</li>
+      </ul>
+      <p><strong>Optional Parameters:</strong></p>
+      <ul>
+        <li><code>title</code> - New title for the quest</li>
+        <li><code>description</code> - New description</li>
+        <li><code>duration</code> - New duration in hours</li>
+        <li><code>reward</code> - New reward</li>
+      </ul>
+      <p><strong>Example:</strong> <code>/quest edit questid:ABC123 title:Updated Quest Title</code></p>
+    `,
+    'quest delete': `
+      <p>Delete a quest (Admin only). This removes the quest permanently.</p>
+      <p><strong>Required Parameters:</strong></p>
+      <ul>
+        <li><code>questid</code> - The ID of the quest to delete</li>
+      </ul>
+      <p><strong>Example:</strong> <code>/quest delete questid:ABC123</code></p>
+      <p><strong>Warning:</strong> This action is permanent and cannot be undone.</p>
+    `,
+    'quest voucher': `
+      <p>Use a quest voucher to create a custom quest.</p>
+      <p><strong>Required Parameters:</strong></p>
+      <ul>
+        <li><code>charactername</code> - The name of your character</li>
+        <li><code>title</code> - The title of the quest</li>
+        <li><code>description</code> - Description of the quest</li>
+        <li><code>duration</code> - Duration in hours</li>
+        <li><code>reward</code> - Reward for completing the quest</li>
+      </ul>
+      <p><strong>Example:</strong> <code>/quest voucher charactername:Link title:Custom Quest description:My custom quest duration:12 reward:25 tokens</code></p>
+    `,
+    'quest list': `
+      <p>List all available quests that you can join.</p>
+      <p><strong>Optional Parameters:</strong></p>
+      <ul>
+        <li><code>status</code> - Filter by status (active, completed, expired)</li>
+        <li><code>village</code> - Filter by village</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <ul>
+        <li><code>/quest list</code></li>
+        <li><code>/quest list status:active</code></li>
+        <li><code>/quest list village:Inariko</code></li>
+      </ul>
+    `,
     'blight': `
       <p>Manage blight progression, healing, and submissions. Blight is a serious condition that affects characters.</p>
       <p><strong>Subcommands:</strong></p>
@@ -966,7 +1157,7 @@ function getCommandUsageGuide(command) {
     `
   };
 
-  return guides[command.name] || '';
+  return guides[command] || '';
 }
 
 // ============================================================================

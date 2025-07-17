@@ -405,70 +405,8 @@ app.get('/api/activities', (_, res) => {
 // ------------------- Commands Endpoint -------------------
 app.get('/api/commands', async (req, res) => {
   try {
-    const commands = [
-      {
-        name: 'help',
-        description: 'Shows available commands',
-        usage: '!help [command]',
-        category: 'General'
-      },
-      {
-        name: 'ping',
-        description: 'Check if the bot is responsive',
-        usage: '!ping',
-        category: 'General'
-      },
-      {
-        name: 'weather',
-        description: 'Get current weather information',
-        usage: '!weather [location]',
-        category: 'Weather'
-      },
-      {
-        name: 'inventory',
-        description: 'Manage your character inventory',
-        usage: '!inventory [add/remove/list] [item] [quantity]',
-        category: 'Inventory'
-      },
-      {
-        name: 'character',
-        description: 'Manage your character information',
-        usage: '!character [info/set/update] [field] [value]',
-        category: 'Character'
-      },
-      {
-        name: 'item',
-        description: 'Search for item information',
-        usage: '!item [item name]',
-        category: 'Items'
-      },
-      {
-        name: 'monster',
-        description: 'Search for monster information',
-        usage: '!monster [monster name]',
-        category: 'Monsters'
-      },
-      {
-        name: 'calendar',
-        description: 'Get calendar information',
-        usage: '!calendar [today/birthdays/bloodmoon]',
-        category: 'Calendar'
-      },
-      {
-        name: 'stats',
-        description: 'View your character statistics',
-        usage: '!stats [category]',
-        category: 'Statistics'
-      },
-      {
-        name: 'guild',
-        description: 'Manage guild information',
-        usage: '!guild [info/members/invite]',
-        category: 'Guild'
-      }
-    ];
-    
-    res.json({ commands });
+    // Return empty array - commands are now defined in commands.js
+    res.json({ commands: [] });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch commands' });
   }
