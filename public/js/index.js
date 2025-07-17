@@ -19,6 +19,7 @@ import * as guilds from './guilds.js';
 import * as commands from './commands.js';
 import * as villageShops from './villageShops.js';
 import * as monsters from './monsters.js';
+import * as pets from './pets.js';
 import * as starterGear from './starterGear.js';
 import { createPagination, setupBackToTopButton, scrollToTop } from './ui.js';
 
@@ -41,6 +42,7 @@ export {
   commands,
   villageShops,
   monsters,
+  pets,
   starterGear,
 };
 
@@ -195,6 +197,9 @@ function setupModelCards() {
           case 'monster':
             await monsters.initializeMonsterPage(data, pagination.page, contentDiv);
             break;
+          case 'pet':
+            await pets.initializePetPage(data, pagination.page, contentDiv);
+            break;
           case 'inventory':
             // Inventory uses its own efficient pagination system
             // Skip the main pagination logic entirely
@@ -288,6 +293,11 @@ function setupModelCards() {
                   // For monsters, we need to update the global data and re-render
                   window.allMonsters = data;
                   await monsters.renderMonsterCards(data, pagination.page, pagination.total);
+                  break;
+                case 'pet':
+                  // For pets, we need to update the global data and re-render
+                  window.allPets = data;
+                  await pets.renderPetCards(data, pagination.page, pagination.total);
                   break;
                 case 'villageShops':
                   // Village shops uses its own efficient pagination system

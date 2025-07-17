@@ -498,7 +498,7 @@ app.get('/api/tinglebot/stats', async (req, res) => {
   try {
     const [totalUsers, activePets, totalMounts, villageShops] = await Promise.all([
       User.countDocuments(),
-      Pet.countDocuments({ isActive: true }),
+              Pet.countDocuments({ status: 'active' }),
       Mount.countDocuments(),
       VillageShops.countDocuments()
     ]);
@@ -877,7 +877,7 @@ app.get('/api/models/:modelType', async (req, res) => {
         break;
       case 'pet':
         Model = Pet;
-        query = { isActive: true };
+        query = { status: 'active' };
         break;
       case 'mount':
         Model = Mount;
@@ -1048,6 +1048,8 @@ app.get('/api/models/:modelType', async (req, res) => {
       .skip(skip)
       .limit(limit)
       .lean();
+
+
 
     // Transform icon URLs for characters and populate user information
     if (modelType === 'character') {
@@ -1765,11 +1767,18 @@ app.post('/api/guild/join', async (req, res) => {
 
 // ------------------- Function: proxyImage -------------------
 // Proxies images from Google Cloud Storage with caching headers
-app.get('/api/images/:filename', async (req, res) => {
+app.get('/api/images/*', async (req, res) => {
   try {
-    const url = `https://storage.googleapis.com/tinglebot/${req.params.filename}`;
+    // Get the full path after /api/images/
+    const fullPath = req.params[0];
+    const url = `https://storage.googleapis.com/tinglebot/${fullPath}`;
+    console.log(`[server.js]: DEBUG - Image proxy request: ${fullPath} -> ${url}`);
+    
     const response = await fetch(url);
-    if (!response.ok) throw new Error('Image not found');
+    if (!response.ok) {
+      console.log(`[server.js]: DEBUG - Image not found at: ${url}`);
+      throw new Error('Image not found');
+    }
     
     // Set CORS headers
     res.set('Access-Control-Allow-Origin', '*');
@@ -1779,6 +1788,7 @@ app.get('/api/images/:filename', async (req, res) => {
     
     response.body.pipe(res);
   } catch (error) {
+    console.log(`[server.js]: DEBUG - Image proxy error: ${error.message}`);
     res.status(404).send('Image not found');
   }
 });

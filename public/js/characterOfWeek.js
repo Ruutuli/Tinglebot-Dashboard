@@ -200,11 +200,14 @@ function formatCharacterIconUrl(icon) {
   if (!icon) return null;
   
   if (icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-    return icon;
+    // Extract filename from Google Cloud Storage URL and use proxy
+    const filename = icon.replace('https://storage.googleapis.com/tinglebot/', '');
+    return `/api/images/${filename}`;
   } else if (icon.startsWith('http')) {
     return icon;
   } else {
-    return `https://storage.googleapis.com/tinglebot/${icon}`;
+    // For relative paths, use the proxy
+    return `/api/images/${icon}`;
   }
 }
 

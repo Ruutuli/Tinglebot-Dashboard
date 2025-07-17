@@ -397,7 +397,7 @@ class CalendarModule {
         date: eventDate,
         type: 'birthday',
         name: birthday.name,
-        icon: birthday.icon || 'https://storage.googleapis.com/tinglebot/default-avatar.png'
+        icon: birthday.icon || '/api/images/default-avatar.png'
       });
     });
     
