@@ -14,7 +14,6 @@ let guildData = null;
 // Fetches guild data from the server
 async function loadGuildData() {
   try {
-    console.log('[guilds.js]: 📊 Loading guild data...');
     
     const response = await fetch('/api/guild/info', {
       method: 'GET',
@@ -28,8 +27,7 @@ async function loadGuildData() {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    guildData = await response.json();
-    console.log('[guilds.js]: ✅ Guild data loaded:', guildData);
+    guildData = await response.json();    
     
     // Update the UI with guild data
     updateGuildUI(guildData);
@@ -43,7 +41,6 @@ async function loadGuildData() {
 // ------------------- Function: updateGuildUI -------------------
 // Updates the guild UI with fetched data
 function updateGuildUI(data) {
-  console.log('[guilds.js]: 🎨 Updating guild UI...');
   
   // Update guild basic info
   const guildName = document.getElementById('guild-name');
@@ -72,7 +69,6 @@ function updateGuildUI(data) {
     guildInactive.textContent = data.inactiveCount !== undefined ? data.inactiveCount : 'Loading...';
   }
   
-  console.log('[guilds.js]: ✅ Guild UI updated');
 }
 
 // ------------------- Function: showGuildError -------------------
@@ -100,7 +96,6 @@ function showGuildError(message) {
 // ------------------- Function: setupGuildActions -------------------
 // Sets up event listeners for guild action buttons
 function setupGuildActions() {
-  console.log('[guilds.js]: 🔧 Setting up guild actions...');
   
   const joinGuildBtn = document.getElementById('join-guild-btn');
   const viewGuildBtn = document.getElementById('view-guild-btn');
@@ -113,14 +108,12 @@ function setupGuildActions() {
     viewGuildBtn.addEventListener('click', handleViewGuild);
   }
   
-  console.log('[guilds.js]: ✅ Guild actions setup complete');
 }
 
 // ------------------- Function: handleJoinGuild -------------------
 // Handles join guild button click
 async function handleJoinGuild(event) {
   event.preventDefault();
-  console.log('[guilds.js]: 🚪 Join guild button clicked');
   
   try {
     // Get guild ID from environment (this would be passed from server)
@@ -155,7 +148,6 @@ async function handleJoinGuild(event) {
 // Handles view guild button click
 function handleViewGuild(event) {
   event.preventDefault();
-  console.log('[guilds.js]: 👁️ View guild button clicked');
   
   // Open Discord guild in new tab
   // Use the guild ID from the loaded guild data
@@ -176,7 +168,6 @@ function handleViewGuild(event) {
 // ------------------- Function: showGuildSection -------------------
 // Shows the guild section and initializes it
 function showGuildSection() {
-  console.log('[guilds.js]: 🏰 Showing guild section...');
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -190,7 +181,6 @@ function showGuildSection() {
   const guildSection = document.getElementById('guilds-section');
   if (guildSection) {
     guildSection.style.display = 'block';
-    console.log('[guilds.js]: ✅ Guild section displayed');
     
     // Initialize guild page
     initGuildPage();
@@ -222,7 +212,6 @@ function showGuildSection() {
 // ------------------- Function: initGuildPage -------------------
 // Initializes the guild page
 async function initGuildPage() {
-  console.log('[guilds.js]: 🚀 Initializing guild page...');
   
   try {
     // Load guild data
@@ -231,7 +220,6 @@ async function initGuildPage() {
     // Setup guild actions
     setupGuildActions();
     
-    console.log('[guilds.js]: ✅ Guild page initialized');
     
   } catch (error) {
     console.error('[guilds.js]: ❌ Error initializing guild page:', error);
@@ -247,12 +235,10 @@ async function initGuildPage() {
 // ------------------- Function: setupGuildEventListeners -------------------
 // Sets up all guild page event listeners
 function setupGuildEventListeners() {
-  console.log('[guilds.js]: 🎧 Setting up guild event listeners...');
   
   // Listen for custom navigation events
   document.addEventListener('navigateToSection', (event) => {
-    if (event.detail.section === 'guilds-section') {
-      console.log('[guilds.js]: 🎯 Received navigation event to guild section');
+    if (event.detail.section === 'guilds-section') {    
       // The section will be shown by the main navigation handler
       // We just need to initialize the guild page
       setTimeout(() => {
@@ -261,7 +247,6 @@ function setupGuildEventListeners() {
     }
   });
   
-  console.log('[guilds.js]: ✅ Guild event listeners setup complete');
 }
 
 // ============================================================================

@@ -66,16 +66,10 @@ const domain = process.env.DOMAIN || (isProduction ? 'tinglebot.xyz' : 'localhos
 // Trust proxy for production environments (Railway, etc.)
 if (isProduction) {
   app.set('trust proxy', 1);
-  console.log('[server.js]: 🔧 Trust proxy enabled for production');
+
 }
 
-console.log('[server.js]: 🔧 Environment Configuration:', {
-  NODE_ENV: process.env.NODE_ENV,
-  RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
-  isProduction,
-  domain,
-  DISCORD_CALLBACK_URL: process.env.DISCORD_CALLBACK_URL
-});
+
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
@@ -121,7 +115,7 @@ const callbackURL = isProduction
   ? `https://${domain}/auth/discord/callback`
   : (process.env.DISCORD_CALLBACK_URL || `http://${domain}:5001/auth/discord/callback`);
 
-console.log('[server.js]: 🔗 Discord OAuth Callback URL:', callbackURL);
+
 
 passport.use(new DiscordStrategy({
   clientID: process.env.DISCORD_CLIENT_ID,
@@ -149,7 +143,6 @@ passport.use(new DiscordStrategy({
         statusChangedAt: new Date()
       });
       await user.save();
-      console.log(`[server.js]: ✅ New Discord user created: ${profile.username}#${profile.discriminator}`);
     } else {
       // Update existing user's Discord info
       user.username = profile.username;
@@ -159,12 +152,10 @@ passport.use(new DiscordStrategy({
       user.status = 'active';
       user.statusChangedAt = new Date();
       await user.save();
-      console.log(`[server.js]: ✅ Discord user updated: ${profile.username}#${profile.discriminator}`);
     }
     
     return done(null, user);
   } catch (error) {
-    console.error('[server.js]: ❌ Discord OAuth error:', error);
     return done(error, null);
   }
 }));
@@ -219,7 +210,6 @@ const initializeCacheCleanup = () => {
     }
   }, 60 * 60 * 1000); // Every hour
   
-  console.log('[server.js]: ✅ Cache cleanup initialized');
 };
 
 // ------------------- Section: Database Initialization -------------------
@@ -228,23 +218,17 @@ const initializeCacheCleanup = () => {
 // Establishes connections to all required databases using db.js methods
 async function initializeDatabases() {
   try {
-    console.log('[server.js]: 🔄 Connecting to databases...');
     
     // Connect to Tinglebot database using db.js method
     await connectToTinglebot();
-    console.log('[server.js]: ✅ Tinglebot DB connected');
     
     // Connect to Inventories database using db.js method
     inventoriesConnection = await connectToInventories();
-    console.log('[server.js]: ✅ Inventories DB connected');
     
     // Connect to Vending database using db.js method
     vendingConnection = await connectToVending();
-    console.log('[server.js]: ✅ Vending DB connected');
     
-    console.log('[server.js]: 🎯 All databases connected successfully');
-  } catch (error) {
-    console.error('[server.js]: ❌ Database connection error:', error);
+  } catch (error) {   
     throw error;
   }
 }
@@ -311,16 +295,7 @@ app.get('/auth/discord/callback',
   }), 
   (req, res) => {
     // Successful authentication
-    console.log(`[server.js]: ✅ Discord login successful for user: ${req.user.username}`);
-    console.log('[server.js]: 🔍 Session after login:', {
-      sessionId: req.session.id,
-      passport: req.session.passport,
-      user: req.user ? {
-        username: req.user.username,
-        discordId: req.user.discordId,
-        id: req.user._id
-      } : null
-    });
+    
     res.redirect('/?login=success');
   }
 );
@@ -330,10 +305,8 @@ app.get('/auth/discord/callback',
 app.get('/auth/logout', (req, res) => {
   req.logout((err) => {
     if (err) {
-      console.error('[server.js]: ❌ Logout error:', err);
       return res.redirect('/login');
     }
-    console.log('[server.js]: ✅ User logged out successfully');
     res.redirect('/login');
   });
 });
@@ -388,44 +361,22 @@ app.get('/api/debug/session', (req, res) => {
 
 // ------------------- Section: API Routes -------------------
 
-// ------------------- Function: healthCheck -------------------
-// Provides system health status and connection information
-app.get('/api/health', async (req, res) => {
-  try {
-    const health = {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      connections: {
-        tinglebot: mongoose.connection.readyState === 1,
-        inventories: inventoriesConnection ? inventoriesConnection.readyState === 1 : false,
-        vending: vendingConnection ? vendingConnection.readyState === 1 : false
-      },
-      models: {
-        character: !!Character,
-        item: !!Item,
-        user: !!User,
-        pet: !!Pet,
-        weather: !!Weather,
-        vending: !!VendingRequest
-      }
-    };
-    
-    console.log('[server.js]: 🏥 Health check:', health);
-    res.json(health);
-  } catch (error) {
-    console.error('[server.js]: ❌ Health check failed:', error);
-    res.status(500).json({ 
-      status: 'error', 
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
+// ------------------- Health Check Endpoint -------------------
+app.get('/api/health', (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    environment: process.env.NODE_ENV || 'development'
+  };
+  
+  res.json(health);
 });
 
-// ------------------- Function: getUserInfo -------------------
-// Returns basic user information for dashboard
-app.get('/api/user', optionalAuth, (req, res) => {
-  console.log('[server.js]: 🔍 /api/user called - Auth check:', {
+// ------------------- User Authentication Status -------------------
+app.get('/api/user', (req, res) => {
+  const authInfo = {
     isAuthenticated: req.isAuthenticated(),
     user: req.user ? {
       username: req.user.username,
@@ -434,36 +385,11 @@ app.get('/api/user', optionalAuth, (req, res) => {
     } : null,
     session: req.session ? {
       id: req.session.id,
-      passport: req.session.passport,
-      cookie: req.session.cookie
-    } : null,
-    headers: {
-      cookie: req.headers.cookie ? 'present' : 'missing',
-      'user-agent': req.headers['user-agent']
-    }
-  });
+      passport: req.session.passport
+    } : null
+  };
   
-  if (req.isAuthenticated()) {
-    res.json({
-      authenticated: true,
-      username: req.user.username,
-      discordId: req.user.discordId,
-      email: req.user.email,
-      avatar: req.user.avatar,
-      discriminator: req.user.discriminator,
-      tokens: req.user.tokens,
-      characterSlot: req.user.characterSlot,
-      status: req.user.status,
-      createdAt: req.user.createdAt,
-      avatarUrl: req.user.avatar ? `https://cdn.discordapp.com/avatars/${req.user.discordId}/${req.user.avatar}.png` : null
-    });
-  } else {
-    res.json({ 
-      authenticated: false,
-      username: 'Guest',
-      message: 'Login with Discord for enhanced features'
-    });
-  }
+  res.json(authInfo);
 });
 
 // ------------------- Function: getActivities -------------------
@@ -476,93 +402,74 @@ app.get('/api/activities', (_, res) => {
   ]);
 });
 
-// ------------------- Function: getCommands -------------------
-// Returns comprehensive command data with usage statistics
-app.get('/api/commands', (_, res) => {
+// ------------------- Commands Endpoint -------------------
+app.get('/api/commands', async (req, res) => {
   try {
-    console.log('[server.js]: 📋 Getting commands data...');
-    
     const commands = [
-      // Character Commands
-      { name: 'character', description: 'Manage your characters', usage: '/character <subcommand>', category: 'character' },
-      { name: 'character create', description: 'Create a new character', usage: '/character create <village>', category: 'character' },
-      { name: 'character create inariko', description: 'Create a character with an Inariko exclusive job', usage: '/character create inariko <name> <age> <height> <hearts> <stamina> <pronouns> <race> <job> <inventory> <applink> <icon>', category: 'character' },
-      { name: 'character create rudania', description: 'Create a character with a Rudania exclusive job', usage: '/character create rudania <name> <age> <height> <hearts> <stamina> <pronouns> <race> <job> <inventory> <applink> <icon>', category: 'character' },
-      { name: 'character create vhintl', description: 'Create a character with a Vhintl exclusive job', usage: '/character create vhintl <name> <age> <height> <hearts> <stamina> <pronouns> <race> <job> <inventory> <applink> <icon>', category: 'character' },
-      { name: 'character create general', description: 'Create a character with a general job', usage: '/character create general <name> <age> <height> <hearts> <stamina> <pronouns> <race> <village> <job> <inventory> <applink> <icon>', category: 'character' },
-      { name: 'character edit', description: 'Edit an existing character', usage: '/character edit <charactername> <category> <updatedinfo> [newicon]', category: 'character' },
-      { name: 'character view', description: 'View details of a character', usage: '/character view <charactername>', category: 'character' },
-      { name: 'character viewlist', description: 'View a list of characters', usage: '/character viewlist [user]', category: 'character' },
-      { name: 'character delete', description: 'Delete a character', usage: '/character delete <charactername>', category: 'character' },
-      { name: 'character changejob', description: 'Change the job of your character', usage: '/character changejob <charactername> <newjob>', category: 'character' },
-      { name: 'character setbirthday', description: 'Set the birthday of a character', usage: '/character setbirthday <charactername> <birthday>', category: 'character' },
-      
-      // Economy Commands
-      { name: 'economy', description: 'Economy commands for gifts, shops, trades, and transfers', usage: '/economy <subcommand>', category: 'economy' },
-      { name: 'economy gift', description: 'Gift items from your character to another character', usage: '/economy gift <fromcharacter> <tocharacter> <itema> <quantitya> [itemb] [quantityb] [itemc] [quantityc]', category: 'economy' },
-      { name: 'economy shop-view', description: 'View items available in the shop', usage: '/economy shop-view', category: 'economy' },
-      { name: 'economy shop-buy', description: 'Buy an item from the shop', usage: '/economy shop-buy <charactername> <itemname> <quantity>', category: 'economy' },
-      { name: 'economy shop-sell', description: 'Sell an item to the shop', usage: '/economy shop-sell <charactername> <itemname> <quantity>', category: 'economy' },
-      { name: 'economy trade', description: 'Trade items between two characters', usage: '/economy trade <fromcharacter> <tocharacter> <item1> <quantity1> [item2] [quantity2] [item3] [quantity3] [tradeid]', category: 'economy' },
-      { name: 'economy transfer', description: 'Transfer items between your characters', usage: '/economy transfer <fromcharacter> <tocharacter> <itema> <quantitya> [itemb] [quantityb] [itemc] [quantityc]', category: 'economy' },
-      
-      // Inventory Commands
-      { name: 'inventory', description: 'Manage your character\'s inventory', usage: '/inventory <subcommand>', category: 'inventory' },
-      { name: 'inventory view', description: 'View your character\'s inventory', usage: '/inventory view <charactername>', category: 'inventory' },
-      { name: 'inventory sync', description: 'Sync your character\'s inventory from Google Sheets', usage: '/inventory sync <charactername>', category: 'inventory' },
-      { name: 'inventory test', description: 'Test if the inventory setup is correct', usage: '/inventory test <charactername>', category: 'inventory' },
-      { name: 'gear', description: 'Displays, equips, or unequips gear of a character', usage: '/gear <charactername> <type> [itemname] [status]', category: 'inventory' },
-      { name: 'item', description: 'Use an item for various purposes', usage: '/item <charactername> <itemname> [quantity] [jobname]', category: 'inventory' },
-      { name: 'spiritorbs', description: 'Check or exchange Spirit Orbs for health or stamina upgrades', usage: '/spiritorbs <subcommand>', category: 'inventory' },
-      { name: 'spiritorbs check', description: 'Check how many Spirit Orbs your character has', usage: '/spiritorbs check <character>', category: 'inventory' },
-      { name: 'spiritorbs exchange', description: 'Exchange 4 Spirit Orbs for +1 heart or stamina', usage: '/spiritorbs exchange <character> <type>', category: 'inventory' },
-      
-      // Exploration Commands
-      { name: 'explore', description: 'Manage exploration parties and expeditions', usage: '/explore <subcommand>', category: 'exploration' },
-      { name: 'explore setup', description: 'Setup a new exploration party', usage: '/explore setup <region>', category: 'exploration' },
-      { name: 'explore join', description: 'Join an expedition party', usage: '/explore join <id> <charactername> <item1> <item2> <item3>', category: 'exploration' },
-      { name: 'explore start', description: 'Start the expedition', usage: '/explore start <id>', category: 'exploration' },
-      { name: 'explore roll', description: 'Roll for a random encounter', usage: '/explore roll <id> <charactername>', category: 'exploration' },
-      { name: 'viewmap', description: 'View the status of a specific quadrant or full square', usage: '/viewmap <square> [quadrant]', category: 'exploration' },
-      
-      // Companions Commands
-      { name: 'pet', description: 'Manage your pets and their abilities', usage: '/pet <subcommand>', category: 'companions' },
-      { name: 'pet roll', description: 'Roll for items with your pet', usage: '/pet roll <charactername> <petname> [rolltype]', category: 'companions' },
-      { name: 'pet upgrade', description: 'Upgrade your pet\'s level', usage: '/pet upgrade <charactername> <petname> <level>', category: 'companions' },
-      { name: 'pet add', description: 'Add a new pet', usage: '/pet add <charactername> <petname> <category> <species> <pettype> [image]', category: 'companions' },
-      { name: 'pet edit', description: 'Edit your pet\'s image', usage: '/pet edit <charactername> <petname> <image>', category: 'companions' },
-      { name: 'pet view', description: 'View details for one of your pets', usage: '/pet view <charactername> <petname>', category: 'companions' },
-      { name: 'mount', description: 'Manage or view mount details', usage: '/mount <subcommand>', category: 'companions' },
-      { name: 'mount encounter', description: 'Join or interact with an existing mount encounter', usage: '/mount encounter <encounterid> <charactername>', category: 'companions' },
-      { name: 'mount view', description: 'View your mount\'s details', usage: '/mount view <charactername>', category: 'companions' },
-      
-      // Jobs Commands
-      { name: 'gather', description: 'Gather resources', usage: '/gather <charactername>', category: 'jobs' },
-      { name: 'loot', description: 'Search for loot', usage: '/loot <charactername>', category: 'jobs' },
-      { name: 'crafting', description: 'Craft items', usage: '/crafting <charactername> <itemname> <quantity> [flavortext]', category: 'jobs' },
-      { name: 'heal', description: 'Heal yourself or others', usage: '/heal <subcommand>', category: 'jobs' },
-      { name: 'heal request', description: 'Request healing from a healer', usage: '/heal request <charactername> <hearts> <payment>', category: 'jobs' },
-      { name: 'heal fulfill', description: 'Fulfill a healing request (healers only)', usage: '/heal fulfill <requestid> <healername>', category: 'jobs' },
-      
-      // Utility Commands
-      { name: 'lookup', description: 'Look up item information', usage: '/lookup <item> [ingredient]', category: 'utility' },
-      { name: 'tokens', description: 'Manage your tokens', usage: '/tokens <subcommand>', category: 'utility' },
-      { name: 'tokens check', description: 'Check your current token balance', usage: '/tokens check', category: 'utility' },
-      { name: 'tokens setup', description: 'Set up your token tracker', usage: '/tokens setup <link>', category: 'utility' },
-      { name: 'roll', description: 'Roll dice for various purposes', usage: '/roll <dice> <sides> [flavor] [advantage]', category: 'utility' },
-      { name: 'cancelvoucher', description: 'Cancel a job voucher', usage: '/cancelvoucher <charactername>', category: 'utility' },
-      
-      // World Commands
-      { name: 'travel', description: 'Travel between villages', usage: '/travel <charactername> <destination> <mode>', category: 'world' },
-      { name: 'quest', description: 'Quest management system', usage: '/quest <subcommand>', category: 'world' },
-      { name: 'blight', description: 'Manage blight progression and healing', usage: '/blight <subcommand>', category: 'world' },
-      { name: 'specialweather', description: 'Gather special items during special weather conditions', usage: '/specialweather <charactername>', category: 'world' }
+      {
+        name: 'help',
+        description: 'Shows available commands',
+        usage: '!help [command]',
+        category: 'General'
+      },
+      {
+        name: 'ping',
+        description: 'Check if the bot is responsive',
+        usage: '!ping',
+        category: 'General'
+      },
+      {
+        name: 'weather',
+        description: 'Get current weather information',
+        usage: '!weather [location]',
+        category: 'Weather'
+      },
+      {
+        name: 'inventory',
+        description: 'Manage your character inventory',
+        usage: '!inventory [add/remove/list] [item] [quantity]',
+        category: 'Inventory'
+      },
+      {
+        name: 'character',
+        description: 'Manage your character information',
+        usage: '!character [info/set/update] [field] [value]',
+        category: 'Character'
+      },
+      {
+        name: 'item',
+        description: 'Search for item information',
+        usage: '!item [item name]',
+        category: 'Items'
+      },
+      {
+        name: 'monster',
+        description: 'Search for monster information',
+        usage: '!monster [monster name]',
+        category: 'Monsters'
+      },
+      {
+        name: 'calendar',
+        description: 'Get calendar information',
+        usage: '!calendar [today/birthdays/bloodmoon]',
+        category: 'Calendar'
+      },
+      {
+        name: 'stats',
+        description: 'View your character statistics',
+        usage: '!stats [category]',
+        category: 'Statistics'
+      },
+      {
+        name: 'guild',
+        description: 'Manage guild information',
+        usage: '!guild [info/members/invite]',
+        category: 'Guild'
+      }
     ];
     
-    console.log(`[server.js]: ✅ Returning ${commands.length} commands`);
-    res.json(commands);
+    res.json({ commands });
   } catch (error) {
-    console.error('[server.js]: ❌ Error fetching commands:', error);
     res.status(500).json({ error: 'Failed to fetch commands' });
   }
 });
@@ -581,7 +488,6 @@ app.get('/api/rootsofthewild/stats', async (req, res) => {
     ]);
     res.json({ totalCharacters, activeQuests, totalItems, activeMonsters });
   } catch (error) {
-    console.error('[server.js]: ❌ Error fetching RootsOfTheWild stats:', error);
     res.status(500).json({ error: 'Failed to fetch RootsOfTheWild stats' });
   }
 });
@@ -598,7 +504,6 @@ app.get('/api/tinglebot/stats', async (req, res) => {
     ]);
     res.json({ totalUsers, activePets, totalMounts, villageShops });
   } catch (error) {
-    console.error('[server.js]: ❌ Error fetching Tinglebot stats:', error);
     res.status(500).json({ error: 'Failed to fetch Tinglebot statistics' });
   }
 });
@@ -753,7 +658,7 @@ app.get('/api/stats/characters', async (req, res) => {
 // Returns calendar data including Hyrulean calendar and Blood Moon dates
 app.get('/api/calendar', async (req, res) => {
   try {
-    console.log('[server.js]: 📅 Getting calendar data...');
+
     
     // Get data from calendar module
     const hyruleanCalendar = calendarModule.hyruleanCalendar;
@@ -795,7 +700,7 @@ app.get('/api/calendar', async (req, res) => {
 // Returns count of documents for all models
 app.get('/api/models/counts', async (req, res) => {
   try {
-    console.log('[server.js]: 📊 Getting model counts...');
+
     
     const modelMap = {
       character: { model: Character, connection: mongoose.connection },
@@ -836,14 +741,14 @@ app.get('/api/models/counts', async (req, res) => {
         } else {
           counts[key] = await model.countDocuments();
         }
-        console.log(`[server.js]: ✅ ${key} count: ${counts[key]}`);
+        
       } catch (error) {
         console.error(`[server.js]: ❌ Error getting ${key} count:`, error.message);
         // Keep 0 on error
       }
     }));
     
-    console.log('[server.js]: 📊 Model counts completed');
+    
     res.json(counts);
   } catch (error) {
     console.error('[server.js]: ❌ Error in /api/models/counts:', error);
@@ -893,7 +798,7 @@ app.get('/api/models/inventory', async (req, res) => {
 
     const paginated = allItems.slice(skip, skip + limit);
     
-    console.log(`[server.js]: ✅ Successfully fetched ${paginated.length} inventory records (page ${page}/${Math.ceil(allItems.length / limit)})`);
+    
     
     res.json({
       data: paginated,
@@ -918,7 +823,7 @@ app.get('/api/models/inventory', async (req, res) => {
 app.get('/api/models/:modelType', async (req, res) => {
   try {
     const { modelType } = req.params;
-    console.log(`[server.js]: 🔍 Fetching ${modelType} data...`);
+
     
     const page = parseInt(req.query.page) || 1;
     const limit = 15; // Items per page
@@ -1018,7 +923,7 @@ app.get('/api/models/:modelType', async (req, res) => {
 
     // For filtered item requests or all=true requests, return all items
     if (isFilteredRequest || allItems) {
-      console.log(`[server.js]: 🔍 ${allItems ? 'All items' : 'Filtered'} request detected, processing filters`);
+
       
       // Build query for item filtering
       if (modelType === 'item') {
@@ -1047,7 +952,6 @@ app.get('/api/models/:modelType', async (req, res) => {
         monsterFields.forEach(field => {
           if (req.query[field] === 'true') {
             query[field] = true;
-            console.log(`[server.js]: 🔍 Adding filter: ${field} = true`);
           }
         });
       }
@@ -1056,7 +960,7 @@ app.get('/api/models/:modelType', async (req, res) => {
         .sort({ itemName: 1 })
         .lean();
       
-      console.log(`[server.js]: ✅ Successfully fetched ${allItemsData.length} ${modelType} records (filtered)`);
+      
       res.json({
         data: allItemsData,
         pagination: {
@@ -1092,7 +996,7 @@ app.get('/api/models/:modelType', async (req, res) => {
       });
     }
 
-    console.log(`[server.js]: ✅ Successfully fetched ${data.length} ${modelType} records (page ${page}/${pages})`);
+    
     res.json({
       data,
       pagination: {
@@ -1153,7 +1057,7 @@ app.get('/api/character/:id', async (req, res) => {
 app.get('/api/user/characters', requireAuth, async (req, res) => {
   try {
     const userId = req.user.discordId;
-    console.log(`[server.js]: 🔍 Fetching characters for user: ${userId}`);
+    
     
     const characters = await Character.find({ userId }).lean();
     
@@ -1165,7 +1069,7 @@ app.get('/api/user/characters', requireAuth, async (req, res) => {
       }
     });
     
-    console.log(`[server.js]: ✅ Found ${characters.length} characters for user ${userId}`);
+    
     res.json({ data: characters });
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching user characters:', error);
@@ -1177,7 +1081,7 @@ app.get('/api/user/characters', requireAuth, async (req, res) => {
 // Returns the current character of the week
 app.get('/api/character-of-week', async (req, res) => {
   try {
-    console.log('[server.js]: 🔍 Fetching current character of the week');
+    
     
     const currentCharacter = await CharacterOfWeek.findOne({ isActive: true })
       .populate('characterId')
@@ -1185,7 +1089,7 @@ app.get('/api/character-of-week', async (req, res) => {
       .lean();
     
     if (!currentCharacter) {
-      console.log('[server.js]: ⚠️ No active character of the week found');
+
       return res.json({ 
         data: null, 
         message: 'No character of the week currently selected' 
@@ -1199,7 +1103,7 @@ app.get('/api/character-of-week', async (req, res) => {
       currentCharacter.characterId.icon = filename;
     }
     
-    console.log(`[server.js]: ✅ Found character of the week: ${currentCharacter.characterName}`);
+    
     res.json({ data: currentCharacter });
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching character of the week:', error);
@@ -1252,7 +1156,7 @@ app.post('/api/character-of-week', requireAuth, async (req, res) => {
     
     await newCharacterOfWeek.save();
     
-    console.log(`[server.js]: ✅ Set new character of the week: ${character.name}`);
+    
     res.json({ 
       data: newCharacterOfWeek,
       message: `Character of the week set to ${character.name}` 
@@ -1320,7 +1224,7 @@ app.post('/api/character-of-week/random', requireAuth, async (req, res) => {
     
     await newCharacterOfWeek.save();
     
-    console.log(`[server.js]: ✅ Randomly selected character of the week: ${randomCharacter.name}`);
+    
     res.json({ 
       data: newCharacterOfWeek,
       message: `Randomly selected ${randomCharacter.name} as character of the week` 
@@ -1377,7 +1281,7 @@ app.post('/api/character-of-week/trigger-first', requireAuth, async (req, res) =
     
     await newCharacterOfWeek.save();
     
-    console.log(`[server.js]: ✅ Manually triggered first character of the week: ${randomCharacter.name}`);
+    
     res.json({ 
       data: newCharacterOfWeek,
       message: `Manually triggered first character of the week: ${randomCharacter.name}` 
@@ -1391,26 +1295,23 @@ app.post('/api/character-of-week/trigger-first', requireAuth, async (req, res) =
 // ------------------- Function: setupWeeklyCharacterRotation -------------------
 // Sets up the weekly character rotation scheduler and initializes on server start
 const setupWeeklyCharacterRotation = async () => {
-  console.log('[server.js]: 🔄 Setting up weekly character rotation scheduler...');
+
   
   // Check if there's already an active character of the week
   const existingCharacter = await CharacterOfWeek.findOne({ isActive: true });
   
   if (existingCharacter) {
-    console.log(`[server.js]: ✅ Found existing character of the week: ${existingCharacter.characterName}`);
+
     
     // Check if the existing character has been active for more than 7 days
     const now = new Date();
     const daysActive = (now - existingCharacter.startDate) / (1000 * 60 * 60 * 24);
     
     if (daysActive >= 7) {
-      console.log(`[server.js]: ⏰ Existing character has been active for ${daysActive.toFixed(1)} days, rotating...`);
       await rotateCharacterOfWeek();
     } else {
-      console.log(`[server.js]: ⏰ Existing character has been active for ${daysActive.toFixed(1)} days, keeping current character`);
     }
   } else {
-    console.log('[server.js]: 🔍 No active character of the week found, creating first one...');
     await rotateCharacterOfWeek();
   }
   
@@ -1419,11 +1320,9 @@ const setupWeeklyCharacterRotation = async () => {
     const now = new Date();
     const nextWeek = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));
     
-    console.log(`[server.js]: ⏰ Next character rotation scheduled for: ${nextWeek.toLocaleString()}`);
     
     setTimeout(async () => {
       try {
-        console.log('[server.js]: 🔄 Executing weekly character rotation...');
         await rotateCharacterOfWeek();
         
         // Schedule next rotation
@@ -1440,7 +1339,6 @@ const setupWeeklyCharacterRotation = async () => {
   // Start the scheduler
   scheduleNextRotation();
   
-  console.log('[server.js]: ✅ Weekly character rotation scheduler initialized');
 };
 
 // ------------------- Function: rotateCharacterOfWeek -------------------
@@ -1451,7 +1349,6 @@ const rotateCharacterOfWeek = async () => {
     const characters = await Character.find({}).lean();
     
     if (characters.length === 0) {
-      console.log('[server.js]: ⚠️ No characters found for rotation');
       return;
     }
     
@@ -1495,10 +1392,7 @@ const rotateCharacterOfWeek = async () => {
     
     await newCharacterOfWeek.save();
     
-    console.log(`[server.js]: ✅ Character rotation completed: ${randomCharacter.name} is now character of the week until ${endDate.toLocaleString()}`);
-    
   } catch (error) {
-    console.error('[server.js]: ❌ Error rotating character of the week:', error);
     throw error;
   }
 };
@@ -1507,19 +1401,16 @@ const rotateCharacterOfWeek = async () => {
 // Simple trigger for first character of the week (no auth required for testing)
 app.post('/api/character-of-week/trigger-simple', async (req, res) => {
   try {
-    console.log('[server.js]: 🔧 Simple character of week trigger requested');
     
     // Check if there's already an active character of the week
     const existingCharacter = await CharacterOfWeek.findOne({ isActive: true });
     if (existingCharacter) {
-      console.log(`[server.js]: ⚠️ Character of the week already exists: ${existingCharacter.characterName}`);
       
       // Check if the existing character has been active for more than 7 days
       const now = new Date();
       const daysActive = (now - existingCharacter.startDate) / (1000 * 60 * 60 * 24);
       
       if (daysActive >= 7) {
-        console.log(`[server.js]: ⏰ Existing character has been active for ${daysActive.toFixed(1)} days, rotating...`);
         await rotateCharacterOfWeek();
         const newCharacter = await CharacterOfWeek.findOne({ isActive: true }).populate('characterId');
         return res.json({ 
@@ -1537,25 +1428,21 @@ app.post('/api/character-of-week/trigger-simple', async (req, res) => {
     // Get all active characters
     const characters = await Character.find({}).lean();
     
-    if (characters.length === 0) {
-      console.log('[server.js]: ❌ No characters found in database');
+    if (characters.length === 0) {    
       return res.status(404).json({ error: 'No characters found' });
     }
     
-    console.log(`[server.js]: 🔍 Found ${characters.length} characters in database`);
     
     // Use the rotation function to create the first character
     await rotateCharacterOfWeek();
     
     const newCharacter = await CharacterOfWeek.findOne({ isActive: true }).populate('characterId');
     
-    console.log(`[server.js]: ✅ Simple trigger created character of the week: ${newCharacter.characterName}`);
     res.json({ 
       data: newCharacter,
       message: `Created character of the week: ${newCharacter.characterName}` 
     });
-  } catch (error) {
-    console.error('[server.js]: ❌ Error in simple character of week trigger:', error);
+  } catch (error) { 
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -1572,7 +1459,6 @@ app.get('/api/user/guild-info', requireAuth, async (req, res) => {
       return res.status(500).json({ error: 'Guild ID not configured' });
     }
     
-    console.log(`[server.js]: 🔍 Fetching guild member info for user: ${userId} in guild: ${guildId}`);
     
     // Fetch guild member information from Discord API
     const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}`, {
@@ -1584,7 +1470,6 @@ app.get('/api/user/guild-info', requireAuth, async (req, res) => {
     
     if (!response.ok) {
       if (response.status === 404) {
-        console.log(`[server.js]: ⚠️ User ${userId} not found in guild ${guildId}`);
         return res.json({ 
           joinedAt: null, 
           message: 'User not found in guild',
@@ -1597,7 +1482,6 @@ app.get('/api/user/guild-info', requireAuth, async (req, res) => {
     const memberData = await response.json();
     const joinedAt = memberData.joined_at ? new Date(memberData.joined_at) : null;
     
-    console.log(`[server.js]: ✅ Found guild member info for user ${userId}, joined: ${joinedAt}`);
     
     res.json({
       joinedAt: joinedAt ? joinedAt.toISOString() : null,
@@ -1606,7 +1490,6 @@ app.get('/api/user/guild-info', requireAuth, async (req, res) => {
       nick: memberData.nick || null
     });
   } catch (error) {
-    console.error('[server.js]: ❌ Error fetching guild member info:', error);
     res.status(500).json({ error: 'Failed to fetch guild member information' });
   }
 });
@@ -1622,7 +1505,6 @@ app.get('/api/guild/info', async (req, res) => {
       console.error('[server.js]: ❌ PROD_GUILD_ID not configured');
       return res.status(500).json({ error: 'Guild ID not configured' });
     }
-    console.log(`[server.js]: 🔍 Fetching guild info for guild: ${guildId}`);
     // Fetch guild information
     const guildResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}`, {
       headers: {
@@ -1687,7 +1569,6 @@ app.get('/api/guild/info', async (req, res) => {
       features: guildData.features || []
     });
   } catch (error) {
-    console.error('[server.js]: ❌ Error fetching guild info:', error);
     res.status(500).json({ error: 'Failed to fetch guild information' });
   }
 });
@@ -1703,7 +1584,6 @@ app.post('/api/guild/join', async (req, res) => {
       return res.status(500).json({ error: 'Guild ID not configured' });
     }
     
-    console.log(`[server.js]: 🔗 Generating invite link for guild: ${guildId}`);
     
     // Create an invite link for the guild
     const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/invites`, {
@@ -1727,7 +1607,6 @@ app.post('/api/guild/join', async (req, res) => {
     const inviteData = await response.json();
     const inviteUrl = `https://discord.gg/${inviteData.code}`;
     
-    console.log(`[server.js]: ✅ Generated invite link for guild ${guildId}: ${inviteUrl}`);
     
     res.json({
       success: true,
@@ -1736,7 +1615,6 @@ app.post('/api/guild/join', async (req, res) => {
       expiresAt: inviteData.expires_at
     });
   } catch (error) {
-    console.error('[server.js]: ❌ Error generating guild invite:', error);
     res.status(500).json({ error: 'Failed to generate guild invite link' });
   }
 });
@@ -1759,7 +1637,6 @@ app.get('/api/images/:filename', async (req, res) => {
     
     response.body.pipe(res);
   } catch (error) {
-    console.error('[server.js]: ❌ Error proxying image:', error);
     res.status(404).send('Image not found');
   }
 });
@@ -1784,7 +1661,7 @@ app.get('/api/inventory', async (req, res) => {
       }
     }
     
-    console.log(`[server.js]: ✅ Successfully fetched ${inventoryData.length} inventory items`);
+    
     res.json(inventoryData);
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching inventory data:', error);
@@ -1803,7 +1680,6 @@ app.get('/api/inventory/characters', async (req, res) => {
     }
     
     const characterNames = characters.split(',').map(name => name.trim());
-    console.log(`[server.js]: 🔍 Fetching inventory for characters:`, characterNames);
     
     const inventoryData = [];
     
@@ -1829,7 +1705,6 @@ app.get('/api/inventory/characters', async (req, res) => {
       }
     }
     
-    console.log(`[server.js]: ✅ Successfully fetched ${inventoryData.length} inventory items for ${characterNames.length} characters`);
     res.json({ data: inventoryData });
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching character inventory data:', error);
@@ -1841,7 +1716,7 @@ app.get('/api/inventory/characters', async (req, res) => {
 // Returns basic character info without inventory data (fast loading)
 app.get('/api/characters/list', async (req, res) => {
   try {
-    console.log('[server.js]: 👥 Fetching character list...');
+  
     
     const characters = await Character.find({}, {
       name: 1,
@@ -1861,7 +1736,7 @@ app.get('/api/characters/list', async (req, res) => {
       currentVillage: char.currentVillage
     }));
     
-    console.log(`[server.js]: ✅ Successfully fetched ${characterList.length} characters`);
+
     res.json({ data: characterList });
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching character list:', error);
@@ -1873,7 +1748,7 @@ app.get('/api/characters/list', async (req, res) => {
 // Returns inventory summary (counts) for all characters
 app.get('/api/inventory/summary', async (req, res) => {
   try {
-    console.log('[server.js]: 📊 Fetching inventory summary...');
+    
     
     const characters = await fetchAllCharacters();
     const summary = [];
@@ -1908,7 +1783,7 @@ app.get('/api/inventory/summary', async (req, res) => {
       }
     }
     
-    console.log(`[server.js]: ✅ Successfully fetched inventory summary for ${summary.length} characters`);
+
     res.json({ data: summary });
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching inventory summary:', error);
@@ -1921,7 +1796,7 @@ app.get('/api/inventory/summary', async (req, res) => {
 app.get('/api/items', async (req, res) => {
   try {
     const items = await fetchAllItems();
-    console.log(`[server.js]: ✅ Successfully fetched ${items.length} items`);
+    
     res.json(items);
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching items data:', error);
@@ -1932,7 +1807,7 @@ app.get('/api/items', async (req, res) => {
 // ------------------- Function: searchInventoryByItem -------------------
 // Searches inventory for specific item across all characters
 app.post('/api/inventory/item', async (req, res) => {
-  console.log('[server.js]: 📥 INVENTORY POST REQUEST RECEIVED');
+  
   const { itemName } = req.body;
   try {
     const characters = await fetchAllCharacters();
@@ -1992,11 +1867,11 @@ function getWeatherDayBounds() {
 // Returns today's weather for all villages (using 8am-8am weather day)
 app.get('/api/weather/today', async (req, res) => {
   try {
-    console.log('[server.js]: 🌤️ Fetching today\'s weather for all villages...');
+    
     
     const { weatherDayStart, weatherDayEnd } = getWeatherDayBounds();
     
-    console.log(`[server.js]: 📅 Weather day: ${weatherDayStart.toISOString()} to ${weatherDayEnd.toISOString()}`);
+    
     
     // Get weather for all villages for the current weather day
     const weatherData = await Weather.find({
@@ -2015,7 +1890,7 @@ app.get('/api/weather/today', async (req, res) => {
       weatherByVillage[village] = villageWeather || null;
     });
     
-    console.log(`[server.js]: ✅ Successfully fetched weather for ${weatherData.length} villages`);
+    
     res.json({
       date: weatherDayStart.toISOString(),
       weatherDayStart: weatherDayStart.toISOString(),
@@ -2037,12 +1912,12 @@ app.get('/api/weather/history/:village', async (req, res) => {
     
     // Determine the current season
     const currentSeason = calendarModule.getCurrentSeason();
-    console.log(`[server.js]: 🌤️ Fetching ${days} days of weather history for ${village} in season ${currentSeason}...`);
+    
     
     // Only fetch weather for the current season
     const history = await Weather.getRecentWeather(village, days, currentSeason);
     
-    console.log(`[server.js]: ✅ Successfully fetched ${history.length} days of weather history for ${village} in season ${currentSeason}`);
+    
     res.json({
       village,
       history,
@@ -2061,7 +1936,7 @@ app.get('/api/weather/stats', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
     
-    console.log(`[server.js]: 📊 Fetching weather statistics for ${days} days...`);
+    
     
     const villages = ['Rudania', 'Inariko', 'Vhintl'];
     const statsData = {};
@@ -2071,7 +1946,7 @@ app.get('/api/weather/stats', async (req, res) => {
       statsData[village] = history;
     }
     
-    console.log(`[server.js]: ✅ Successfully fetched weather statistics for ${villages.length} villages`);
+    
     res.json({
       days,
       villages: statsData,
@@ -2130,8 +2005,7 @@ const startServer = async () => {
     
     // Start server
     app.listen(PORT, () => {
-      console.log(`[server.js]: 🚀 Dashboard server running on port ${PORT}`);
-      console.log(`[server.js]: 📝 Visit http://localhost:${PORT} to view the dashboard`);
+
     });
   } catch (error) {
     console.error('[server.js]: ❌ Failed to start server:', error);
@@ -2144,25 +2018,25 @@ const startServer = async () => {
 // ------------------- Function: gracefulShutdown -------------------
 // Handles graceful shutdown of the server and database connections
 const gracefulShutdown = async () => {
-  console.log('[server.js]: 🔄 Shutting down gracefully...');
+
   
   // Close all database connections
   if (mongoose.connection.readyState === 1) {
     await mongoose.connection.close();
-    console.log('[server.js]: ✅ Tinglebot connection closed');
+
   }
   
   if (inventoriesConnection) {
     await inventoriesConnection.close();
-    console.log('[server.js]: ✅ Inventories connection closed');
+    
   }
   
   if (vendingConnection) {
     await vendingConnection.close();
-    console.log('[server.js]: ✅ Vending connection closed');
+
   }
   
-  console.log('[server.js]: 🏁 Server shutdown complete');
+  
   process.exit(0);
 };
 

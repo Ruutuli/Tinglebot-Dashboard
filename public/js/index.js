@@ -28,10 +28,6 @@ const { renderCharacterCards } = characters;
 // Make weatherStats available globally
 window.weatherStats = weatherStats;
 
-// Test commands module import
-// console.log('🔍 Testing commands module import...');
-// console.log('📦 Commands module:', commands);
-// console.log('🔧 showCommandsSection available:', typeof commands?.showCommandsSection);
 
 export {
   inventory,
@@ -54,26 +50,13 @@ export {
 // ============================================================================
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    console.log('🚀 DOM Content Loaded - Starting initialization...');
-    
-    // Initialize authentication first
-    console.log('🔐 Initializing authentication...');
     await auth.checkUserAuthStatus();
     
-    // Check if back-to-top button exists
     const backToTopButton = document.getElementById('backToTop');
-    console.log('🔍 Back-to-top button check:', {
-      exists: !!backToTopButton,
-      element: backToTopButton,
-      id: backToTopButton?.id,
-      className: backToTopButton?.className
-    });
     
     setupSidebarNavigation();
-    console.log('🔝 Calling setupBackToTopButton from index.js...');
     setupBackToTopButton();
     setupModelCards();
-    console.log('✅ Initialization complete');
   } catch (err) {
     error.logError(err, 'Initialization');
   }
@@ -83,25 +66,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Attaches click handlers to each model card and loads model data
 function setupModelCards() {
   const modelCards = document.querySelectorAll('.model-card');
-  console.log('🔍 Setting up model cards:', modelCards.length);
 
   modelCards.forEach(card => {
     const modelName = card.getAttribute('data-model');
-    console.log('🎯 Setting up card:', modelName);
     
     card.addEventListener('click', async (event) => {
       event.preventDefault(); // Prevent default button behavior
-      console.log('🖱️ Model card clicked:', modelName);
 
       // Reset filters when switching between models
       if (window.itemFiltersInitialized) {
-        console.log('🧹 Resetting item filters for model switch');
         window.itemFiltersInitialized = false;
         window.allItems = null;
         window.savedFilterState = {};
       }
       if (window.characterFiltersInitialized) {
-        console.log('🧹 Resetting character filters for model switch');
         window.characterFiltersInitialized = false;
         window.allCharacters = null;
       }
@@ -111,7 +89,6 @@ function setupModelCards() {
       setTimeout(() => card.classList.remove('clicked'), 200);
 
       showLoadingState();
-      console.log('⏳ Loading state shown');
 
       // Declare variables outside try block so they're available in catch
       let dashboardSection, modelDetailsPage, title, contentDiv, backButton;
@@ -124,14 +101,6 @@ function setupModelCards() {
         contentDiv = document.getElementById('model-details-data');
         backButton = document.querySelector('.back-button');
 
-        console.log('🔍 Checking required elements:', {
-          dashboardSection: !!dashboardSection,
-          modelDetailsPage: !!modelDetailsPage,
-          title: !!title,
-          contentDiv: !!contentDiv,
-          backButton: !!backButton
-        });
-
         if (!dashboardSection || !modelDetailsPage || !title || !contentDiv || !backButton) {
           throw new Error('Required DOM elements not found');
         }
@@ -143,7 +112,6 @@ function setupModelCards() {
 
         // Setup back button handler
         backButton.onclick = () => {
-          console.log('🔙 Back button clicked');
           modelDetailsPage.style.display = 'none';
           dashboardSection.style.display = 'block';
           // Reset any global state
@@ -166,22 +134,15 @@ function setupModelCards() {
         }
    
         const response = await fetch(fetchUrl);
-        console.log('📥 Response status:', response.status);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const { data, pagination } = await response.json();
-        console.log('📦 Received data:', { 
-          dataLength: data?.length, 
-          pagination,
-          firstItem: data?.[0] 
-        });
 
         const characterFiltersBar = document.querySelector('.character-filters');
         if (modelName === 'character' && characterFiltersBar) {
-          console.log('🎛️ Setting up character filters');
           if (contentDiv.firstChild !== characterFiltersBar) {
             contentDiv.insertBefore(characterFiltersBar, contentDiv.firstChild);
           }
@@ -192,33 +153,24 @@ function setupModelCards() {
 
         const villageShopFiltersBar = document.querySelector('.village-shop-filters');
         if (modelName === 'villageShops' && villageShopFiltersBar) {
-          console.log('🏪 Setting up village shop filters');
-          console.log('🏪 Filter container found:', villageShopFiltersBar);
-          console.log('🏪 Filter container children:', villageShopFiltersBar.children.length);
           if (contentDiv.firstChild !== villageShopFiltersBar) {
             contentDiv.insertBefore(villageShopFiltersBar, contentDiv.firstChild);
-            console.log('🏪 Moved filter container to content div');
           }
           villageShopFiltersBar.style.display = 'flex';
-          console.log('🏪 Made filter container visible');
         } else if (villageShopFiltersBar) {
           villageShopFiltersBar.style.display = 'none';
         } else if (modelName === 'villageShops') {
           console.error('❌ Village shop filters container not found in index.js');
         }
 
-        console.log('🚀 Initializing model:', modelName);
         switch (modelName) {
           case 'character':
-            console.log('👥 Initializing character page');
             await characters.initializeCharacterPage(data, pagination.page, contentDiv);
             break;
           case 'weather':
-            console.log('🌤️ Initializing weather statistics page');
             await weatherStats.initializeWeatherStatsPage();
             break;
           case 'item':
-            console.log('📦 Initializing item page');
             // Check if item filters are active
             if (window.itemFiltersInitialized && window.savedFilterState) {
               const hasActiveFilters = window.savedFilterState.searchTerm || 
@@ -229,7 +181,6 @@ function setupModelCards() {
                 window.savedFilterState.locationsFilter !== 'all';
               
               if (hasActiveFilters) {
-                console.log('🔍 Filters active - skipping normal pagination for items');
                 // Don't apply normal pagination when filters are active
                 // Let the filtered pagination handle it
                 return; // Skip pagination update
@@ -238,22 +189,18 @@ function setupModelCards() {
             await items.initializeItemPage(data, pagination.page, contentDiv);
             break;
           case 'starterGear':
-            console.log('🥾 Initializing starter gear page');
             title.textContent = 'Starter Gear';
             await starterGear.initializeStarterGearPage(data, pagination.page, contentDiv);
             break;
           case 'monster':
-            console.log('👹 Initializing monster page');
             await monsters.initializeMonsterPage(data, pagination.page, contentDiv);
             break;
           case 'inventory':
-            console.log('🎒 Initializing inventory page');
             // Inventory uses its own efficient pagination system
             // Skip the main pagination logic entirely
             await inventory.initializeInventoryPage(data, pagination.page, contentDiv);
             break;
           case 'villageShops':
-            console.log('🏰 Initializing village shops page');
             await villageShops.initializeVillageShopsPage(data, pagination.page, contentDiv);
             break;
           default:
@@ -277,7 +224,6 @@ function setupModelCards() {
               window.savedFilterState.locationsFilter !== 'all';
             
             if (hasActiveFilters) {
-              console.log('🔍 Filters active - skipping initial pagination setup for items');
               // Don't create normal pagination when filters are active
               // Let the filtered pagination handle it
               return;
@@ -286,46 +232,29 @@ function setupModelCards() {
 
           // Skip pagination for inventory as it uses its own efficient system
           if (modelName === 'inventory') {
-            console.log('🎒 Skipping main pagination for inventory - uses efficient pagination system');
             return;
           }
 
           // Skip pagination for village shops as it uses its own efficient system
           if (modelName === 'villageShops') {
-            console.log('🏰 Skipping main pagination for village shops - uses efficient pagination system');
             return;
           }
 
-          console.log('📄 Setting up pagination');
           const handlePageChange = async (pageNum) => {
-            console.log(`🔄 Page change requested to page ${pageNum}`);
             showLoadingState();
             try {
-              console.log(`📄 Loading page ${pageNum}`);
               const { data, pagination } = await loadModelData(modelName, pageNum);
-              console.log(`📦 Received page ${pageNum} data:`, { 
-                dataLength: data?.length, 
-                pagination,
-                firstItem: data?.[0] 
-              });
 
               switch (modelName) {
                 case 'character':
-                  console.log('🎯 About to render characters:', {
-                    dataLength: data?.length,
-                    page: pagination.page,
-                    firstCharacter: data?.[0]?.name
-                  });
                   try {
                     // For characters, we need to handle pagination differently
                     // since they have their own filtering system
                     if (!window.characterFiltersInitialized) {
                       // If filters aren't initialized, use the main pagination
                       await characters.renderCharacterCards(data, pagination.page, false);
-                      console.log('✅ Characters rendered successfully');
                     } else {
                       // If filters are initialized, let the character module handle pagination
-                      console.log('🔍 Character filters active - letting character module handle pagination');
                       return;
                     }
                   } catch (err) {
@@ -343,8 +272,7 @@ function setupModelCards() {
                       window.savedFilterState.jobsFilter !== 'all' || 
                       window.savedFilterState.locationsFilter !== 'all';
                     
-                    if (hasActiveFilters) {
-                      console.log('🔍 Filters active - skipping pagination for items');
+                    if (hasActiveFilters) {   
                       // Don't apply normal pagination when filters are active
                       // Let the filtered pagination handle it
                       return;
@@ -355,7 +283,6 @@ function setupModelCards() {
                 case 'inventory':
                   // Inventory uses its own efficient pagination system
                   // Skip the main pagination handling
-                  console.log('🎒 Skipping main pagination handling for inventory');
                   return;
                 case 'monster':
                   // For monsters, we need to update the global data and re-render
@@ -365,14 +292,12 @@ function setupModelCards() {
                 case 'villageShops':
                   // Village shops uses its own efficient pagination system
                   // Skip the main pagination handling
-                  console.log('🏰 Skipping main pagination handling for village shops');
                   return;
                 default:
                   console.error(`Unknown model type: ${modelName}`);
               }
               
               // Recreate pagination with updated page number
-              console.log('📄 Recreating pagination with updated page:', pagination.page);
               const updatedPaginationDiv = createPagination({ page: pagination.page, pages: pagination.pages }, handlePageChange);
               
               // Update pagination in the DOM
@@ -408,11 +333,9 @@ function setupModelCards() {
           } else if (modelName === 'inventory') {
             // Inventory uses its own efficient pagination system
             // Skip creating main pagination container
-            console.log('🎒 Skipping main pagination container creation for inventory');
           } else if (modelName === 'villageShops') {
             // Village shops uses its own efficient pagination system
             // Skip creating main pagination container
-            console.log('🏰 Skipping main pagination container creation for village shops');
           } else {
             // Fix the createPagination call to use correct parameter format
             const paginationDiv = createPagination({ page: pagination.page, pages: pagination.pages }, handlePageChange);
@@ -422,15 +345,12 @@ function setupModelCards() {
 
         // Load character of the week
         if (typeof loadCharacterOfWeek === 'function') {
-          console.log('🌟 Loading character of the week...');
           try {
             loadCharacterOfWeek();
           } catch (error) {
             console.error('❌ Error loading character of the week:', error);
           }
         } else {
-          console.log('⚠️ Character of week function not available');
-          console.log('🔍 Available loadCharacterOfWeek:', typeof loadCharacterOfWeek);
         }
 
       } catch (err) {
@@ -441,7 +361,6 @@ function setupModelCards() {
         }
       } finally {
         hideLoadingState();
-        console.log('✅ Loading complete');
       }
     });
   });
@@ -559,7 +478,6 @@ async function loadStatsData() {
   try {
     // Note: Activity list functionality removed as it's not implemented in the UI
     // The stats section focuses on character statistics charts instead
-    console.log('📊 Stats data loading skipped - using character stats instead');
   } catch (err) {
     error.logError(err, 'Loading Stats');
   }
@@ -581,18 +499,14 @@ function showSection(sectionId) {
 // Handles all sidebar navigation including dashboard and stats
 // ============================================================================
 function setupSidebarNavigation() {
-  console.log('📊 Setting up sidebar navigation...');
   
   const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
-  console.log('🔍 Found sidebar links:', sidebarLinks.length);
   
   sidebarLinks.forEach(link => {
     const sectionId = link.getAttribute('data-section');
-    console.log('🔗 Setting up link:', sectionId);
     
     link.addEventListener('click', e => {
       e.preventDefault();
-      console.log('🖱️ Sidebar link clicked:', sectionId);
       
       // Close mobile sidebar if open
       closeMobileSidebar();
@@ -624,7 +538,6 @@ function setupSidebarNavigation() {
   // Handle browser back/forward buttons
   window.addEventListener('popstate', (event) => {
     const section = event.state?.section || 'dashboard-section';
-    console.log('🔄 Browser navigation to:', section);
     
     if (section === 'stats-section') {
       showStatsSection();
@@ -647,7 +560,6 @@ function setupSidebarNavigation() {
   const hash = window.location.hash;
   if (hash) {
     const sectionId = hash.substring(1);
-    console.log('📍 Initial URL hash:', sectionId);
     
     if (sectionId === 'stats-section') {
       showStatsSection();
@@ -679,7 +591,6 @@ function setupSidebarNavigation() {
 // ============================================================================
 
 function setupMobileSidebar() {
-  console.log('📱 Setting up mobile sidebar functionality...');
   
   const sidebarToggle = document.getElementById('sidebar-toggle');
   const sidebar = document.querySelector('.sidebar');
@@ -699,7 +610,6 @@ function setupMobileSidebar() {
   sidebarToggle.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('📱 Sidebar toggle clicked');
     
     if (isMobileView()) {
       toggleMobileSidebar();
@@ -710,14 +620,12 @@ function setupMobileSidebar() {
   
   // Overlay click handler to close sidebar
   overlay.addEventListener('click', () => {
-    console.log('📱 Overlay clicked - closing sidebar');
     closeMobileSidebar();
   });
   
   // Close sidebar on escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && isMobileView()) {
-      console.log('📱 Escape key pressed - closing sidebar');
       closeMobileSidebar();
     }
   });
@@ -727,7 +635,6 @@ function setupMobileSidebar() {
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
-      console.log('📱 Window resized - checking mobile state');
       handleWindowResize();
     }, 250);
   });
@@ -756,7 +663,6 @@ function toggleMobileSidebar() {
 }
 
 function openMobileSidebar() {
-  console.log('📱 Opening mobile sidebar');
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.sidebar-overlay');
   
@@ -774,7 +680,6 @@ function openMobileSidebar() {
 }
 
 function closeMobileSidebar() {
-  console.log('📱 Closing mobile sidebar');
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.sidebar-overlay');
   
@@ -797,7 +702,6 @@ function closeMobileSidebar() {
 }
 
 function toggleDesktopSidebar() {
-  console.log('🖥️ Toggling desktop sidebar');
   const sidebar = document.querySelector('.sidebar');
   const mainWrapper = document.querySelector('.main-wrapper');
   
@@ -917,7 +821,6 @@ function hideModelDetails() {
 // Handles stats page navigation specifically
 // ============================================================================
 function showStatsSection() {
-  console.log('📊 Showing stats section...');
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -931,7 +834,6 @@ function showStatsSection() {
   const statsSection = document.getElementById('stats-section');
   if (statsSection) {
     statsSection.style.display = 'block';
-    console.log('✅ Stats section displayed');
     
     // Initialize stats page
     import('./stats.js').then(statsModule => {
@@ -964,8 +866,7 @@ function showStatsSection() {
   }
 }
 
-function showDashboardSection() {
-  console.log('🏠 Showing dashboard section...');
+function showDashboardSection() { 
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -979,7 +880,6 @@ function showDashboardSection() {
   const dashboardSection = document.getElementById('dashboard-section');
   if (dashboardSection) {
     dashboardSection.style.display = 'block';
-    console.log('✅ Dashboard section displayed');
     
     // Debug: Check if dashboard content is visible
     const welcomeBox = dashboardSection.querySelector('.dashboard-welcome-box');
@@ -987,17 +887,7 @@ function showDashboardSection() {
     const linksSection = dashboardSection.querySelector('.dashboard-links-section');
     const countdownSection = dashboardSection.querySelector('#countdown-section');
     
-    console.log('🔍 Dashboard content check:', {
-      welcomeBox: !!welcomeBox,
-      welcomeBoxDisplay: welcomeBox?.style.display,
-      modelGrid: !!modelGrid,
-      modelGridDisplay: modelGrid?.style.display,
-      linksSection: !!linksSection,
-      linksSectionDisplay: linksSection?.style.display,
-      countdownSection: !!countdownSection,
-      countdownSectionDisplay: countdownSection?.style.display,
-      dashboardSectionDisplay: dashboardSection.style.display
-    });
+
     
     // Fix: Explicitly make dashboard content visible
     if (welcomeBox) welcomeBox.style.display = 'block';
@@ -1009,20 +899,12 @@ function showDashboardSection() {
     const characterOfWeekSection = document.getElementById('character-of-week-section');
     if (characterOfWeekSection) {
       characterOfWeekSection.style.display = 'block';
-      console.log('🔧 Made character of week section visible');
     }
-    
-    console.log('🔧 Fixed dashboard content visibility');
     
     // Check for any loading states that might be hiding content
     const loader = document.getElementById('loader');
     const loadingStates = document.querySelectorAll('.loading-state');
-    console.log('🔍 Loading states check:', {
-      loader: !!loader,
-      loaderDisplay: loader?.style.display,
-      loadingStatesCount: loadingStates.length,
-      loadingStatesDisplay: Array.from(loadingStates).map(el => el.style.display)
-    });
+    
     
     // Always destroy and re-create the countdown manager (after content is visible)
     setTimeout(() => {
@@ -1040,21 +922,17 @@ function showDashboardSection() {
     }
     // Render weather section
     if (window.renderWeatherSection) {
-      console.log('🌤️ Rendering weather section...');
       window.renderWeatherSection();
     }
     
     // Load character of the week
     if (typeof loadCharacterOfWeek === 'function') {
-      console.log('🌟 Loading character of the week...');
       try {
         loadCharacterOfWeek();
       } catch (error) {
         console.error('❌ Error loading character of the week:', error);
       }
     } else {
-      console.log('⚠️ Character of week function not available');
-      console.log('🔍 Available loadCharacterOfWeek:', typeof loadCharacterOfWeek);
     }
     
     // The dashboard content (welcome message, links, model cards) is already in the HTML
@@ -1089,7 +967,6 @@ function showDashboardSection() {
 // Handles profile page navigation specifically
 // ============================================================================
 function showProfileSection() {
-  console.log('👤 Showing profile section...');
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -1103,7 +980,6 @@ function showProfileSection() {
   const profileSection = document.getElementById('profile-section');
   if (profileSection) {
     profileSection.style.display = 'block';
-    console.log('✅ Profile section displayed');
     
     // Initialize profile page
     import('./profile.js').then(profileModule => {
@@ -1141,7 +1017,6 @@ function showProfileSection() {
 // Handles guild page navigation specifically
 // ============================================================================
 function showGuildSection() {
-  console.log('🏰 Showing guild section...');
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -1155,7 +1030,6 @@ function showGuildSection() {
   const guildSection = document.getElementById('guilds-section');
   if (guildSection) {
     guildSection.style.display = 'block';
-    console.log('✅ Guild section displayed');
     
     // Initialize guild page
     guilds.showGuildSection();
@@ -1189,7 +1063,6 @@ function showGuildSection() {
 // Handles calendar page navigation specifically
 // ============================================================================
 function showCalendarSection() {
-  console.log('📅 Showing calendar section...');
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -1203,13 +1076,11 @@ function showCalendarSection() {
   const calendarSection = document.getElementById('calendar-section');
   if (calendarSection) {
     calendarSection.style.display = 'block';
-    console.log('✅ Calendar section displayed');
     
     // Initialize calendar page if module is available
     if (window.calendarModule) {
       window.calendarModule.loadCalendarData();
     } else {
-      console.log('⚠️ Calendar module not available yet');
     }
   } else {
     console.error('❌ Calendar section not found');

@@ -18,7 +18,7 @@ function validateForm(formData) {
     return {
         isValid: Object.keys(errors).length === 0,
         errors
-    };
+    };  
 }
 
 function isValidEmail(email) {

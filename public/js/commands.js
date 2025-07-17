@@ -3,8 +3,6 @@
    Purpose: Handles the commands page functionality
 ============================================================================ */
 
-console.log('🚀 Commands module loading...');
-
 // Import UI functions
 import { setupBackToTopButton } from './ui.js';
 
@@ -23,13 +21,11 @@ function loadCommandsCSS() {
     link.rel = 'stylesheet';
     link.href = 'css/commands.css';
     document.head.appendChild(link);
-    console.log('✅ commands.css loaded');
   }
 }
 
 export function showCommandsSection() {
   loadCommandsCSS();
-  console.log('📋 Showing commands section...');
   
   try {
     // Hide all sections
@@ -42,7 +38,6 @@ export function showCommandsSection() {
     const commandsSection = document.getElementById('commands-section');
     if (commandsSection) {
       commandsSection.style.display = 'block';
-      console.log('✅ Commands section displayed');
     } else {
       console.error('❌ Commands section element not found');
     }
@@ -67,10 +62,8 @@ export function showCommandsSection() {
     
     // Initialize commands if not already done
     if (allCommands.length === 0) {
-      console.log('🔄 Commands not loaded yet, initializing...');
       initCommands();
     } else {
-      console.log('✅ Commands already loaded, refreshing display...');
       displayCommands();
       updateStats();
     }
@@ -86,7 +79,6 @@ export function showCommandsSection() {
 // ============================================================================
 async function loadCommands() {
   try {
-    console.log('📥 Loading commands data...');
     
     const response = await fetch('/api/commands');
     if (!response.ok) {
@@ -102,7 +94,6 @@ async function loadCommands() {
     // Initialize filters after loading commands
     initializeFilters();
     
-    console.log('✅ Commands loaded successfully');
   } catch (err) {
     console.error('❌ Error loading commands:', err);
     showError('Failed to load commands');
@@ -262,8 +253,7 @@ function updateCommandsStats(commands) {
     if (totalElement) totalElement.textContent = totalCommands.toLocaleString();
     if (categoriesElement) categoriesElement.textContent = categories;
     if (mostUsedElement) mostUsedElement.textContent = mostUsed.name;
-    
-    console.log('✅ Commands statistics updated');
+      
   } catch (err) {
     console.error('❌ Error updating commands stats:', err);
   }
@@ -951,21 +941,17 @@ function getCommandUsageGuide(command) {
 
 // Initialize filter controls
 function initializeFilters() {
-  console.log('🔧 Initializing command filters...');
-  
   const searchInput = document.getElementById('search-input');
   const categoryFilter = document.getElementById('category-filter');
   
   if (searchInput) {
     searchInput.addEventListener('input', debounce(filterCommands, 300));
-    console.log('✅ Search input listener added');
   } else {
     console.error('❌ Search input not found');
   }
   
   if (categoryFilter) {
     categoryFilter.addEventListener('change', filterCommands);
-    console.log('✅ Category filter listener added');
   } else {
     console.error('❌ Category filter not found');
   }
@@ -1021,12 +1007,10 @@ function clearAllFilters() {
   displayCommands();
   updateStats();
   
-  console.log('🧹 All filters cleared');
 }
 
 // Filter commands by category
 function filterByCategory(category) {
-  console.log('🎯 Filtering by category:', category);
   
   if (category === 'all') {
     filteredCommands = [...allCommands];
@@ -1051,7 +1035,6 @@ function filterCommands() {
   const searchTerm = searchInput.value.toLowerCase().trim();
   const categoryFilterValue = categoryFilter.value;
   
-  console.log('🔍 Filtering commands:', { searchTerm, categoryFilterValue });
   
   filteredCommands = allCommands.filter(command => {
     const matchesSearch = searchTerm === '' || 
@@ -1145,7 +1128,6 @@ function updateResultsInfo() {
 
 // Initialize commands page
 function initCommands() {
-  console.log('🚀 Initializing commands page...');
   loadCommands();
 }
 
@@ -1165,5 +1147,3 @@ window.commandsModule = {
   closeCommandModal,
   clearAllFilters
 };
-
-console.log('✅ Commands module loaded successfully'); 

@@ -42,16 +42,13 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
   <script>
-    console.log('Page loading started');
     window.addEventListener('DOMContentLoaded', () => {
-      console.log('DOM Content Loaded');
       const styles = document.styleSheets;
-      console.log('Loaded stylesheets:', styles.length);
       for (let i = 0; i < styles.length; i++) {
         try {
-          console.log(`Stylesheet ${i}:`, styles[i].href);
+          // Access stylesheet href for potential future use
         } catch (e) {
-          console.log(`Stylesheet ${i}: Error accessing href - likely a cross-origin stylesheet`);
+          // Handle cross-origin stylesheet access errors
         }
       }
     });
@@ -805,12 +802,10 @@
 
     // Log when the page is fully loaded
     window.addEventListener('load', function() {
-      console.log('✅ Page fully loaded');
       // Check if modules are loaded
       const scripts = document.querySelectorAll('script[type="module"]');
-      console.log('📜 Module scripts found:', scripts.length);
       scripts.forEach(script => {
-        console.log('🔍 Module script:', script.src);
+        // Module script info could be handled here
       });
     });
 
@@ -843,17 +838,11 @@
 
     // Ensure character of week is loaded and available
     window.addEventListener('load', function() {
-      console.log('🔍 Checking character of week function availability...');
-      console.log('loadCharacterOfWeek function:', typeof loadCharacterOfWeek);
-      
       // If character of week function is available, trigger initial load
       if (typeof loadCharacterOfWeek === 'function') {
-        console.log('✅ Character of week function found, triggering initial load');
         setTimeout(() => {
           loadCharacterOfWeek();
         }, 1000); // Small delay to ensure everything is loaded
-      } else {
-        console.log('❌ Character of week function not found');
       }
     });
   </script>

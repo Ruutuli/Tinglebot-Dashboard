@@ -23,12 +23,11 @@ document.addEventListener('DOMContentLoaded', initUserAuth);
 // Initializes user authentication and menu functionality
 async function initUserAuth() {
   try {
-    console.log('[auth.js]: 🔐 Initializing user authentication...');
+    
     
     // Check if user just logged in (check URL parameters)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('login') === 'success') {
-      console.log('[auth.js]: 🎉 Login success detected, refreshing user data...');
       // Remove the parameter from URL
       window.history.replaceState({}, document.title, window.location.pathname);
       // Wait a moment for server to process login
@@ -50,7 +49,6 @@ async function initUserAuth() {
       }
     }, 30000);
     
-    console.log('[auth.js]: ✅ User authentication initialized');
   } catch (error) {
     console.error('[auth.js]: ❌ Error initializing user auth:', error);
     showGuestUser();
@@ -81,12 +79,10 @@ async function checkUserAuthStatus() {
     const userData = await response.json();
     
     if (userData.authenticated) {
-      console.log('[auth.js]: ✅ User authenticated:', userData.username);
       currentUser = userData;
       isAuthenticated = true;
       updateUserMenu(userData);
     } else {
-      console.log('[auth.js]: 👤 User not authenticated, showing guest mode');
       currentUser = null;
       isAuthenticated = false;
       showGuestUser();
@@ -113,7 +109,6 @@ function setupUserMenu() {
     return;
   }
   
-  console.log('[auth.js]: 🔧 Setting up user menu interactions');
 
   // User menu click handler
   userMenu.addEventListener('click', function(event) {
@@ -153,7 +148,6 @@ function setupUserMenu() {
     logoutButton.addEventListener('click', async (event) => {
       event.preventDefault();
       event.stopPropagation();
-      console.log('[auth.js]: 🚪 Logout button clicked', {time: Date.now(), stack: new Error().stack});
       closeUserDropdown('logout button');
       await logout();
     });
@@ -165,7 +159,6 @@ function setupUserMenu() {
     profileButton.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      console.log('[auth.js]: 👤 Profile button clicked', {time: Date.now(), stack: new Error().stack});
       closeUserDropdown('profile button');
       // Navigate to profile section
       const profileLink = document.querySelector('a[data-section="profile-section"]');
@@ -175,7 +168,6 @@ function setupUserMenu() {
     });
   }
 
-  console.log('[auth.js]: ✅ User menu interactions set up successfully');
 }
 
 // ------------------- Function: openUserDropdown -------------------
@@ -242,7 +234,6 @@ function updateUserMenu(userData) {
   userInfo.style.display = 'flex';
   guestInfo.style.display = 'none';
   
-  console.log('[auth.js]: ✅ User menu updated for authenticated user');
 }
 
 // ------------------- Function: showGuestUser -------------------
@@ -266,7 +257,6 @@ function showGuestUser() {
   userInfo.style.display = 'none';
   guestInfo.style.display = 'flex';
   
-  console.log('[auth.js]: ✅ User menu updated for guest user');
 }
 
 // ============================================================================
@@ -277,8 +267,7 @@ function showGuestUser() {
 // ------------------- Function: refreshUserData -------------------
 // Refreshes user data from server
 async function refreshUserData() {
-  try {
-    console.log('[auth.js]: 🔄 Refreshing user data...');
+  try { 
     await checkUserAuthStatus();
   } catch (error) {
     console.error('[auth.js]: ❌ Error refreshing user data:', error);
@@ -289,7 +278,6 @@ async function refreshUserData() {
 // Forces a refresh of the user menu (useful after login/logout)
 async function forceRefreshUserMenu() {
   try {
-    console.log('[auth.js]: 🔄 Force refreshing user menu...');
     await checkUserAuthStatus();
   } catch (error) {
     console.error('[auth.js]: ❌ Error force refreshing user menu:', error);
@@ -305,8 +293,7 @@ async function logout() {
       credentials: 'include'
     });
     
-    if (response.ok) {
-      console.log('[auth.js]: ✅ User logged out successfully');
+    if (response.ok) {  
       currentUser = null;
       isAuthenticated = false;
       showGuestUser();

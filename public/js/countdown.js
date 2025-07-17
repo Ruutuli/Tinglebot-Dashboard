@@ -80,8 +80,7 @@ class CountdownManager {
     setInterval(() => {
       this.updateEventsList();
     }, 60000);
-    
-    console.log('✅ Countdown manager initialized');
+      
   }
 
   getNextBloodMoonDate() {

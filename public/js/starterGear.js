@@ -87,15 +87,12 @@ function capitalize(str) {
 // Load filter options for starter gear
 async function loadFilterOptionsFromJSON() {
   try {
-    console.log('📄 Loading filter options for starter gear...');
     const response = await fetch('/js/itemFilterOptions.json');
     if (!response.ok) {
-      console.warn('⚠️ Could not load filter options from JSON file');
       return;
     }
     
     const filterOptions = await response.json();
-    console.log('✅ Loaded filter options from JSON:', filterOptions);
     
     // Use all categories from JSON
     populateSelect('starter-gear-filter-category', filterOptions.categories || []);
@@ -108,9 +105,7 @@ async function loadFilterOptionsFromJSON() {
     const starterGearSubtypes = ['Club', 'Shield', 'Bow', 'Boomerang', 'Sword', 'Axe', 'Spear', 'Leaf', 'Polearm', 'Shirt', 'Trousers'];
     populateSelect('starter-gear-filter-subtype', starterGearSubtypes);
     
-    console.log('✅ Starter gear filter options populated');
   } catch (error) {
-    console.error('❌ Error loading filter options from JSON:', error);
   }
 }
 
@@ -119,18 +114,15 @@ async function populateFilterOptions(items) {
   await loadFilterOptionsFromJSON();
   
   if (items?.length) {
-    console.log(`[Filter Debug] Items available (${items.length}), but using JSON file for filter options`);
   }
 }
 
 // Setup filters for starter gear
 async function setupStarterGearFilters(items) {
-  console.log('Setting up starter gear filters...');
 
   window.allStarterGearItems = items;
 
   if (window.starterGearFiltersInitialized) {
-    console.log('Filters already initialized, skipping setup');
     window.filterStarterGearItems();
     return;
   }
@@ -152,11 +144,9 @@ async function setupStarterGearFilters(items) {
   const missing = [searchInput, categorySelect, typeSelect, subtypeSelect, sortSelect, itemsPerPageSelect, clearFiltersBtn].some(el => !el);
   if (missing) {
     if (!window.starterGearFilterSetupRetried) {
-      console.warn('Retrying filter setup once...');
       window.starterGearFilterSetupRetried = true;
       requestAnimationFrame(() => setupStarterGearFilters(items));
     } else {
-      console.error('❌ Failed to initialize starter gear filters. Please refresh.');
     }
     return;
   }
@@ -182,16 +172,6 @@ async function setupStarterGearFilters(items) {
     const subtypeFilter = subtypeSelect.value.toLowerCase();
     const sortBy = sortSelect.value;
     const itemsPerPage = itemsPerPageSelect.value === 'all' ? window.allStarterGearItems.length : parseInt(itemsPerPageSelect.value);
-
-    console.log('🔍 filterStarterGearItems called:', {
-      page,
-      searchTerm,
-      categoryFilter,
-      typeFilter,
-      subtypeFilter,
-      sortBy,
-      itemsPerPage
-    });
 
     // Save current filter state
     window.savedStarterGearFilterState = {
@@ -252,21 +232,12 @@ async function setupStarterGearFilters(items) {
         : (typeof valB === 'string' ? valB.localeCompare(valA) : valB - valA);
     });
 
-    console.log('🔍 After filtering and sorting:', sorted.length);
 
     // Apply pagination
     const totalPages = Math.ceil(sorted.length / itemsPerPage);
     const startIndex = (page - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const paginatedItems = sorted.slice(startIndex, endIndex);
-
-    console.log('🔍 Pagination details:', {
-      totalPages,
-      startIndex,
-      endIndex,
-      paginatedItemsLength: paginatedItems.length,
-      itemsPerPage
-    });
 
     // Update results info
     const resultsInfo = document.querySelector('.starter-gear-results-info p');
@@ -298,8 +269,7 @@ async function setupStarterGearFilters(items) {
   // Create pagination for filtered results
   function updateStarterGearPagination(currentPage, totalPages, totalItems) {
     const contentDiv = document.getElementById('model-details-data');
-    if (!contentDiv) {
-      console.error('❌ Content div not found');
+    if (!contentDiv) {  
       return;
     }
 
@@ -311,10 +281,8 @@ async function setupStarterGearFilters(items) {
 
     // Only show pagination if there are multiple pages
     if (totalPages > 1) {
-      console.log('📄 Setting up pagination for starter gear results:', { currentPage, totalPages, totalItems });
       
       const handlePageChange = async (pageNum) => {
-        console.log(`🔄 Starter gear page change requested to page ${pageNum}`);
         window.filterStarterGearItems(pageNum);
       };
 
@@ -385,7 +353,6 @@ async function setupStarterGearFilters(items) {
       }
 
       contentDiv.appendChild(paginationDiv);
-      console.log('✅ Starter gear pagination created successfully');
     }
   }
 
@@ -413,7 +380,6 @@ async function setupStarterGearFilters(items) {
   });
 
   window.starterGearFiltersInitialized = true;
-  console.log('✅ Starter gear filters initialized');
   window.filterStarterGearItems();
 }
 

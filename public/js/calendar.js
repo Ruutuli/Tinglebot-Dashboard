@@ -13,7 +13,6 @@ class CalendarModule {
   }
 
   async init() {
-    console.log(' Calendar module initializing...');
     this.setupEventListeners();
     await this.loadCalendarData();
     this.updateOverview();
@@ -82,7 +81,6 @@ class CalendarModule {
 
   async loadCalendarData() {
     try {
-      console.log('📅 Loading calendar data...');
       
       // Load Hyrulean calendar data and birthdays from calendar endpoint
       const calendarResponse = await fetch('/api/calendar');
@@ -92,19 +90,6 @@ class CalendarModule {
         this.bloodmoonDates = calendarData.bloodmoonDates || [];
         this.birthdays = calendarData.birthdays || [];
         
-        console.log('📅 Received calendar data:', {
-          hyruleanCalendar: this.hyruleanCalendar.length,
-          bloodmoonDates: this.bloodmoonDates.length,
-          birthdays: this.birthdays.length
-        });
-        
-        // Log each birthday for debugging
-        this.birthdays.forEach((birthday, index) => {
-          console.log(`📅 Birthday ${index + 1}:`, {
-            name: birthday.name,
-            birthday: birthday.birthday
-          });
-        });
       }
 
       this.loadTabContent(this.currentTab);
@@ -318,7 +303,6 @@ class CalendarModule {
   }
 
   renderMonthlyCalendar() {
-    console.log('📅 Rendering monthly calendar...');
     
     // Update header
     const monthYearElement = document.getElementById('current-month-year');
@@ -401,89 +385,23 @@ class CalendarModule {
   }
 
   generateEventsList() {
-    const container = document.getElementById('calendar-events');
-    if (!container) return;
-    
-    const year = this.currentDate.getFullYear();
-    const month = this.currentDate.getMonth();
-    
-    // Get all events for this month
-    const monthEvents = [];
+    const events = [];
     
     // Add birthdays
     this.birthdays.forEach(birthday => {
-      console.log('Processing birthday for events list:', birthday); // Debug log
+      const [month, day] = birthday.birthday.split('-');
+      const eventDate = new Date(new Date().getFullYear(), parseInt(month) - 1, parseInt(day));
       
-      // Birthday data is already in MM-DD format from the server
-      if (birthday.birthday) {
-        const [month, day] = birthday.birthday.split('-');
-        const birthdayDate = new Date(year, parseInt(month) - 1, parseInt(day));
-        
-        if (birthdayDate && !isNaN(birthdayDate.getTime()) && birthdayDate.getMonth() === month) {
-          monthEvents.push({
-            type: 'birthday',
-            title: `${birthday.name}'s Birthday`,
-            date: birthdayDate,
-            icon: 'fas fa-birthday-cake'
-          });
-        }
-      }
+      // Add birthday to events list
+      events.push({
+        date: eventDate,
+        type: 'birthday',
+        name: birthday.name,
+        icon: birthday.icon || 'https://storage.googleapis.com/tinglebot/default-avatar.png'
+      });
     });
     
-    // Add blood moon dates
-    this.bloodmoonDates.forEach((bloodmoon, index) => {
-      const bloodmoonDate = new Date(`2024-${bloodmoon.realDate}`);
-      if (bloodmoonDate.getMonth() === month) {
-        monthEvents.push({
-          type: 'bloodmoon',
-          title: 'Blood Moon',
-          date: bloodmoonDate,
-          icon: 'fas fa-moon',
-          subtitle: `Cycle Day ${(index % 26) + 1}`
-        });
-      }
-    });
-    
-    // Sort events by date
-    monthEvents.sort((a, b) => a.date - b.date);
-    
-    if (monthEvents.length === 0) {
-      container.innerHTML = `
-        <h4>Events This Month</h4>
-        <div class="events-list">
-          <p style="color: var(--text-secondary); text-align: center; padding: 1rem;">
-            No events scheduled for this month
-          </p>
-        </div>
-      `;
-      return;
-    }
-    
-    const eventsHTML = monthEvents.map(event => `
-      <div class="event-item ${event.type}">
-        <div class="event-icon">
-          <i class="${event.icon}"></i>
-        </div>
-        <div class="event-details">
-          <div class="event-title">${event.title}</div>
-          <div class="event-date">
-            ${event.date.toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-            ${event.subtitle ? ` • ${event.subtitle}` : ''}
-          </div>
-        </div>
-      </div>
-    `).join('');
-    
-    container.innerHTML = `
-      <h4>Events This Month</h4>
-      <div class="events-list">
-        ${eventsHTML}
-      </div>
-    `;
+    return events;
   }
 
   getDayEvents(date) {
@@ -496,7 +414,7 @@ class CalendarModule {
     );
     
     if (dayBirthdays.length > 0) {
-      console.log('🎂 Birthday matches found:', dayBirthdays.map(b => b.name), 'on', dateString);
+
       
       if (dayBirthdays.length === 1) {
         // Single birthday - show name with cake
@@ -537,7 +455,7 @@ class CalendarModule {
       
       const dayInMonth = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
       
-      console.log(`Converting ${date.toDateString()}: month=${hyruleanMonth.name}, start=${hyruleanMonth.start}, dayInMonth=${dayInMonth}`);
+
       
       // Ensure the day is within valid range
       if (dayInMonth >= 1 && dayInMonth <= 26) {

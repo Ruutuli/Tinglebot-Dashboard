@@ -20,32 +20,22 @@ function renderVillageShopCards(items, page = 1, totalItems = null) {
       return nameA.localeCompare(nameB);
     });
 
-    console.log('🎨 renderVillageShopCards called:', {
-      itemsLength: sortedItems?.length,
-      page,
-      totalItems
-    });
-
     // Scroll to top of the page
     scrollToTop();
 
     const grid = document.getElementById('village-shops-container');
     if (!grid) {
-      console.error('❌ Grid container not found');
       return;
     }
-    console.log('✅ Found grid container');
   
     // ------------------- No Items Found -------------------
     if (!sortedItems || sortedItems.length === 0) {
-      console.log('⚠️ No village shop items to render');
       grid.innerHTML = '<div class="village-shop-loading">No village shop items found</div>';
       const pagination = document.getElementById('village-shop-pagination');
       if (pagination) pagination.innerHTML = '';
       return;
     }
-  
-    console.log('✅ Village shop items sorted alphabetically');
+
     
     // Get items per page setting
     const itemsPerPageSelect = document.getElementById('village-shop-items-per-page');
@@ -60,9 +50,7 @@ function renderVillageShopCards(items, page = 1, totalItems = null) {
     const endIndex = Math.min(startIndex + itemsPerPage, itemsForPagination);
   
     // ------------------- Render Village Shop Item Cards -------------------
-    console.log('🎨 Rendering village shop item cards');
     grid.innerHTML = sortedItems.map(item => {
-      console.log('🏪 Processing village shop item:', item.itemName);
       
       // Helper for tags
       const renderTags = arr => (Array.isArray(arr) ? arr.filter(Boolean).map(tag => `<span class="item-tag">${tag.trim()}</span>`).join('') : '');
@@ -210,7 +198,6 @@ function renderVillageShopCards(items, page = 1, totalItems = null) {
       resultsInfo.textContent = `Showing ${startItem}-${endItem} of ${itemsForPagination} village shop items`;
     }
 
-    console.log('✅ Village shop cards rendered successfully');
   }
   
   // ============================================================================
@@ -295,7 +282,6 @@ async function fetchAllVillageShopItemsForFilters() {
     window.allVillageShopItemsForFilters = data;
     return data;
   } catch (err) {
-    console.error('[Filter Debug] Failed to fetch all village shop items for filters, using current page only:', err);
     // Fallback: use current page items if available
     return window.allVillageShopItems || [];
   }
@@ -304,39 +290,31 @@ async function fetchAllVillageShopItemsForFilters() {
 // ------------------- Function: populateFilterOptions -------------------
 // Populates filter dropdowns with available values
 async function populateFilterOptions(items) {
-  console.log('📄 Populating village shop filter options...');
-  
+
   // Always load from JSON file first
   await loadFilterOptionsFromJSON();
   
   // If we have items, we could also populate from live data, but for now we'll just use the JSON
   if (items?.length) {
-    console.log(`[Filter Debug] Village shop items available (${items.length}), but using JSON file for filter options`);
   }
   
-  console.log('✅ Village shop filter options populated');
 }
 
 // ------------------- Function: loadFilterOptionsFromJSON -------------------
 // Loads filter options from the JSON file as a fallback
 async function loadFilterOptionsFromJSON() {
   try {
-    console.log('📄 Loading filter options from JSON file...');
     const response = await fetch('/js/itemFilterOptions.json');
     if (!response.ok) {
-      console.warn('⚠️ Could not load filter options from JSON file');
       return;
     }
     
     const filterOptions = await response.json();
-    console.log('✅ Loaded filter options from JSON:', filterOptions);
     
     populateSelect('village-shop-filter-category', filterOptions.categories || []);
     populateSelect('village-shop-filter-type', filterOptions.types || []);
     
-    console.log('✅ Filter options populated from JSON file');
   } catch (error) {
-    console.error('❌ Error loading filter options from JSON:', error);
   }
 }
 
@@ -365,7 +343,6 @@ function populateSelect(id, values) {
 function updateVillageShopPagination(currentPage, totalPages, totalItems) {
   const paginationContainer = document.getElementById('village-shop-pagination');
   if (!paginationContainer) {
-    console.error('❌ Village shop pagination container not found');
     return;
   }
 
@@ -374,10 +351,8 @@ function updateVillageShopPagination(currentPage, totalPages, totalItems) {
 
   // Only show pagination if there are multiple pages
   if (totalPages > 1) {
-    console.log('📄 Setting up pagination for village shops:', { currentPage, totalPages, totalItems });
     
     const handlePageChange = (pageNum) => {
-      console.log(`🔄 Village shop page change requested to page ${pageNum}`);
       window.filterVillageShopItems(pageNum);
     };
 
@@ -448,18 +423,15 @@ function updateVillageShopPagination(currentPage, totalPages, totalItems) {
     }
 
     paginationContainer.appendChild(paginationDiv);
-    console.log('✅ Village shop pagination created successfully');
   }
 }
 
 // ------------------- Function: setupVillageShopFilters -------------------
 // Sets up simple filters for village shop items
 async function setupVillageShopFilters(items) {
-  console.log('Setting up village shop filters...');
 
   // Fetch all village shop items for proper pagination
-  try {
-    console.log('🔄 Fetching all village shop items for initial setup...');
+  try {  
     const response = await fetch('/api/models/villageShops?all=true');
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const { data: allVillageShopItems } = await response.json();
@@ -473,15 +445,12 @@ async function setupVillageShopFilters(items) {
     
     // Update the global village shop list with all items
     window.allVillageShopItems = sortedItems;
-    console.log('✅ Set global village shop list to', sortedItems.length, 'items (sorted alphabetically)');
   } catch (error) {
-    console.error('❌ Error fetching all village shop items:', error);
     // Fallback to using the provided items
     window.allVillageShopItems = items;
   }
 
   if (window.villageShopFiltersInitialized) {
-    console.log('Filters already initialized, skipping setup');
     window.filterVillageShopItems();
     return;
   }
@@ -489,8 +458,6 @@ async function setupVillageShopFilters(items) {
   // Show the filters container
   const filtersContainer = document.querySelector('.village-shop-filters');
   if (filtersContainer) {
-    console.log('✅ Found village shop filters container');
-    console.log('✅ Filter container children:', filtersContainer.children.length);
     filtersContainer.style.display = 'block';
   } else {
     console.error('❌ Village shop filters container not found');
@@ -506,14 +473,7 @@ async function setupVillageShopFilters(items) {
   const itemsPerPageSelect = document.getElementById('village-shop-items-per-page');
   const clearFiltersBtn = document.getElementById('village-shop-clear-filters');
 
-  console.log('🔍 Filter elements found:', {
-    searchInput: !!searchInput,
-    categorySelect: !!categorySelect,
-    typeSelect: !!typeSelect,
-    sortSelect: !!sortSelect,
-    itemsPerPageSelect: !!itemsPerPageSelect,
-    clearFiltersBtn: !!clearFiltersBtn
-  });
+
 
   // Check which elements are missing for better debugging
   const missingElements = [];
@@ -550,8 +510,6 @@ async function setupVillageShopFilters(items) {
   if (savedFilterState.typeFilter) typeSelect.value = savedFilterState.typeFilter;
   if (savedFilterState.sortBy) sortSelect.value = savedFilterState.sortBy;
 
-  console.log('✅ All filter elements found and initialized');
-
   // ------------------- Function: filterVillageShopItems -------------------
   // Main filtering function
   window.filterVillageShopItems = async function (page = 1) {
@@ -561,14 +519,7 @@ async function setupVillageShopFilters(items) {
     const sortBy = sortSelect.value;
     const itemsPerPage = itemsPerPageSelect.value === 'all' ? 999999 : parseInt(itemsPerPageSelect.value);
 
-    console.log('🔍 filterVillageShopItems called:', {
-      page,
-      searchTerm,
-      categoryFilter,
-      typeFilter,
-      sortBy,
-      itemsPerPage
-    });
+
 
     // Save current filter state
     window.savedFilterState = {
@@ -584,18 +535,10 @@ async function setupVillageShopFilters(items) {
       categoryFilter !== 'all' || 
       typeFilter !== 'all';
 
-    console.log('🔍 Filter analysis:', {
-      hasActiveFilters,
-      itemsPerPage,
-      willUseServerSide: hasActiveFilters || itemsPerPage !== 999999
-    });
-
     // Always use server-side filtering when filters are active OR when items per page is not 'all'
     if (hasActiveFilters || itemsPerPage !== 999999) {
-      console.log('🔍 Using server-side filtering (filterVillageShopItemsWithAllData)');
       await filterVillageShopItemsWithAllData(page);
     } else {
-      console.log('🔍 Using client-side filtering (filterVillageShopItemsClientSide)');
       filterVillageShopItemsClientSide(page);
     }
   };
@@ -609,12 +552,6 @@ async function setupVillageShopFilters(items) {
     const sortBy = sortSelect.value;
     const itemsPerPage = itemsPerPageSelect.value === 'all' ? 999999 : parseInt(itemsPerPageSelect.value);
 
-    console.log('🔍 filterVillageShopItemsWithAllData called:', {
-      page,
-      itemsPerPage,
-      itemsPerPageSelectValue: itemsPerPageSelect.value
-    });
-
     // Show loading state
     const resultsInfo = document.querySelector('.village-shop-results-info p');
     if (resultsInfo) {
@@ -627,26 +564,14 @@ async function setupVillageShopFilters(items) {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const { data: allVillageShopItems } = await response.json();
 
-      console.log('🔍 Fetched village shop items from database:', allVillageShopItems.length);
-
       // Apply filtering and sorting to ALL items
       const filteredAndSorted = applyVillageShopFiltersAndSort(allVillageShopItems);
-
-      console.log('🔍 After filtering and sorting:', filteredAndSorted.length);
 
       // Apply pagination
       const totalPages = Math.ceil(filteredAndSorted.length / itemsPerPage);
       const startIndex = (page - 1) * itemsPerPage;
       const endIndex = startIndex + itemsPerPage;
       const paginatedItems = filteredAndSorted.slice(startIndex, endIndex);
-
-      console.log('🔍 Pagination details:', {
-        totalPages,
-        startIndex,
-        endIndex,
-        paginatedItemsLength: paginatedItems.length,
-        itemsPerPage
-      });
 
       // Update global items for this filtered view
       window.allVillageShopItems = filteredAndSorted;
@@ -690,12 +615,6 @@ async function setupVillageShopFilters(items) {
     const sortBy = sortSelect.value;
     const itemsPerPage = itemsPerPageSelect.value === 'all' ? window.allVillageShopItems.length : parseInt(itemsPerPageSelect.value);
 
-    console.log('🔍 filterVillageShopItemsClientSide called:', {
-      page,
-      itemsPerPage,
-      itemsPerPageSelectValue: itemsPerPageSelect.value
-    });
-
     const filtered = window.allVillageShopItems.filter(item => {
       const matchesSearch = !searchTerm ||
         item.itemName?.toLowerCase().includes(searchTerm) ||
@@ -718,14 +637,6 @@ async function setupVillageShopFilters(items) {
     const startIndex = (page - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const paginatedItems = sorted.slice(startIndex, endIndex);
-
-    console.log('🔍 Pagination details:', {
-      totalPages,
-      startIndex,
-      endIndex,
-      paginatedItemsLength: paginatedItems.length,
-      itemsPerPage
-    });
 
     // Update results info
     const resultsInfo = document.querySelector('.village-shop-results-info p');
@@ -816,7 +727,6 @@ async function setupVillageShopFilters(items) {
   // Clear filters button
   if (clearFiltersBtn) {
     clearFiltersBtn.addEventListener('click', async () => {
-      console.log('🔍 Clear filters button clicked');
       
       searchInput.value = '';
       categorySelect.value = 'all';
@@ -829,7 +739,6 @@ async function setupVillageShopFilters(items) {
       
       // Reset the global village shop list to the original data
       try {
-        console.log('🔄 Fetching all village shop items after clearing filters...');
         const response = await fetch('/api/models/villageShops?all=true');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const { data: allVillageShopItems } = await response.json();
@@ -843,7 +752,6 @@ async function setupVillageShopFilters(items) {
         
         // Update the global village shop list with all items
         window.allVillageShopItems = sortedItems;
-        console.log('✅ Reset global village shop list to', sortedItems.length, 'items (sorted alphabetically)');
         
         // Get the selected items per page value
         const itemsPerPage = itemsPerPageSelect.value === 'all' ? sortedItems.length : parseInt(itemsPerPageSelect.value);
@@ -886,7 +794,6 @@ async function setupVillageShopFilters(items) {
   }
 
   window.villageShopFiltersInitialized = true;
-  console.log('✅ Village shop filters initialized');
 }
 
 // ============================================================================
@@ -908,11 +815,7 @@ const LOCATION_COLORS = {
 // ------------------- Function: initializeVillageShopsPage -------------------
 // Initializes the village shops page with data and sets up filters
 async function initializeVillageShopsPage(data, page, contentDiv) {
-  console.log('🏪 Initializing village shops page:', {
-    dataLength: data?.length,
-    page,
-    contentDiv: !!contentDiv
-  });
+
 
   try {
     // Clear the content div first
@@ -979,8 +882,6 @@ async function initializeVillageShopsPage(data, page, contentDiv) {
     paginationContainer.id = 'village-shop-pagination';
     contentDiv.appendChild(paginationContainer);
 
-    console.log('✅ Created village shop containers');
-
     // Set up filters first
     try {
       await setupVillageShopFilters(data);
@@ -998,7 +899,6 @@ async function initializeVillageShopsPage(data, page, contentDiv) {
       resultsInfo.textContent = `Showing ${data.length} village shop items`;
     }
     
-    console.log('✅ Village shops page initialized successfully');
   } catch (error) {
     console.error('❌ Error initializing village shops page:', error);
     if (contentDiv) {

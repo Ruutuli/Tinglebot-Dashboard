@@ -3,8 +3,7 @@
 // Basic structure and connection functionality for rebuilding
 // ============================================================================
 
-// Add a simple test to verify this file is loaded
-console.log('🎒 Inventory.js loaded successfully');
+
 
 // ------------------- Utility Functions -------------------
 
@@ -237,12 +236,10 @@ let charactersPerPage = 12;
  * @param {HTMLElement} contentDiv - Content container element
  */
 async function initializeInventoryPage(data, page = 1, contentDiv) {
-  console.log('🎒 ===== BASIC INVENTORY PAGE INITIALIZATION =====');
   
   // Create filters container if it doesn't exist
   let filtersContainer = document.querySelector('.search-filter-bar');
   if (!filtersContainer) {
-    console.log('🔧 Creating filters container...');
     filtersContainer = document.createElement('div');
     filtersContainer.className = 'search-filter-bar';
     filtersContainer.innerHTML = createFilterHTML();
@@ -251,11 +248,9 @@ async function initializeInventoryPage(data, page = 1, contentDiv) {
     const contentDiv = getContentDiv();
     if (contentDiv) {
       contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
-      console.log('✅ Created and inserted filters into model-details-data');
     } else {
       // Fallback to body
-      document.body.appendChild(filtersContainer);
-      console.log('⚠️ Created filters and appended to body as fallback');
+      document.body.appendChild(filtersContainer);    
     }
   }
 
@@ -288,8 +283,6 @@ async function initializeInventoryPage(data, page = 1, contentDiv) {
   setupInventoryFilters();
   await loadCharacterSummaries();
 
-  console.log('✅ Basic inventory page initialized');
-  console.log('🎒 Ready for rebuild');
 }
 
 /**
@@ -297,15 +290,13 @@ async function initializeInventoryPage(data, page = 1, contentDiv) {
  */
 async function loadCharacterSummaries() {
   try {
-    console.log('📊 Loading character summaries...');
     
     // First, load basic character info (fast) and show immediately
     const characterResponse = await fetch('/api/characters/list');
     if (!characterResponse.ok) throw new Error(`HTTP error! status: ${characterResponse.status}`);
     const { data: characters } = await characterResponse.json();
     
-    console.log('📊 Loaded character list:', characters.length);
-    
+
     // Show characters immediately with placeholder data
     const initialSummaries = characters.map(char => ({
       ...char,
@@ -324,9 +315,7 @@ async function loadCharacterSummaries() {
       const summaryResponse = await fetch('/api/inventory/summary');
       if (!summaryResponse.ok) throw new Error(`HTTP error! status: ${summaryResponse.status}`);
       const { data: summaries } = await summaryResponse.json();
-      
-      console.log('📊 Loaded inventory summaries:', summaries.length);
-      
+
       // Update with real inventory data
       const updatedSummaries = characters.map(char => {
         const summary = summaries.find(s => s.characterName === char.characterName);
@@ -374,18 +363,15 @@ async function loadCharacterSummaries() {
 async function loadCharacterInventory(characterName) {
   // Check if already loaded
   if (loadedCharacterInventories.has(characterName)) {
-    console.log(`📦 Using cached inventory for ${characterName}`);
     return loadedCharacterInventories.get(characterName);
   }
   
   try {
-    console.log(`📦 Loading inventory for character: ${characterName}`);
     
     const response = await fetch(`/api/inventory/characters?characters=${encodeURIComponent(characterName)}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const { data: items } = await response.json();
     
-    console.log(`📦 Loaded ${items.length} items for ${characterName}`);
     
     // Cache the inventory data
     loadedCharacterInventories.set(characterName, items);
@@ -412,11 +398,10 @@ function applyFiltersAndRender(page = 1) {
     (charactersPerPageSelect.value === 'all' ? currentCharacterSummaries.length : parseInt(charactersPerPageSelect.value)) : 
     12;
 
-  console.log('🔍 Applying filters:', { searchTerm, villageFilter, sortBy, page, charactersPerPage });
 
   // Save current filter state
   window.savedInventoryFilterState = {
-    searchTerm: document.getElementById('inventory-search')?.value || '',
+    searchTerm: document.getElementById('inventory-search')?.value || '', 
     villageFilter,
     sortBy,
     charactersPerPage: charactersPerPageSelect?.value || '12'
@@ -436,21 +421,13 @@ function applyFiltersAndRender(page = 1) {
   // Apply sorting
   filteredSummaries = applySorting(filteredSummaries, sortBy);
 
-  console.log('🔍 Filtered summaries:', filteredSummaries.length);
-
   // Apply pagination
   const totalPages = Math.ceil(filteredSummaries.length / charactersPerPage);
   const startIndex = (page - 1) * charactersPerPage;
   const endIndex = startIndex + charactersPerPage;
   const paginatedSummaries = filteredSummaries.slice(startIndex, endIndex);
 
-  console.log('🔍 Pagination details:', {
-    totalPages,
-    startIndex,
-    endIndex,
-    paginatedSummariesLength: paginatedSummaries.length,
-    charactersPerPage
-  });
+
 
   // Update results info
   if (charactersPerPageSelect && charactersPerPageSelect.value === 'all') {
@@ -475,7 +452,6 @@ function applyFiltersAndRender(page = 1) {
  * @param {Array} summaries - Character summaries to render
  */
 function renderCharacterCards(summaries) {
-  console.log('🎨 Rendering character cards:', summaries.length);
   
   const container = document.getElementById('inventory-grid');
   if (!container) {
@@ -528,7 +504,6 @@ function renderCharacterCards(summaries) {
 
   const cardsHTML = summaries.map(summary => {
     const isExpanded = expandedCharacters.has(summary.characterName);
-    console.log(`🎭 Character ${summary.characterName} icon:`, summary.icon);
     return `
       <div class="character-inventory-card" data-character="${summary.characterName}">
         <div class="character-inventory-scroll">
@@ -589,7 +564,6 @@ function renderCharacterCards(summaries) {
   }).join('');
 
   container.innerHTML = cardsHTML;
-  console.log('✅ Character cards rendered');
 }
 
 /**
@@ -610,10 +584,8 @@ function updateInventoryPagination(currentPage, totalPages, totalItems) {
 
   // Only show pagination if there are multiple pages
   if (totalPages > 1) {
-    console.log('📄 Setting up pagination for inventory results:', { currentPage, totalPages, totalItems });
     
     const handlePageChange = (pageNum) => {
-      console.log(`🔄 Inventory page change requested to page ${pageNum}`);
       applyFiltersAndRender(pageNum);
     };
 
@@ -625,7 +597,6 @@ function updateInventoryPagination(currentPage, totalPages, totalItems) {
     });
 
     contentDiv.appendChild(paginationDiv);
-    console.log('✅ Inventory pagination created successfully');
   }
 }
 
@@ -871,11 +842,11 @@ function updateCharacterItemsGrid(items, characterName) {
  * Sets up inventory filters with event listeners
  */
 function setupInventoryFilters() {
-  console.log('🔧 Setting up inventory filters');
+  
   
   // Check if filters are already initialized
   if (window.inventoryFiltersInitialized) {
-    console.log('🔧 Inventory filters already initialized, skipping setup');
+    
     return;
   }
   
@@ -909,7 +880,7 @@ function setupInventoryFilters() {
       
       // Set new timeout for 300ms debouncing
       searchTimeout = setTimeout(() => {
-        console.log('🔍 Search input debounced, applying filters...');
+        
         applyFiltersAndRender(1);
       }, 300);
     });
@@ -942,7 +913,7 @@ function setupInventoryFilters() {
   }
   
   window.inventoryFiltersInitialized = true;
-  console.log('✅ Inventory filters setup complete');
+  
 }
 
 // ------------------- Interaction Functions -------------------
@@ -952,7 +923,7 @@ function setupInventoryFilters() {
  * @param {string} characterName - Name of the character
  */
 async function toggleCharacterInventory(characterName) {
-  console.log('🔄 Toggling inventory for:', characterName);
+  
   
   const card = document.querySelector(`[data-character="${characterName}"]`);
   if (!card) return;
@@ -1011,5 +982,3 @@ export {
 
 // Make toggleCharacterInventory globally available for HTML onclick
 window.toggleCharacterInventory = toggleCharacterInventory;
-
-console.log('🎒 Stripped Inventory.js loaded successfully'); 

@@ -99,8 +99,8 @@ function displayCharacterOfWeek(container, data) {
       </div>
     `;
   }
-  
-  // Determine character status
+    
+    // Determine character status
   let statusClass = '';
   let statusText = '';
   let statusIcon = '';

@@ -18,7 +18,6 @@ async function initAuth() {
     
     if (authStatus.authenticated) {
       // User is already logged in, redirect to dashboard
-      console.log('User already authenticated, redirecting to dashboard');
       redirectToDashboard();
       return;
     }

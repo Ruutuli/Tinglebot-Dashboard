@@ -157,8 +157,6 @@ const villageColors = {
  */
 async function fetchTodayWeather() {
   try {
-    console.log('[weather.js]: 🌤️ Fetching today\'s weather...');
-    
     const response = await fetch('/api/weather/today');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -177,11 +175,8 @@ async function fetchTodayWeather() {
     weatherCache.data = data;
     weatherCache.timestamp = Date.now();
     
-    console.log('[weather.js]: ✅ Weather data fetched successfully');
-    console.log(`[weather.js]: 📅 Weather day: ${currentWeatherDay.displayText}`);
     return data;
   } catch (error) {
-    console.error('[weather.js]: ❌ Error fetching weather:', error);
     throw error;
   }
 }
@@ -194,7 +189,6 @@ async function getTodayWeather() {
   
   // Check if cache is valid
   if (weatherCache.data && (now - weatherCache.timestamp) < weatherCache.CACHE_DURATION) {
-    console.log('[weather.js]: 📦 Using cached weather data');
     return weatherCache.data;
   }
   
@@ -458,8 +452,7 @@ function getWeatherOverlay(condition, type) {
 async function renderWeatherSection() {
   try {
     const weatherContainer = document.getElementById('weather-section');
-    if (!weatherContainer) {
-      console.log('[weather.js]: ⚠️ Weather container not found');
+      if (!weatherContainer) {  
       return;
     }
 
@@ -505,7 +498,6 @@ async function renderWeatherSection() {
       </div>
     `;
 
-    console.log('[weather.js]: ✅ Weather section rendered successfully');
   } catch (error) {
     console.error('[weather.js]: ❌ Error rendering weather section:', error);
     
@@ -529,7 +521,6 @@ async function renderWeatherSection() {
  * Initializes the weather component
  */
 function initWeather() {
-  console.log('[weather.js]: 🚀 Initializing weather component...');
   
   // Render weather section when dashboard is shown
   document.addEventListener('DOMContentLoaded', () => {
@@ -623,7 +614,6 @@ function getWeatherDayBadgeText() {
  */
 async function showWeatherStats() {
   try {
-    console.log('[weather.js]: 📊 Showing weather statistics page...');
     
     // Hide dashboard, show model details view
     const dashboardSection = document.getElementById('dashboard-section');
@@ -643,7 +633,6 @@ async function showWeatherStats() {
 
     // Setup back button handler
     backButton.onclick = () => {
-      console.log('🔙 Back button clicked - returning to dashboard');
       modelDetailsPage.style.display = 'none';
       dashboardSection.style.display = 'block';
     };

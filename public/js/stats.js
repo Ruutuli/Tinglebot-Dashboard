@@ -8,9 +8,7 @@
 // Register ChartDataLabels plugin if available
 if (typeof ChartDataLabels !== 'undefined') {
     Chart.register(ChartDataLabels);
-    console.log('ChartDataLabels plugin registered successfully');
 } else {
-    console.warn('ChartDataLabels plugin not found');
 }
 
 // ============================================================================
@@ -184,7 +182,6 @@ function createPieChart(ctx, data, options = {}) {
 
     // Add datalabels plugin if available
     if (typeof ChartDataLabels !== 'undefined') {
-      console.log('Adding datalabels to pie chart');
       chartConfig.options.plugins.datalabels = {
         color: '#000000',
         font: {
@@ -201,7 +198,6 @@ function createPieChart(ctx, data, options = {}) {
         }
       };
       chartConfig.plugins = [ChartDataLabels];
-      console.log('Datalabels configuration:', chartConfig.options.plugins.datalabels);
     } else {
       console.warn('ChartDataLabels not available for pie chart');
     }

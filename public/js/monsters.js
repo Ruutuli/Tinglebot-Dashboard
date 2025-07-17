@@ -7,12 +7,7 @@ import { scrollToTop } from './ui.js';
 // ------------------- Function: renderMonsterCards -------------------
 // Renders all monster cards with pagination
 function renderMonsterCards(monsters, page = 1, totalMonsters = null) {
-  console.log('🎨 renderMonsterCards called:', { 
-    monstersLength: monsters?.length, 
-    page, 
-    totalMonsters,
-    firstMonster: monsters?.[0]?.name 
-  });
+
 
   // Scroll to top of the page
   scrollToTop();
@@ -62,15 +57,8 @@ function renderMonsterCards(monsters, page = 1, totalMonsters = null) {
     return;
   }
 
-  console.log('🎨 Grid found, rendering monsters:', { 
-    monstersToRenderLength: monstersToRender?.length,
-    isPaginatedCall,
-    startIndex,
-    endIndex
-  });
-
+      // ------------------- No Monsters Found -------------------
   if (!monstersToRender || monstersToRender.length === 0) {
-    console.log('⚠️ No monsters to render');
     grid.innerHTML = '<div class="monster-loading">No monsters found</div>';
     return;
   }
@@ -171,10 +159,7 @@ function renderMonsterCards(monsters, page = 1, totalMonsters = null) {
     }
   }
 
-  console.log('✅ Monster cards rendered successfully');
-
   // ------------------- Attach Loot Loading Handlers -------------------
-  console.log('🎯 Attaching loot loading handlers');
   monsters.forEach(monster => {
     const safeMonsterName = monster.name.replace(/[^a-zA-Z0-9]/g, '-');
     const backContent = document.querySelector(`#monster-${safeMonsterName}-back`);
@@ -183,14 +168,10 @@ function renderMonsterCards(monsters, page = 1, totalMonsters = null) {
     // Add click handler for lazy loading
     const card = document.querySelector(`.monster-card[data-monster-name="${monster.name}"]`);
     if (!card) {
-      console.log(`[Loot UI] ⚠️ Card not found for monster: ${monster.name}`);
       return;
     }
 
-    console.log(`[Loot UI] 🎯 Setting up click handler for monster: ${monster.name}`);
-    
     card.addEventListener('click', async () => {
-      console.log(`[Loot UI] 🖱️ Card clicked for monster: ${monster.name}`);
       const startTime = Date.now();
       
       // Initialize cache if needed
@@ -199,21 +180,16 @@ function renderMonsterCards(monsters, page = 1, totalMonsters = null) {
           // Check cache first
     const cachedData = cache.get(monster.name);
     if (cachedData) {
-      console.log(`[Loot UI] 🎯 Using cached data for monster: ${monster.name}`);
-      console.log(`[Loot UI] ⏱️ Cache response time: ${Date.now() - startTime}ms`);
       
       // Debug: Check if this is Chuchu (Large) and clear cache if needed
       if (monster.name === 'Chuchu (Large)') {
-        console.log(`[Loot Debug] Chuchu (Large) cache hit - clearing cache to force refresh with new filtering logic`);
         cache.clearForMonster(monster.name);
-        console.log(`[Loot Debug] Cache cleared for Chuchu (Large), will fetch fresh data`);
       } else {
         backContent.innerHTML = cachedData;
         return;
       }
     }
       
-      console.log(`[Loot UI] 🔍 Cache miss for monster: ${monster.name}, fetching from API...`);
       
       // Show loading state
       backContent.innerHTML = `
@@ -226,17 +202,10 @@ function renderMonsterCards(monsters, page = 1, totalMonsters = null) {
       `;
       
       try {
-        console.log(`[Loot UI] 📡 Fetching loot data for: ${monster.name}`);
         const lootHTML = await fetchMonsterLoot(monster.name);
-        console.log(`[Loot UI] ✅ Received loot data for: ${monster.name}`);
         
         backContent.innerHTML = lootHTML;
-        console.log(`[Loot UI] 💾 Cached loot data for: ${monster.name}`);
-        
-        console.log(`[Loot UI] ⏱️ Total load time: ${Date.now() - startTime}ms`);
       } catch (error) {
-        console.error(`[Loot UI] ❌ Error loading loot data for ${monster.name}:`, error);
-        console.error(`[Loot UI] ⏱️ Failed after: ${Date.now() - startTime}ms`);
         
         backContent.innerHTML = `
           <div class="monster-loot-section">
@@ -247,7 +216,6 @@ function renderMonsterCards(monsters, page = 1, totalMonsters = null) {
       }
     });
   });
-  console.log('✅ Loot handlers attached');
 }
 
 // ============================================================================
@@ -262,7 +230,6 @@ function initializeLootCache() {
     return window.lootCache;
   }
 
-  console.log('[Loot Cache] Initializing loot cache...');
   
   // Load cached data from localStorage
   let cachedData = {};
@@ -270,10 +237,8 @@ function initializeLootCache() {
     const stored = localStorage.getItem('monsterLootCache');
     if (stored) {
       cachedData = JSON.parse(stored);
-      console.log(`[Loot Cache] Loaded ${Object.keys(cachedData).length} cached monsters from localStorage`);
     }
   } catch (error) {
-    console.warn('[Loot Cache] Failed to load cache from localStorage:', error);
   }
 
   const cache = {
@@ -284,7 +249,6 @@ function initializeLootCache() {
     MAX_SIZE: 50,
 
     set(key, value) {
-      console.log(`[Loot Cache] Setting cache for: ${key}`);
       this.data[key] = {
         value,
         timestamp: Date.now()
@@ -302,19 +266,16 @@ function initializeLootCache() {
     get(key) {
       const entry = this.data[key];
       if (!entry) {
-        console.log(`[Loot Cache] Cache miss for: ${key}`);
         return null;
       }
 
       // Check if cache is still valid
       if (Date.now() - entry.timestamp > this.CACHE_DURATION) {
-        console.log(`[Loot Cache] Cache expired for: ${key}`);
         delete this.data[key];
         this.persistToStorage();
         return null;
       }
 
-      console.log(`[Loot Cache] Cache hit for: ${key}`);
       return entry.value;
     },
 
@@ -346,7 +307,6 @@ function initializeLootCache() {
         }
       }
 
-      console.log(`[Loot Cache] Evicting oldest entry: ${oldestKey}`);
       delete this.data[oldestKey];
     },
 
@@ -354,24 +314,20 @@ function initializeLootCache() {
       try {
         localStorage.setItem('monsterLootCache', JSON.stringify(this.data));
       } catch (error) {
-        console.warn('[Loot Cache] Failed to persist cache to localStorage:', error);
       }
     },
 
     clear() {
-      console.log('[Loot Cache] Clearing all cached data');
       this.data = {};
       this.hitCount = 0;
       this.missCount = 0;
       try {
         localStorage.removeItem('monsterLootCache');
       } catch (error) {
-        console.warn('[Loot Cache] Failed to clear localStorage:', error);
       }
     },
 
     clearForMonster(monsterName) {
-      console.log(`[Loot Cache] Clearing cache for specific monster: ${monsterName}`);
       if (this.data[monsterName]) {
         delete this.data[monsterName];
         this.persistToStorage();
@@ -390,26 +346,20 @@ function initializeLootCache() {
   };
 
   window.lootCache = cache;
-  console.log('[Loot Cache] Loot cache initialized with', Object.keys(cache.data).length, 'monsters');
   
   // Add global function to clear cache (for debugging)
   window.clearLootCache = function() {
-    console.log('[Global] Clearing all loot cache...');
     cache.clear();
-    console.log('[Global] Loot cache cleared successfully');
   };
   
   // Add global function to clear cache for specific monster
   window.clearLootCacheForMonster = function(monsterName) {
-    console.log(`[Global] Clearing loot cache for: ${monsterName}`);
     cache.clearForMonster(monsterName);
-    console.log(`[Global] Loot cache cleared for: ${monsterName}`);
   };
   
   // Add global function to show cache stats
   window.showLootCacheStats = function() {
     const stats = cache.getStats();
-    console.log('[Global] Loot Cache Stats:', stats);
     return stats;
   };
   
@@ -422,48 +372,32 @@ async function fetchMonsterLoot(monsterName) {
   const cache = initializeLootCache();
   
   try {
-    console.log(`\n==========================================`);
-    console.log(`🔍 Fetching loot for monster: ${monsterName}`);
-    console.log(`==========================================\n`);
-    
     // Check cache first
     const cachedHTML = cache.get(monsterName);
     if (cachedHTML) {
       cache.hitCount++;
-      console.log(`[Loot Cache] ✅ Cache hit for: ${monsterName}`);
       
       // Debug: Check if this is Chuchu (Large) and clear cache if needed
       if (monsterName === 'Chuchu (Large)') {
-        console.log(`[Loot Debug] Chuchu (Large) cache hit - clearing cache to force refresh with new filtering logic`);
         cache.clearForMonster(monsterName);
-        console.log(`[Loot Debug] Cache cleared for Chuchu (Large), will fetch fresh data`);
       } else {
         return cachedHTML;
       }
     }
     
     cache.missCount++;
-    console.log(`[Loot Cache] ❌ Cache miss for: ${monsterName}`);
     
     // Convert monster name to the format used in ItemModel
     const monsterField = convertMonsterNameToField(monsterName);
     if (!monsterField) {
-      console.warn(`[Loot] No field mapping found for monster: ${monsterName}`);
       return createLootHTML(monsterName, []);
     }
     
-    console.log(`[Loot Debug] Monster name: "${monsterName}"`);
-    console.log(`[Loot Debug] Converted to field: "${monsterField}"`);
-    
     // Build the API URL
     const apiUrl = `/api/models/item?${monsterField}=true&all=true`;
-    console.log(`[Loot Debug] API URL: ${apiUrl}`);
     
     // Fetch items that this monster drops
-    console.log(`[Loot Debug] Making API request...`);
     const response = await fetch(apiUrl);
-    
-    console.log(`[Loot Debug] Response status: ${response.status} ${response.statusText}`);
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -472,34 +406,14 @@ async function fetchMonsterLoot(monsterName) {
     const responseData = await response.json();
     const { data: lootItems } = responseData;
     
-    console.log(`[Loot Debug] Raw response data:`, responseData);
-    console.log(`[Loot Debug] Total items in response: ${lootItems.length}`);
-    
-    // Log some sample items for debugging
-    if (lootItems.length > 0) {
-      console.log(`[Loot Debug] Sample items (first 5):`);
-      lootItems.slice(0, 5).forEach((item, index) => {
-        console.log(`  ${index + 1}. "${item.itemName}" - chuchuLarge: ${item.chuchuLarge}, validItems: ${item.validItems ? item.validItems.length : 'none'}`);
-      });
-      
-      if (lootItems.length > 5) {
-        console.log(`  ... and ${lootItems.length - 5} more items`);
-      }
-    }
-    
-    console.log(`[Loot] ✅ Received ${lootItems.length} loot items for: ${monsterName}`);
-    
     // Create HTML
     const lootHTML = createLootHTML(monsterName, lootItems);
     
     // Cache the result
     cache.set(monsterName, lootHTML);
-    console.log(`[Loot Cache] 💾 Cached loot data for: ${monsterName}`);
     
-    console.log('✅ Loot section created successfully');
     return lootHTML;
   } catch (error) {
-    console.error(`[Loot] ❌ Error fetching loot for ${monsterName}:`, error);
     throw error;
   }
 }
@@ -509,15 +423,11 @@ async function fetchMonsterLoot(monsterName) {
 function convertMonsterNameToField(monsterName) {
   if (!monsterName) return null;
   
-  console.log(`[Field Conversion Debug] Converting monster name: "${monsterName}"`);
-  
   // Convert to lowercase and remove spaces/special characters
   const normalizedName = monsterName.toLowerCase()
     .replace(/\s+/g, '') // Remove spaces
     .replace(/[()]/g, '') // Remove parentheses
     .replace(/-/g, ''); // Remove hyphens
-  
-  console.log(`[Field Conversion Debug] Normalized name: "${normalizedName}"`);
   
   // Mapping from monster names to ItemModel fields
   const monsterFieldMap = {
@@ -603,18 +513,13 @@ function convertMonsterNameToField(monsterName) {
   };
   
   const mappedField = monsterFieldMap[normalizedName];
-  console.log(`[Field Conversion Debug] Mapped field: "${mappedField}"`);
-  
   return mappedField;
 }
 
 // ------------------- Function: createLootHTML -------------------
 // Creates HTML for loot display
 function createLootHTML(monsterName, lootItems) {
-  console.log(`[Loot HTML Debug] Creating HTML for ${monsterName} with ${lootItems.length} items`);
-  
   if (!lootItems || lootItems.length === 0) {
-    console.log(`[Loot HTML Debug] No items provided, showing empty state`);
     return `
       <div class="monster-loot-section">
         <div class="monster-loot-title">Loot dropped by ${monsterName}</div>
@@ -629,17 +534,7 @@ function createLootHTML(monsterName, lootItems) {
   // Filter out general category items (items with validItems array)
   const filteredItems = lootItems.filter(item => !item.validItems || item.validItems.length === 0);
   
-  // Debug logging
-  const generalCategoryItems = lootItems.filter(item => item.validItems && item.validItems.length > 0);
-  if (generalCategoryItems.length > 0) {
-    console.log(`[Loot HTML Debug] Filtered out ${generalCategoryItems.length} general category items for ${monsterName}:`, 
-      generalCategoryItems.map(item => item.itemName));
-  }
-  
-  console.log(`[Loot HTML Debug] After filtering: ${filteredItems.length} specific items remaining`);
-  
   if (filteredItems.length === 0) {
-    console.log(`[Loot HTML Debug] No specific items after filtering, showing empty state`);
     return `
       <div class="monster-loot-section">
         <div class="monster-loot-title">Loot dropped by ${monsterName}</div>
@@ -657,9 +552,6 @@ function createLootHTML(monsterName, lootItems) {
     const nameB = (b.itemName || '').toLowerCase();
     return nameA.localeCompare(nameB);
   });
-  
-  console.log(`[Loot HTML Debug] Final sorted items (${sortedItems.length}):`, 
-    sortedItems.map(item => item.itemName));
   
   let lootHTML = `
     <div class="monster-loot-section">
@@ -713,7 +605,6 @@ function createLootHTML(monsterName, lootItems) {
     </div>
   `;
   
-  console.log(`[Loot HTML Debug] HTML created successfully for ${monsterName}`);
   return lootHTML;
 }
 
@@ -912,16 +803,7 @@ async function setupMonsterFilters(monsters) {
     const locationsFilter = locationsSelect ? locationsSelect.value.toLowerCase() : 'all';
     const sortBy = sortSelect ? sortSelect.value : 'name-asc';
 
-    console.log('🔍 filterMonsters called:', {
-      page,
-      searchTerm,
-      speciesFilter,
-      typeFilter,
-      tierFilter,
-      jobsFilter,
-      locationsFilter,
-      sortBy
-    });
+
 
     // Save current filter state
     window.savedMonsterFilterState = {
@@ -949,10 +831,8 @@ async function setupMonsterFilters(monsters) {
     // Always use server-side filtering when filters are active OR when monsters per page is not 'all'
     // This ensures we have all the data needed for proper filtering and pagination
     if (hasActiveFilters || monstersPerPage !== 'all') {
-      console.log('🔍 Using server-side filtering (filterMonstersWithAllData)');
       filterMonstersWithAllData(page);
     } else {
-      console.log('🔍 Using client-side filtering (filterMonstersClientSide)');
       filterMonstersClientSide(page);
     }
   };
@@ -1075,12 +955,10 @@ async function setupMonsterFilters(monsters) {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const { data: allMonsters } = await response.json();
 
-      console.log('🔍 Fetched monsters from database:', allMonsters.length);
-
       // Apply filtering and sorting to ALL monsters
       const filteredAndSorted = applyFiltersAndSort(allMonsters);
 
-      console.log('🔍 After filtering and sorting:', filteredAndSorted.length);
+
 
       // Apply pagination
       const monstersPerPageSelect = document.getElementById('monsters-per-page');
@@ -1219,10 +1097,8 @@ async function setupMonsterFilters(monsters) {
 
     // Only show pagination if there are multiple pages
     if (totalPages > 1) {
-      console.log('📄 Setting up pagination for filtered results:', { currentPage, totalPages, totalMonsters });
       
       const handlePageChange = async (pageNum) => {
-        console.log(`🔄 Filtered page change requested to page ${pageNum}`);
         window.filterMonsters(pageNum);
       };
 
@@ -1293,7 +1169,6 @@ async function setupMonsterFilters(monsters) {
       }
 
       contentDiv.appendChild(paginationDiv);
-      console.log('✅ Filtered pagination created successfully');
     }
   }
 
@@ -1327,7 +1202,7 @@ async function setupMonsterFilters(monsters) {
       window.savedMonsterFilterState = {};
       
       // Reload the original page data
-      console.log('🔄 Clearing filters, reloading original page data...');
+
       try {
         const response = await fetch('/api/models/monster?page=1');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -1366,7 +1241,6 @@ async function setupMonsterFilters(monsters) {
 // ------------------- Function: populateFilterOptions -------------------
 async function populateFilterOptions(monsters) {
   try {
-    console.log('📄 Loading monster filter options from database...');
     
     // Fetch all monsters from database to get unique filter values
     const response = await fetch('/api/models/monster?all=true');
@@ -1376,7 +1250,6 @@ async function populateFilterOptions(monsters) {
     }
     
     const { data: allMonsters } = await response.json();
-    console.log('✅ Loaded monster filter options from database:', allMonsters?.length, 'monsters');
     
     const speciesSelect = document.getElementById('filter-species');
     const typeSelect = document.getElementById('filter-type');
@@ -1409,7 +1282,7 @@ async function populateFilterOptions(monsters) {
       populateSelect(locationsSelect, locations);
     }
     
-    console.log('✅ Monster filter options populated from database');
+      
   } catch (error) {
     console.error('❌ Error loading monster filter options from database:', error);
   }

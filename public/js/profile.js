@@ -17,16 +17,13 @@ let profileInitialized = false;
 // Initializes the profile page and loads user data
 async function initProfilePage() {
   try {
-    console.log('[profile.js]: 🚀 Initializing profile page...');
     
     if (profileInitialized) {
-      console.log('[profile.js]: ✅ Profile page already initialized');
       return;
     }
     
     // Check authentication
-    if (!isAuthenticated || !currentUser) {
-      console.log('[profile.js]: ❌ User not authenticated, redirecting to login');
+    if (!isAuthenticated || !currentUser) { 
       window.location.href = '/login';
       return;
     }
@@ -38,7 +35,7 @@ async function initProfilePage() {
     setupProfileEventListeners();
     
     profileInitialized = true;
-    console.log('[profile.js]: ✅ Profile page initialized successfully');
+    
   } catch (error) {
     console.error('[profile.js]: ❌ Error initializing profile page:', error);
   }
@@ -53,7 +50,7 @@ async function initProfilePage() {
 // Loads and displays user profile data
 async function loadProfileData() {
   try {
-    console.log('[profile.js]: 📊 Loading profile data...');
+    
     
     // Update profile elements with current user data
     updateProfileDisplay(currentUser);
@@ -64,7 +61,6 @@ async function loadProfileData() {
     // Load user's characters
     await loadUserCharacters();
     
-    console.log('[profile.js]: ✅ Profile data loaded successfully');
   } catch (error) {
     console.error('[profile.js]: ❌ Error loading profile data:', error);
     showProfileError('Failed to load profile data');
@@ -82,7 +78,7 @@ function updateProfileDisplay(userData) {
   
   if (!profileAvatar || !profileName ||
       !profileTokens || !profileSlots || !profileJoined) {
-    console.error('[profile.js]: ❌ Profile elements not found');
+    
     return;
   }
   
@@ -100,14 +96,13 @@ function updateProfileDisplay(userData) {
   // Update join date - will be updated by loadExtendedProfileData
   profileJoined.textContent = 'Loading...';
   
-  console.log('[profile.js]: ✅ Profile display updated');
 }
 
 // ------------------- Function: loadExtendedProfileData -------------------
 // Loads additional profile data from server if needed
 async function loadExtendedProfileData() {
   try {
-    console.log('[profile.js]: 📈 Loading extended profile data...');
+    
     
     // Fetch guild member information to get actual join date
     const response = await fetch('/api/user/guild-info', {
@@ -129,10 +124,8 @@ async function loadExtendedProfileData() {
       if (guildData.joinedAt) {
         const joinDate = new Date(guildData.joinedAt);
         profileJoined.textContent = formatDate(joinDate);
-        console.log('[profile.js]: ✅ Updated profile with guild join date:', joinDate);
       } else if (guildData.inGuild === false) {
         profileJoined.textContent = 'Not in guild';
-        console.log('[profile.js]: ⚠️ User not found in guild');
       } else {
         // Fallback to database creation date
         if (currentUser && currentUser.createdAt) {
@@ -141,11 +134,9 @@ async function loadExtendedProfileData() {
         } else {
           profileJoined.textContent = 'Unknown';
         }
-        console.log('[profile.js]: ⚠️ Using fallback join date');
       }
     }
     
-    console.log('[profile.js]: 📈 Extended profile data loaded successfully');
   } catch (error) {
     console.error('[profile.js]: ❌ Error loading extended profile data:', error);
     
@@ -164,14 +155,14 @@ async function loadExtendedProfileData() {
 // Loads and displays the user's characters
 async function loadUserCharacters() {
   try {
-    console.log('[profile.js]: 👥 Loading user characters...');
+    
     
     const charactersContainer = document.getElementById('profile-characters-container');
     const charactersCount = document.getElementById('characters-count');
     const charactersLoading = document.getElementById('profile-characters-loading');
     
     if (!charactersContainer || !charactersCount || !charactersLoading) {
-      console.error('[profile.js]: ❌ Character elements not found');
+      
       return;
     }
     
@@ -194,7 +185,6 @@ async function loadUserCharacters() {
     }
     
     const { data: characters } = await response.json();
-    console.log('[profile.js]: ✅ Loaded user characters:', characters.length);
     
     // Update character count
     charactersCount.textContent = characters.length;
@@ -225,9 +215,8 @@ async function loadUserCharacters() {
       charactersContainer.appendChild(charactersGrid);
     }
     
-    console.log('[profile.js]: ✅ User characters displayed successfully');
   } catch (error) {
-    console.error('[profile.js]: ❌ Error loading user characters:', error);
+    
     
     const charactersContainer = document.getElementById('profile-characters-container');
     if (charactersContainer) {
@@ -326,7 +315,6 @@ function createProfileCharacterCard(character) {
   
   // Add click handler to show character details modal
   card.addEventListener('click', () => {
-    console.log('[profile.js]: 🖱️ Profile character card clicked:', character.name);
     showCharacterModal(character);
   });
   
@@ -336,7 +324,6 @@ function createProfileCharacterCard(character) {
 // ------------------- Function: showCharacterModal -------------------
 // Shows a modal with detailed character information
 function showCharacterModal(character) {
-  console.log('[profile.js]: 🎭 Showing character modal for:', character.name);
   
   // Create modal container
   const modal = document.createElement('div');
@@ -626,7 +613,6 @@ function convertCmToFeetInches(heightInCm) {
 // ------------------- Function: setupProfileEventListeners -------------------
 // Sets up all profile page event listeners
 function setupProfileEventListeners() {
-  console.log('[profile.js]: 🎧 Setting up profile event listeners...');
   
   // Profile link in user dropdown
   const profileLink = document.getElementById('profile-link');
@@ -637,7 +623,6 @@ function setupProfileEventListeners() {
   // Listen for custom navigation events
   document.addEventListener('navigateToSection', (event) => {
     if (event.detail.section === 'profile-section') {
-      console.log('[profile.js]: 🎯 Received navigation event to profile section');
       // The section will be shown by the main navigation handler
       // We just need to initialize the profile page
       setTimeout(() => {
@@ -646,7 +631,6 @@ function setupProfileEventListeners() {
     }
   });
   
-  console.log('[profile.js]: ✅ Profile event listeners setup complete');
 }
 
 // ============================================================================
@@ -658,7 +642,6 @@ function setupProfileEventListeners() {
 // Handles profile link click from user dropdown
 function handleProfileLinkClick(event) {
   event.preventDefault();
-  console.log('[profile.js]: 🔗 Profile link clicked from dropdown');
   
   // Close the user dropdown
   const userDropdown = document.getElementById('user-dropdown');
@@ -690,7 +673,7 @@ function formatDate(date) {
       day: 'numeric'
     });
   } catch (error) {
-    console.error('[profile.js]: ❌ Error formatting date:', error);
+    
     return 'Unknown';
   }
 }
@@ -698,7 +681,7 @@ function formatDate(date) {
 // ------------------- Function: showProfileMessage -------------------
 // Shows a message on the profile page
 function showProfileMessage(message, type = 'info') {
-  console.log(`[profile.js]: 💬 ${type.toUpperCase()}: ${message}`);
+  
   
   // Create a temporary message element
   const messageElement = document.createElement('div');
@@ -804,7 +787,7 @@ function checkIfCharacterRolledToday(character) {
     
     return false;
   } catch (error) {
-    console.error('[profile.js]: ❌ Error checking daily roll status:', error);
+
     return false;
   }
 }

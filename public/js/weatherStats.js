@@ -122,7 +122,6 @@ const villageCrests = {
  */
 async function fetchWeatherHistory(days = 30) {
   try {
-    console.log(`[weatherStats.js]: 🌤️ Fetching ${days} days of weather history...`);
     
     // Use the new stats endpoint for better performance
     const response = await fetch(`/api/weather/stats?days=${days}`);
@@ -131,10 +130,8 @@ async function fetchWeatherHistory(days = 30) {
     }
     
     const data = await response.json();
-    console.log(`[weatherStats.js]: ✅ Weather history fetched for ${Object.keys(data.villages).length} villages`);
     return data.villages;
   } catch (error) {
-    console.error('[weatherStats.js]: ❌ Error fetching weather history:', error);
     throw error;
   }
 }
@@ -147,7 +144,6 @@ async function getWeatherStatsData(days = 30) {
   
   // Check if cache is valid
   if (weatherStatsCache.data && (now - weatherStatsCache.timestamp) < weatherStatsCache.CACHE_DURATION) {
-    console.log('[weatherStats.js]: 📦 Using cached weather stats data');
     return weatherStatsCache.data;
   }
   
@@ -297,7 +293,6 @@ function createWeatherPieChart(ctx, data, title, colors) {
   const percentages = Object.values(data).map(item => item.percentage || 0);
   
   if (typeof Chart === 'undefined') {
-    console.error('[weatherStats.js]: ❌ Chart.js not available');
     return null;
   }
   
@@ -623,11 +618,9 @@ function renderRecentWeather(weatherData, village) {
  */
 async function renderWeatherStatsPage() {
   try {
-    console.log('[weatherStats.js]: 🌤️ Rendering weather statistics page...');
     
     const contentDiv = document.getElementById('model-details-data');
     if (!contentDiv) {
-      console.error('[weatherStats.js]: ❌ Content div not found');
       return;
     }
     
@@ -687,9 +680,7 @@ async function renderWeatherStatsPage() {
       });
     }, 100);
     
-    console.log('[weatherStats.js]: ✅ Weather statistics page rendered successfully');
   } catch (error) {
-    console.error('[weatherStats.js]: ❌ Error rendering weather statistics page:', error);
     
     const contentDiv = document.getElementById('model-details-data');
     if (contentDiv) {
@@ -764,8 +755,7 @@ function createWeatherChartsForVillage(analysis, village) {
  * Initializes the weather statistics page
  */
 async function initializeWeatherStatsPage() {
-  console.log('[weatherStats.js]: 🌤️ Initializing weather statistics page...');
-  
+
   // Scroll to top
   scrollToTop();
   

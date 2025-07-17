@@ -20,13 +20,6 @@ function renderItemCards(items, page = 1, totalItems = null) {
       return nameA.localeCompare(nameB);
     });
 
-    console.log('🎨 Starting item rendering:', { 
-      itemsLength: sortedItems?.length,
-      page,
-      totalItems,
-      firstItem: sortedItems?.[0]?.itemName
-    });
-
     // Scroll to top of the page
     scrollToTop();
 
@@ -35,19 +28,15 @@ function renderItemCards(items, page = 1, totalItems = null) {
       console.error('❌ Grid container not found');
       return;
     }
-    console.log('✅ Found grid container');
   
     // ------------------- No Items Found -------------------
     if (!sortedItems || sortedItems.length === 0) {
-      console.log('⚠️ No items to render');
       grid.innerHTML = '<div class="item-loading">No items found</div>';
       const pagination = document.getElementById('item-pagination');
       if (pagination) pagination.innerHTML = '';
       return;
     }
   
-    console.log('✅ Items sorted alphabetically');
-    
     // Get items per page setting
     const itemsPerPageSelect = document.getElementById('items-per-page');
     const itemsPerPage = itemsPerPageSelect ? 
@@ -61,10 +50,7 @@ function renderItemCards(items, page = 1, totalItems = null) {
     const endIndex = Math.min(startIndex + itemsPerPage, itemsForPagination);
   
     // ------------------- Render Item Cards -------------------
-    console.log('🎨 Rendering item cards');
     grid.innerHTML = sortedItems.map(item => {
-      console.log('📦 Processing item:', item.itemName);
-      
       // Helper for tags
       const renderTags = arr => (Array.isArray(arr) ? arr.filter(Boolean).map(tag => `<span class="item-tag">${tag.trim()}</span>`).join('') : '');
       
@@ -279,10 +265,8 @@ function renderItemCards(items, page = 1, totalItems = null) {
         </div>
       `;
     }).join('');
-    console.log('✅ Item cards rendered');
   
     // ------------------- Attach Inventory Loading Handlers -------------------
-    console.log('🎯 Attaching inventory loading handlers');
     items.forEach(item => {
       const safeItemName = item.itemName.replace(/[^a-zA-Z0-9]/g, '-');
       const backContent = document.querySelector(`#item-${safeItemName}-back`);
@@ -291,14 +275,10 @@ function renderItemCards(items, page = 1, totalItems = null) {
       // Add click handler for lazy loading
       const card = document.querySelector(`.item-card[data-item-name="${item.itemName}"]`);
       if (!card) {
-        console.log(`[Inventory UI] ⚠️ Card not found for item: ${item.itemName}`);
-        return;
+          return;
       }
 
-      console.log(`[Inventory UI] 🎯 Setting up click handler for item: ${item.itemName}`);
-      
       card.addEventListener('click', async () => {
-        console.log(`[Inventory UI] 🖱️ Card clicked for item: ${item.itemName}`);
         const startTime = Date.now();
         
         // Initialize cache if needed
@@ -307,13 +287,10 @@ function renderItemCards(items, page = 1, totalItems = null) {
         // Check cache first
         const cachedData = cache.get(item.itemName);
         if (cachedData) {
-          console.log(`[Inventory UI] 🎯 Using cached data for item: ${item.itemName}`);
-          console.log(`[Inventory UI] ⏱️ Cache response time: ${Date.now() - startTime}ms`);
           backContent.innerHTML = cachedData;
           return;
         }
         
-        console.log(`[Inventory UI] 🔍 Cache miss for item: ${item.itemName}, fetching from API...`);
         
         // Show loading state
         backContent.innerHTML = `
@@ -326,17 +303,11 @@ function renderItemCards(items, page = 1, totalItems = null) {
         `;
         
         try {
-          console.log(`[Inventory UI] 📡 Fetching inventory data for: ${item.itemName}`);
           const inventoryHTML = await fetchItemInventory(item.itemName);
-          console.log(`[Inventory UI] ✅ Received inventory data for: ${item.itemName}`);
           
           backContent.innerHTML = inventoryHTML;
-          console.log(`[Inventory UI] 💾 Cached inventory data for: ${item.itemName}`);
-          
-          console.log(`[Inventory UI] ⏱️ Total load time: ${Date.now() - startTime}ms`);
         } catch (error) {
           console.error(`[Inventory UI] ❌ Error loading inventory data for ${item.itemName}:`, error);
-          console.error(`[Inventory UI] ⏱️ Failed after: ${Date.now() - startTime}ms`);
           
           backContent.innerHTML = `
             <div class="character-inventory-section">
@@ -347,8 +318,7 @@ function renderItemCards(items, page = 1, totalItems = null) {
         }
       });
     });
-    console.log('✅ Inventory handlers attached');
-
+  
     // Update results info
     const resultsInfo = document.querySelector('.item-results-info p');
     if (resultsInfo) {
@@ -446,7 +416,6 @@ function initializeInventoryCache() {
         }
       });
       
-      console.log(`[Cache] Loaded ${data.size} cached items from localStorage`);
     }
   } catch (error) {
     console.warn('[Cache] Failed to load cache from localStorage:', error);
@@ -513,7 +482,6 @@ function initializeInventoryCache() {
       if (oldestKey) {
         this.data.delete(oldestKey);
         this.timestamps.delete(oldestKey);
-        console.log(`[Cache] Evicted oldest entry: ${oldestKey}`);
       }
     },
     
@@ -534,7 +502,6 @@ function initializeInventoryCache() {
       this.timestamps.clear();
       localStorage.removeItem(CACHE_KEY);
       localStorage.removeItem(TIMESTAMP_KEY);
-      console.log('[Cache] Cache cleared');
     },
     
     getStats() {
@@ -550,7 +517,6 @@ function initializeInventoryCache() {
     missCount: 0
   };
 
-  console.log(`[Cache] Enhanced inventory cache initialized with ${data.size} items`);
   return window.inventoryCache;
 }
 
@@ -561,7 +527,6 @@ async function fetchItemInventoryWithTimeout(itemName, timeout = 15000) {
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   
   try {
-    console.log(`[Inventory] 📡 Fetching inventory for: ${itemName} (timeout: ${timeout}ms)`);
     
     const response = await fetch('/api/inventory/item', {
       method: 'POST',
@@ -579,7 +544,6 @@ async function fetchItemInventoryWithTimeout(itemName, timeout = 15000) {
     }
     
     const data = await response.json();
-    console.log(`[Inventory] ✅ Received ${data.length} inventory entries for: ${itemName}`);
     
     return data;
   } catch (error) {
@@ -644,15 +608,11 @@ async function fetchItemInventory(itemName) {
   const cache = initializeInventoryCache();
   
   try {
-    console.log(`\n==========================================`);
-    console.log(`🔍 Fetching inventory for item: ${itemName}`);
-    console.log(`==========================================\n`);
     
     // Check cache first
     const cachedHTML = cache.get(itemName);
     if (cachedHTML) {
       cache.hitCount++;
-      console.log(`[Cache] ✅ Cache hit for: ${itemName}`);
       
       // Extract total count from cached HTML and update badge
       const totalMatch = cachedHTML.match(/Total in world: <strong>(\d+)<\/strong>/);
@@ -664,7 +624,6 @@ async function fetchItemInventory(itemName) {
     }
     
     cache.missCount++;
-    console.log(`[Cache] ❌ Cache miss for: ${itemName}`);
     
     // Fetch data with timeout
     const data = await fetchItemInventoryWithTimeout(itemName, 12000);
@@ -680,9 +639,7 @@ async function fetchItemInventory(itemName) {
     
     // Cache the result
     cache.set(itemName, inventoryHTML);
-    console.log(`[Cache] 💾 Cached inventory data for: ${itemName}`);
     
-    console.log('✅ Inventory section created successfully');
     return inventoryHTML;
   } catch (error) {
     console.error('❌ Error fetching inventory:', error);
@@ -706,8 +663,7 @@ async function preloadVisibleItemInventories() {
   if (!window.allItems || !window.inventoryCache) return;
   
   // Check if preloading is disabled due to too many timeouts
-  if (window.preloadDisabled) {
-    console.log('[Preload] Preloading disabled due to previous timeouts');
+  if (window.preloadDisabled) { 
     return;
   }
   
@@ -716,11 +672,9 @@ async function preloadVisibleItemInventories() {
   const itemsToPreload = visibleItems.filter(item => !cache.has(item.itemName));
   
   if (itemsToPreload.length === 0) {
-    console.log('[Preload] No items need preloading');
     return;
   }
   
-  console.log(`[Preload] Preloading ${itemsToPreload.length} item inventories...`);
   
   // Track timeout count
   let timeoutCount = 0;
@@ -740,14 +694,12 @@ async function preloadVisibleItemInventories() {
         // Update the badge immediately
         updateTotalInWorldBadge(item.itemName, totalInWorld);
         
-        console.log(`[Preload] ✅ Preloaded: ${item.itemName} (Total: ${totalInWorld})`);
       } catch (error) {
         console.warn(`[Preload] ⚠️ Failed to preload: ${item.itemName}`, error);
         timeoutCount++;
         
         // Disable preloading if too many timeouts
         if (timeoutCount >= maxTimeouts) {
-          console.warn(`[Preload] Too many timeouts (${timeoutCount}), disabling preloading`);
           window.preloadDisabled = true;
           return;
         }
@@ -764,7 +716,6 @@ async function preloadVisibleItemInventories() {
     }
   }
   
-  console.log('[Preload] Preloading complete');
 }
 
 // ============================================================================
@@ -810,7 +761,6 @@ async function populateFilterOptions(items) {
   
   // If we have items, we could also populate from live data, but for now we'll just use the JSON
   if (items?.length) {
-    console.log(`[Filter Debug] Items available (${items.length}), but using JSON file for filter options`);
   }
 }
 
@@ -818,7 +768,6 @@ async function populateFilterOptions(items) {
 // Loads filter options from the JSON file as a fallback
 async function loadFilterOptionsFromJSON() {
   try {
-    console.log('📄 Loading filter options from JSON file...');
     const response = await fetch('/js/itemFilterOptions.json');
     if (!response.ok) {
       console.warn('⚠️ Could not load filter options from JSON file');
@@ -826,7 +775,6 @@ async function loadFilterOptionsFromJSON() {
     }
     
     const filterOptions = await response.json();
-    console.log('✅ Loaded filter options from JSON:', filterOptions);
     
     populateSelect('filter-category', filterOptions.categories || []);
     populateSelect('filter-type', filterOptions.types || []);
@@ -835,7 +783,6 @@ async function loadFilterOptionsFromJSON() {
     populateSelect('filter-locations', filterOptions.locations || []);
     populateSelect('filter-sources', filterOptions.sources || []);
     
-    console.log('✅ Filter options populated from JSON file');
   } catch (error) {
     console.error('❌ Error loading filter options from JSON:', error);
   }
@@ -864,12 +811,10 @@ function populateSelect(id, values) {
 // ------------------- Function: setupItemFilters -------------------
 // Adds listeners to filter UI and re-renders items on change
 async function setupItemFilters(items) {
-  console.log('Setting up item filters...');
 
   window.allItems = items;
 
-  if (window.itemFiltersInitialized) {
-    console.log('Filters already initialized, skipping setup');
+  if (window.itemFiltersInitialized) {  
     window.filterItems();
     return;
   }
@@ -894,7 +839,6 @@ async function setupItemFilters(items) {
   const missing = [searchInput, categorySelect, typeSelect, subtypeSelect, jobsSelect, locationsSelect, sourcesSelect, sortSelect, itemsPerPageSelect, clearFiltersBtn].some(el => !el);
   if (missing) {
     if (!window.filterSetupRetried) {
-      console.warn('Retrying filter setup once...');
       window.filterSetupRetried = true;
       requestAnimationFrame(() => setupItemFilters(items));
     } else {
@@ -932,18 +876,7 @@ async function setupItemFilters(items) {
     const sortBy = sortSelect.value;
     const itemsPerPage = itemsPerPageSelect.value;
 
-    console.log('🔍 filterItems called:', {
-      page,
-      searchTerm,
-      categoryFilter,
-      typeFilter,
-      subtypeFilter,
-      jobsFilter,
-      locationsFilter,
-      sourcesFilter,
-      sortBy,
-      itemsPerPage
-    });
+    
 
     // Save current filter state
     window.savedFilterState = {
@@ -967,20 +900,14 @@ async function setupItemFilters(items) {
       locationsFilter !== 'all' || 
       sourcesFilter !== 'all';
 
-    console.log('🔍 Filter analysis:', {
-      hasActiveFilters,
-      itemsPerPage,
-      willUseServerSide: hasActiveFilters || itemsPerPage !== 'all'
-    });
+    
 
     // Always use server-side filtering when filters are active OR when items per page is not 'all'
     // This ensures we have all the data needed for proper pagination
     if (hasActiveFilters || itemsPerPage !== 'all') {
       // When filters are active or pagination is needed, always fetch all items and filter client-side
-      console.log('🔍 Using server-side filtering (filterItemsWithAllData)');
       await filterItemsWithAllData(page);
     } else {
-      console.log('🔍 Using client-side filtering (filterItemsClientSide)');
       filterItemsClientSide(page);
     }
   };
@@ -998,11 +925,7 @@ async function setupItemFilters(items) {
     const sortBy = sortSelect.value;
     const itemsPerPage = itemsPerPageSelect.value === 'all' ? 999999 : parseInt(itemsPerPageSelect.value);
 
-    console.log('🔍 filterItemsWithAllData called:', {
-      page,
-      itemsPerPage,
-      itemsPerPageSelectValue: itemsPerPageSelect.value
-    });
+
 
     // Show loading state
     const resultsInfo = document.querySelector('.item-results-info p');
@@ -1016,12 +939,12 @@ async function setupItemFilters(items) {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const { data: allItems } = await response.json();
 
-      console.log('🔍 Fetched items from database:', allItems.length);
+
 
       // Apply filtering and sorting to ALL items
       const filteredAndSorted = applyFiltersAndSort(allItems);
 
-      console.log('🔍 After filtering and sorting:', filteredAndSorted.length);
+
 
       // Apply pagination
       const totalPages = Math.ceil(filteredAndSorted.length / itemsPerPage);
@@ -1029,13 +952,7 @@ async function setupItemFilters(items) {
       const endIndex = startIndex + itemsPerPage;
       const paginatedItems = filteredAndSorted.slice(startIndex, endIndex);
 
-      console.log('🔍 Pagination details:', {
-        totalPages,
-        startIndex,
-        endIndex,
-        paginatedItemsLength: paginatedItems.length,
-        itemsPerPage
-      });
+
 
       // Update global items for this filtered view
       window.allItems = filteredAndSorted;
@@ -1069,7 +986,6 @@ async function setupItemFilters(items) {
       setTimeout(() => {
         const contentDiv = document.getElementById('model-details-data');
         if (contentDiv && !contentDiv.querySelector('.pagination')) {
-          console.log('🔄 Recreating filtered pagination due to timing conflict');
           if (itemsPerPageSelect.value !== 'all' && filteredAndSorted.length > itemsPerPage) {
             updateFilteredPagination(page, totalPages, filteredAndSorted.length);
           }
@@ -1079,7 +995,6 @@ async function setupItemFilters(items) {
     } catch (error) {
       console.error('❌ Error fetching all items for filtering:', error);
       // Fallback to client-side filtering on current items
-      console.log('🔄 Falling back to client-side filtering on current page...');
       filterItemsClientSide(page);
     }
   }
@@ -1097,11 +1012,6 @@ async function setupItemFilters(items) {
     const sortBy = sortSelect.value;
     const itemsPerPage = itemsPerPageSelect.value === 'all' ? window.allItems.length : parseInt(itemsPerPageSelect.value);
 
-    console.log('🔍 filterItemsClientSide called:', {
-      page,
-      itemsPerPage,
-      itemsPerPageSelectValue: itemsPerPageSelect.value
-    });
 
     const filtered = window.allItems.filter(item => {
       const matchesSearch = !searchTerm ||
@@ -1168,7 +1078,6 @@ async function setupItemFilters(items) {
         : (typeof valB === 'string' ? valB.localeCompare(valA) : valB - valA);
     });
 
-    console.log('🔍 After filtering and sorting:', sorted.length);
 
     // Apply pagination
     const totalPages = Math.ceil(sorted.length / itemsPerPage);
@@ -1176,13 +1085,7 @@ async function setupItemFilters(items) {
     const endIndex = startIndex + itemsPerPage;
     const paginatedItems = sorted.slice(startIndex, endIndex);
 
-    console.log('🔍 Pagination details:', {
-      totalPages,
-      startIndex,
-      endIndex,
-      paginatedItemsLength: paginatedItems.length,
-      itemsPerPage
-    });
+
 
     // Update results info
     const resultsInfo = document.querySelector('.item-results-info p');
@@ -1308,10 +1211,8 @@ async function setupItemFilters(items) {
 
     // Only show pagination if there are multiple pages
     if (totalPages > 1) {
-      console.log('📄 Setting up pagination for filtered results:', { currentPage, totalPages, totalItems });
-      
+
       const handlePageChange = async (pageNum) => {
-        console.log(`🔄 Filtered page change requested to page ${pageNum}`);
         // Call filterItems with the new page number
         window.filterItems(pageNum);
       };
@@ -1383,7 +1284,6 @@ async function setupItemFilters(items) {
       }
 
       contentDiv.appendChild(paginationDiv);
-      console.log('✅ Filtered pagination created successfully');
     }
   }
 
@@ -1413,7 +1313,6 @@ async function setupItemFilters(items) {
     window.savedFilterState = {};
     
     // Reload the original page data
-    console.log('🔄 Clearing filters, reloading original page data...');
     try {
       const response = await fetch('/api/models/item?page=1');
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -1443,7 +1342,6 @@ async function setupItemFilters(items) {
       // Re-create normal pagination
       if (pagination.pages > 1) {
         const handlePageChange = async (pageNum) => {
-          console.log(`🔄 Normal page change requested to page ${pageNum}`);
           try {
             const { data: pageData, pagination: pagePagination } = await fetch(`/api/models/item?page=${pageNum}`).then(r => r.json());
             window.allItems = pageData;
@@ -1552,11 +1450,9 @@ async function setupItemFilters(items) {
     }
 
     contentDiv.appendChild(paginationDiv);
-    console.log('✅ Normal pagination created successfully');
   }
 
-  window.itemFiltersInitialized = true;
-  console.log('✅ Filters initialized');
+  window.itemFiltersInitialized = true; 
   window.filterItems();
 }
 
@@ -1850,7 +1746,6 @@ window.TinglebotCache = {
       return { error: 'Please provide an array of item names' };
     }
     
-    console.log(`[Manual Preload] Starting preload of ${itemNames.length} items...`);
     const results = [];
     
     for (const itemName of itemNames) {
@@ -1867,21 +1762,18 @@ window.TinglebotCache = {
       }
     }
     
-    console.log('[Manual Preload] Complete:', results);
     return results;
   },
   
   // Enable preloading
   enablePreloading() {
     window.preloadDisabled = false;
-    console.log('[Cache] Preloading enabled');
     return { success: 'Preloading enabled' };
   },
   
   // Disable preloading
   disablePreloading() {
     window.preloadDisabled = true;
-    console.log('[Cache] Preloading disabled');
     return { success: 'Preloading disabled' };
   },
   
@@ -1895,14 +1787,11 @@ window.TinglebotCache = {
   
   // Force preload visible items
   async forcePreload() {
-    console.log('[Cache] Force preloading visible items...');
     window.preloadDisabled = false; // Temporarily enable
     await preloadVisibleItemInventories();
     return { success: 'Force preload completed' };
   }
 };
-
-console.log('🔧 TinglebotCache utilities available. Use TinglebotCache.getStats() to see cache information.');
 
 // ============================================================================
 // ------------------- Exports -------------------
@@ -1994,8 +1883,6 @@ function optimizeItemsForMobile() {
   const isMobile = isMobileDevice();
   const isTouch = isTouchDevice();
   
-  console.log('📱 Optimizing items for mobile:', { isMobile, isTouch });
-  
   // Add mobile-specific classes to body
   if (isMobile) {
     document.body.classList.add('mobile-device');
@@ -2017,8 +1904,6 @@ function setupItemMobileEventHandlers() {
   const isTouch = isTouchDevice();
   
   if (!isMobile && !isTouch) return;
-  
-  console.log('📱 Setting up mobile event handlers for items');
   
   // Add touch feedback to item cards
   const itemCards = document.querySelectorAll('.item-card');
@@ -2148,8 +2033,7 @@ function handleItemMobileOrientationChange() {
   const handleOrientationChange = () => {
     clearTimeout(orientationTimeout);
     orientationTimeout = setTimeout(() => {
-      console.log('📱 Orientation changed, re-optimizing items for mobile');
-      
+
       // Re-apply mobile optimizations
       optimizeItemsForMobile();
       
@@ -2195,6 +2079,5 @@ function updateTotalInWorldBadge(itemName, totalCount) {
   } else if (totalCount > 0) {
     badge.classList.add('has-value');
   }
-  
-  console.log(`[Badge] Updated badge for ${itemName}: ${totalCount}`);
+   
 }

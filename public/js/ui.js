@@ -15,14 +15,7 @@ function setupBackToTopButton() {
     
     let button = document.getElementById('backToTop');
     if (!button) {
-      console.error('❌ Back to top button not found in DOM');
-      console.error('❌ Available elements with "back" in ID:', 
-        Array.from(document.querySelectorAll('[id*="back"]')).map(el => el.id));
-      console.error('❌ Available elements with "top" in ID:', 
-        Array.from(document.querySelectorAll('[id*="top"]')).map(el => el.id));
-      
-      // Create the button as a fallback
-      console.log('🔝 Creating back-to-top button as fallback...');
+        // Create the button as a fallback
       button = document.createElement('button');
       button.id = 'backToTop';
       button.className = 'back-to-top';
@@ -33,7 +26,6 @@ function setupBackToTopButton() {
     
     
     // Ensure button is always visible
-    console.log('🔝 Making button always visible...');
     button.style.display = 'flex';
     button.style.opacity = '1';
     button.style.pointerEvents = 'auto';
@@ -41,11 +33,9 @@ function setupBackToTopButton() {
   
     // Smooth scroll to top on click
     button.addEventListener('click', () => {
-      console.log('🔝 Back to top button clicked');
       scrollToTop();
     });
     
-    console.log('✅ Back to top button setup complete - always visible');
 }
 
 /**
@@ -53,25 +43,15 @@ function setupBackToTopButton() {
  * Smoothly scrolls the window to the top of the page with a single, smooth animation.
  */
 function scrollToTop() {
-  console.log('📜 scrollToTop function called');
-  console.log('📜 Current window scroll position:', window.pageYOffset);
-  console.log('📜 Current document scroll position:', document.documentElement.scrollTop);
-  console.log('📜 Current body scroll position:', document.body.scrollTop);
   
   // Check for scrollable containers that might need scrolling
   const mainContent = document.querySelector('.main-content');
   const modelDetailsData = document.getElementById('model-details-data');
   
   if (mainContent) {
-    console.log('📜 Main content scroll position:', mainContent.scrollTop);
-    console.log('📜 Main content scroll height:', mainContent.scrollHeight);
-    console.log('📜 Main content client height:', mainContent.clientHeight);
   }
   
   if (modelDetailsData) {
-    console.log('📜 Model details scroll position:', modelDetailsData.scrollTop);
-    console.log('📜 Model details scroll height:', modelDetailsData.scrollHeight);
-    console.log('📜 Model details client height:', modelDetailsData.clientHeight);
   }
   
   // Check if any scrollable containers need scrolling
@@ -87,23 +67,19 @@ function scrollToTop() {
   
   // If we have scrollable elements, scroll them first
   if (scrollableElements.length > 0) {
-    console.log('📜 Found scrollable elements:', scrollableElements.length);
     scrollableElements.forEach(element => {
-      console.log('📜 Scrolling element:', element.className || element.id);
       element.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
   
   // Always scroll the window as well
   if ('scrollBehavior' in document.documentElement.style) {
-    console.log('📜 Using native smooth scroll behavior for window');
     window.scrollTo({ 
       top: 0, 
       behavior: 'smooth' 
     });
   } else {
     // Fallback for older browsers with custom easing
-    console.log('📜 Using fallback smooth scroll method for window');
     const start = window.pageYOffset;
     const startTime = performance.now();
     const duration = 600; // Slightly faster for better UX
@@ -127,7 +103,6 @@ function scrollToTop() {
     requestAnimationFrame(animateWindowScroll);
   }
   
-  console.log('📜 Smooth scroll to top initiated');
 }
   
 // ============================================================================
@@ -139,19 +114,15 @@ function scrollToTop() {
  * Builds and returns a DOM node with pagination controls.
  */
 function createPagination({ page = 1, pages = 1 }, onPageChange) {
-  console.log('🎯 Creating pagination:', { page, pages });
   if (pages <= 1) {
-    console.log('📄 No pagination needed (pages <= 1)');
     return document.createDocumentFragment();
   }
 
   const paginationDiv = document.createElement('div');
   paginationDiv.className = 'pagination';
-  console.log('📄 Created pagination container');
 
   // Helper to create a button
   const makeButton = ({ className, content, title, disabled, onClick }) => {
-    console.log('🔘 Creating button:', { className, content, title, disabled });
     const btn = document.createElement('button');
     btn.className = className;
     if (title) btn.title = title;
@@ -159,7 +130,6 @@ function createPagination({ page = 1, pages = 1 }, onPageChange) {
     btn.innerHTML = content;
     btn.addEventListener('click', (e) => {
       e.preventDefault();
-      console.log('🖱️ Pagination button clicked:', { className, content });
       onClick();
     });
     return btn;
@@ -167,13 +137,11 @@ function createPagination({ page = 1, pages = 1 }, onPageChange) {
 
   // Previous
   if (page > 1) {
-    console.log('⬅️ Adding previous button');
     paginationDiv.appendChild(makeButton({
       className: 'pagination-button',
       content: '<i class="fas fa-chevron-left"></i>',
       title: 'Previous Page',
       onClick: () => {
-        console.log('⬅️ Previous page clicked, current page:', page);
         onPageChange(page - 1);
       },
     }));
@@ -181,12 +149,10 @@ function createPagination({ page = 1, pages = 1 }, onPageChange) {
 
   // First page shortcut
   if (page > 2) {
-    console.log('1️⃣ Adding first page button');
     paginationDiv.appendChild(makeButton({
       className: 'pagination-button',
       content: '1',
       onClick: () => {
-        console.log('1️⃣ First page clicked');
         onPageChange(1);
       },
     }));
@@ -194,7 +160,6 @@ function createPagination({ page = 1, pages = 1 }, onPageChange) {
 
   // Leading ellipsis
   if (page > 3) {
-    console.log('... Adding leading ellipsis');
     const ell = document.createElement('span');
     ell.className = 'pagination-ellipsis';
     ell.textContent = '…';
@@ -202,14 +167,11 @@ function createPagination({ page = 1, pages = 1 }, onPageChange) {
   }
 
   // Surrounding pages
-  console.log('📄 Adding surrounding pages');
   for (let i = Math.max(1, page - 1); i <= Math.min(pages, page + 1); i++) {
-    console.log(`📄 Adding page button ${i}`);
     paginationDiv.appendChild(makeButton({
       className: `pagination-button${i === page ? ' active' : ''}`,
       content: `${i}`,
-      onClick: () => {
-        console.log(`📄 Page ${i} clicked`);
+      onClick: () => {  
         onPageChange(i);
       },
     }));
@@ -217,7 +179,6 @@ function createPagination({ page = 1, pages = 1 }, onPageChange) {
 
   // Trailing ellipsis
   if (page < pages - 2) {
-    console.log('... Adding trailing ellipsis');
     const ell = document.createElement('span');
     ell.className = 'pagination-ellipsis';
     ell.textContent = '…';
@@ -226,12 +187,10 @@ function createPagination({ page = 1, pages = 1 }, onPageChange) {
 
   // Last page shortcut
   if (page < pages - 1) {
-    console.log('🔚 Adding last page button');
     paginationDiv.appendChild(makeButton({
       className: 'pagination-button',
       content: `${pages}`,
       onClick: () => {
-        console.log(`🔚 Last page clicked: ${pages}`);
         onPageChange(pages);
       },
     }));
@@ -239,19 +198,16 @@ function createPagination({ page = 1, pages = 1 }, onPageChange) {
 
   // Next
   if (page < pages) {
-    console.log('➡️ Adding next button');
     paginationDiv.appendChild(makeButton({
       className: 'pagination-button',
       content: '<i class="fas fa-chevron-right"></i>',
       title: 'Next Page',
       onClick: () => {
-        console.log('➡️ Next page clicked, current page:', page);
         onPageChange(page + 1);
       },
     }));
   }
 
-  console.log('✅ Pagination creation complete');
   return paginationDiv;
 }
 

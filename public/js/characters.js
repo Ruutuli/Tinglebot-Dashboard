@@ -127,7 +127,7 @@ function handleMobileOrientationChange() {
   const handleOrientationChange = () => {
     clearTimeout(orientationTimeout);
     orientationTimeout = setTimeout(() => {
-      console.log('📱 Orientation changed, re-optimizing for mobile');
+
       
       // Re-apply mobile optimizations
       optimizeForMobile();
@@ -225,12 +225,7 @@ function closeModal(modal) {
 // ------------------- Function: renderCharacterCards -------------------
 // Renders all character cards with pagination and stat sections
 function renderCharacterCards(characters, page = 1, enableModals = true) {
-    console.log('🎨 Starting character rendering:', { 
-      charactersLength: characters?.length,
-      page,
-      firstCharacter: characters?.[0]?.name,
-      enableModals
-    });
+
 
     // Apply mobile optimizations
     const { isMobile, isTouch } = optimizeForMobile();
@@ -243,11 +238,9 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
       console.error('❌ Grid container not found');
       return;
     }
-    console.log('✅ Found grid container');
   
     // ------------------- No Characters Found -------------------
     if (!characters || characters.length === 0) {
-      console.log('⚠️ No characters to render');
       grid.innerHTML = '<div class="character-loading">No characters found</div>';
       const pagination = document.getElementById('character-pagination');
       if (pagination) pagination.innerHTML = '';
@@ -256,7 +249,6 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
   
     // Update the global characters array
     window.allCharacters = characters;
-    console.log('✅ Updated global characters array:', window.allCharacters?.length);
   
     // Get characters per page setting
     const charactersPerPageSelect = document.getElementById('characters-per-page');
@@ -270,9 +262,7 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
     const endIndex = Math.min(startIndex + charactersPerPage, characters.length);
   
     // ------------------- Render Character Cards -------------------
-    console.log('🎨 Rendering character cards');
     grid.innerHTML = characters.map(character => {
-      console.log('🎭 Processing character:', character.name);
       let statusClass = '';
       let statusText = '';
       let cardStatusClass = '';
@@ -387,16 +377,13 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
         </div>
       `;
     }).join('');
-    console.log('✅ Character cards rendered');
   
     // ------------------- Attach Modal Handlers -------------------
     if (enableModals) {
-      console.log('🎯 Attaching modal handlers');
       const characterCards = grid.querySelectorAll('.character-card');
       characterCards.forEach(card => {
         card.addEventListener('click', () => {
           const name = card.getAttribute('data-character');
-          console.log('🖱️ Character card clicked:', name);
           const character = window.allCharacters.find(c => c.name === name);
           if (!character) return;
     
@@ -415,9 +402,7 @@ function renderCharacterCards(characters, page = 1, enableModals = true) {
           }, { once: true });
         });
       });
-      console.log('✅ Modal handlers attached');
-    } else {
-      console.log('🚫 Modal handlers disabled');
+      } else {
     }
 
     // Setup mobile event handlers after rendering
@@ -594,17 +579,14 @@ function renderStatRow(label, value, barClass, percent) {
 // Populates dropdowns for job, race, and village based on unique values from database
 async function populateFilterOptions(characters) {
   try {
-    console.log('📄 Loading character filter options from database...');
     
     // Fetch all characters from database to get unique filter values
     const response = await fetch('/api/models/character?all=true');
     if (!response.ok) {
-      console.warn('⚠️ Could not load character filter options from database');
-      return;
+      return; 
     }
     
     const { data: allCharacters } = await response.json();
-    console.log('✅ Loaded character filter options from database:', allCharacters?.length, 'characters');
     
     // Extract unique values from all characters
     const jobMap = new Map();
@@ -622,7 +604,6 @@ async function populateFilterOptions(characters) {
     populateSelect('filter-race', Array.from(raceSet));
     populateSelect('filter-village', Array.from(villageSet));
     
-    console.log('✅ Character filter options populated from database');
   } catch (error) {
     console.error('❌ Error loading character filter options from database:', error);
   }
@@ -651,12 +632,10 @@ async function populateFilterOptions(characters) {
   // ------------------- Function: setupCharacterFilters -------------------
   // Adds listeners to filter UI and re-renders characters on change
   async function setupCharacterFilters(characters) {
-    console.log('Setting up character filters...');
   
     window.allCharacters = characters;
   
     if (window.characterFiltersInitialized) {
-      console.log('Filters already initialized, skipping setup');
       window.filterCharacters(1);
       return;
     }
@@ -678,7 +657,6 @@ async function populateFilterOptions(characters) {
     const missing = [searchInput, jobSelect, raceSelect, villageSelect, sortSelect, charactersPerPageSelect, clearFiltersBtn].some(el => !el);
     if (missing) {
       if (!window.filterSetupRetried) {
-        console.warn('Retrying filter setup once...');
         window.filterSetupRetried = true;
         requestAnimationFrame(() => setupCharacterFilters(characters));
       } else {
@@ -738,16 +716,7 @@ async function populateFilterOptions(characters) {
       const sortBy = sortSelect.value;
       const charactersPerPage = charactersPerPageSelect.value;
 
-      console.log('🔍 filterCharacters called:', {
-        page,
-        searchTerm,
-        jobFilter,
-        raceFilter,
-        villageFilter,
-        sortBy,
-        charactersPerPage
-      });
-
+      
       // Save current filter state
       window.savedFilterState = {
         searchTerm: searchInput.value,
@@ -764,20 +733,13 @@ async function populateFilterOptions(characters) {
         raceFilter !== 'all' || 
         villageFilter !== 'all';
 
-      console.log('🔍 Filter analysis:', {
-        hasActiveFilters,
-        charactersPerPage,
-        willUseServerSide: hasActiveFilters || charactersPerPage !== 'all'
-      });
-
+      
       // Always use server-side filtering when filters are active OR when characters per page is not 'all'
       // This ensures we have all the data needed for proper pagination
       if (hasActiveFilters || charactersPerPage !== 'all') {
         // When filters are active or pagination is needed, always fetch all characters and filter client-side
-        console.log('🔍 Using server-side filtering (filterCharactersWithAllData)');
         await filterCharactersWithAllData(page);
       } else {
-        console.log('🔍 Using client-side filtering (filterCharactersClientSide)');
         filterCharactersClientSide(page);
       }
     };
@@ -792,12 +754,6 @@ async function populateFilterOptions(characters) {
       const sortBy = sortSelect.value;
       const charactersPerPage = charactersPerPageSelect.value === 'all' ? 999999 : parseInt(charactersPerPageSelect.value);
 
-      console.log('🔍 filterCharactersWithAllData called:', {
-        page,
-        charactersPerPage,
-        charactersPerPageSelectValue: charactersPerPageSelect.value
-      });
-
       // Show loading state
       const resultsInfo = document.querySelector('.character-results-info p');
       if (resultsInfo) {
@@ -810,32 +766,22 @@ async function populateFilterOptions(characters) {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const { data: allCharacters } = await response.json();
 
-        console.log('🔍 Fetched characters from database:', allCharacters.length);
-
         // Apply filtering and sorting to ALL characters
         const filteredAndSorted = applyFiltersAndSort(allCharacters);
 
-        console.log('🔍 After filtering and sorting:', filteredAndSorted.length);
-
         // Apply pagination
         const totalPages = Math.ceil(filteredAndSorted.length / charactersPerPage);
-        const startIndex = (page - 1) * charactersPerPage;
+        const startIndex = (page - 1) * charactersPerPage;    
         const endIndex = startIndex + charactersPerPage;
         const paginatedCharacters = filteredAndSorted.slice(startIndex, endIndex);
 
-        console.log('🔍 Pagination details:', {
-          totalPages,
-          startIndex,
-          endIndex,
-          paginatedCharactersLength: paginatedCharacters.length,
-          charactersPerPage
-        });
+
 
         // Update global characters for this filtered view
         window.allCharacters = filteredAndSorted;
 
-        // Update results info
-        if (resultsInfo) {
+          // Update results info
+          if (resultsInfo) {
           if (charactersPerPageSelect.value === 'all') {
             resultsInfo.textContent = `Showing all ${filteredAndSorted.length} filtered characters`;
           } else {
@@ -1113,12 +1059,7 @@ async function populateFilterOptions(characters) {
     charactersPerPageSelect.addEventListener('change', () => window.filterCharacters(1));
   
     clearFiltersBtn.addEventListener('click', async () => {
-      console.log('🔍 Clear filters button clicked');
-      console.log('🔍 Before clear - searchInput.value:', searchInput.value);
-      console.log('🔍 Before clear - jobSelect.value:', jobSelect.value);
-      console.log('🔍 Before clear - raceSelect.value:', raceSelect.value);
-      console.log('🔍 Before clear - villageSelect.value:', villageSelect.value);
-      console.log('🔍 Before clear - sortSelect.value:', sortSelect.value);
+
       
       searchInput.value = '';
       jobSelect.value = 'all';
@@ -1127,18 +1068,14 @@ async function populateFilterOptions(characters) {
       sortSelect.value = 'name-asc';
       charactersPerPageSelect.value = '12';
       
-      console.log('🔍 After clear - searchInput.value:', searchInput.value);
-      console.log('🔍 After clear - jobSelect.value:', jobSelect.value);
-      console.log('🔍 After clear - raceSelect.value:', raceSelect.value);
-      console.log('🔍 After clear - villageSelect.value:', villageSelect.value);
-      console.log('🔍 After clear - sortSelect.value:', sortSelect.value);
+
       
       // Clear the saved filter state
       window.savedFilterState = {};
       
       // Reset the global character list to the original data
       try {
-        console.log('🔄 Fetching all characters after clearing filters...');
+
         const response = await fetch('/api/models/character?all=true');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const { data: allCharacters } = await response.json();
@@ -1152,7 +1089,7 @@ async function populateFilterOptions(characters) {
         
         // Update the global character list with all characters
         window.allCharacters = sortedCharacters;
-        console.log('✅ Reset global character list to', sortedCharacters.length, 'characters (sorted alphabetically)');
+
         
         // Get the selected characters per page value
         const charactersPerPage = charactersPerPageSelect.value === 'all' ? sortedCharacters.length : parseInt(charactersPerPageSelect.value);
@@ -1215,7 +1152,7 @@ async function populateFilterOptions(characters) {
     });
   
     window.characterFiltersInitialized = true;
-    console.log('✅ Character filters initialized');
+
     window.filterCharacters(1);
   }
   
