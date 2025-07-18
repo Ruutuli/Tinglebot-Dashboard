@@ -219,35 +219,47 @@
   color: #7289da;
 }
 
-/* --------------------------------------------------------------------------
-   Character Loading States
---------------------------------------------------------------------------- */
+/* ============================================================================
+// Character Loading States
+// ============================================================================ */
+
 .character-loading {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 250px;
-  padding: 3rem;
+  padding: 2rem;
   text-align: center;
-
-  background: rgba(20, 20, 25, 0.7);
-  border: 1px solid rgba(75, 75, 75, 0.3);
-  border-radius: var(--card-radius);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-  color: var(--botw-blue);
-  animation: pulse 1.5s infinite;
-}
-
-.character-loading.error {
-  background: rgba(25, 15, 20, 0.7);
-  color: var(--blight-border);
-  animation: none;
+  color: var(--text-secondary);
+  grid-column: 1 / -1;
 }
 
 .character-loading i {
-  font-size: 1.5rem;
-  margin-right: 0.8rem;
-  animation: spin 1s linear infinite;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--accent-color);
+}
+
+.character-loading p {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Mobile optimizations for loading */
+@media (max-width: 768px) {
+  .character-loading {
+    padding: 1rem;
+  }
+  
+  .character-loading i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .character-loading p {
+    font-size: 1rem;
+  }
 }
 
 /* Loading Inventory Fallback */

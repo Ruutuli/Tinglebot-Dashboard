@@ -262,19 +262,6 @@ function renderCharacterCards(characters, page = 1, enableModals = true, isFromF
     const endIndex = Math.min(startIndex + charactersPerPage, characters.length);
   
     // ------------------- Render Character Cards -------------------
-    console.log(`[characters.js]: DEBUG - 🎯 RENDERING CHARACTERS`);
-    console.log(`[characters.js]: DEBUG - Rendering ${characters.length} characters`);
-    console.log(`[characters.js]: DEBUG - Page: ${page}, isFromFiltering: ${isFromFiltering}`);
-    console.log(`[characters.js]: DEBUG - Sample character data:`, characters.slice(0, 2).map(char => ({
-      name: char.name,
-      userId: char.userId,
-      owner: char.owner,
-      hasOwner: !!char.owner,
-      ownerKeys: char.owner ? Object.keys(char.owner) : null
-    })));
-    
-    // Log the raw API response
-    console.log(`[characters.js]: DEBUG - Raw API response sample:`, JSON.stringify(characters.slice(0, 1), null, 2));
     
     grid.innerHTML = characters.map(character => {
       let statusClass = '';
@@ -757,24 +744,27 @@ async function populateFilterOptions(characters) {
         raceFilter !== 'all' || 
         villageFilter !== 'all';
 
-      // If we already have filtered results and we're just changing pages, use client-side filtering
-      if (window.filteredCharacters && page > 1) {
+      // If we have cached data and no new filters, use client-side filtering
+      if (window.cachedCharacterData && !hasActiveFilters) {
         filterCharactersClientSide(page);
+        return;
+      }
+
+      // Always use server-side filtering when filters are active OR when characters per page is not 'all'
+      // This ensures we have all the data needed for proper pagination
+      if (hasActiveFilters || charactersPerPage !== 'all') {
+        // When filters are active or pagination is needed, always fetch all characters and filter client-side
+        await filterCharactersWithAllData(page);
       } else {
-        // Always use server-side filtering when filters are active OR when characters per page is not 'all'
-        // This ensures we have all the data needed for proper pagination
-        if (hasActiveFilters || charactersPerPage !== 'all') {
-          // When filters are active or pagination is needed, always fetch all characters and filter client-side
-          await filterCharactersWithAllData(page);
-        } else {
-          filterCharactersClientSide(page);
-        }
+        // For simple pagination without filters, use client-side filtering
+        filterCharactersClientSide(page);
       }
     };
 
     // ------------------- Function: filterCharactersWithAllData -------------------
     // Fetches all characters from database and applies client-side filtering
     async function filterCharactersWithAllData(page = 1) {
+      const startTime = Date.now();
       const searchTerm = searchInput.value.toLowerCase();
       const jobFilter = jobSelect.value.toLowerCase();
       const raceFilter = raceSelect.value.toLowerCase();
@@ -789,13 +779,36 @@ async function populateFilterOptions(characters) {
       }
 
       try {
-        // Always fetch ALL characters from the database
-        const response = await fetch('/api/models/character?all=true');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const { data: allCharacters } = await response.json();
+        // Check if we have cached data and it's recent (less than 5 minutes old)
+        const now = Date.now();
+        const cacheAge = window.cachedCharacterData ? (now - window.cachedCharacterData.timestamp) : Infinity;
+        const isCacheValid = cacheAge < (5 * 60 * 1000); // 5 minutes
+
+        let allCharacters;
+        if (window.cachedCharacterData && isCacheValid) {
+          allCharacters = window.cachedCharacterData.data;
+          trackPerformance('character_filter_cache_hit', startTime);
+        } else {
+          // Fetch all characters from database
+          const fetchStartTime = Date.now();
+          const response = await fetch('/api/models/character?all=true');
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          const { data } = await response.json();
+          allCharacters = data;
+          
+          trackPerformance('character_data_fetch', fetchStartTime);
+          
+          // Cache the data
+          window.cachedCharacterData = {
+            data: allCharacters,
+            timestamp: now
+          };
+        }
 
         // Apply filtering and sorting to ALL characters
+        const filterStartTime = Date.now();
         const filteredAndSorted = applyFiltersAndSort(allCharacters);
+        trackPerformance('character_filter_sort', filterStartTime);
 
         // Store the filtered results for pagination
         window.filteredCharacters = filteredAndSorted;
@@ -824,7 +837,9 @@ async function populateFilterOptions(characters) {
         }
 
         // Render the paginated filtered characters
+        const renderStartTime = Date.now();
         renderCharacterCards(paginatedCharacters, page, false, true);
+        trackPerformance('character_render', renderStartTime);
 
         // Update pagination
         if (charactersPerPageSelect.value !== 'all' && filteredAndSorted.length > charactersPerPage) {
@@ -835,6 +850,8 @@ async function populateFilterOptions(characters) {
             paginationContainer.innerHTML = '';
           }
         }
+
+        trackPerformance('character_filter_complete', startTime);
 
       } catch (error) {
         console.error('❌ Error filtering characters:', error);
@@ -854,8 +871,8 @@ async function populateFilterOptions(characters) {
       const sortBy = sortSelect.value;
       const charactersPerPage = charactersPerPageSelect.value === 'all' ? window.allCharacters.length : parseInt(charactersPerPageSelect.value);
 
-      // Use stored filtered characters if available (for pagination)
-      const charactersToFilter = window.filteredCharacters || window.allCharacters;
+      // Use cached data if available, otherwise use stored filtered characters or all characters
+      const charactersToFilter = window.cachedCharacterData?.data || window.filteredCharacters || window.allCharacters;
 
       const filtered = charactersToFilter.filter(c => {
         const matchesSearch = !searchTerm ||
@@ -1113,17 +1130,33 @@ async function populateFilterOptions(characters) {
       
       // Reset the global character list to the original data
       try {
+        // Use cached data if available and recent
+        const now = Date.now();
+        const cacheAge = window.cachedCharacterData ? (now - window.cachedCharacterData.timestamp) : Infinity;
+        const isCacheValid = cacheAge < (5 * 60 * 1000); // 5 minutes
 
-        const response = await fetch('/api/models/character?all=true');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const { data: allCharacters } = await response.json();
-        
-        // Sort characters alphabetically by name
-        const sortedCharacters = [...allCharacters].sort((a, b) => {
-          const nameA = (a.name || '').toLowerCase();
-          const nameB = (b.name || '').toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
+        let sortedCharacters;
+        if (window.cachedCharacterData && isCacheValid) {
+          sortedCharacters = window.cachedCharacterData.data;
+        } else {
+          // Fetch fresh data if cache is invalid
+          const response = await fetch('/api/models/character?all=true');
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          const { data: allCharacters } = await response.json();
+          
+          // Sort characters alphabetically by name
+          sortedCharacters = [...allCharacters].sort((a, b) => {
+            const nameA = (a.name || '').toLowerCase();
+            const nameB = (b.name || '').toLowerCase();
+            return nameA.localeCompare(nameB);
+          });
+          
+          // Update cache
+          window.cachedCharacterData = {
+            data: sortedCharacters,
+            timestamp: now
+          };
+        }
         
         // Update the global character list with all characters
         window.allCharacters = sortedCharacters;
@@ -1210,7 +1243,6 @@ async function initializeCharacterPage(data, page = 1, contentDiv) {
     // Store characters globally for filtering
     window.allCharacters = data;
     
-
 
     // Apply mobile optimizations early
     const { isMobile, isTouch } = optimizeForMobile();
@@ -1355,6 +1387,14 @@ async function initializeCharacterPage(data, page = 1, contentDiv) {
     // Setup mobile orientation change handler
     handleMobileOrientationChange();
 
+    // Show initial loading state
+    container.innerHTML = `
+        <div class="character-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading characters...</p>
+        </div>
+    `;
+
     // Only initialize filters if they haven't been initialized yet
     if (!window.characterFiltersInitialized) {
         await setupCharacterFilters(data);
@@ -1367,6 +1407,65 @@ async function initializeCharacterPage(data, page = 1, contentDiv) {
     // The results info will be updated by filterCharacters or renderCharacterCards
 }
   
+// ============================================================================
+// ------------------- Performance Monitoring -------------------
+// Tracks loading times and performance metrics
+// ============================================================================
+
+// ------------------- Function: trackPerformance -------------------
+// Tracks performance metrics for character loading
+function trackPerformance(operation, startTime) {
+  const duration = Date.now() - startTime;
+  console.log(`⏱️ Performance: ${operation} took ${duration}ms`);
+  
+  // Store performance data for analytics
+  if (!window.performanceMetrics) {
+    window.performanceMetrics = {};
+  }
+  
+  if (!window.performanceMetrics[operation]) {
+    window.performanceMetrics[operation] = [];
+  }
+  
+  window.performanceMetrics[operation].push(duration);
+  
+  // Keep only last 10 measurements
+  if (window.performanceMetrics[operation].length > 10) {
+    window.performanceMetrics[operation].shift();
+  }
+  
+  // Log average performance
+  const avg = window.performanceMetrics[operation].reduce((a, b) => a + b, 0) / window.performanceMetrics[operation].length;
+  console.log(`📊 Average ${operation}: ${Math.round(avg)}ms`);
+  
+  return duration;
+}
+
+// ------------------- Function: getPerformanceSummary -------------------
+// Returns a summary of performance metrics
+function getPerformanceSummary() {
+  if (!window.performanceMetrics) {
+    return 'No performance data available';
+  }
+  
+  const summary = {};
+  Object.keys(window.performanceMetrics).forEach(operation => {
+    const measurements = window.performanceMetrics[operation];
+    const avg = measurements.reduce((a, b) => a + b, 0) / measurements.length;
+    const min = Math.min(...measurements);
+    const max = Math.max(...measurements);
+    
+    summary[operation] = {
+      average: Math.round(avg),
+      min,
+      max,
+      count: measurements.length
+    };
+  });
+  
+  return summary;
+}
+
 // ============================================================================
 // ------------------- Exports -------------------
 // Public API for character rendering module
@@ -1383,7 +1482,10 @@ export {
     setupMobileEventHandlers,
     handleMobileOrientationChange,
     createMobileFriendlyModal,
-    closeModal
+    closeModal,
+    // Performance monitoring
+    trackPerformance,
+    getPerformanceSummary
   };
   
   

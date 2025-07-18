@@ -552,6 +552,8 @@ function setupSidebarNavigation() {
         commands.showCommandsSection();
       } else if (sectionId === 'calendar-section') {
         showCalendarSection();
+      } else if (sectionId === 'users-section') {
+        showUsersSection();
       } else {
         // For other sections, use the existing showSection function
         showSection(sectionId);
@@ -575,6 +577,8 @@ function setupSidebarNavigation() {
       commands.showCommandsSection();
     } else if (section === 'calendar-section') {
       showCalendarSection();
+    } else if (section === 'users-section') {
+      showUsersSection();
     } else {
       showSection(section);
     }
@@ -597,6 +601,8 @@ function setupSidebarNavigation() {
       commands.showCommandsSection();
     } else if (sectionId === 'calendar-section') {
       showCalendarSection();
+    } else if (sectionId === 'users-section') {
+      showUsersSection();
     } else {
       showSection(sectionId);
     }
@@ -1132,6 +1138,60 @@ function showCalendarSection() {
 }
 
 // ============================================================================
+// ------------------- Users Navigation -------------------
+// Handles users page navigation specifically
+// ============================================================================
+function showUsersSection() {
+  
+  // Hide all main content sections
+  const mainContent = document.querySelector('.main-content');
+  const sections = mainContent.querySelectorAll('section, #model-details-page');
+  
+  sections.forEach(section => {
+    section.style.display = 'none';
+  });
+  
+  // Show the users section
+  const usersSection = document.getElementById('users-section');
+  if (usersSection) {
+    usersSection.style.display = 'block';
+    
+    // Initialize users page
+    import('./users.js').then(usersModule => {
+      // The UserLookup class is already initialized in the module
+      // We just need to ensure it's ready
+      if (window.userLookup) {
+        window.userLookup.initializeSection();
+      }
+    }).catch(err => {
+      console.error('❌ Error loading users module:', err);
+    });
+  } else {
+    console.error('❌ Users section not found');
+  }
+  
+  // Update active state in sidebar
+  const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+  sidebarLinks.forEach(link => {
+    const linkSection = link.getAttribute('data-section');
+    const listItem = link.closest('li');
+    if (listItem) {
+      if (linkSection === 'users-section') {
+        listItem.classList.add('active');
+      } else {
+        listItem.classList.remove('active');
+      }
+    }
+  });
+  
+  // Update breadcrumb
+  const breadcrumb = document.querySelector('.breadcrumb');
+  if (breadcrumb) {
+    breadcrumb.textContent = 'Users';
+  }
+}
+
+// ============================================================================
 // ------------------- Exports -------------------
 // Shared helpers and UI controls
 // ============================================================================
@@ -1150,5 +1210,6 @@ export {
   loadModelData,
   showProfileSection,
   showGuildSection,
-  showCalendarSection
+  showCalendarSection,
+  showUsersSection
 };

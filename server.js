@@ -189,6 +189,17 @@ const characterListCache = {
   CACHE_DURATION: 10 * 60 * 1000 
 };
 
+// Add character data caching
+const characterDataCache = {
+  data: null,
+  timestamp: 0,
+  CACHE_DURATION: 5 * 60 * 1000 // 5 minutes for character data
+};
+
+// Add spirit orb cache
+const spiritOrbCache = new Map();
+const SPIRIT_ORB_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+
 // ------------------- Function: initializeCacheCleanup -------------------
 // Sets up periodic cache cleanup to prevent memory leaks
 const initializeCacheCleanup = () => {
@@ -208,8 +219,20 @@ const initializeCacheCleanup = () => {
       characterListCache.data = null;
       characterListCache.timestamp = 0;
     }
+    
+    // Clean up characterDataCache (object)
+    if (characterDataCache.data && now - characterDataCache.timestamp > characterDataCache.CACHE_DURATION) {
+      characterDataCache.data = null;
+      characterDataCache.timestamp = 0;
+    }
+    
+    // Clean up spiritOrbCache (Map)
+    for (const [key, value] of spiritOrbCache.entries()) {
+      if (now - value.timestamp > SPIRIT_ORB_CACHE_DURATION) {
+        spiritOrbCache.delete(key);
+      }
+    }
   }, 60 * 60 * 1000); // Every hour
-  
 };
 
 // ------------------- Section: Database Initialization -------------------
@@ -303,7 +326,7 @@ app.get('/auth/discord/callback',
   }), 
   (req, res) => {
     console.log('[server.js]: ✅ Discord authentication successful');
-    console.log('[server.js]: 👤 Authenticated user:', {
+    console.log('[server.js]: �� Authenticated user:', {
       username: req.user?.username,
       discordId: req.user?.discordId,
       id: req.user?._id
@@ -399,14 +422,6 @@ app.get('/api/health', (req, res) => {
 
 // ------------------- User Authentication Status -------------------
 app.get('/api/user', (req, res) => {
-  console.log('[server.js]: 🔍 /api/user endpoint called');
-  console.log('[server.js]: 📊 Authentication status:', {
-    isAuthenticated: req.isAuthenticated(),
-    hasUser: !!req.user,
-    hasSession: !!req.session,
-    sessionId: req.session?.id,
-    userAgent: req.headers['user-agent']
-  });
   
   const authInfo = {
     isAuthenticated: req.isAuthenticated(),
@@ -426,8 +441,131 @@ app.get('/api/user', (req, res) => {
     } : null
   };
   
-  console.log('[server.js]: 📤 Sending auth info:', authInfo);
+
   res.json(authInfo);
+});
+
+// ------------------- Section: User Lookup API Routes -------------------
+
+// ------------------- Function: searchUsers -------------------
+// Search users by username or Discord ID
+app.get('/api/users/search', async (req, res) => {
+  try {
+    const { query } = req.query;
+    
+    if (!query || query.length < 2) {
+      return res.status(400).json({ error: 'Search query must be at least 2 characters long' });
+    }
+
+    const searchRegex = new RegExp(query, 'i');
+    
+    const users = await User.find({
+      $or: [
+        { username: searchRegex },
+        { discordId: searchRegex }
+      ]
+    })
+    .select('discordId username discriminator avatar tokens characterSlot status createdAt')
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .lean();
+
+    // Get character counts for each user
+    const usersWithCharacters = await Promise.all(
+      users.map(async (user) => {
+        const characterCount = await Character.countDocuments({ userId: user.discordId });
+        return {
+          ...user,
+          characterCount
+        };
+      })
+    );
+
+    res.json({ users: usersWithCharacters });
+  } catch (error) {
+    console.error('[server.js]: Error searching users:', error);
+    res.status(500).json({ error: 'Failed to search users' });
+  }
+});
+
+// ------------------- Function: getAllUsers -------------------
+// Get all users with pagination
+app.get('/api/users', async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    // Get total count
+    const totalUsers = await User.countDocuments();
+    
+    // Get users for current page
+    const users = await User.find({})
+      .select('discordId username discriminator avatar tokens characterSlot status createdAt')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Get character counts for each user
+    const usersWithCharacters = await Promise.all(
+      users.map(async (user) => {
+        const characterCount = await Character.countDocuments({ userId: user.discordId });
+        return {
+          ...user,
+          characterCount
+        };
+      })
+    );
+
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    res.json({
+      users: usersWithCharacters,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalUsers,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
+    });
+  } catch (error) {
+    console.error('[server.js]: Error fetching users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// ------------------- Function: getUserDetails -------------------
+// Get detailed user information including characters
+app.get('/api/users/:discordId', async (req, res) => {
+  try {
+    const { discordId } = req.params;
+
+    const user = await User.findOne({ discordId })
+      .select('discordId username discriminator avatar tokens characterSlot status createdAt')
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get user's characters
+    const characters = await Character.find({ userId: discordId })
+      .select('name icon job homeVillage currentHearts maxHearts currentStamina maxStamina appLink _id')
+      .lean();
+
+    res.json({
+      user: {
+        ...user,
+        characterCount: characters.length
+      },
+      characters
+    });
+  } catch (error) {
+    console.error('[server.js]: Error fetching user details:', error);
+    res.status(500).json({ error: 'Failed to fetch user details' });
+  }
 });
 
 // ------------------- Function: getActivities -------------------
@@ -959,60 +1097,70 @@ app.get('/api/models/:modelType', async (req, res) => {
       // For characters, we need to populate user information even for all=true requests
       let finalData = allItemsData;
       if (modelType === 'character') {
-              // Get unique user IDs from characters
-      const userIds = [...new Set(allItemsData.map(char => char.userId))];
-      
-      // Fetch user information for all unique user IDs
-      const users = await User.find({ discordId: { $in: userIds } }, { 
-        discordId: 1, 
-        username: 1, 
-        discriminator: 1 
-      }).lean();
-      
-      // Create a map for quick lookup
-      const userMap = {};
-      users.forEach(user => {
-        userMap[user.discordId] = user;
-      });
-        
-        // Transform character data
-        finalData = allItemsData.map(character => {
-          // Transform icon URL
-          if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-            const filename = character.icon.split('/').pop();
-            character.icon = filename;
-          }
+        // Check cache first
+        const now = Date.now();
+        if (characterDataCache.data && (now - characterDataCache.timestamp) < characterDataCache.CACHE_DURATION) {
+          finalData = characterDataCache.data;
+        } else {
+          // Get unique user IDs from characters
+          const userIds = [...new Set(allItemsData.map(char => char.userId))];
           
-          // Add user information
-          const user = userMap[character.userId];
-          if (user) {
-            character.owner = {
-              username: user.username,
-              discriminator: user.discriminator,
-              displayName: user.username || 'Unknown User'
-            };
-          } else {
-            character.owner = {
-              username: 'Unknown',
-              discriminator: null,
-              displayName: 'Unknown User'
-            };
-          }
+          // Fetch user information for all unique user IDs in one query
+          const users = await User.find({ discordId: { $in: userIds } }, { 
+            discordId: 1, 
+            username: 1, 
+            discriminator: 1 
+          }).lean();
           
-          // Count spirit orbs from inventory (replace character model field)
-          character.spiritOrbs = 0; // Will be updated with actual count from inventory
+          // Create a map for quick lookup
+          const userMap = {};
+          users.forEach(user => {
+            userMap[user.discordId] = user;
+          });
+            
+          // Transform character data
+          finalData = allItemsData.map(character => {
+            // Transform icon URL
+            if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
+              const filename = character.icon.split('/').pop();
+              character.icon = filename;
+            }
+            
+            // Add user information
+            const user = userMap[character.userId];
+            if (user) {
+              character.owner = {
+                username: user.username,
+                discriminator: user.discriminator,
+                displayName: user.username || 'Unknown User'
+              };
+            } else {
+              character.owner = {
+                username: 'Unknown',
+                discriminator: null,
+                displayName: 'Unknown User'
+              };
+            }
+            
+            // Initialize spirit orbs (will be updated below)
+            character.spiritOrbs = 0;
+            
+            return character;
+          });
           
-          return character;
-        });
-        
-        // Get spirit orb counts for all characters
-        const characterNames = finalData.map(char => char.name);
-        const spiritOrbCounts = await countSpiritOrbsBatch(characterNames);
-        
-        // Update spirit orb counts
-        finalData.forEach(character => {
-          character.spiritOrbs = spiritOrbCounts[character.name] || 0;
-        });
+          // Get spirit orb counts for all characters in one batch
+          const characterNames = finalData.map(char => char.name);
+          const spiritOrbCounts = await countSpiritOrbsBatch(characterNames);
+          
+          // Update spirit orb counts
+          finalData.forEach(character => {
+            character.spiritOrbs = spiritOrbCounts[character.name] || 0;
+          });
+          
+          // Cache the processed data
+          characterDataCache.data = finalData;
+          characterDataCache.timestamp = now;
+        }
         
 
       }
@@ -1046,58 +1194,67 @@ app.get('/api/models/:modelType', async (req, res) => {
 
     // Transform icon URLs for characters and populate user information
     if (modelType === 'character') {
-      // Get unique user IDs from characters
-      const userIds = [...new Set(data.map(char => char.userId))];
-      
-      // Fetch user information for all unique user IDs
-      const users = await User.find({ discordId: { $in: userIds } }, { 
-        discordId: 1, 
-        username: 1, 
-        discriminator: 1 
-      }).lean();
-      
-      // Create a map for quick lookup
-      const userMap = {};
-      users.forEach(user => {
-        userMap[user.discordId] = user;
-      });
-      
-      // Transform character data
-      data.forEach(character => {
-        // Transform icon URL
-        if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-          const filename = character.icon.split('/').pop();
-          character.icon = filename;
-        }
+      // Check cache first for paginated requests
+      const now = Date.now();
+      if (characterDataCache.data && (now - characterDataCache.timestamp) < characterDataCache.CACHE_DURATION) {
+        // Use cached data and apply pagination
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        data = characterDataCache.data.slice(startIndex, endIndex);
+      } else {
+        // Get unique user IDs from characters
+        const userIds = [...new Set(data.map(char => char.userId))];
         
-        // Add user information
-        const user = userMap[character.userId];
-        if (user) {
-          character.owner = {
-            username: user.username,
-            discriminator: user.discriminator,
-            displayName: user.username || 'Unknown User'
-          };
-        } else {
-          character.owner = {
-            username: 'Unknown',
-            discriminator: null,
-            displayName: 'Unknown User'
-          };
-        }
+        // Fetch user information for all unique user IDs in one query
+        const users = await User.find({ discordId: { $in: userIds } }, { 
+          discordId: 1, 
+          username: 1, 
+          discriminator: 1 
+        }).lean();
         
-        // Count spirit orbs from inventory (replace character model field)
-        character.spiritOrbs = 0; // Will be updated with actual count from inventory
-      });
-      
-      // Get spirit orb counts for all characters
-      const characterNames = data.map(char => char.name);
-      const spiritOrbCounts = await countSpiritOrbsBatch(characterNames);
-      
-      // Update spirit orb counts
-      data.forEach(character => {
-        character.spiritOrbs = spiritOrbCounts[character.name] || 0;
-      });
+        // Create a map for quick lookup
+        const userMap = {};
+        users.forEach(user => {
+          userMap[user.discordId] = user;
+        });
+        
+        // Transform character data
+        data.forEach(character => {
+          // Transform icon URL
+          if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
+            const filename = character.icon.split('/').pop();
+            character.icon = filename;
+          }
+          
+          // Add user information
+          const user = userMap[character.userId];
+          if (user) {
+            character.owner = {
+              username: user.username,
+              discriminator: user.discriminator,
+              displayName: user.username || 'Unknown User'
+            };
+          } else {
+            character.owner = {
+              username: 'Unknown',
+              discriminator: null,
+              displayName: 'Unknown User'
+            };
+          }
+          
+          // Initialize spirit orbs (will be updated below)
+          character.spiritOrbs = 0;
+        });
+        
+        // Get spirit orb counts for all characters in one batch
+        const characterNames = data.map(char => char.name);
+        const spiritOrbCounts = await countSpiritOrbsBatch(characterNames);
+        
+        // Update spirit orb counts
+        data.forEach(character => {
+          character.spiritOrbs = spiritOrbCounts[character.name] || 0;
+        });
+      }
       
 
     }
@@ -2189,20 +2346,43 @@ async function countSpiritOrbs(characterName) {
 }
 
 // ------------------- Function: countSpiritOrbsBatch -------------------
-// Counts spirit orbs for multiple characters efficiently
+// Counts spirit orbs for multiple characters efficiently with caching
 async function countSpiritOrbsBatch(characterNames) {
   const spiritOrbCounts = {};
+  const now = Date.now();
   
+  // Check cache first
+  const uncachedCharacters = [];
   for (const characterName of characterNames) {
-    try {
-      const col = await getCharacterInventoryCollection(characterName);
-      const spiritOrbItem = await col.findOne({ 
-        itemName: { $regex: /^spirit\s*orb$/i } 
-      });
-      spiritOrbCounts[characterName] = spiritOrbItem ? spiritOrbItem.quantity || 0 : 0;
-    } catch (error) {
-      console.warn(`[server.js]: ⚠️ Error counting spirit orbs for ${characterName}:`, error.message);
-      spiritOrbCounts[characterName] = 0;
+    const cached = spiritOrbCache.get(characterName);
+    if (cached && (now - cached.timestamp) < SPIRIT_ORB_CACHE_DURATION) {
+      spiritOrbCounts[characterName] = cached.count;
+    } else {
+      uncachedCharacters.push(characterName);
+    }
+  }
+  
+  // Only query database for uncached characters
+  if (uncachedCharacters.length > 0) {
+    for (const characterName of uncachedCharacters) {
+      try {
+        const col = await getCharacterInventoryCollection(characterName);
+        const spiritOrbItem = await col.findOne({ 
+          itemName: { $regex: /^spirit\s*orb$/i } 
+        });
+        const count = spiritOrbItem ? spiritOrbItem.quantity || 0 : 0;
+        
+        // Cache the result
+        spiritOrbCache.set(characterName, {
+          count,
+          timestamp: now
+        });
+        
+        spiritOrbCounts[characterName] = count;
+      } catch (error) {
+        console.warn(`[server.js]: ⚠️ Error counting spirit orbs for ${characterName}:`, error.message);
+        spiritOrbCounts[characterName] = 0;
+      }
     }
   }
   

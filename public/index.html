@@ -152,6 +152,9 @@
             <a href="#guilds" data-section="guilds-section"><i class="fas fa-server"></i><span>Discord</span></a>
           </li>
           <li>
+            <a href="#users" data-section="users-section"><i class="fas fa-users"></i><span>Users</span></a>
+          </li>
+          <li>
             <a href="#commands" data-section="commands-section"><i class="fas fa-terminal"></i><span>Commands</span></a>
           </li>
           <li>
@@ -592,6 +595,120 @@
         </div>
       </section>
 
+      <!-- Users Section -->
+      <section id="users-section" style="display:none;">
+        <div class="dashboard-header">
+          <h1>User Lookup</h1>
+          <div class="dashboard-divider"></div>
+        </div>
+        
+        <!-- Search Interface -->
+        <div class="users-search-container">
+          <div class="users-search-header">
+            <h3><i class="fas fa-search"></i> Find Users</h3>
+            <p>Search for users by username or Discord ID</p>
+          </div>
+          
+          <div class="users-search-form">
+            <div class="search-input-group">
+              <input 
+                type="text" 
+                id="user-search-input" 
+                class="user-search-input" 
+                placeholder="Enter username or Discord ID..."
+                minlength="2"
+              />
+              <button id="user-search-btn" class="user-search-btn">
+                <i class="fas fa-search"></i>
+                <span>Search</span>
+              </button>
+            </div>
+            <div class="search-info">
+              <span class="search-debounce-info">Search will trigger automatically after typing stops</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Container -->
+        <div class="users-results-container">
+          <!-- Loading State -->
+          <div id="users-loading" class="users-loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Loading users...</p>
+          </div>
+
+          <!-- Search Results -->
+          <div id="users-search-results" class="users-search-results" style="display: none;">
+            <div class="users-results-header">
+              <h3><i class="fas fa-search"></i> Search Results</h3>
+              <button id="back-to-all-users" class="back-to-all-btn">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back to All Users</span>
+              </button>
+            </div>
+            <div id="users-search-list" class="users-grid">
+              <!-- Search results will be populated here -->
+            </div>
+          </div>
+
+          <!-- All Users -->
+          <div id="users-all-container" class="users-all-container">
+            <div class="users-all-header">
+              <h3><i class="fas fa-users"></i> All Users</h3>
+              <div class="users-stats">
+                <span class="users-count">Total Users: <span id="total-users-count">0</span></span>
+              </div>
+            </div>
+            
+            <!-- Pagination Controls -->
+            <div class="users-pagination">
+              <button id="users-prev-page" class="pagination-btn" disabled>
+                <i class="fas fa-chevron-left"></i>
+                <span>Previous</span>
+              </button>
+              <div class="pagination-info">
+                <span>Page <span id="current-page">1</span> of <span id="total-pages">1</span></span>
+              </div>
+              <button id="users-next-page" class="pagination-btn">
+                <span>Next</span>
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+
+            <!-- Users Grid -->
+            <div id="users-grid" class="users-grid">
+              <!-- Users will be populated here -->
+            </div>
+          </div>
+
+          <!-- No Results State -->
+          <div id="users-no-results" class="users-no-results" style="display: none;">
+            <div class="no-results-icon">
+              <i class="fas fa-search"></i>
+            </div>
+            <h3>No Users Found</h3>
+            <p>Try adjusting your search terms or browse all users instead.</p>
+            <button id="browse-all-users" class="browse-all-btn">
+              <i class="fas fa-users"></i>
+              <span>Browse All Users</span>
+            </button>
+          </div>
+
+          <!-- Error State -->
+          <div id="users-error" class="users-error" style="display: none;">
+            <div class="error-icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3>Something went wrong</h3>
+            <p id="users-error-message">An error occurred while loading users.</p>
+            <button id="users-retry-btn" class="retry-btn">
+              <i class="fas fa-redo"></i>
+              <span>Try Again</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- Calendar Section -->
       <section id="calendar-section" style="display:none;">
         <div class="dashboard-header">
@@ -802,6 +919,7 @@
   <script src="js/debug.js"></script>
   <script type="module" src="js/characterOfWeek.js"></script>
   <script type="module" src="js/monsters.js"></script>
+  <script type="module" src="js/users.js"></script>
   
   <!-- Performance and Error Handling Script -->
   <script src="js/performance.js"></script>

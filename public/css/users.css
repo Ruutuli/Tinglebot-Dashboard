@@ -14,6 +14,1352 @@
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
 }
 
+/* =============================================================================
+   User Lookup – Search Interface
+============================================================================= */
+
+.users-search-container {
+  background: var(--card-background);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  margin-bottom: 2.5rem;
+  box-shadow: var(--section-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.users-search-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover), var(--accent));
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.users-search-header {
+  margin-bottom: 2rem;
+}
+
+.users-search-header h3 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.users-search-header p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.users-search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.search-input-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.user-search-input {
+  flex: 1;
+  background: var(--glass-bg);
+  border: 2px solid var(--glass-border);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  color: var(--text-primary);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.user-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(0, 163, 218, 0.15);
+  background: var(--card-background);
+}
+
+.user-search-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.user-search-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: white;
+  border: none;
+  border-radius: 1rem;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 163, 218, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.user-search-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.user-search-btn:hover::before {
+  left: 100%;
+}
+
+.user-search-btn:hover {
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 163, 218, 0.4);
+}
+
+.user-search-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 163, 218, 0.3);
+}
+
+.search-info {
+  display: flex;
+  justify-content: center;
+}
+
+.search-debounce-info {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* =============================================================================
+   User Lookup – Results Container
+============================================================================= */
+
+.users-results-container {
+  position: relative;
+  min-height: 400px;
+}
+
+/* =============================================================================
+   User Lookup – Loading State
+============================================================================= */
+
+.users-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: var(--text-secondary);
+  background: var(--card-background);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+  box-shadow: var(--section-shadow);
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--glass-border);
+  border-top: 4px solid var(--accent);
+  border-radius: 50%;
+  animation: spin 1.2s linear infinite;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 163, 218, 0.2);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.users-loading p {
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+/* =============================================================================
+   User Lookup – Search Results
+============================================================================= */
+
+.users-search-results {
+  background: var(--card-background);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: var(--section-shadow);
+}
+
+.users-results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.users-results-header h3 {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back-to-all-btn {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.75rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back-to-all-btn:hover {
+  background: var(--card-background);
+  border-color: var(--accent);
+}
+
+/* =============================================================================
+   User Lookup – All Users Container
+============================================================================= */
+
+.users-all-container {
+  background: var(--card-background);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: var(--section-shadow);
+}
+
+.users-all-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.users-all-header h3 {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.users-stats {
+  display: flex;
+  gap: 1rem;
+}
+
+.users-count {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.users-count span {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* =============================================================================
+   User Lookup – Pagination
+============================================================================= */
+
+.users-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--glass-bg);
+  border-radius: 1rem;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-btn {
+  background: var(--card-background);
+  color: var(--text-primary);
+  border: 2px solid var(--glass-border);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: white;
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 163, 218, 0.3);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pagination-info {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  background: var(--card-background);
+  border-radius: 0.5rem;
+  border: 1px solid var(--glass-border);
+}
+
+.pagination-info span {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* =============================================================================
+   User Lookup – Users Grid
+============================================================================= */
+
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+/* =============================================================================
+   User Lookup – User Cards
+============================================================================= */
+
+.user-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.user-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.user-card:hover::before {
+  transform: scaleX(1);
+}
+
+.user-card:hover {
+  background: var(--card-background);
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.user-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.user-avatar-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid var(--glass-border);
+  transition: all 0.3s ease;
+  object-fit: cover;
+}
+
+.user-card:hover .user-avatar {
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+
+.user-status {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px solid var(--card-background);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.user-status.active .status-dot {
+  background: linear-gradient(135deg, #4ade80, #22c55e) !important;
+}
+
+.user-status.inactive .status-dot {
+  background: linear-gradient(135deg, #f87171, #ef4444) !important;
+}
+
+.user-status .status-dot {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: block;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.user-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0.75rem;
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.user-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.user-stat-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.user-stat-label {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-stat-value {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.user-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.user-view-btn {
+  background: linear-gradient(135deg, var(--totk-light-green), var(--totk-green));
+  color: var(--totk-black);
+  border: none;
+  border-radius: 0.875rem;
+  padding: 0.875rem 2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  box-shadow: 0 4px 12px rgba(73, 213, 156, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.user-view-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.user-view-btn:hover::before {
+  left: 100%;
+}
+
+.user-view-btn:hover {
+  background: linear-gradient(135deg, var(--totk-green), var(--totk-light-green));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(73, 213, 156, 0.4);
+}
+
+.user-view-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(73, 213, 156, 0.3);
+}
+
+/* =============================================================================
+   User Lookup – No Results State
+============================================================================= */
+
+.users-no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: var(--card-background);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+  box-shadow: var(--section-shadow);
+}
+
+.no-results-icon {
+  font-size: 4rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  opacity: 0.7;
+}
+
+.users-no-results h3 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+}
+
+.users-no-results p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0 0 2rem 0;
+  line-height: 1.5;
+  max-width: 400px;
+}
+
+.browse-all-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: white;
+  border: none;
+  border-radius: 1rem;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 163, 218, 0.3);
+}
+
+.browse-all-btn:hover {
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 163, 218, 0.4);
+}
+
+/* =============================================================================
+   User Lookup – Error State
+============================================================================= */
+
+.users-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: var(--card-background);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+  box-shadow: var(--section-shadow);
+}
+
+.error-icon {
+  font-size: 4rem;
+  color: #f87171;
+  margin-bottom: 1.5rem;
+  opacity: 0.8;
+}
+
+.users-error h3 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+}
+
+.users-error p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0 0 2rem 0;
+  line-height: 1.5;
+  max-width: 400px;
+}
+
+.retry-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: white;
+  border: none;
+  border-radius: 1rem;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 163, 218, 0.3);
+}
+
+.retry-btn:hover {
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 163, 218, 0.4);
+}
+
+/* =============================================================================
+   User Lookup – Responsive Design
+============================================================================= */
+
+@media (max-width: 1024px) {
+  .users-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .users-search-container {
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .users-search-header h3 {
+    font-size: 1.25rem;
+  }
+  
+  .users-search-header p {
+    font-size: 0.9rem;
+  }
+  
+  .search-input-group {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .user-search-input {
+    padding: 0.875rem 1rem;
+    font-size: 0.95rem;
+  }
+  
+  .user-search-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.875rem 1.5rem;
+  }
+  
+  .users-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+  
+  .user-card {
+    padding: 1.5rem;
+  }
+  
+  .user-card-header {
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  .user-avatar {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .user-name {
+    font-size: 1.1rem;
+  }
+  
+  .user-stats {
+    gap: 1rem;
+    padding: 1rem 0;
+    margin-bottom: 1.25rem;
+  }
+  
+  .user-stat-value {
+    font-size: 1.1rem;
+  }
+  
+  .users-all-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .users-pagination {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+  
+  .pagination-btn {
+    padding: 0.625rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .users-search-container,
+  .users-all-container,
+  .users-search-results {
+    padding: 1.25rem;
+    border-radius: 1rem;
+  }
+  
+  .users-search-header {
+    margin-bottom: 1.5rem;
+  }
+  
+  .users-search-header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .user-search-input {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .user-search-btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+  }
+  
+  .user-card {
+    padding: 1.25rem;
+  }
+  
+  .user-card-header {
+    gap: 0.875rem;
+    margin-bottom: 1rem;
+  }
+  
+  .user-avatar {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .user-name {
+    font-size: 1rem;
+  }
+  
+  .user-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.875rem;
+    padding: 0.875rem 0;
+    margin-bottom: 1rem;
+  }
+  
+  .user-stat-label {
+    font-size: 0.7rem;
+  }
+  
+  .user-stat-value {
+    font-size: 1rem;
+  }
+  
+  .user-view-btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.85rem;
+  }
+  
+  .users-pagination {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+  
+  .pagination-btn {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8rem;
+  }
+  
+  .pagination-info {
+    font-size: 0.9rem;
+    padding: 0.375rem 0.75rem;
+  }
+}
+
+/* =============================================================================
+   User Lookup – User Details Modal
+============================================================================= */
+
+.user-details-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+.user-details-modal-content {
+  background: var(--card-background);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+  animation: slideInUp 0.3s ease;
+}
+
+.user-details-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.user-details-user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-details-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid var(--glass-border);
+}
+
+.user-details-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.user-details-name {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+
+
+.user-details-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.user-details-status.active {
+  color: #4ade80;
+}
+
+.user-details-status.inactive {
+  color: #f87171;
+}
+
+.user-details-status .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.user-details-status.active .status-dot {
+  background: linear-gradient(135deg, #4ade80, #22c55e) !important;
+}
+
+.user-details-status.inactive .status-dot {
+  background: linear-gradient(135deg, #f87171, #ef4444) !important;
+}
+
+.close-modal {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.close-modal:hover {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+}
+
+.user-details-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+/* Custom scrollbar for modal */
+.user-details-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.user-details-modal-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.user-details-modal-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.user-details-modal-body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  transform: scaleX(1.1);
+}
+
+/* Firefox scrollbar */
+.user-details-modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) rgba(255, 255, 255, 0.05);
+}
+
+.user-details-section {
+  margin-bottom: 2rem;
+}
+
+.user-details-section:last-child {
+  margin-bottom: 0;
+}
+
+.user-details-section h3 {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+}
+
+.user-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.user-details-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--glass-bg);
+  border-radius: 0.5rem;
+  border: 1px solid var(--glass-border);
+}
+
+.user-details-item .label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.user-details-item .value {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* =============================================================================
+   User Lookup – Character Cards in Modal
+============================================================================= */
+
+.user-characters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.user-character-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.user-character-card:hover {
+  background: var(--card-background);
+  transform: translateY(-2px);
+}
+
+/* Village-based color coding */
+.user-character-card.vhintl {
+  border-color: #4ade80;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
+}
+
+.user-character-card.vhintl:hover {
+  border-color: #22c55e;
+  box-shadow: 0 0 15px rgba(74, 222, 128, 0.4);
+}
+
+.user-character-card.inariko {
+  border-color: #3b82f6;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+}
+
+.user-character-card.inariko:hover {
+  border-color: #2563eb;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+}
+
+.user-character-card.rudania {
+  border-color: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
+.user-character-card.rudania:hover {
+  border-color: #dc2626;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+.user-character-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-character-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 0.5rem;
+  border: 3px solid var(--glass-border);
+  transition: all 0.2s ease;
+}
+
+.user-character-card:hover .user-character-avatar {
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+
+
+
+.user-character-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.user-character-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.user-character-name {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.user-character-details {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.user-character-job,
+.user-character-village {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin: 0;
+  text-transform: capitalize;
+  opacity: 0.8;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.375rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-character-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.user-character-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.user-character-profile-btn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.user-character-profile-btn:active {
+  transform: translateY(0);
+}
+
+.user-character-profile-btn i {
+  font-size: 0.8rem;
+}
+
+.user-character-stats {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--glass-border);
+}
+
+.user-character-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-character-stat .stat-label {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.user-character-stat .stat-value {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.user-no-characters {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.user-no-characters i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.user-no-characters p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* =============================================================================
+   User Lookup – Modal Animations
+============================================================================= */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* =============================================================================
+   User Lookup – Modal Responsive Design
+============================================================================= */
+
+@media (max-width: 768px) {
+  .user-details-modal-content {
+    width: 95%;
+    max-height: 95vh;
+  }
+  
+  .user-details-modal-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .user-details-user-info {
+    width: 100%;
+  }
+  
+  .user-details-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-characters-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-character-card {
+    gap: 1rem;
+  }
+  
+  .user-character-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+  
+  .user-character-main-info {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .user-character-details {
+    justify-content: center;
+    gap: 1rem;
+  }
+  
+  .user-character-stats {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .user-character-actions {
+    justify-content: center;
+  }
+}
+
 
 /* =============================================================================
    User Components – Menu
@@ -40,12 +1386,6 @@
 .user-menu:focus {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-}
-
-.user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
 }
 
 

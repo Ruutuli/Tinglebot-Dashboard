@@ -82,15 +82,12 @@ async function checkUserAuthStatus() {
     }
     
     const userData = await response.json();
-    console.log('[auth.js]: 📊 User data received:', userData);
     
     if (userData.isAuthenticated) {
-      console.log('[auth.js]: ✅ User is authenticated');
       currentUser = userData.user;
       isAuthenticated = true;
       updateUserMenu(userData.user);
     } else {
-      console.log('[auth.js]: 👤 User is not authenticated, showing guest user');
       currentUser = null;
       isAuthenticated = false;
       showGuestUser();
@@ -109,34 +106,23 @@ async function checkUserAuthStatus() {
 // ------------------- Function: setupUserMenu -------------------
 // Sets up user menu click handlers and interactions
 function setupUserMenu() {
-  console.log('[auth.js]: 🔧 Setting up user menu interactions...');
-  
   const userMenu = document.getElementById('user-menu');
   userDropdown = document.getElementById('user-dropdown'); // Assign to global variable
   
   if (!userMenu || !userDropdown) {
     console.error('[auth.js]: ❌ User menu elements not found');
-    console.log('[auth.js]: 🔍 Looking for elements:', {
-      userMenu: !!userMenu,
-      userDropdown: !!userDropdown
-    });
     return;
   }
-  
-  console.log('[auth.js]: ✅ User menu elements found');
 
   // User menu click handler
   userMenu.addEventListener('click', function(event) {
-    console.log('[auth.js]: 🖱️ User menu clicked');
     event.preventDefault();
     event.stopPropagation();
     
     // Toggle dropdown
     if (userDropdown.classList.contains('show')) {
-        console.log('[auth.js]: 🔽 Closing dropdown');
         closeUserDropdown('userMenu click');
     } else {
-        console.log('[auth.js]: 🔼 Opening dropdown');
         openUserDropdown('userMenu click');
     }
   });
@@ -163,24 +149,18 @@ function setupUserMenu() {
   // Handle logout button click
   const logoutButton = userDropdown.querySelector('.logout-button');
   if (logoutButton) {
-    console.log('[auth.js]: ✅ Logout button found');
     logoutButton.addEventListener('click', async (event) => {
-      console.log('[auth.js]: 🚪 Logout button clicked');
       event.preventDefault();
       event.stopPropagation();
       closeUserDropdown('logout button');
       await logout();
     });
-  } else {
-    console.log('[auth.js]: ⚠️ Logout button not found');
   }
 
   // Handle profile button click
   const profileButton = userDropdown.querySelector('.profile-button');
   if (profileButton) {
-    console.log('[auth.js]: ✅ Profile button found');
     profileButton.addEventListener('click', (event) => {
-      console.log('[auth.js]: 👤 Profile button clicked');
       event.preventDefault();
       event.stopPropagation();
       closeUserDropdown('profile button');
@@ -190,26 +170,19 @@ function setupUserMenu() {
         profileLink.click();
       }
     });
-  } else {
-    console.log('[auth.js]: ⚠️ Profile button not found');
   }
 
   // Handle login button click in guest info
   const loginButton = userDropdown.querySelector('.login-button');
   if (loginButton) {
-    console.log('[auth.js]: ✅ Login button found in dropdown');
     loginButton.addEventListener('click', (event) => {
-      console.log('[auth.js]: 🔐 Login button clicked in dropdown');
       event.preventDefault();
       event.stopPropagation();
       closeUserDropdown('login button');
       
       // Navigate to login page
-      console.log('[auth.js]: 🔗 Redirecting to login page...');
       window.location.href = '/login';
     });
-  } else {
-    console.log('[auth.js]: ⚠️ Login button not found in dropdown');
   }
 
 }
@@ -217,8 +190,6 @@ function setupUserMenu() {
 // ------------------- Function: openUserDropdown -------------------
 // Opens the user dropdown menu
 function openUserDropdown(source = 'unknown') {
-  console.log(`[auth.js]: 🔼 Opening user dropdown (source: ${source})`);
-  
   // Get userDropdown element if not already initialized
   const dropdown = userDropdown || document.getElementById('user-dropdown');
   if (!dropdown) {
@@ -228,31 +199,24 @@ function openUserDropdown(source = 'unknown') {
   
   dropdown.classList.add('show');
   dropdown.setAttribute('aria-expanded', 'true');
-  console.log('[auth.js]: ✅ Dropdown opened successfully');
 }
 
 // ------------------- Function: closeUserDropdown -------------------
 // Closes the user dropdown menu
 function closeUserDropdown(source = 'unknown') {
-  console.log(`[auth.js]: 🔽 Closing user dropdown (source: ${source})`);
-  
   // Get userDropdown element if not already initialized
   const dropdown = userDropdown || document.getElementById('user-dropdown');
   if (!dropdown || !dropdown.classList.contains('show')) {
-    console.log('[auth.js]: ℹ️ Dropdown already closed or not found');
     return;
   }
   
   dropdown.classList.remove('show');
   dropdown.setAttribute('aria-expanded', 'false');
-  console.log('[auth.js]: ✅ Dropdown closed successfully');
 }
 
 // ------------------- Function: updateUserMenu -------------------
 // Updates user menu with authenticated user data
 function updateUserMenu(userData) {
-  console.log('[auth.js]: 🔄 Updating user menu with authenticated user data:', userData);
-  
   const usernameElement = document.getElementById('username');
   const userAvatar = document.getElementById('user-avatar');
   const userDropdownAvatar = document.getElementById('user-dropdown-avatar');
@@ -266,21 +230,8 @@ function updateUserMenu(userData) {
   if (!usernameElement || !userAvatar || !userDropdownAvatar || !userName || 
       !userDiscriminator || !userTokens || !userSlots || !userInfo || !guestInfo) {
     console.error('[auth.js]: ❌ User menu elements not found');
-    console.log('[auth.js]: 🔍 Available elements:', {
-      usernameElement: !!usernameElement,
-      userAvatar: !!userAvatar,
-      userDropdownAvatar: !!userDropdownAvatar,
-      userName: !!userName,
-      userDiscriminator: !!userDiscriminator,
-      userTokens: !!userTokens,
-      userSlots: !!userSlots,
-      userInfo: !!userInfo,
-      guestInfo: !!guestInfo
-    });
     return;
   }
-  
-  console.log('[auth.js]: ✅ All user menu elements found');
   
   // Update main username display
   usernameElement.textContent = userData.username || 'User';
@@ -299,15 +250,11 @@ function updateUserMenu(userData) {
   // Show user info, hide guest info
   userInfo.style.display = 'flex';
   guestInfo.style.display = 'none';
-  
-  console.log('[auth.js]: ✅ User menu updated successfully');
 }
 
 // ------------------- Function: showGuestUser -------------------
 // Shows guest user interface when not authenticated
 function showGuestUser() {
-  console.log('[auth.js]: 👤 Showing guest user interface');
-  
   const usernameElement = document.getElementById('username');
   const userAvatar = document.getElementById('user-avatar');
   const userInfo = document.getElementById('user-info');
@@ -325,8 +272,6 @@ function showGuestUser() {
   // Show guest info, hide user info
   userInfo.style.display = 'none';
   guestInfo.style.display = 'flex';
-  
-  console.log('[auth.js]: ✅ Guest user interface shown');
 }
 
 // ============================================================================
