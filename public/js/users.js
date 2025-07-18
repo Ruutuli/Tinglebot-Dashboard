@@ -399,13 +399,15 @@ class UserLookup {
     
     return `
       <div class="user-character-card ${villageClass}">
-        <div class="user-character-header">
+        <div class="user-character-avatar-container">
           <img 
             src="${iconUrl}" 
             alt="${character.name}" 
             class="user-character-avatar"
             onerror="this.src='/images/ankleicon.png'"
           />
+        </div>
+        <div class="user-character-content">
           <div class="user-character-info">
             <div class="user-character-main-info">
               <h4 class="user-character-name">${character.name}</h4>
@@ -425,12 +427,12 @@ class UserLookup {
               </div>
             </div>
           </div>
-        </div>
-        <div class="user-character-actions">
-          <a href="${profileLink}" class="user-character-profile-btn" target="_blank">
-            <i class="fas fa-external-link-alt"></i>
-            <span>Profile</span>
-          </a>
+          <div class="user-character-actions">
+            <a href="${profileLink}" class="user-character-profile-btn" target="_blank">
+              <i class="fas fa-external-link-alt"></i>
+              <span>Profile</span>
+            </a>
+          </div>
         </div>
       </div>
     `;
