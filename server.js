@@ -244,14 +244,28 @@ async function initializeDatabases() {
     
     // Connect to Tinglebot database using db.js method
     await connectToTinglebot();
+    console.log('[server.js]: ✅ Connected to Tinglebot database');
     
     // Connect to Inventories database using db.js method
-    inventoriesConnection = await connectToInventories();
+    try {
+      inventoriesConnection = await connectToInventories();
+      console.log('[server.js]: ✅ Connected to Inventories database');
+    } catch (inventoryError) {
+      console.error('[server.js]: ❌ Failed to connect to Inventories database:', inventoryError.message);
+      // Continue without inventories connection - spirit orb counting will fail gracefully
+    }
     
     // Connect to Vending database using db.js method
-    vendingConnection = await connectToVending();
+    try {
+      vendingConnection = await connectToVending();
+      console.log('[server.js]: ✅ Connected to Vending database');
+    } catch (vendingError) {
+      console.error('[server.js]: ❌ Failed to connect to Vending database:', vendingError.message);
+      // Continue without vending connection
+    }
     
   } catch (error) {   
+    console.error('[server.js]: ❌ Database initialization error:', error);
     throw error;
   }
 }
@@ -414,7 +428,16 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     memory: process.memoryUsage(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    database: {
+      tinglebot: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      inventories: inventoriesConnection ? 'connected' : 'disconnected',
+      vending: vendingConnection ? 'connected' : 'disconnected'
+    },
+    models: {
+      character: Character ? 'loaded' : 'not loaded',
+      user: User ? 'loaded' : 'not loaded'
+    }
   };
   
   res.json(health);
@@ -998,6 +1021,10 @@ app.get('/api/models/:modelType', async (req, res) => {
     switch (modelType) {
       case 'character':
         Model = Character;
+        if (!Character) {
+          console.error(`[server.js]: ❌ Character model not initialized`);
+          return res.status(500).json({ error: 'Character model not available' });
+        }
         break;
       case 'item':
         Model = Item;
@@ -1050,6 +1077,12 @@ app.get('/api/models/:modelType', async (req, res) => {
     if (!Model) {
       console.error(`[server.js]: ❌ Model not found for type: ${modelType}`);
       return res.status(500).json({ error: `Model not initialized for type: ${modelType}` });
+    }
+
+    // Ensure database connection is available
+    if (mongoose.connection.readyState !== 1) {
+      console.error(`[server.js]: ❌ Database not connected. State: ${mongoose.connection.readyState}`);
+      return res.status(500).json({ error: 'Database connection not available' });
     }
 
     // For filtered item requests or all=true requests, return all items
@@ -1148,7 +1181,9 @@ app.get('/api/models/:modelType', async (req, res) => {
             return character;
           });
           
-          // Get spirit orb counts for all characters in one batch
+                // Get spirit orb counts for all characters in one batch
+      if (inventoriesConnection) {
+        try {
           const characterNames = finalData.map(char => char.name);
           const spiritOrbCounts = await countSpiritOrbsBatch(characterNames);
           
@@ -1156,6 +1191,18 @@ app.get('/api/models/:modelType', async (req, res) => {
           finalData.forEach(character => {
             character.spiritOrbs = spiritOrbCounts[character.name] || 0;
           });
+        } catch (spiritOrbError) {
+          console.warn('[server.js]: ⚠️ Error counting spirit orbs, using defaults:', spiritOrbError.message);
+          finalData.forEach(character => {
+            character.spiritOrbs = 0;
+          });
+        }
+      } else {
+        // No inventories connection, use defaults
+        finalData.forEach(character => {
+          character.spiritOrbs = 0;
+        });
+      }
           
           // Cache the processed data
           characterDataCache.data = finalData;
@@ -1184,7 +1231,7 @@ app.get('/api/models/:modelType', async (req, res) => {
 
 
     // Fetch paginated data
-    const data = await Model.find(query)
+    let data = await Model.find(query)
       .sort(modelType === 'item' ? { itemName: 1 } : {})
       .skip(skip)
       .limit(limit)
@@ -1194,69 +1241,96 @@ app.get('/api/models/:modelType', async (req, res) => {
 
     // Transform icon URLs for characters and populate user information
     if (modelType === 'character') {
-      // Check cache first for paginated requests
-      const now = Date.now();
-      if (characterDataCache.data && (now - characterDataCache.timestamp) < characterDataCache.CACHE_DURATION) {
-        // Use cached data and apply pagination
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        data = characterDataCache.data.slice(startIndex, endIndex);
-      } else {
-        // Get unique user IDs from characters
-        const userIds = [...new Set(data.map(char => char.userId))];
-        
-        // Fetch user information for all unique user IDs in one query
-        const users = await User.find({ discordId: { $in: userIds } }, { 
-          discordId: 1, 
-          username: 1, 
-          discriminator: 1 
-        }).lean();
-        
-        // Create a map for quick lookup
-        const userMap = {};
-        users.forEach(user => {
-          userMap[user.discordId] = user;
-        });
-        
-        // Transform character data
-        data.forEach(character => {
-          // Transform icon URL
-          if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-            const filename = character.icon.split('/').pop();
-            character.icon = filename;
-          }
+      try {
+        // Check cache first for paginated requests
+        const now = Date.now();
+        if (characterDataCache.data && (now - characterDataCache.timestamp) < characterDataCache.CACHE_DURATION) {
+          // Use cached data and apply pagination
+          const startIndex = (page - 1) * limit;
+          const endIndex = startIndex + limit;
+          data = characterDataCache.data.slice(startIndex, endIndex);
+        } else {
+          // Get unique user IDs from characters
+          const userIds = [...new Set(data.map(char => char.userId))];
           
-          // Add user information
-          const user = userMap[character.userId];
-          if (user) {
-            character.owner = {
-              username: user.username,
-              discriminator: user.discriminator,
-              displayName: user.username || 'Unknown User'
-            };
+          // Fetch user information for all unique user IDs in one query
+          const users = await User.find({ discordId: { $in: userIds } }, { 
+            discordId: 1, 
+            username: 1, 
+            discriminator: 1 
+          }).lean();
+          
+          // Create a map for quick lookup
+          const userMap = {};
+          users.forEach(user => {
+            userMap[user.discordId] = user;
+          });
+          
+          // Transform character data
+          data.forEach(character => {
+            // Transform icon URL
+            if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
+              const filename = character.icon.split('/').pop();
+              character.icon = filename;
+            }
+            
+            // Add user information
+            const user = userMap[character.userId];
+            if (user) {
+              character.owner = {
+                username: user.username,
+                discriminator: user.discriminator,
+                displayName: user.username || 'Unknown User'
+              };
+            } else {
+              character.owner = {
+                username: 'Unknown',
+                discriminator: null,
+                displayName: 'Unknown User'
+              };
+            }
+            
+            // Initialize spirit orbs (will be updated below)
+            character.spiritOrbs = 0;
+          });
+          
+          // Get spirit orb counts for all characters in one batch
+          if (inventoriesConnection) {
+            try {
+              const characterNames = data.map(char => char.name);
+              const spiritOrbCounts = await countSpiritOrbsBatch(characterNames);
+              
+              // Update spirit orb counts
+              data.forEach(character => {
+                character.spiritOrbs = spiritOrbCounts[character.name] || 0;
+              });
+            } catch (spiritOrbError) {
+              console.warn('[server.js]: ⚠️ Error counting spirit orbs, using defaults:', spiritOrbError.message);
+              data.forEach(character => {
+                character.spiritOrbs = 0;
+              });
+            }
           } else {
+            // No inventories connection, use defaults
+            data.forEach(character => {
+              character.spiritOrbs = 0;
+            });
+          }
+        }
+      } catch (error) {
+        console.error(`[server.js]: ❌ Error processing character data:`, error);
+        // Continue with basic data without spirit orb counts
+        data.forEach(character => {
+          character.spiritOrbs = 0;
+          if (!character.owner) {
             character.owner = {
               username: 'Unknown',
               discriminator: null,
               displayName: 'Unknown User'
             };
           }
-          
-          // Initialize spirit orbs (will be updated below)
-          character.spiritOrbs = 0;
-        });
-        
-        // Get spirit orb counts for all characters in one batch
-        const characterNames = data.map(char => char.name);
-        const spiritOrbCounts = await countSpiritOrbsBatch(characterNames);
-        
-        // Update spirit orb counts
-        data.forEach(character => {
-          character.spiritOrbs = spiritOrbCounts[character.name] || 0;
         });
       }
-      
-
     }
 
     
@@ -1286,6 +1360,34 @@ app.get('/api/character-count', async (_, res) => {
   } catch (error) {
     console.error('[server.js]: ❌ Failed to fetch character count:', error);
     res.status(500).json({ error: 'Failed to fetch character count' });
+  }
+});
+
+// ------------------- Function: debugCharacterModel -------------------
+// Debug endpoint for character model issues
+app.get('/api/debug/character-model', async (req, res) => {
+  try {
+    const debug = {
+      modelLoaded: !!Character,
+      databaseConnected: mongoose.connection.readyState === 1,
+      inventoriesConnected: !!inventoriesConnection,
+      characterCount: null,
+      sampleCharacter: null
+    };
+    
+    if (debug.modelLoaded && debug.databaseConnected) {
+      try {
+        debug.characterCount = await Character.countDocuments();
+        debug.sampleCharacter = await Character.findOne().lean();
+      } catch (dbError) {
+        debug.databaseError = dbError.message;
+      }
+    }
+    
+    res.json(debug);
+  } catch (error) {
+    console.error('[server.js]: ❌ Debug endpoint error:', error);
+    res.status(500).json({ error: 'Debug endpoint failed', details: error.message });
   }
 });
 
@@ -2366,6 +2468,13 @@ async function countSpiritOrbsBatch(characterNames) {
   if (uncachedCharacters.length > 0) {
     for (const characterName of uncachedCharacters) {
       try {
+        // Ensure characterName is valid
+        if (!characterName || typeof characterName !== 'string') {
+          console.warn(`[server.js]: ⚠️ Invalid character name for spirit orb count: ${characterName}`);
+          spiritOrbCounts[characterName] = 0;
+          continue;
+        }
+        
         const col = await getCharacterInventoryCollection(characterName);
         const spiritOrbItem = await col.findOne({ 
           itemName: { $regex: /^spirit\s*orb$/i } 
