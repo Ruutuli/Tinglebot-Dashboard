@@ -102,7 +102,7 @@ function updateProfileDisplay(userData) {
   
   // Update stats
   profileTokens.textContent = userData.tokens || 0;
-  profileSlots.textContent = userData.characterSlot || 2;
+  profileSlots.textContent = userData.characterSlot !== undefined ? userData.characterSlot : 2;
   
   // Update join date - will be updated by loadExtendedProfileData
   profileJoined.textContent = 'Loading...';
