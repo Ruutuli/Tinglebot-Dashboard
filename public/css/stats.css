@@ -513,3 +513,658 @@
 .stats-table-section {
   margin-bottom: 2.5rem;
 }
+
+/* ============================================================================
+   📱 MOBILE RESPONSIVE STYLES
+============================================================================ */
+
+/* ============================================================================
+   📱 TABLET BREAKPOINT (768px and below)
+============================================================================ */
+
+@media (max-width: 768px) {
+  /* Stats Cards Grid */
+  .stats-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  /* Stats Cards */
+  .stats-card {
+    min-height: 300px;
+    padding: 2rem 1.5rem;
+    font-size: 1.1rem;
+  }
+
+  .stats-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .stats-card p,
+  .stats-card ul {
+    font-size: 1rem;
+  }
+
+  .stats-card ul li {
+    font-size: 0.95rem;
+  }
+
+  /* Stats Card Wide */
+  .stats-card-wide {
+    padding: 2rem 1.5rem;
+    margin: 1.5rem 0 0;
+  }
+
+  .stats-card-wide h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .stats-card-wide .chart-container {
+    height: 300px;
+    margin-top: 0.75rem;
+  }
+
+  /* Stat Card */
+  .stat-card {
+    padding: 1.25rem;
+    gap: 0.75rem;
+  }
+
+  /* Stats Tables */
+  .stats-table-container {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+    margin: 0.75rem 0;
+  }
+
+  .stats-table {
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .stats-table th {
+    font-size: 0.7rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .stats-table th[colspan="2"] {
+    font-size: 0.9rem;
+  }
+
+  .stats-table td {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  /* Visiting Villages */
+  .visiting-villages-grid {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .visiting-village {
+    min-width: 100%;
+    max-width: 100%;
+    padding: 1.25rem;
+  }
+
+  .visiting-village h4 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Extra Stats */
+  .extra-stats {
+    margin-top: 1rem !important;
+  }
+
+  .stats-table-section {
+    margin-bottom: 2rem;
+  }
+
+  .stats-section-header {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Stat Items */
+  .stat-item {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+    gap: 0.4rem;
+  }
+
+  .stat-item i {
+    font-size: 0.8rem;
+  }
+
+  .stat-item-vertical {
+    font-size: 0.8rem;
+    padding: 0.75rem;
+  }
+
+  .stat-item-vertical .stat-label {
+    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .stat-item-vertical .stat-value {
+    font-size: 1.25rem;
+  }
+
+  /* Stat Labels & Values */
+  .stat-label {
+    font-size: 0.65rem;
+    width: 70px;
+    margin-bottom: 0.4rem;
+  }
+
+  .stat-value {
+    font-size: 0.9rem;
+    margin-right: 10px;
+  }
+
+  /* Stat Icon */
+  .stat-icon {
+    width: 35px;
+    height: 35px;
+  }
+
+  .stat-info h3 {
+    font-size: 0.9rem;
+  }
+}
+
+/* ============================================================================
+   📱 MOBILE BREAKPOINT (640px and below)
+============================================================================ */
+
+@media (max-width: 640px) {
+  /* Stats Cards Grid */
+  .stats-cards-grid {
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+
+  /* Stats Cards */
+  .stats-card {
+    min-height: 250px;
+    padding: 1.5rem 1rem;
+    font-size: 1rem;
+  }
+
+  .stats-card h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .stats-card p,
+  .stats-card ul {
+    font-size: 0.9rem;
+  }
+
+  .stats-card ul li {
+    font-size: 0.85rem;
+  }
+
+  /* Stats Card Wide */
+  .stats-card-wide {
+    padding: 1.5rem 1rem;
+    margin: 1rem 0 0;
+  }
+
+  .stats-card-wide h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .stats-card-wide .chart-container {
+    height: 250px;
+    margin-top: 0.5rem;
+  }
+
+  /* Stat Card */
+  .stat-card {
+    padding: 1rem;
+    gap: 0.6rem;
+  }
+
+  /* Stats Tables */
+  .stats-table-container {
+    gap: 0.75rem;
+    margin: 0.5rem 0;
+  }
+
+  .stats-table {
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .stats-table th {
+    font-size: 0.65rem;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .stats-table th[colspan="2"] {
+    font-size: 0.8rem;
+  }
+
+  .stats-table td {
+    font-size: 0.7rem;
+    padding: 0.4rem 0.5rem;
+  }
+
+  /* Visiting Villages */
+  .visiting-villages-grid {
+    gap: 0.75rem;
+  }
+
+  .visiting-village {
+    padding: 1rem;
+  }
+
+  .visiting-village h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Extra Stats */
+  .extra-stats {
+    margin-top: 0.75rem !important;
+  }
+
+  .stats-table-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .stats-section-header {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Stat Items */
+  .stat-item {
+    font-size: 0.85rem;
+    padding: 0.3rem 0.6rem;
+    gap: 0.3rem;
+  }
+
+  .stat-item i {
+    font-size: 0.75rem;
+  }
+
+  .stat-item-vertical {
+    font-size: 0.75rem;
+    padding: 0.6rem;
+  }
+
+  .stat-item-vertical .stat-label {
+    font-size: 0.75rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .stat-item-vertical .stat-value {
+    font-size: 1.1rem;
+  }
+
+  /* Stat Labels & Values */
+  .stat-label {
+    font-size: 0.6rem;
+    width: 60px;
+    margin-bottom: 0.3rem;
+  }
+
+  .stat-value {
+    font-size: 0.85rem;
+    margin-right: 8px;
+  }
+
+  /* Stat Icon */
+  .stat-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .stat-info h3 {
+    font-size: 0.85rem;
+  }
+}
+
+/* ============================================================================
+   📱 SMALL MOBILE BREAKPOINT (480px and below)
+============================================================================ */
+
+@media (max-width: 480px) {
+  /* Stats Cards Grid */
+  .stats-cards-grid {
+    gap: 0.75rem;
+    margin: 0.75rem 0;
+  }
+
+  /* Stats Cards */
+  .stats-card {
+    min-height: 200px;
+    padding: 1.25rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .stats-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .stats-card p,
+  .stats-card ul {
+    font-size: 0.8rem;
+  }
+
+  .stats-card ul li {
+    font-size: 0.8rem;
+  }
+
+  /* Stats Card Wide */
+  .stats-card-wide {
+    padding: 1.25rem 0.75rem;
+    margin: 0.75rem 0 0;
+  }
+
+  .stats-card-wide h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .stats-card-wide .chart-container {
+    height: 200px;
+    margin-top: 0.5rem;
+  }
+
+  /* Stat Card */
+  .stat-card {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  /* Stats Tables */
+  .stats-table-container {
+    gap: 0.5rem;
+    margin: 0.4rem 0;
+  }
+
+  .stats-table {
+    font-size: 0.7rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .stats-table th {
+    font-size: 0.6rem;
+    padding: 0.3rem 0.4rem;
+  }
+
+  .stats-table th[colspan="2"] {
+    font-size: 0.75rem;
+  }
+
+  .stats-table td {
+    font-size: 0.65rem;
+    padding: 0.3rem 0.4rem;
+  }
+
+  /* Visiting Villages */
+  .visiting-villages-grid {
+    gap: 0.5rem;
+  }
+
+  .visiting-village {
+    padding: 0.75rem;
+  }
+
+  .visiting-village h4 {
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+  }
+
+  /* Extra Stats */
+  .extra-stats {
+    margin-top: 0.5rem !important;
+  }
+
+  .stats-table-section {
+    margin-bottom: 1.25rem;
+  }
+
+  .stats-section-header {
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+  }
+
+  /* Stat Items */
+  .stat-item {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    gap: 0.25rem;
+  }
+
+  .stat-item i {
+    font-size: 0.7rem;
+  }
+
+  .stat-item-vertical {
+    font-size: 0.7rem;
+    padding: 0.5rem;
+  }
+
+  .stat-item-vertical .stat-label {
+    font-size: 0.7rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-item-vertical .stat-value {
+    font-size: 1rem;
+  }
+
+  /* Stat Labels & Values */
+  .stat-label {
+    font-size: 0.55rem;
+    width: 55px;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-value {
+    font-size: 0.8rem;
+    margin-right: 6px;
+  }
+
+  /* Stat Icon */
+  .stat-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .stat-info h3 {
+    font-size: 0.8rem;
+  }
+}
+
+/* ============================================================================
+   📱 LANDSCAPE ORIENTATION (768px and below, landscape)
+============================================================================ */
+
+@media (max-width: 768px) and (orientation: landscape) {
+  /* Stats Cards Grid */
+  .stats-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  /* Stats Cards */
+  .stats-card {
+    min-height: 200px;
+    padding: 1.5rem 1rem;
+  }
+
+  .stats-card h3 {
+    font-size: 1.25rem;
+  }
+
+  /* Stats Card Wide */
+  .stats-card-wide {
+    padding: 1.5rem 1rem;
+  }
+
+  .stats-card-wide h3 {
+    font-size: 1.25rem;
+  }
+
+  .stats-card-wide .chart-container {
+    height: 250px;
+  }
+
+  /* Stats Tables */
+  .stats-table-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem;
+  }
+
+  /* Visiting Villages */
+  .visiting-villages-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .visiting-village {
+    min-width: calc(50% - 0.375rem);
+    max-width: calc(50% - 0.375rem);
+    padding: 1rem;
+  }
+
+  /* Stat Items */
+  .stat-item {
+    font-size: 0.85rem;
+    padding: 0.3rem 0.6rem;
+  }
+
+  .stat-item-vertical {
+    font-size: 0.75rem;
+    padding: 0.6rem;
+  }
+}
+
+/* ============================================================================
+   📱 EXTRA SMALL MOBILE BREAKPOINT (360px and below)
+============================================================================ */
+
+@media (max-width: 360px) {
+  /* Stats Cards */
+  .stats-card {
+    min-height: 180px;
+    padding: 1rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .stats-card h3 {
+    font-size: 1rem;
+  }
+
+  .stats-card p,
+  .stats-card ul {
+    font-size: 0.75rem;
+  }
+
+  .stats-card ul li {
+    font-size: 0.75rem;
+  }
+
+  /* Stats Card Wide */
+  .stats-card-wide {
+    padding: 1rem 0.5rem;
+  }
+
+  .stats-card-wide h3 {
+    font-size: 1rem;
+  }
+
+  .stats-card-wide .chart-container {
+    height: 180px;
+  }
+
+  /* Stat Card */
+  .stat-card {
+    padding: 0.6rem;
+    gap: 0.4rem;
+  }
+
+  /* Stats Tables */
+  .stats-table {
+    font-size: 0.65rem;
+  }
+
+  .stats-table th {
+    font-size: 0.55rem;
+    padding: 0.25rem 0.3rem;
+  }
+
+  .stats-table th[colspan="2"] {
+    font-size: 0.7rem;
+  }
+
+  .stats-table td {
+    font-size: 0.6rem;
+    padding: 0.25rem 0.3rem;
+  }
+
+  /* Visiting Villages */
+  .visiting-village {
+    padding: 0.6rem;
+  }
+
+  .visiting-village h4 {
+    font-size: 0.8rem;
+  }
+
+  /* Stat Items */
+  .stat-item {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .stat-item i {
+    font-size: 0.65rem;
+  }
+
+  .stat-item-vertical {
+    font-size: 0.65rem;
+    padding: 0.4rem;
+  }
+
+  .stat-item-vertical .stat-label {
+    font-size: 0.65rem;
+  }
+
+  .stat-item-vertical .stat-value {
+    font-size: 0.9rem;
+  }
+
+  /* Stat Labels & Values */
+  .stat-label {
+    font-size: 0.5rem;
+    width: 50px;
+  }
+
+  .stat-value {
+    font-size: 0.75rem;
+  }
+
+  /* Stat Icon */
+  .stat-icon {
+    width: 25px;
+    height: 25px;
+  }
+
+  .stat-info h3 {
+    font-size: 0.75rem;
+  }
+}

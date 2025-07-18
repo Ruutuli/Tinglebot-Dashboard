@@ -20,8 +20,163 @@ let raceChart = null;
 let jobChart = null;
 
 // ============================================================================
+// ------------------- Responsive Chart Management -------------------
+// ============================================================================
+
+// Function: Update charts on window resize
+function updateChartsOnResize() {
+    const isMobile = isMobileDevice();
+    
+    // Update chart containers height based on screen size
+    const chartContainers = document.querySelectorAll('.chart-container');
+    chartContainers.forEach(container => {
+        if (isMobile) {
+            container.style.height = '250px';
+        } else {
+            container.style.height = '400px';
+        }
+    });
+    
+    // Recreate charts if they exist
+    if (villageChart || raceChart || jobChart) {
+        console.log('Updating charts for responsive layout...');
+        initStatsPage();
+    }
+}
+
+// Add window resize listener
+window.addEventListener('resize', () => {
+    // Debounce resize events
+    clearTimeout(window.resizeTimeout);
+    window.resizeTimeout = setTimeout(updateChartsOnResize, 250);
+});
+
+// ============================================================================
 // ------------------- Chart Creation Functions -------------------
 // ============================================================================
+
+// Helper: Check if device is mobile
+function isMobileDevice() {
+    return window.innerWidth <= 768;
+}
+
+// Helper: Get responsive chart options
+function getResponsiveChartOptions() {
+    const isMobile = isMobileDevice();
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+            padding: { 
+                top: isMobile ? 5 : 10, 
+                bottom: isMobile ? 5 : 10 
+            }
+        },
+        plugins: {
+            legend: { 
+                display: !isMobile,
+                position: 'bottom',
+                labels: {
+                    color: '#FFFFFF',
+                    font: { size: isMobile ? 10 : 12 },
+                    padding: isMobile ? 10 : 15,
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
+            },
+            title: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: '#333',
+                titleColor: '#fff',
+                bodyColor: '#ddd',
+                borderColor: '#555',
+                borderWidth: 1,
+                titleFont: { size: isMobile ? 11 : 13 },
+                bodyFont: { size: isMobile ? 10 : 12 }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    color: '#FFFFFF',
+                    font: { size: isMobile ? 10 : 12 }
+                },
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                }
+            },
+            x: {
+                ticks: {
+                    color: '#FFFFFF',
+                    font: { size: isMobile ? 10 : 12 }
+                },
+                grid: {
+                    display: false
+                }
+            }
+        },
+        animation: {
+            duration: isMobile ? 600 : 800,
+            easing: 'easeOutQuart'
+        }
+    };
+}
+
+// Helper: Get responsive pie chart options
+function getResponsivePieChartOptions() {
+    const isMobile = isMobileDevice();
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+            padding: { 
+                top: isMobile ? 5 : 10, 
+                bottom: isMobile ? 5 : 10 
+            }
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: isMobile ? 'bottom' : 'bottom',
+                labels: {
+                    color: '#FFFFFF',
+                    font: { size: isMobile ? 10 : 12 },
+                    padding: isMobile ? 10 : 15,
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
+            },
+            title: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: '#333',
+                titleColor: '#fff',
+                bodyColor: '#ddd',
+                borderColor: '#555',
+                borderWidth: 1,
+                titleFont: { size: isMobile ? 11 : 13 },
+                bodyFont: { size: isMobile ? 10 : 12 },
+                callbacks: {
+                    label: function(context) {
+                        const label = context.label || '';
+                        const value = context.parsed;
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return `${label}: ${value} (${percentage}%)`;
+                    }
+                }
+            }
+        },
+        animation: {
+            duration: isMobile ? 600 : 800,
+            easing: 'easeOutQuart'
+        }
+    };
+}
 
 // Helper: Format debuff end date as next midnight
 function formatDebuffEndMidnight(dateStr) {
@@ -43,6 +198,7 @@ function createBarChart(ctx, data, options = {}) {
   
     const labels = Object.keys(data).map(labelTransform);
     const values = Object.values(data);
+    const isMobile = isMobileDevice();
   
     const chartConfig = {
       type: 'bar',
@@ -51,37 +207,20 @@ function createBarChart(ctx, data, options = {}) {
         datasets: [{
           data: values,
           backgroundColor: colors,
-          borderRadius: 8, // Rounded bars
-          barPercentage: 0.75,     // Wider bars (was 0.6)
-          categoryPercentage: 0.85 // Less spacing between groups (was 0.7)          
+          borderRadius: isMobile ? 4 : 8, // Smaller rounded bars on mobile
+          barPercentage: isMobile ? 0.8 : 0.75,     // Wider bars on mobile
+          categoryPercentage: isMobile ? 0.9 : 0.85 // Less spacing on mobile
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        layout: {
-          padding: { top: 10, bottom: 10 }
-        },
-        plugins: {
-          legend: { display: false },
-          title: {
-            display: false
-          },
-          tooltip: {
-            backgroundColor: '#333',
-            titleColor: '#fff',
-            bodyColor: '#ddd',
-            borderColor: '#555',
-            borderWidth: 1
-          }
-        },
+        ...getResponsiveChartOptions(),
         scales: {
           y: {
             beginAtZero: true,
             max: yMax,
             ticks: {
               color: '#FFFFFF',
-              font: { size: 12 }
+              font: { size: isMobile ? 10 : 12 }
             },
             grid: {
               color: 'rgba(255, 255, 255, 0.1)'
@@ -90,16 +229,12 @@ function createBarChart(ctx, data, options = {}) {
           x: {
             ticks: {
               color: '#FFFFFF',
-              font: { size: 12 }
+              font: { size: isMobile ? 10 : 12 }
             },
             grid: {
               display: false
             }
           }
-        },
-        animation: {
-          duration: 800,
-          easing: 'easeOutQuart'
         }
       }
     };
@@ -112,7 +247,7 @@ function createBarChart(ctx, data, options = {}) {
         color: '#FFFFFF',
         font: {
           weight: 'bold',
-          size: 12
+          size: isMobile ? 10 : 12
         },
         formatter: value => value
       };
@@ -132,6 +267,7 @@ function createPieChart(ctx, data, options = {}) {
   
     const labels = Object.keys(data).map(labelTransform);
     const values = Object.values(data);
+    const isMobile = isMobileDevice();
   
     const chartConfig = {
       type: 'pie',
@@ -140,53 +276,11 @@ function createPieChart(ctx, data, options = {}) {
         datasets: [{
           data: values,
           backgroundColor: colors,
-          borderWidth: 2,
+          borderWidth: isMobile ? 1 : 2,
           borderColor: '#1a1a1a'
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        layout: {
-          padding: { top: 10, bottom: 10 }
-        },
-        plugins: {
-          legend: {
-            display: true,
-            position: 'bottom',
-            labels: {
-              color: '#FFFFFF',
-              font: { size: 12 },
-              padding: 15,
-              usePointStyle: true,
-              pointStyle: 'circle'
-            }
-          },
-          title: {
-            display: false
-          },
-          tooltip: {
-            backgroundColor: '#333',
-            titleColor: '#fff',
-            bodyColor: '#ddd',
-            borderColor: '#555',
-            borderWidth: 1,
-            callbacks: {
-              label: function(context) {
-                const label = context.label || '';
-                const value = context.parsed;
-                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                const percentage = ((value / total) * 100).toFixed(1);
-                return `${label}: ${value} (${percentage}%)`;
-              }
-            }
-          }
-        },
-        animation: {
-          duration: 800,
-          easing: 'easeOutQuart'
-        }
-      }
+      options: getResponsivePieChartOptions()
     };
 
     // Add datalabels plugin if available
@@ -195,7 +289,7 @@ function createPieChart(ctx, data, options = {}) {
         color: '#000000',
         font: {
           weight: 'bold',
-          size: 18
+          size: isMobile ? 14 : 18
         },
         anchor: 'center',
         align: 'center',
@@ -474,6 +568,17 @@ async function initStatsPage() {
         if (raceChart) raceChart.destroy();
         if (jobChart) jobChart.destroy();
 
+        // Set responsive chart container heights
+        const isMobile = isMobileDevice();
+        const chartContainers = document.querySelectorAll('.chart-container');
+        chartContainers.forEach(container => {
+            if (isMobile) {
+                container.style.height = '250px';
+            } else {
+                container.style.height = '400px';
+            }
+        });
+
         // --- Chart: Village Distribution ---
         const villageCtx = document.getElementById('villageDistributionChart').getContext('2d');
         const villageData = data.charactersPerVillage || {};
@@ -491,7 +596,7 @@ async function initStatsPage() {
                 '#FF9999', '#FFD27A', '#FFF066', '#A6F29A', '#6EEEDD', '#8FCBFF',
                 '#B89CFF', '#F78CD2', '#8CE6C0', '#FFDB66', '#BFBFBF'
               ],
-            yMax: 25
+            yMax: isMobile ? 20 : 25
         });
 
         // --- Chart: Job Distribution ---
@@ -511,7 +616,7 @@ async function initStatsPage() {
                     '#8FCBFF', '#B89CFF', '#F78CD2', '#8CE6C0', '#FFDB66',
                     '#BFBFBF', '#D6AEFA', '#7BEFC3', '#FFC3A0', '#AAB6FF', '#FFB3B3'
                   ],
-                yMax: 15
+                yMax: isMobile ? 12 : 15
             });
         }
     } catch (err) {

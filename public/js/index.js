@@ -64,6 +64,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+// Force sidebar to closed state on page load
+// (prevents stuck mobile-open or mobile-closing classes)
+document.addEventListener('DOMContentLoaded', () => {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  
+  console.log('🔄 Page load - resetting sidebar state');
+  console.log('🔍 Sidebar before reset:', sidebar?.className);
+  
+  if (sidebar) {
+    sidebar.classList.remove('mobile-open', 'mobile-closing');
+    console.log('✅ Removed mobile classes from sidebar');
+    console.log('🔍 Sidebar after reset:', sidebar.className);
+  }
+  if (overlay) {
+    overlay.classList.remove('active');
+    console.log('✅ Removed active class from overlay');
+  }
+  document.body.style.overflow = '';
+  console.log('✅ Reset body overflow');
+});
+
 // ------------------- Function: setupModelCards -------------------
 // Attaches click handlers to each model card and loads model data
 function setupModelCards() {
@@ -641,6 +663,8 @@ function setupMobileSidebar() {
     e.preventDefault();
     e.stopPropagation();
     
+    console.log('🖱️ Sidebar toggle clicked, mobile view:', isMobileView());
+    
     if (isMobileView()) {
       toggleMobileSidebar();
     } else {
@@ -674,20 +698,58 @@ function setupMobileSidebar() {
 }
 
 function isMobileView() {
-  return window.innerWidth <= 768;
+  const isMobile = window.innerWidth <= 768;
+  console.log('📱 Mobile view check:', isMobile, 'window width:', window.innerWidth);
+  return isMobile;
 }
 
 function toggleMobileSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.sidebar-overlay');
   
-  if (!sidebar) return;
+  if (!sidebar) {
+    console.warn('⚠️ Sidebar not found');
+    return;
+  }
   
-  const isOpen = sidebar.classList.contains('mobile-open');
+  // Force clean state first - remove any mobile classes
+  sidebar.classList.remove('mobile-open', 'mobile-closing');
   
-  if (isOpen) {
+  // Debug: Log the actual sidebar element and its classes after cleanup
+  console.log('🔍 Sidebar element:', sidebar);
+  console.log('🔍 Sidebar classes after cleanup:', sidebar.className);
+  console.log('🔍 Has mobile-open:', sidebar.classList.contains('mobile-open'));
+  console.log('🔍 Has mobile-closing:', sidebar.classList.contains('mobile-closing'));
+  
+  // Now check if sidebar should be considered "open" based on transform
+  const computedStyle = window.getComputedStyle(sidebar);
+  const transform = computedStyle.transform;
+  
+  // Parse the transform matrix to check if sidebar is visible
+  // matrix(a, b, c, d, tx, ty) where tx is the X translation
+  // If tx is 0, sidebar is visible (at position 0)
+  // If tx is negative (like -280), sidebar is hidden (translated left)
+  let isCurrentlyVisible = false;
+  
+  if (transform === 'none') {
+    isCurrentlyVisible = true; // No transform means visible
+  } else if (transform.startsWith('matrix(')) {
+    const matrixValues = transform.match(/matrix\(([^)]+)\)/);
+    if (matrixValues) {
+      const values = matrixValues[1].split(',').map(v => parseFloat(v.trim()));
+      const tx = values[4]; // X translation (5th value)
+      isCurrentlyVisible = tx >= 0; // If translation is 0 or positive, sidebar is visible
+    }
+  }
+  
+  console.log('🔍 Computed transform:', transform);
+  console.log('🔍 Is currently visible:', isCurrentlyVisible);
+  
+  if (isCurrentlyVisible) {
+    console.log('🔄 Sidebar appears to be visible, closing it');
     closeMobileSidebar();
   } else {
+    console.log('🔄 Sidebar appears to be hidden, opening it');
     openMobileSidebar();
   }
 }
@@ -696,13 +758,19 @@ function openMobileSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.sidebar-overlay');
   
+  console.log('📱 Opening mobile sidebar');
+  
   if (sidebar) {
-    sidebar.classList.add('mobile-open');
+    // Ensure clean state first
     sidebar.classList.remove('mobile-closing');
+    sidebar.classList.add('mobile-open');
+    console.log('✅ Sidebar classes updated - added mobile-open');
+    console.log('🔍 Final sidebar classes:', sidebar.className);
   }
   
   if (overlay) {
     overlay.classList.add('active');
+    console.log('✅ Overlay activated');
   }
   
   // Prevent body scroll when sidebar is open
@@ -713,18 +781,25 @@ function closeMobileSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.sidebar-overlay');
   
+  console.log('📱 Closing mobile sidebar');
+  
   if (sidebar) {
-    sidebar.classList.add('mobile-closing');
+    // Ensure clean state first
     sidebar.classList.remove('mobile-open');
+    sidebar.classList.add('mobile-closing');
+    console.log('✅ Sidebar classes updated - added mobile-closing');
+    console.log('🔍 Final sidebar classes:', sidebar.className);
     
     // Remove closing class after animation
     setTimeout(() => {
       sidebar.classList.remove('mobile-closing');
+      console.log('✅ Sidebar closing animation complete');
     }, 300);
   }
   
   if (overlay) {
     overlay.classList.remove('active');
+    console.log('✅ Overlay deactivated');
   }
   
   // Restore body scroll
@@ -749,36 +824,30 @@ function toggleDesktopSidebar() {
 }
 
 function handleWindowResize() {
-  const isMobile = isMobileView();
   const sidebar = document.querySelector('.sidebar');
   const mainWrapper = document.querySelector('.main-wrapper');
   const overlay = document.querySelector('.sidebar-overlay');
-  
-  if (isMobile) {
-    // Mobile view: ensure sidebar is hidden by default
-    if (sidebar) {
-      sidebar.classList.remove('collapsed');
-      sidebar.classList.remove('mobile-open');
-      sidebar.classList.remove('mobile-closing');
-    }
-    if (mainWrapper) {
-      mainWrapper.classList.remove('sidebar-collapsed');
-    }
-    if (overlay) {
-      overlay.classList.remove('active');
-    }
-    document.body.style.overflow = '';
-  } else {
-    // Desktop view: ensure mobile classes are removed
-    if (sidebar) {
-      sidebar.classList.remove('mobile-open');
-      sidebar.classList.remove('mobile-closing');
-    }
-    if (overlay) {
-      overlay.classList.remove('active');
-    }
-    document.body.style.overflow = '';
+
+  console.log('🔄 Window resize - resetting sidebar state');
+  console.log('🔍 Sidebar before reset:', sidebar?.className);
+
+  // Always reset sidebar and overlay state
+  if (sidebar) {
+    sidebar.classList.remove('collapsed');
+    sidebar.classList.remove('mobile-open');
+    sidebar.classList.remove('mobile-closing');
+    console.log('✅ Removed all mobile classes from sidebar');
+    console.log('🔍 Sidebar after reset:', sidebar.className);
   }
+  if (mainWrapper) {
+    mainWrapper.classList.remove('sidebar-collapsed');
+  }
+  if (overlay) {
+    overlay.classList.remove('active');
+    console.log('✅ Removed active class from overlay');
+  }
+  document.body.style.overflow = '';
+  console.log('✅ Reset body overflow');
 }
 
 // ============================================================================
