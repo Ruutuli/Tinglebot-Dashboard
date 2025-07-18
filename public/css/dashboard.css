@@ -114,3 +114,179 @@
   border: 1.5px solid #cbb687;
   box-shadow: 0 2px 16px 0 #cbb68722, var(--card-shadow);
 }
+
+/* ==========================================================================
+   MOBILE RESPONSIVE STYLES
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .dashboard-header h1 {
+    font-size: 2.25rem;
+  }
+  
+  .dashboard-welcome-box {
+    max-width: 95%;
+  }
+  
+  .dashboard-welcome {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Dashboard Header Mobile */
+  .dashboard-header {
+    margin-bottom: 2rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Welcome Box Mobile */
+  .dashboard-welcome-box {
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    max-width: 100%;
+  }
+  
+  .dashboard-welcome {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  
+  /* Divider Mobile */
+  .dashboard-divider {
+    width: 95%;
+    margin-bottom: 1rem;
+  }
+  
+  /* Links Section Mobile */
+  .dashboard-links-section {
+    margin: 1.5rem 0 1rem;
+  }
+  
+  .dashboard-section-card {
+    padding: 1rem 0;
+    font-size: 1.25rem;
+  }
+  
+  .dashboard-links-icon i {
+    font-size: 1.1rem;
+  }
+  
+  .dashboard-links-label {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Dashboard Header Extra Small */
+  .dashboard-header {
+    margin-bottom: 1.5rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.75rem;
+  }
+  
+  /* Welcome Box Extra Small */
+  .dashboard-welcome-box {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .dashboard-welcome {
+    font-size: 0.95rem;
+  }
+  
+  /* Links Section Extra Small */
+  .dashboard-links-section {
+    margin: 1rem 0 0.75rem;
+  }
+  
+  .dashboard-section-card {
+    padding: 0.75rem 0;
+    font-size: 1.1rem;
+  }
+  
+  .dashboard-links-icon i {
+    font-size: 1rem;
+  }
+  
+  .dashboard-links-label {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Dashboard Header Small */
+  .dashboard-header {
+    margin-bottom: 1rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  /* Welcome Box Small */
+  .dashboard-welcome-box {
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .dashboard-welcome {
+    font-size: 0.9rem;
+  }
+  
+  /* Links Section Small */
+  .dashboard-links-section {
+    margin: 0.75rem 0 0.5rem;
+  }
+  
+  .dashboard-section-card {
+    padding: 0.5rem 0;
+    font-size: 1rem;
+  }
+  
+  .dashboard-links-icon i {
+    font-size: 0.9rem;
+  }
+  
+  .dashboard-links-label {
+    font-size: 1rem;
+  }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+  .dashboard-section-card {
+    min-height: 60px;
+  }
+  
+  .dashboard-section-card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* Landscape mobile optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .dashboard-header {
+    margin-bottom: 1rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .dashboard-welcome-box {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .dashboard-welcome {
+    font-size: 0.9rem;
+  }
+}

@@ -308,71 +308,6 @@
 }
 
 /* ============================================================================
-   Mobile Responsiveness
-   ============================================================================ */
-
-@media (max-width: 768px) {
-  .pet-details-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    padding: 0.5rem;
-  }
-
-  .pet-card {
-    padding: 1rem;
-  }
-
-  .pet-header-row {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .pet-image {
-    width: 60px;
-    height: 60px;
-  }
-
-  .pet-name-big {
-    font-size: 1.2rem;
-  }
-
-  .pet-owner-character {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .character-stats {
-    width: 100%;
-    justify-content: space-between;
-  }
-}
-
-@media (max-width: 480px) {
-  .pet-card {
-    padding: 0.75rem;
-  }
-
-  .pet-name-big {
-    font-size: 1.1rem;
-  }
-
-  .pet-type-bar {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.8rem;
-  }
-
-  .pet-section-label {
-    font-size: 0.9rem;
-  }
-
-  .pet-detail-row {
-    font-size: 0.9rem;
-  }
-}
-
-/* ============================================================================
    Modern Card Styles (Consistent with Items/Monsters)
    ============================================================================ */
 
@@ -541,4 +476,620 @@
 
 .pet-card:hover .pet-type-bar::after {
   transform: translateX(100%);
+} 
+
+/* ==========================================================================
+   MOBILE RESPONSIVE STYLES
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .pet-details-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+    padding: 0.75rem;
+  }
+  
+  .pet-card,
+  .modern-pet-card {
+    padding: 1.25rem;
+  }
+  
+  .pet-image,
+  .modern-pet-image {
+    width: 75px;
+    height: 75px;
+  }
+  
+  .pet-name-big {
+    font-size: 1.3rem;
+  }
+  
+  .pet-type-bar {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .pet-type-bar i {
+    font-size: 0.9rem;
+  }
+  
+  .pet-owner-label {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Pet Grid Mobile */
+  .pet-details-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Pet Card Mobile */
+  .pet-card,
+  .modern-pet-card {
+    padding: 1rem;
+  }
+  
+  /* Pet Header Row Mobile */
+  .pet-header-row,
+  .modern-pet-header {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Pet Image Mobile */
+  .pet-image,
+  .modern-pet-image {
+    width: 65px;
+    height: 65px;
+  }
+  
+  /* Pet Header Info Mobile */
+  .pet-header-info,
+  .modern-pet-header-info {
+    gap: 0.5rem;
+  }
+  
+  /* Pet Name Row Mobile */
+  .pet-name-row {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .pet-name-big {
+    font-size: 1.1rem;
+  }
+  
+  /* Pet Status Badge Mobile */
+  .pet-status-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+  }
+  
+  /* Pet Type Bar Mobile */
+  .pet-type-bar {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.7rem;
+    gap: 0.4rem;
+  }
+  
+  .pet-type-bar i {
+    font-size: 0.8rem;
+  }
+  
+  /* Pet Owner Row Mobile */
+  .pet-owner-row {
+    gap: 0.4rem;
+  }
+  
+  .pet-owner-label {
+    font-size: 0.75rem;
+  }
+  
+  /* Pet Section Mobile */
+  .pet-section,
+  .modern-pet-section {
+    margin-bottom: 1rem;
+  }
+  
+  .pet-section-label,
+  .modern-pet-section-label {
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .pet-section-label i,
+  .modern-pet-section-label i {
+    font-size: 0.9rem;
+  }
+  
+  /* Pet Detail List Mobile */
+  .pet-detail-list,
+  .modern-pet-detail-list {
+    gap: 0.5rem;
+  }
+  
+  /* Pet Detail Row Mobile */
+  .pet-detail-row,
+  .modern-pet-detail-row {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .pet-detail-row strong,
+  .modern-pet-detail-row strong {
+    font-size: 0.8rem;
+  }
+  
+  .pet-detail-row span,
+  .modern-pet-detail-row span {
+    font-size: 0.85rem;
+  }
+  
+  /* Pet Storage Details Mobile */
+  .pet-storage-details {
+    gap: 0.5rem;
+  }
+  
+  .pet-storage-info {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .pet-storage-info i {
+    font-size: 0.75rem;
+  }
+  
+  /* Pet Rolls Details Mobile */
+  .pet-rolls-details {
+    gap: 0.75rem;
+  }
+  
+  .pet-rolls-section {
+    margin-bottom: 0.75rem;
+  }
+  
+  .pet-rolls-list {
+    gap: 0.4rem;
+  }
+  
+  .pet-roll-tag {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+  }
+  
+  .pet-last-roll {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .pet-last-roll i {
+    font-size: 0.75rem;
+  }
+  
+  /* Pet Tag Mobile */
+  .pet-tag {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+  }
+  
+  /* Pet Results Info Mobile */
+  .pet-results-info {
+    margin: 0.75rem 0.5rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .pet-results-info p {
+    font-size: 0.85rem;
+  }
+  
+  /* Pet Loading Mobile */
+  .pet-loading {
+    padding: 2rem 1rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Pet Grid Extra Small */
+  .pet-details-grid {
+    gap: 0.75rem;
+    padding: 0.25rem;
+  }
+  
+  /* Pet Card Extra Small */
+  .pet-card,
+  .modern-pet-card {
+    padding: 0.75rem;
+  }
+  
+  /* Pet Header Row Extra Small */
+  .pet-header-row,
+  .modern-pet-header {
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Pet Image Extra Small */
+  .pet-image,
+  .modern-pet-image {
+    width: 55px;
+    height: 55px;
+  }
+  
+  /* Pet Header Info Extra Small */
+  .pet-header-info,
+  .modern-pet-header-info {
+    gap: 0.4rem;
+  }
+  
+  /* Pet Name Row Extra Small */
+  .pet-name-row {
+    gap: 0.4rem;
+  }
+  
+  .pet-name-big {
+    font-size: 1rem;
+  }
+  
+  /* Pet Status Badge Extra Small */
+  .pet-status-badge {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+  }
+  
+  /* Pet Type Bar Extra Small */
+  .pet-type-bar {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    gap: 0.3rem;
+  }
+  
+  .pet-type-bar i {
+    font-size: 0.75rem;
+  }
+  
+  /* Pet Owner Row Extra Small */
+  .pet-owner-row {
+    gap: 0.3rem;
+  }
+  
+  .pet-owner-label {
+    font-size: 0.7rem;
+  }
+  
+  /* Pet Section Extra Small */
+  .pet-section,
+  .modern-pet-section {
+    margin-bottom: 0.75rem;
+  }
+  
+  .pet-section-label,
+  .modern-pet-section-label {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .pet-section-label i,
+  .modern-pet-section-label i {
+    font-size: 0.8rem;
+  }
+  
+  /* Pet Detail List Extra Small */
+  .pet-detail-list,
+  .modern-pet-detail-list {
+    gap: 0.4rem;
+  }
+  
+  /* Pet Detail Row Extra Small */
+  .pet-detail-row,
+  .modern-pet-detail-row {
+    padding: 0.4rem 0.6rem;
+  }
+  
+  .pet-detail-row strong,
+  .modern-pet-detail-row strong {
+    font-size: 0.75rem;
+  }
+  
+  .pet-detail-row span,
+  .modern-pet-detail-row span {
+    font-size: 0.8rem;
+  }
+  
+  /* Pet Storage Details Extra Small */
+  .pet-storage-details {
+    gap: 0.4rem;
+  }
+  
+  .pet-storage-info {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
+  }
+  
+  .pet-storage-info i {
+    font-size: 0.7rem;
+  }
+  
+  /* Pet Rolls Details Extra Small */
+  .pet-rolls-details {
+    gap: 0.6rem;
+  }
+  
+  .pet-rolls-section {
+    margin-bottom: 0.6rem;
+  }
+  
+  .pet-rolls-list {
+    gap: 0.3rem;
+  }
+  
+  .pet-roll-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+  }
+  
+  .pet-last-roll {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
+  }
+  
+  .pet-last-roll i {
+    font-size: 0.7rem;
+  }
+  
+  /* Pet Tag Extra Small */
+  .pet-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+  }
+  
+  /* Pet Results Info Extra Small */
+  .pet-results-info {
+    margin: 0.5rem 0.25rem;
+    padding: 0.6rem 0.75rem;
+  }
+  
+  .pet-results-info p {
+    font-size: 0.8rem;
+  }
+  
+  /* Pet Loading Extra Small */
+  .pet-loading {
+    padding: 1.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Pet Grid Small */
+  .pet-details-grid {
+    gap: 0.5rem;
+    padding: 0.25rem;
+  }
+  
+  /* Pet Card Small */
+  .pet-card,
+  .modern-pet-card {
+    padding: 0.5rem;
+  }
+  
+  /* Pet Header Row Small */
+  .pet-header-row,
+  .modern-pet-header {
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Pet Image Small */
+  .pet-image,
+  .modern-pet-image {
+    width: 45px;
+    height: 45px;
+  }
+  
+  /* Pet Header Info Small */
+  .pet-header-info,
+  .modern-pet-header-info {
+    gap: 0.3rem;
+  }
+  
+  /* Pet Name Row Small */
+  .pet-name-row {
+    gap: 0.3rem;
+  }
+  
+  .pet-name-big {
+    font-size: 0.9rem;
+  }
+  
+  /* Pet Status Badge Small */
+  .pet-status-badge {
+    font-size: 0.6rem;
+    padding: 0.08rem 0.3rem;
+  }
+  
+  /* Pet Type Bar Small */
+  .pet-type-bar {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    gap: 0.25rem;
+  }
+  
+  .pet-type-bar i {
+    font-size: 0.7rem;
+  }
+  
+  /* Pet Owner Row Small */
+  .pet-owner-row {
+    gap: 0.25rem;
+  }
+  
+  .pet-owner-label {
+    font-size: 0.65rem;
+  }
+  
+  /* Pet Section Small */
+  .pet-section,
+  .modern-pet-section {
+    margin-bottom: 0.5rem;
+  }
+  
+  .pet-section-label,
+  .modern-pet-section-label {
+    font-size: 0.75rem;
+    margin-bottom: 0.4rem;
+  }
+  
+  .pet-section-label i,
+  .modern-pet-section-label i {
+    font-size: 0.75rem;
+  }
+  
+  /* Pet Detail List Small */
+  .pet-detail-list,
+  .modern-pet-detail-list {
+    gap: 0.3rem;
+  }
+  
+  /* Pet Detail Row Small */
+  .pet-detail-row,
+  .modern-pet-detail-row {
+    padding: 0.3rem 0.5rem;
+  }
+  
+  .pet-detail-row strong,
+  .modern-pet-detail-row strong {
+    font-size: 0.7rem;
+  }
+  
+  .pet-detail-row span,
+  .modern-pet-detail-row span {
+    font-size: 0.75rem;
+  }
+  
+  /* Pet Storage Details Small */
+  .pet-storage-details {
+    gap: 0.3rem;
+  }
+  
+  .pet-storage-info {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.5rem;
+  }
+  
+  .pet-storage-info i {
+    font-size: 0.65rem;
+  }
+  
+  /* Pet Rolls Details Small */
+  .pet-rolls-details {
+    gap: 0.5rem;
+  }
+  
+  .pet-rolls-section {
+    margin-bottom: 0.5rem;
+  }
+  
+  .pet-rolls-list {
+    gap: 0.25rem;
+  }
+  
+  .pet-roll-tag {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.3rem;
+  }
+  
+  .pet-last-roll {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.5rem;
+  }
+  
+  .pet-last-roll i {
+    font-size: 0.65rem;
+  }
+  
+  /* Pet Tag Small */
+  .pet-tag {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.3rem;
+  }
+  
+  /* Pet Results Info Small */
+  .pet-results-info {
+    margin: 0.4rem 0.25rem;
+    padding: 0.5rem 0.6rem;
+  }
+  
+  .pet-results-info p {
+    font-size: 0.75rem;
+  }
+  
+  /* Pet Loading Small */
+  .pet-loading {
+    padding: 1.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+  .pet-card,
+  .modern-pet-card {
+    min-height: 60px;
+  }
+  
+  .pet-card:active,
+  .modern-pet-card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  .pet-status-badge:active {
+    transform: scale(0.95);
+  }
+  
+  .pet-type-bar:active {
+    background: rgba(45, 122, 77, 0.8);
+    transform: scale(0.95);
+  }
+  
+  .pet-tag:active,
+  .pet-roll-tag:active {
+    transform: scale(0.95);
+  }
+}
+
+/* Landscape mobile optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .pet-details-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .pet-card,
+  .modern-pet-card {
+    padding: 0.75rem;
+  }
+  
+  .pet-name-big {
+    font-size: 1rem;
+  }
+  
+  .pet-image,
+  .modern-pet-image {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .pet-type-bar {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+  }
+  
+  .pet-type-bar i {
+    font-size: 0.75rem;
+  }
 } 

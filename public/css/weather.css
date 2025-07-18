@@ -1065,11 +1065,909 @@
   }
   
   @keyframes pulse {
-    0%, 100% {
-      opacity: 1;
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  
+  /* ==========================================================================
+     MOBILE RESPONSIVE STYLES
+     ========================================================================== */
+  
+  @media (max-width: 1024px) {
+    .weather-grid {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
     }
-    50% {
-      opacity: 0.7;
+    
+    .weather-header h2 {
+      font-size: 1.5rem;
+    }
+    
+    .weather-header p {
+      font-size: 0.9rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    /* Weather Section Mobile */
+    .weather-section {
+      margin-bottom: 1.5rem;
+    }
+    
+    /* Header Mobile */
+    .weather-header {
+      margin-bottom: 1.5rem;
+    }
+    
+    .weather-header h2 {
+      font-size: 1.25rem;
+      gap: 0.5rem;
+    }
+    
+    .weather-header h2 i {
+      font-size: 1.25rem;
+    }
+    
+    .weather-header p {
+      font-size: 0.85rem;
+    }
+    
+    /* Grid Mobile */
+    .weather-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    /* Cards Mobile */
+    .weather-card {
+      padding: 1.25rem;
+    }
+    
+    .weather-card-header {
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .weather-card-header.new-header-layout {
+      padding: 0.5rem 1.25rem;
+      margin: -1.25rem -1.25rem 0.75rem;
+    }
+    
+    .weather-card-content {
+      gap: 0.75rem;
+    }
+    
+    .weather-date {
+      font-size: 0.8rem;
+      padding: 0.2rem 0.6rem;
+    }
+    
+    /* Season Mobile */
+    .weather-season {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+    }
+    
+    .weather-season-image {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+    
+    .weather-badge-season-img {
+      width: 2rem;
+      height: 2rem;
+    }
+    
+    /* Details Mobile */
+    .weather-details {
+      gap: 0.6rem;
+    }
+    
+    .weather-detail-item {
+      padding: 0.6rem;
+      border-radius: 0.6rem;
+    }
+    
+    .weather-detail-label {
+      font-size: 0.8rem;
+    }
+    
+    .weather-detail-label i {
+      font-size: 0.75rem;
+    }
+    
+    .weather-detail-value {
+      font-size: 0.8rem;
+    }
+    
+    .weather-emoji {
+      font-size: 1rem;
+    }
+    
+    .weather-image {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+    
+    .weather-text {
+      font-size: 0.8rem;
+    }
+    
+    /* Badge Mobile */
+    .weather-badge {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.7rem;
+    }
+    
+    .weather-badge-today {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.75rem;
+    }
+    
+    .weather-badge-season {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.7rem;
+    }
+    
+    /* Stats Button Mobile */
+    .weather-stats-button {
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+    }
+    
+    .weather-stats-button i {
+      font-size: 0.75rem;
+    }
+    
+    /* Stats Page Mobile */
+    .weather-stats-page {
+      padding: 1rem;
+    }
+    
+    .weather-stats-header {
+      margin-bottom: 1.5rem;
+    }
+    
+    .weather-stats-header h1 {
+      font-size: 1.5rem;
+    }
+    
+    .weather-stats-header p {
+      font-size: 0.9rem;
+    }
+    
+    .weather-stats-cards {
+      gap: 1rem;
+    }
+    
+    .weather-stats-card {
+      padding: 1rem;
+    }
+    
+    .weather-stats-card h3 {
+      font-size: 1.1rem;
+    }
+    
+    .weather-stats-card-header {
+      padding: 0.75rem;
+    }
+    
+    .weather-stats-village-crest {
+      width: 2rem;
+      height: 2rem;
+    }
+    
+    .weather-stats-card-header h3 {
+      font-size: 1rem;
+    }
+    
+    .weather-stats-summary {
+      gap: 0.5rem;
+    }
+    
+    .weather-stats-item {
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+    }
+    
+    .weather-stats-label {
+      font-size: 0.8rem;
+    }
+    
+    .weather-stats-value {
+      font-size: 0.8rem;
+    }
+    
+    /* Charts Mobile */
+    .weather-charts-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    
+    .weather-chart-container {
+      padding: 1rem;
+    }
+    
+    .weather-chart-container h3 {
+      font-size: 1rem;
+    }
+    
+    .weather-chart-container canvas {
+      max-height: 200px;
+    }
+    
+    .weather-chart-container.pie-chart-container canvas {
+      max-height: 180px;
+    }
+    
+    /* History Mobile */
+    .weather-history-section h3 {
+      font-size: 1.1rem;
+    }
+    
+    .weather-history-grid {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+    
+    .weather-history-card {
+      padding: 0.75rem;
+    }
+    
+    .weather-history-date {
+      font-size: 0.8rem;
+      padding: 0.2rem 0.5rem;
+    }
+    
+    .weather-history-season {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+    }
+    
+    .weather-history-season-img {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+    
+    .weather-history-season span {
+      font-size: 0.7rem;
+    }
+    
+    .weather-history-details {
+      gap: 0.4rem;
+    }
+    
+    .weather-history-item {
+      padding: 0.4rem;
+      border-radius: 0.4rem;
+    }
+    
+    .weather-history-emoji {
+      font-size: 0.9rem;
+    }
+    
+    .weather-history-text {
+      font-size: 0.75rem;
+    }
+    
+    .weather-history-special {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.7rem;
+    }
+    
+    /* Table Mobile */
+    .weather-history-table {
+      font-size: 0.75rem;
+    }
+    
+    .weather-history-table th,
+    .weather-history-table td {
+      padding: 0.4rem 0.6rem;
+    }
+  }
+  
+  @media (max-width: 640px) {
+    /* Weather Section Extra Small */
+    .weather-section {
+      margin-bottom: 1rem;
+    }
+    
+    /* Header Extra Small */
+    .weather-header {
+      margin-bottom: 1rem;
+    }
+    
+    .weather-header h2 {
+      font-size: 1.1rem;
+    }
+    
+    .weather-header h2 i {
+      font-size: 1.1rem;
+    }
+    
+    .weather-header p {
+      font-size: 0.8rem;
+    }
+    
+    /* Grid Extra Small */
+    .weather-grid {
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    
+    /* Cards Extra Small */
+    .weather-card {
+      padding: 1rem;
+    }
+    
+    .weather-card-header {
+      padding-bottom: 0.4rem;
+      margin-bottom: 0.6rem;
+    }
+    
+    .weather-card-header.new-header-layout {
+      padding: 0.4rem 1rem;
+      margin: -1rem -1rem 0.6rem;
+    }
+    
+    .weather-card-content {
+      gap: 0.6rem;
+    }
+    
+    .weather-date {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+    }
+    
+    /* Season Extra Small */
+    .weather-season {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+    }
+    
+    .weather-season-image {
+      width: 1.1rem;
+      height: 1.1rem;
+    }
+    
+    .weather-badge-season-img {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+    
+    /* Details Extra Small */
+    .weather-details {
+      gap: 0.5rem;
+    }
+    
+    .weather-detail-item {
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+    }
+    
+    .weather-detail-label {
+      font-size: 0.75rem;
+    }
+    
+    .weather-detail-label i {
+      font-size: 0.7rem;
+    }
+    
+    .weather-detail-value {
+      font-size: 0.75rem;
+    }
+    
+    .weather-emoji {
+      font-size: 0.9rem;
+    }
+    
+    .weather-image {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+    
+    .weather-text {
+      font-size: 0.75rem;
+    }
+    
+    /* Badge Extra Small */
+    .weather-badge {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.65rem;
+    }
+    
+    .weather-badge-today {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.7rem;
+    }
+    
+    .weather-badge-season {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.65rem;
+    }
+    
+    /* Stats Button Extra Small */
+    .weather-stats-button {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.75rem;
+    }
+    
+    .weather-stats-button i {
+      font-size: 0.7rem;
+    }
+    
+    /* Stats Page Extra Small */
+    .weather-stats-page {
+      padding: 0.75rem;
+    }
+    
+    .weather-stats-header {
+      margin-bottom: 1rem;
+    }
+    
+    .weather-stats-header h1 {
+      font-size: 1.25rem;
+    }
+    
+    .weather-stats-header p {
+      font-size: 0.85rem;
+    }
+    
+    .weather-stats-cards {
+      gap: 0.75rem;
+    }
+    
+    .weather-stats-card {
+      padding: 0.75rem;
+    }
+    
+    .weather-stats-card h3 {
+      font-size: 1rem;
+    }
+    
+    .weather-stats-card-header {
+      padding: 0.6rem;
+    }
+    
+    .weather-stats-village-crest {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+    
+    .weather-stats-card-header h3 {
+      font-size: 0.9rem;
+    }
+    
+    .weather-stats-summary {
+      gap: 0.4rem;
+    }
+    
+    .weather-stats-item {
+      padding: 0.4rem;
+      border-radius: 0.4rem;
+    }
+    
+    .weather-stats-label {
+      font-size: 0.75rem;
+    }
+    
+    .weather-stats-value {
+      font-size: 0.75rem;
+    }
+    
+    /* Charts Extra Small */
+    .weather-charts-grid {
+      gap: 0.75rem;
+    }
+    
+    .weather-chart-container {
+      padding: 0.75rem;
+    }
+    
+    .weather-chart-container h3 {
+      font-size: 0.9rem;
+    }
+    
+    .weather-chart-container canvas {
+      max-height: 180px;
+    }
+    
+    .weather-chart-container.pie-chart-container canvas {
+      max-height: 160px;
+    }
+    
+    /* History Extra Small */
+    .weather-history-section h3 {
+      font-size: 1rem;
+    }
+    
+    .weather-history-grid {
+      gap: 0.6rem;
+    }
+    
+    .weather-history-card {
+      padding: 0.6rem;
+    }
+    
+    .weather-history-date {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.4rem;
+    }
+    
+    .weather-history-season {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.7rem;
+    }
+    
+    .weather-history-season-img {
+      width: 1.1rem;
+      height: 1.1rem;
+    }
+    
+    .weather-history-season span {
+      font-size: 0.65rem;
+    }
+    
+    .weather-history-details {
+      gap: 0.3rem;
+    }
+    
+    .weather-history-item {
+      padding: 0.3rem;
+      border-radius: 0.3rem;
+    }
+    
+    .weather-history-emoji {
+      font-size: 0.8rem;
+    }
+    
+    .weather-history-text {
+      font-size: 0.7rem;
+    }
+    
+    .weather-history-special {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.65rem;
+    }
+    
+    /* Table Extra Small */
+    .weather-history-table {
+      font-size: 0.7rem;
+    }
+    
+    .weather-history-table th,
+    .weather-history-table td {
+      padding: 0.3rem 0.5rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    /* Weather Section Small */
+    .weather-section {
+      margin-bottom: 0.75rem;
+    }
+    
+    /* Header Small */
+    .weather-header {
+      margin-bottom: 0.75rem;
+    }
+    
+    .weather-header h2 {
+      font-size: 1rem;
+    }
+    
+    .weather-header h2 i {
+      font-size: 1rem;
+    }
+    
+    .weather-header p {
+      font-size: 0.75rem;
+    }
+    
+    /* Grid Small */
+    .weather-grid {
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    /* Cards Small */
+    .weather-card {
+      padding: 0.75rem;
+    }
+    
+    .weather-card-header {
+      padding-bottom: 0.3rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .weather-card-header.new-header-layout {
+      padding: 0.3rem 0.75rem;
+      margin: -0.75rem -0.75rem 0.5rem;
+    }
+    
+    .weather-card-content {
+      gap: 0.5rem;
+    }
+    
+    .weather-date {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+    }
+    
+    /* Season Small */
+    .weather-season {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.7rem;
+    }
+    
+    .weather-season-image {
+      width: 1rem;
+      height: 1rem;
+    }
+    
+    .weather-badge-season-img {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+    
+    /* Details Small */
+    .weather-details {
+      gap: 0.4rem;
+    }
+    
+    .weather-detail-item {
+      padding: 0.4rem;
+      border-radius: 0.4rem;
+    }
+    
+    .weather-detail-label {
+      font-size: 0.7rem;
+    }
+    
+    .weather-detail-label i {
+      font-size: 0.65rem;
+    }
+    
+    .weather-detail-value {
+      font-size: 0.7rem;
+    }
+    
+    .weather-emoji {
+      font-size: 0.8rem;
+    }
+    
+    .weather-image {
+      width: 1.1rem;
+      height: 1.1rem;
+    }
+    
+    .weather-text {
+      font-size: 0.7rem;
+    }
+    
+    /* Badge Small */
+    .weather-badge {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.6rem;
+    }
+    
+    .weather-badge-today {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.65rem;
+    }
+    
+    .weather-badge-season {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.6rem;
+    }
+    
+    /* Stats Button Small */
+    .weather-stats-button {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.7rem;
+    }
+    
+    .weather-stats-button i {
+      font-size: 0.65rem;
+    }
+    
+    /* Stats Page Small */
+    .weather-stats-page {
+      padding: 0.5rem;
+    }
+    
+    .weather-stats-header {
+      margin-bottom: 0.75rem;
+    }
+    
+    .weather-stats-header h1 {
+      font-size: 1.1rem;
+    }
+    
+    .weather-stats-header p {
+      font-size: 0.8rem;
+    }
+    
+    .weather-stats-cards {
+      gap: 0.5rem;
+    }
+    
+    .weather-stats-card {
+      padding: 0.5rem;
+    }
+    
+    .weather-stats-card h3 {
+      font-size: 0.9rem;
+    }
+    
+    .weather-stats-card-header {
+      padding: 0.4rem;
+    }
+    
+    .weather-stats-village-crest {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+    
+    .weather-stats-card-header h3 {
+      font-size: 0.8rem;
+    }
+    
+    .weather-stats-summary {
+      gap: 0.3rem;
+    }
+    
+    .weather-stats-item {
+      padding: 0.3rem;
+      border-radius: 0.3rem;
+    }
+    
+    .weather-stats-label {
+      font-size: 0.7rem;
+    }
+    
+    .weather-stats-value {
+      font-size: 0.7rem;
+    }
+    
+    /* Charts Small */
+    .weather-charts-grid {
+      gap: 0.5rem;
+    }
+    
+    .weather-chart-container {
+      padding: 0.5rem;
+    }
+    
+    .weather-chart-container h3 {
+      font-size: 0.8rem;
+    }
+    
+    .weather-chart-container canvas {
+      max-height: 160px;
+    }
+    
+    .weather-chart-container.pie-chart-container canvas {
+      max-height: 140px;
+    }
+    
+    /* History Small */
+    .weather-history-section h3 {
+      font-size: 0.9rem;
+    }
+    
+    .weather-history-grid {
+      gap: 0.4rem;
+    }
+    
+    .weather-history-card {
+      padding: 0.4rem;
+    }
+    
+    .weather-history-date {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.3rem;
+    }
+    
+    .weather-history-season {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.65rem;
+    }
+    
+    .weather-history-season-img {
+      width: 1rem;
+      height: 1rem;
+    }
+    
+    .weather-history-season span {
+      font-size: 0.6rem;
+    }
+    
+    .weather-history-details {
+      gap: 0.25rem;
+    }
+    
+    .weather-history-item {
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+    }
+    
+    .weather-history-emoji {
+      font-size: 0.75rem;
+    }
+    
+    .weather-history-text {
+      font-size: 0.65rem;
+    }
+    
+    .weather-history-special {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.6rem;
+    }
+    
+    /* Table Small */
+    .weather-history-table {
+      font-size: 0.65rem;
+    }
+    
+    .weather-history-table th,
+    .weather-history-table td {
+      padding: 0.25rem 0.4rem;
+    }
+  }
+  
+  /* Touch-friendly interactions */
+  @media (hover: none) and (pointer: coarse) {
+    .weather-card {
+      min-height: 120px;
+    }
+    
+    .weather-card:active {
+      transform: scale(0.98);
+      transition: transform 0.1s ease;
+    }
+    
+    .weather-stats-button:active {
+      transform: scale(0.95);
+      transition: transform 0.1s ease;
+    }
+    
+    .weather-history-card:active {
+      transform: scale(0.98);
+      transition: transform 0.1s ease;
+    }
+  }
+  
+  /* Landscape mobile optimizations */
+  @media (max-width: 768px) and (orientation: landscape) {
+    .weather-section {
+      margin-bottom: 1rem;
+    }
+    
+    .weather-header {
+      margin-bottom: 1rem;
+    }
+    
+    .weather-header h2 {
+      font-size: 1.1rem;
+    }
+    
+    .weather-grid {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+    
+    .weather-card {
+      padding: 1rem;
+    }
+    
+    .weather-card-content h3 {
+      font-size: 1rem;
+    }
+    
+    .weather-description {
+      font-size: 0.8rem;
     }
   }
   

@@ -538,3 +538,818 @@ h4 { font-size: 1.25rem; }
   height: auto;
   outline: 2px solid #0078d7;
 }
+
+/* =============================================================================
+   MOBILE RESPONSIVE DESIGN
+   ============================================================================= */
+
+/* Mobile-first responsive breakpoints */
+@media (max-width: 1200px) {
+  :root {
+    --sidebar-width: 240px;
+    --main-padding: 2rem;
+  }
+  
+  .main-wrapper {
+    margin-left: var(--sidebar-width);
+  }
+  
+  .main-wrapper.sidebar-collapsed {
+    margin-left: 60px;
+  }
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 220px;
+    --main-padding: 1.5rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 2.25rem;
+  }
+  
+  .dashboard-welcome {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 200px;
+    --main-padding: 1rem;
+    --card-radius: 0.8rem;
+  }
+  
+  /* Mobile Layout Adjustments */
+  .main-wrapper {
+    margin-left: 0;
+    margin-top: 60px;
+    height: calc(100vh - 60px);
+  }
+  
+  .main-wrapper.sidebar-collapsed {
+    margin-left: 0;
+  }
+  
+  .main-content {
+    padding: 1rem;
+  }
+  
+  /* Topbar Mobile Optimizations */
+  .topbar {
+    height: 60px;
+    padding: 0.75rem 1rem;
+  }
+  
+  .topbar-left {
+    gap: 0.75rem;
+  }
+  
+  .topbar-right {
+    gap: 0.5rem;
+  }
+  
+  .breadcrumb {
+    font-size: 1rem;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* User Menu Mobile */
+  .user-menu {
+    position: relative;
+  }
+  
+  .username {
+    display: none;
+  }
+  
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .user-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    min-width: 280px;
+    z-index: 1001;
+  }
+  
+  /* Sidebar Mobile */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 1002;
+  }
+  
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  
+  .sidebar-toggle {
+    display: flex;
+  }
+  
+  /* Dashboard Mobile */
+  .dashboard-header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .dashboard-welcome-box {
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .dashboard-welcome {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  
+  .dashboard-divider {
+    width: 95%;
+    margin-bottom: 1rem;
+  }
+  
+  /* Typography Mobile */
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+  h4 { font-size: 1.1rem; }
+  
+  /* Card Mobile */
+  .card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Back to Top Mobile */
+  .back-to-top {
+    bottom: 1rem;
+    right: 1rem;
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --main-padding: 0.75rem;
+  }
+  
+  /* Extra Small Mobile */
+  .main-content {
+    padding: 0.75rem;
+  }
+  
+  .topbar {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.75rem;
+  }
+  
+  .dashboard-welcome-box {
+    padding: 0.75rem 1rem;
+  }
+  
+  .dashboard-welcome {
+    font-size: 0.95rem;
+  }
+  
+  /* Typography Extra Small */
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+  h3 { font-size: 1.1rem; }
+  h4 { font-size: 1rem; }
+  
+  /* User Menu Extra Small */
+  .user-dropdown {
+    min-width: 260px;
+  }
+  
+  .user-info,
+  .guest-info {
+    padding: 1rem;
+  }
+  
+  .user-actions,
+  .guest-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .profile-button,
+  .logout-button,
+  .login-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --main-padding: 0.5rem;
+  }
+  
+  /* Small Mobile */
+  .main-content {
+    padding: 0.5rem;
+  }
+  
+  .topbar {
+    padding: 0.5rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .dashboard-welcome-box {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .dashboard-welcome {
+    font-size: 0.9rem;
+  }
+  
+  /* Typography Small */
+  h1 { font-size: 1.25rem; }
+  h2 { font-size: 1.1rem; }
+  h3 { font-size: 1rem; }
+  h4 { font-size: 0.9rem; }
+  
+  /* User Menu Small */
+  .user-dropdown {
+    min-width: 240px;
+  }
+  
+  .user-info,
+  .guest-info {
+    padding: 0.75rem;
+  }
+  
+  .user-details {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+  
+  .user-stats {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  /* Back to Top Small */
+  .back-to-top {
+    bottom: 0.75rem;
+    right: 0.75rem;
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
+  }
+}
+
+/* Touch-friendly interactions for mobile */
+@media (hover: none) and (pointer: coarse) {
+  /* Increase touch targets */
+  .sidebar-nav a {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+  }
+  
+  .model-card {
+    min-height: 60px;
+    padding: 1rem 1.25rem;
+  }
+  
+  .countdown-card,
+  .weather-card {
+    min-height: 120px;
+  }
+  
+  /* Remove hover effects on touch devices */
+  .sidebar-nav a:hover,
+  .model-card:hover,
+  .countdown-card:hover,
+  .weather-card:hover {
+    transform: none;
+  }
+  
+  /* Add active states for touch feedback */
+  .sidebar-nav a:active,
+  .model-card:active,
+  .countdown-card:active,
+  .weather-card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* Landscape mobile optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .main-wrapper {
+    margin-top: 50px;
+    height: calc(100vh - 50px);
+  }
+  
+  .topbar {
+    height: 50px;
+  }
+  
+  .dashboard-header {
+    margin-bottom: 1.5rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .dashboard-welcome-box {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .user-avatar,
+  .bot-logo {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .floating-shapes .shape {
+    animation: none;
+  }
+  
+  .logo-glow {
+    animation: none;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #000000;
+    --bg-secondary: #1a1a1a;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+  }
+}
+
+/* Print styles */
+@media print {
+  .sidebar,
+  .topbar,
+  .back-to-top,
+  .sidebar-toggle {
+    display: none !important;
+  }
+  
+  .main-wrapper {
+    margin-left: 0 !important;
+    margin-top: 0 !important;
+  }
+  
+  .main-content {
+    padding: 0 !important;
+  }
+  
+  * {
+    background: white !important;
+    color: black !important;
+  }
+}
+
+/* =============================================================================
+   MOBILE SIDEBAR OVERLAY
+   ============================================================================= */
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1001;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  backdrop-filter: blur(2px);
+}
+
+/* =============================================================================
+   MOBILE-SPECIFIC ENHANCEMENTS
+   ============================================================================= */
+
+/* Mobile sidebar improvements */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 280px;
+    max-width: 85vw;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 1002;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  
+  .sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--glass-border);
+  }
+  
+  .sidebar-nav {
+    padding: 1rem 0;
+  }
+  
+  .sidebar-nav a {
+    padding: 1rem 1.5rem;
+    margin: 0.25rem 1rem;
+    border-radius: 0.5rem;
+  }
+  
+  /* Mobile topbar improvements */
+  .topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+  }
+  
+  /* Mobile content adjustments */
+  .main-content {
+    padding-top: 80px;
+  }
+  
+  /* Mobile card improvements */
+  .card,
+  .countdown-card,
+  .weather-card,
+  .model-card {
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Mobile button improvements */
+  button,
+  .btn {
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border-radius: 0.5rem;
+  }
+  
+  /* Mobile input improvements */
+  input,
+  textarea,
+  select {
+    min-height: 44px;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border-radius: 0.5rem;
+  }
+  
+  /* Mobile spacing improvements */
+  .dashboard-section-card,
+  .countdown-section,
+  .weather-section,
+  .character-of-week-section {
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Mobile typography improvements */
+  .dashboard-welcome {
+    line-height: 1.6;
+  }
+  
+  /* Mobile grid improvements */
+  .model-grid {
+    gap: 0.75rem;
+  }
+  
+  .countdown-grid {
+    gap: 1rem;
+  }
+  
+  .weather-grid {
+    gap: 1rem;
+  }
+}
+
+/* Mobile landscape optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .sidebar {
+    width: 250px;
+  }
+  
+  .topbar {
+    height: 50px;
+  }
+  
+  .main-content {
+    padding-top: 60px;
+  }
+  
+  .dashboard-header {
+    margin-bottom: 1rem;
+  }
+  
+  .dashboard-welcome-box {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Mobile touch improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Increase touch targets */
+  .sidebar-nav a,
+  .model-card,
+  .countdown-card,
+  .weather-card {
+    min-height: 48px;
+  }
+  
+  /* Improve button touch targets */
+  button,
+  .btn,
+  .pagination-button {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  /* Improve input touch targets */
+  input,
+  textarea,
+  select {
+    min-height: 48px;
+  }
+  
+  /* Add touch feedback */
+  .model-card:active,
+  .countdown-card:active,
+  .weather-card:active,
+  .sidebar-nav a:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  /* Remove hover effects on touch devices */
+  .model-card:hover,
+  .countdown-card:hover,
+  .weather-card:hover,
+  .sidebar-nav a:hover {
+    transform: none;
+  }
+}
+
+/* Mobile performance optimizations */
+@media (max-width: 768px) {
+  /* Reduce animations for better performance */
+  * {
+    animation-duration: 0.2s !important;
+    transition-duration: 0.2s !important;
+  }
+  
+  /* Optimize scrolling */
+  .main-content,
+  .model-details-content {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Optimize images */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Optimize fonts */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Mobile accessibility improvements */
+@media (max-width: 768px) {
+  /* Improve focus indicators */
+  button:focus,
+  input:focus,
+  textarea:focus,
+  select:focus,
+  a:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  
+  /* Improve contrast for mobile */
+  .text-secondary {
+    color: var(--text-primary) !important;
+    opacity: 0.8;
+  }
+  
+  /* Improve readability */
+  p, span, div {
+    line-height: 1.5;
+  }
+  
+  /* Improve spacing for touch */
+  .dashboard-divider {
+    margin: 1rem auto;
+  }
+  
+  .dashboard-section-card {
+    margin: 1rem auto 0.75rem;
+  }
+}
+
+/* Mobile-specific animations */
+@media (max-width: 768px) {
+  @keyframes fadeInUpMobile {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .dashboard-section-card,
+  .countdown-card,
+  .weather-card,
+  .model-card {
+    animation: fadeInUpMobile 0.3s ease-out;
+  }
+}
+
+/* Mobile loading states */
+@media (max-width: 768px) {
+  .loading-spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+  }
+  
+  .loading-state p {
+    font-size: 0.9rem;
+  }
+  
+  .error-state p {
+    font-size: 0.9rem;
+  }
+}
+
+/* Mobile navigation improvements */
+@media (max-width: 768px) {
+  /* Improve sidebar navigation */
+  .sidebar-nav ul {
+    padding: 0;
+  }
+  
+  .sidebar-nav li {
+    margin: 0;
+  }
+  
+  .sidebar-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    margin: 0.25rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+  }
+  
+  .sidebar-nav a i {
+    width: 20px;
+    text-align: center;
+    font-size: 1.1rem;
+  }
+  
+  .sidebar-nav a span {
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  
+  /* Active state improvements */
+  .sidebar-nav li.active a {
+    background: var(--glass-bg);
+    color: var(--totk-light-green);
+    border-left: 3px solid var(--totk-light-green);
+  }
+  
+  /* Hover state improvements */
+  .sidebar-nav a:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(2px);
+  }
+}
+
+/* Mobile form improvements */
+@media (max-width: 768px) {
+  /* Improve form elements */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  textarea,
+  select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--glass-border);
+    border-radius: 0.5rem;
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  
+  /* Improve form focus states */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0, 163, 218, 0.2);
+  }
+  
+  /* Improve form labels */
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  
+  /* Improve form groups */
+  .form-group {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Mobile utility classes */
+@media (max-width: 768px) {
+  .mobile-hidden {
+    display: none !important;
+  }
+  
+  .mobile-visible {
+    display: block !important;
+  }
+  
+  .mobile-full-width {
+    width: 100% !important;
+  }
+  
+  .mobile-text-center {
+    text-align: center !important;
+  }
+  
+  .mobile-text-left {
+    text-align: left !important;
+  }
+  
+  .mobile-text-right {
+    text-align: right !important;
+  }
+  
+  .mobile-margin-0 {
+    margin: 0 !important;
+  }
+  
+  .mobile-padding-0 {
+    padding: 0 !important;
+  }
+}

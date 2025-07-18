@@ -138,3 +138,300 @@
 .pagination-ellipsis.monster-theme {
   color: #888;
 }
+
+/* ==========================================================================
+   MOBILE RESPONSIVE STYLES
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .pagination-wrapper,
+  .character-pagination,
+  .item-pagination,
+  .inventory-pagination,
+  #village-shop-pagination {
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+  }
+  
+  .character-pagination,
+  .item-pagination {
+    padding: 0.75rem 0;
+  }
+  
+  .character-pagination {
+    margin: 2rem 0;
+  }
+  
+  .item-pagination {
+    margin: 2rem 0 1.5rem;
+  }
+  
+  .pagination {
+    padding: 0.75rem;
+    margin: 1.5rem 0;
+    gap: 0.4rem;
+  }
+  
+  .pagination-button {
+    height: 2.25rem;
+    min-width: 2.25rem;
+    padding: 0 0.75rem;
+    font-size: 0.85rem;
+  }
+  
+  .pagination-ellipsis {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Pagination Wrapper Mobile */
+  .pagination-wrapper,
+  .character-pagination,
+  .item-pagination,
+  .inventory-pagination,
+  #village-shop-pagination {
+    padding: 1rem;
+    margin: 1rem 0;
+    gap: 0.4rem;
+  }
+  
+  .character-pagination,
+  .item-pagination {
+    padding: 0.6rem 0;
+  }
+  
+  .character-pagination {
+    margin: 1.5rem 0;
+  }
+  
+  .item-pagination {
+    margin: 1.5rem 0 1rem;
+  }
+  
+  /* Pagination Container Mobile */
+  .pagination {
+    padding: 0.6rem;
+    margin: 1rem 0;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+  
+  /* Pagination Button Mobile */
+  .pagination-button {
+    height: 2rem;
+    min-width: 2rem;
+    padding: 0 0.6rem;
+    font-size: 0.8rem;
+    border-radius: 0.4rem;
+  }
+  
+  .pagination-ellipsis {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.8rem;
+    padding: 6px 3px;
+  }
+  
+  /* Monster Theme Mobile */
+  .pagination-button.monster-theme {
+    font-size: 0.8rem;
+  }
+  
+  .pagination-ellipsis.monster-theme {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Pagination Wrapper Extra Small */
+  .pagination-wrapper,
+  .character-pagination,
+  .item-pagination,
+  .inventory-pagination,
+  #village-shop-pagination {
+    padding: 0.75rem;
+    margin: 0.75rem 0;
+    gap: 0.3rem;
+  }
+  
+  .character-pagination,
+  .item-pagination {
+    padding: 0.5rem 0;
+  }
+  
+  .character-pagination {
+    margin: 1.25rem 0;
+  }
+  
+  .item-pagination {
+    margin: 1.25rem 0 0.75rem;
+  }
+  
+  /* Pagination Container Extra Small */
+  .pagination {
+    padding: 0.5rem;
+    margin: 0.75rem 0;
+    gap: 0.25rem;
+  }
+  
+  /* Pagination Button Extra Small */
+  .pagination-button {
+    height: 1.75rem;
+    min-width: 1.75rem;
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 0.35rem;
+  }
+  
+  .pagination-ellipsis {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.75rem;
+    padding: 5px 2px;
+  }
+  
+  /* Monster Theme Extra Small */
+  .pagination-button.monster-theme {
+    font-size: 0.75rem;
+  }
+  
+  .pagination-ellipsis.monster-theme {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Pagination Wrapper Small */
+  .pagination-wrapper,
+  .character-pagination,
+  .item-pagination,
+  .inventory-pagination,
+  #village-shop-pagination {
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    gap: 0.25rem;
+  }
+  
+  .character-pagination,
+  .item-pagination {
+    padding: 0.4rem 0;
+  }
+  
+  .character-pagination {
+    margin: 1rem 0;
+  }
+  
+  .item-pagination {
+    margin: 1rem 0 0.5rem;
+  }
+  
+  /* Pagination Container Small */
+  .pagination {
+    padding: 0.4rem;
+    margin: 0.5rem 0;
+    gap: 0.2rem;
+  }
+  
+  /* Pagination Button Small */
+  .pagination-button {
+    height: 1.5rem;
+    min-width: 1.5rem;
+    padding: 0 0.4rem;
+    font-size: 0.7rem;
+    border-radius: 0.3rem;
+  }
+  
+  .pagination-ellipsis {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.7rem;
+    padding: 4px 2px;
+  }
+  
+  /* Monster Theme Small */
+  .pagination-button.monster-theme {
+    font-size: 0.7rem;
+  }
+  
+  .pagination-ellipsis.monster-theme {
+    font-size: 0.7rem;
+  }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+  .pagination-button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .pagination-button:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+  }
+  
+  .pagination-button.active:active {
+    transform: scale(0.95);
+  }
+  
+  .pagination-button.disabled:active,
+  .pagination-button:disabled:active {
+    transform: none;
+  }
+}
+
+/* Landscape mobile optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .pagination-wrapper,
+  .character-pagination,
+  .item-pagination,
+  .inventory-pagination,
+  #village-shop-pagination {
+    padding: 0.75rem;
+    margin: 0.75rem 0;
+  }
+  
+  .pagination {
+    padding: 0.5rem;
+    margin: 0.75rem 0;
+    gap: 0.3rem;
+  }
+  
+  .pagination-button {
+    height: 1.75rem;
+    min-width: 1.75rem;
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .pagination-ellipsis {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .pagination-button {
+    border-width: 0.5px;
+  }
+  
+  .pagination {
+    border-width: 0.5px;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .pagination-button {
+    transition: none;
+  }
+  
+  .pagination-button:active {
+    transform: none;
+  }
+}

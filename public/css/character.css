@@ -246,21 +246,6 @@
   font-weight: 500;
 }
 
-/* Mobile optimizations for loading */
-@media (max-width: 768px) {
-  .character-loading {
-    padding: 1rem;
-  }
-  
-  .character-loading i {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .character-loading p {
-    font-size: 1rem;
-  }
-}
 
 /* Loading Inventory Fallback */
 .loading-inventory {
@@ -1005,6 +990,788 @@
   .character-detail-list {
     gap: 0.3rem 0.8rem;
     margin-bottom: 0.8rem;
+  }
+}
+
+/* ==========================================================================
+   Character Inventory Stats Layout
+   ========================================================================== */
+
+.character-inventory-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.character-inventory-stats .inventory-stat-item {
+  flex-shrink: 0;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVE STYLES
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .characters-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.25rem;
+    padding: 1.25rem;
+  }
+  
+  .character-details-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .character-header {
+    padding: 1.25rem 1.5rem;
+    gap: 1.25rem;
+  }
+  
+  .character-name {
+    font-size: 1.4rem;
+  }
+  
+  .character-avatar {
+    width: 70px;
+    height: 70px;
+    font-size: 1.75rem;
+  }
+  
+  /* Character Inventory Stats Tablet */
+  .character-inventory-stats {
+    gap: 0.4rem;
+    padding: 0.4rem 0;
+  }
+  
+  .character-inventory-stats .inventory-stat-item {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Character Grid Mobile */
+  .characters-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .character-details-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Character Header Mobile */
+  .character-header {
+    padding: 1rem 1.25rem;
+    gap: 1rem;
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .character-name-row {
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .character-name {
+    font-size: 1.25rem;
+  }
+  
+  .character-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+  
+  /* Character Content Mobile */
+  .character-content {
+    padding: 1rem 1.25rem 1.5rem;
+  }
+  
+  .character-section {
+    margin: 0.75rem 0 0.5rem;
+  }
+  
+  .character-section-title {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Character Details Mobile */
+  .character-detail-list {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .character-detail-label {
+    font-size: 0.75rem;
+  }
+  
+  .character-detail-value {
+    font-size: 0.8rem;
+    padding: 0.15rem 0.6rem;
+  }
+  
+  /* Character Race Job Row Mobile */
+  .character-race-job-row {
+    font-size: 0.85rem;
+    margin: 0.1rem 0 0.3rem 0;
+  }
+  
+  /* Character Owner Mobile */
+  .character-owner {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.4rem;
+  }
+  
+  /* Character Links Mobile */
+  .character-links {
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+  }
+  
+  .character-link {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.3rem;
+  }
+  
+  /* Character Modal Mobile */
+  .character-modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .character-modal-header {
+    padding: 1rem 1.5rem;
+  }
+  
+  .character-modal-body {
+    padding: 1.5rem;
+  }
+  
+  .character-modal-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .character-modal-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .character-modal-item {
+    padding: 0.6rem 0.8rem;
+  }
+  
+  .character-modal-item .label {
+    font-size: 0.8rem;
+  }
+  
+  .character-modal-item .value {
+    font-size: 0.8rem;
+    max-width: 70%;
+  }
+  
+  .character-modal-links a {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  /* Character Inventory Mobile */
+  .character-inventory-card {
+    margin-bottom: 0.75rem;
+  }
+  
+  .character-inventory-header {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+  
+  .character-inventory-info .character-avatar {
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 1.5rem !important;
+  }
+  
+  .character-inventory-name {
+    font-size: 1.1rem;
+    margin-bottom: 0.4rem;
+  }
+  
+  /* Character Inventory Stats Mobile */
+  .character-inventory-stats {
+    gap: 0.4rem;
+    padding: 0.4rem 0;
+    margin-bottom: 0.75rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .character-inventory-stats::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .character-inventory-stats .inventory-stat-item {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+    min-width: fit-content;
+    flex-shrink: 0;
+  }
+  
+  .character-inventory-content.expanded {
+    padding: 1rem 1rem 1.5rem;
+  }
+  
+  /* Character Items Grid Mobile */
+  .character-items-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding-bottom: 0.75rem;
+  }
+  
+  .character-item-card {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  /* Character Stats Mobile */
+  .character-stats {
+    gap: 0.75rem;
+  }
+  
+  .character-stat-row {
+    height: 18px;
+    margin-bottom: 0.5rem;
+  }
+  
+  .character-stat-bar {
+    height: 5px;
+  }
+  
+  /* Character Status Mobile */
+  .character-status {
+    padding: 0.15rem 0.4rem;
+  }
+  
+  .character-status-text {
+    font-size: 0.65rem;
+  }
+  
+  /* Character Loading Mobile */
+  .character-loading {
+    padding: 1.5rem;
+  }
+  
+  .character-loading i {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .character-loading p {
+    font-size: 1rem;
+  }
+  
+  .character-results-info {
+    margin: 0.75rem 1rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Character Grid Extra Small */
+  .characters-grid {
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+  
+  .character-details-grid {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Character Header Extra Small */
+  .character-header {
+    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+  }
+  
+  .character-name {
+    font-size: 1.1rem;
+  }
+  
+  .character-avatar {
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
+  }
+  
+  /* Character Content Extra Small */
+  .character-content {
+    padding: 0.75rem 1rem 1.25rem;
+  }
+  
+  .character-section {
+    margin: 0.6rem 0 0.4rem;
+  }
+  
+  .character-section-title {
+    font-size: 0.75rem;
+    margin-bottom: 0.4rem;
+  }
+  
+  /* Character Details Extra Small */
+  .character-detail-list {
+    gap: 0.3rem;
+    margin-bottom: 0.6rem;
+  }
+  
+  .character-detail-label {
+    font-size: 0.7rem;
+  }
+  
+  .character-detail-value {
+    font-size: 0.75rem;
+    padding: 0.1rem 0.5rem;
+  }
+  
+  /* Character Race Job Row Extra Small */
+  .character-race-job-row {
+    font-size: 0.8rem;
+    margin: 0.1rem 0 0.25rem 0;
+  }
+  
+  /* Character Owner Extra Small */
+  .character-owner {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+  }
+  
+  /* Character Links Extra Small */
+  .character-links {
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+  }
+  
+  .character-link {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.25rem;
+  }
+  
+  /* Character Modal Extra Small */
+  .character-modal-content {
+    width: 98%;
+    max-height: 95vh;
+  }
+  
+  .character-modal-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .character-modal-body {
+    padding: 1rem;
+  }
+  
+  .character-modal-section h3 {
+    font-size: 1rem;
+    margin-bottom: 0.6rem;
+  }
+  
+  .character-modal-grid {
+    gap: 0.6rem;
+  }
+  
+  .character-modal-item {
+    padding: 0.5rem 0.6rem;
+  }
+  
+  .character-modal-item .label {
+    font-size: 0.75rem;
+  }
+  
+  .character-modal-item .value {
+    font-size: 0.75rem;
+    max-width: 75%;
+  }
+  
+  .character-modal-links a {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+  }
+  
+  /* Character Inventory Extra Small */
+  .character-inventory-header {
+    padding: 0.75rem;
+    gap: 0.6rem;
+  }
+  
+  .character-inventory-info .character-avatar {
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 1.25rem !important;
+  }
+  
+  .character-inventory-name {
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  /* Character Inventory Stats Extra Small */
+  .character-inventory-stats {
+    gap: 0.3rem;
+    padding: 0.3rem 0;
+    margin-bottom: 0.5rem;
+  }
+  
+  .character-inventory-stats .inventory-stat-item {
+    padding: 0.5rem 0.7rem;
+    font-size: 0.8rem;
+  }
+  
+  .character-inventory-content.expanded {
+    padding: 0.75rem 0.75rem 1.25rem;
+  }
+  
+  /* Character Items Grid Extra Small */
+  .character-items-grid {
+    gap: 0.75rem;
+    padding-bottom: 0.6rem;
+  }
+  
+  .character-item-card {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+  
+  /* Character Stats Extra Small */
+  .character-stats {
+    gap: 0.6rem;
+  }
+  
+  .character-stat-row {
+    height: 16px;
+    margin-bottom: 0.4rem;
+  }
+  
+  .character-stat-bar {
+    height: 4px;
+  }
+  
+  /* Character Status Extra Small */
+  .character-status {
+    padding: 0.1rem 0.3rem;
+  }
+  
+  .character-status-text {
+    font-size: 0.6rem;
+  }
+  
+  /* Character Loading Extra Small */
+  .character-loading {
+    padding: 1rem;
+  }
+  
+  .character-loading i {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .character-loading p {
+    font-size: 0.9rem;
+  }
+  
+  .character-results-info {
+    margin: 0.5rem 0.75rem;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Character Grid Small */
+  .characters-grid {
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+  
+  .character-details-grid {
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Character Header Small */
+  .character-header {
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem;
+  }
+  
+  .character-name {
+    font-size: 1rem;
+  }
+  
+  .character-avatar {
+    width: 45px;
+    height: 45px;
+    font-size: 1.1rem;
+  }
+  
+  /* Character Content Small */
+  .character-content {
+    padding: 0.5rem 0.75rem 1rem;
+  }
+  
+  .character-section {
+    margin: 0.5rem 0 0.3rem;
+  }
+  
+  .character-section-title {
+    font-size: 0.7rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  /* Character Details Small */
+  .character-detail-list {
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .character-detail-label {
+    font-size: 0.65rem;
+  }
+  
+  .character-detail-value {
+    font-size: 0.7rem;
+    padding: 0.08rem 0.4rem;
+  }
+  
+  /* Character Race Job Row Small */
+  .character-race-job-row {
+    font-size: 0.75rem;
+    margin: 0.08rem 0 0.2rem 0;
+  }
+  
+  /* Character Owner Small */
+  .character-owner {
+    font-size: 0.65rem;
+    padding: 0.08rem 0.25rem;
+  }
+  
+  /* Character Links Small */
+  .character-links {
+    gap: 0.2rem;
+    margin-top: 0.2rem;
+  }
+  
+  .character-link {
+    font-size: 0.65rem;
+    padding: 0.08rem 0.2rem;
+  }
+  
+  /* Character Modal Small */
+  .character-modal-content {
+    width: 100%;
+    max-height: 100vh;
+  }
+  
+  .character-modal-header {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .character-modal-body {
+    padding: 0.75rem;
+  }
+  
+  .character-modal-section h3 {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .character-modal-grid {
+    gap: 0.5rem;
+  }
+  
+  .character-modal-item {
+    padding: 0.4rem 0.5rem;
+  }
+  
+  .character-modal-item .label {
+    font-size: 0.7rem;
+  }
+  
+  .character-modal-item .value {
+    font-size: 0.7rem;
+    max-width: 80%;
+  }
+  
+  .character-modal-links a {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Character Inventory Small */
+  .character-inventory-header {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  .character-inventory-info .character-avatar {
+    width: 45px !important;
+    height: 45px !important;
+    font-size: 1.1rem !important;
+  }
+  
+  .character-inventory-name {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  /* Character Inventory Stats Small */
+  .character-inventory-stats {
+    gap: 0.25rem;
+    padding: 0.25rem 0;
+    margin-bottom: 0.4rem;
+  }
+  
+  .character-inventory-stats .inventory-stat-item {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+  
+  .character-inventory-content.expanded {
+    padding: 0.5rem 0.5rem 1rem;
+  }
+  
+  /* Character Items Grid Small */
+  .character-items-grid {
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  .character-item-card {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  /* Character Stats Small */
+  .character-stats {
+    gap: 0.5rem;
+  }
+  
+  .character-stat-row {
+    height: 14px;
+    margin-bottom: 0.3rem;
+  }
+  
+  .character-stat-bar {
+    height: 3px;
+  }
+  
+  /* Character Status Small */
+  .character-status {
+    padding: 0.08rem 0.25rem;
+  }
+  
+  .character-status-text {
+    font-size: 0.55rem;
+  }
+  
+  /* Character Loading Small */
+  .character-loading {
+    padding: 0.75rem;
+  }
+  
+  .character-loading i {
+    font-size: 1rem;
+    margin-bottom: 0.4rem;
+  }
+  
+  .character-loading p {
+    font-size: 0.8rem;
+  }
+  
+  .character-results-info {
+    margin: 0.4rem 0.5rem;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+  .character-card {
+    min-height: 60px;
+  }
+  
+  .character-card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  .character-inventory-header:active {
+    background: rgba(255, 255, 255, 0.12);
+  }
+  
+  .character-item-card:active {
+    transform: translateY(-3px) scale(1.01);
+  }
+  
+  .character-modal-item:active {
+    transform: translateY(-0.5px);
+  }
+  
+  .character-modal-links a:active {
+    transform: translateY(-1px);
+  }
+}
+
+/* Landscape mobile optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .characters-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .character-details-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .character-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .character-name {
+    font-size: 1.1rem;
+  }
+  
+  .character-avatar {
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
+  }
+  
+  .character-content {
+    padding: 0.75rem 1rem 1.25rem;
+  }
+  
+  .character-modal-content {
+    max-height: 80vh;
   }
 }
 

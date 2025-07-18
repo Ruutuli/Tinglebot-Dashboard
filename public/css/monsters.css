@@ -291,28 +291,6 @@
   background-color: #ffc766 !important;
 }
 
-/* ============================================================================
-   Responsive Adjustments
-============================================================================ */
-
-@media (max-width: 768px) {
-  .monster-details-grid {
-    gap: 16px;
-    grid-template-columns: 1fr;
-  }
-
-  .monster-card {
-    min-height: auto;
-    padding: 16px;
-  }
-
-  .monster-header {
-    flex-direction: column;
-    gap: 12px;
-    text-align: center;
-  }
-}
-
 /* =============================================================================
    Monster Cards - Flip Functionality
 ============================================================================= */
@@ -511,32 +489,6 @@
   background: var(--botw-dark-blue);
 }
 
-/* ============================================================================
-   Mobile Responsive - Flip Card
-============================================================================ */
-
-@media (max-width: 768px) {
-  .model-details-item.monster-card {
-    padding: 1rem;
-  }
-
-  .monster-header {
-    gap: 0.75rem;
-  }
-
-  .monster-image {
-    height: 50px;
-    width: 50px;
-  }
-
-  .monster-name {
-    font-size: 1.1rem;
-  }
-
-  .monster-card-back {
-    padding: 1rem;
-  }
-}
 
 /* ============================================================================
    Loot Item Image
@@ -584,12 +536,6 @@
   justify-content: center;
 }
 
-@media (max-width: 768px) {
-  .loot-item-image {
-    width: 35px;
-    height: 35px;
-  }
-}
 
 /* ============================================================================
    Monster Loot Section Wrappers
@@ -723,12 +669,7 @@
   background: var(--botw-dark-blue);
 }
 
-/* Mobile Responsive Adjustments */
-@media (max-width: 768px) {
-  .monster-loot-list {
-    max-height: 300px;
-  }
-}
+
 
 /* ============================================================================
    Loot Count Badge
@@ -750,4 +691,767 @@
 
 .loot-count strong {
   color: var(--text-primary);
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVE STYLES
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .monster-details-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .monster-card {
+    padding: 1.25rem;
+    gap: 1.25rem;
+  }
+  
+  .model-details-item.monster-card {
+    padding: 1.25rem;
+  }
+  
+  .monster-image {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .monster-image img {
+    width: 85%;
+    height: 85%;
+  }
+  
+  .monster-name {
+    font-size: 1.3rem;
+  }
+  
+  .monster-species {
+    font-size: 0.9rem;
+  }
+  
+  .monster-type {
+    font-size: 0.85rem;
+    padding: 0.25rem 0.6rem;
+  }
+  
+  .monster-stats {
+    gap: 0.75rem;
+  }
+  
+  .stat-row {
+    height: 20px;
+    margin-bottom: 0.5rem;
+  }
+  
+  .stat-label {
+    font-size: 0.85rem;
+  }
+  
+  .stat-value {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Monster Grid Mobile */
+  .monster-details-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Monster Card Mobile */
+  .monster-card {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  .model-details-item.monster-card {
+    padding: 1rem;
+  }
+  
+  /* Monster Header Mobile */
+  .monster-header {
+    gap: 0.75rem;
+  }
+  
+  /* Monster Image Mobile */
+  .monster-image {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .monster-image img {
+    width: 80%;
+    height: 80%;
+  }
+  
+  /* Monster Title Mobile */
+  .monster-title {
+    gap: 0.5rem;
+  }
+  
+  .monster-name {
+    font-size: 1.1rem;
+  }
+  
+  .monster-species {
+    font-size: 0.8rem;
+  }
+  
+  .monster-type {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.4rem;
+  }
+  
+  /* Monster Stats Mobile */
+  .monster-stats {
+    gap: 0.6rem;
+  }
+  
+  .stat-row {
+    height: 18px;
+    margin-bottom: 0.4rem;
+  }
+  
+  .stat-label {
+    font-size: 0.8rem;
+    margin-right: 0.5rem;
+  }
+  
+  .stat-value {
+    font-size: 0.8rem;
+  }
+  
+  /* Blood Moon Indicator Mobile */
+  .bloodmoon-indicator {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+  }
+  
+  /* Monster Section Mobile */
+  .monster-section {
+    margin: 0.75rem 0 0.5rem;
+  }
+  
+  .section-title {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.15rem;
+  }
+  
+  /* Monster Locations Mobile */
+  .monster-locations,
+  .monster-jobs {
+    gap: 0.4rem;
+  }
+  
+  .monster-location-tag,
+  .monster-job-tag {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+  }
+  
+  /* Monster Card Back Mobile */
+  .monster-card-back {
+    padding: 1rem;
+  }
+  
+  .monster-card-back::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .monster-card-back::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .monster-card-back::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+  }
+  
+  .monster-card-back::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+  
+  /* Loot Item Image Mobile */
+  .loot-item-image {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .loot-item-image img {
+    width: 85%;
+    height: 85%;
+  }
+  
+  .loot-item-emoji-img {
+    width: 85%;
+    height: 85%;
+  }
+  
+  .loot-item-emoji {
+    font-size: 1.2rem;
+  }
+  
+  /* Monster Loot Section Mobile */
+  .monster-loot-section {
+    margin-bottom: 0.75rem;
+  }
+  
+  .monster-loot-title {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .monster-loot-empty {
+    padding: 0.75rem;
+  }
+  
+  .monster-loot-empty i {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .monster-loot-empty p {
+    font-size: 0.85rem;
+  }
+  
+  /* Loot Item Card Mobile */
+  .loot-item-card {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+  
+  .loot-item-info {
+    gap: 0.4rem;
+  }
+  
+  .loot-item-name {
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  .loot-item-category {
+    font-size: 0.7rem;
+  }
+  
+  .loot-item-prices {
+    gap: 0.4rem;
+  }
+  
+  .loot-item-buy,
+  .loot-item-sell {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+  }
+  
+  /* Monster Loot List Mobile */
+  .monster-loot-list {
+    gap: 0.5rem;
+    max-height: 200px;
+  }
+  
+  .monster-loot-list::-webkit-scrollbar {
+    width: 3px;
+  }
+  
+  .monster-loot-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .monster-loot-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 1.5px;
+  }
+  
+  .monster-loot-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+  
+  /* Loot Count Mobile */
+  .loot-count {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+  }
+  
+  .loot-count i {
+    font-size: 0.65rem;
+  }
+  
+  .loot-count strong {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Monster Grid Extra Small */
+  .monster-details-grid {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Monster Card Extra Small */
+  .monster-card {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+  
+  .model-details-item.monster-card {
+    padding: 0.75rem;
+  }
+  
+  /* Monster Header Extra Small */
+  .monster-header {
+    gap: 0.6rem;
+  }
+  
+  /* Monster Image Extra Small */
+  .monster-image {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .monster-image img {
+    width: 75%;
+    height: 75%;
+  }
+  
+  /* Monster Title Extra Small */
+  .monster-title {
+    gap: 0.4rem;
+  }
+  
+  .monster-name {
+    font-size: 1rem;
+  }
+  
+  .monster-species {
+    font-size: 0.75rem;
+  }
+  
+  .monster-type {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+  }
+  
+  /* Monster Stats Extra Small */
+  .monster-stats {
+    gap: 0.5rem;
+  }
+  
+  .stat-row {
+    height: 16px;
+    margin-bottom: 0.3rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+    margin-right: 0.4rem;
+  }
+  
+  .stat-value {
+    font-size: 0.75rem;
+  }
+  
+  /* Blood Moon Indicator Extra Small */
+  .bloodmoon-indicator {
+    font-size: 0.65rem;
+    padding: 0.08rem 0.25rem;
+  }
+  
+  /* Monster Section Extra Small */
+  .monster-section {
+    margin: 0.6rem 0 0.4rem;
+  }
+  
+  .section-title {
+    font-size: 0.75rem;
+    margin-bottom: 0.4rem;
+    padding-bottom: 0.1rem;
+  }
+  
+  /* Monster Locations Extra Small */
+  .monster-locations,
+  .monster-jobs {
+    gap: 0.3rem;
+  }
+  
+  .monster-location-tag,
+  .monster-job-tag {
+    font-size: 0.65rem;
+    padding: 0.08rem 0.3rem;
+  }
+  
+  /* Monster Card Back Extra Small */
+  .monster-card-back {
+    padding: 0.75rem;
+  }
+  
+  /* Loot Item Image Extra Small */
+  .loot-item-image {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .loot-item-image img {
+    width: 80%;
+    height: 80%;
+  }
+  
+  .loot-item-emoji-img {
+    width: 80%;
+    height: 80%;
+  }
+  
+  .loot-item-emoji {
+    font-size: 1rem;
+  }
+  
+  /* Monster Loot Section Extra Small */
+  .monster-loot-section {
+    margin-bottom: 0.6rem;
+  }
+  
+  .monster-loot-title {
+    font-size: 0.75rem;
+    margin-bottom: 0.4rem;
+  }
+  
+  .monster-loot-empty {
+    padding: 0.6rem;
+  }
+  
+  .monster-loot-empty i {
+    font-size: 1rem;
+    margin-bottom: 0.4rem;
+  }
+  
+  .monster-loot-empty p {
+    font-size: 0.8rem;
+  }
+  
+  /* Loot Item Card Extra Small */
+  .loot-item-card {
+    padding: 0.6rem;
+    gap: 0.6rem;
+  }
+  
+  .loot-item-info {
+    gap: 0.3rem;
+  }
+  
+  .loot-item-name {
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .loot-item-category {
+    font-size: 0.65rem;
+  }
+  
+  .loot-item-prices {
+    gap: 0.3rem;
+  }
+  
+  .loot-item-buy,
+  .loot-item-sell {
+    font-size: 0.65rem;
+    padding: 0.08rem 0.25rem;
+  }
+  
+  /* Monster Loot List Extra Small */
+  .monster-loot-list {
+    gap: 0.4rem;
+    max-height: 180px;
+  }
+  
+  /* Loot Count Extra Small */
+  .loot-count {
+    font-size: 0.65rem;
+    padding: 0.08rem 0.25rem;
+  }
+  
+  .loot-count i {
+    font-size: 0.6rem;
+  }
+  
+  .loot-count strong {
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Monster Grid Small */
+  .monster-details-grid {
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Monster Card Small */
+  .monster-card {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  .model-details-item.monster-card {
+    padding: 0.5rem;
+  }
+  
+  /* Monster Header Small */
+  .monster-header {
+    gap: 0.5rem;
+  }
+  
+  /* Monster Image Small */
+  .monster-image {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .monster-image img {
+    width: 70%;
+    height: 70%;
+  }
+  
+  /* Monster Title Small */
+  .monster-title {
+    gap: 0.3rem;
+  }
+  
+  .monster-name {
+    font-size: 0.9rem;
+  }
+  
+  .monster-species {
+    font-size: 0.7rem;
+  }
+  
+  .monster-type {
+    font-size: 0.65rem;
+    padding: 0.06rem 0.25rem;
+  }
+  
+  /* Monster Stats Small */
+  .monster-stats {
+    gap: 0.4rem;
+  }
+  
+  .stat-row {
+    height: 14px;
+    margin-bottom: 0.25rem;
+  }
+  
+  .stat-label {
+    font-size: 0.7rem;
+    margin-right: 0.3rem;
+  }
+  
+  .stat-value {
+    font-size: 0.7rem;
+  }
+  
+  /* Blood Moon Indicator Small */
+  .bloodmoon-indicator {
+    font-size: 0.6rem;
+    padding: 0.06rem 0.2rem;
+  }
+  
+  /* Monster Section Small */
+  .monster-section {
+    margin: 0.5rem 0 0.3rem;
+  }
+  
+  .section-title {
+    font-size: 0.7rem;
+    margin-bottom: 0.3rem;
+    padding-bottom: 0.08rem;
+  }
+  
+  /* Monster Locations Small */
+  .monster-locations,
+  .monster-jobs {
+    gap: 0.25rem;
+  }
+  
+  .monster-location-tag,
+  .monster-job-tag {
+    font-size: 0.6rem;
+    padding: 0.06rem 0.25rem;
+  }
+  
+  /* Monster Card Back Small */
+  .monster-card-back {
+    padding: 0.5rem;
+  }
+  
+  /* Loot Item Image Small */
+  .loot-item-image {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .loot-item-image img {
+    width: 75%;
+    height: 75%;
+  }
+  
+  .loot-item-emoji-img {
+    width: 75%;
+    height: 75%;
+  }
+  
+  .loot-item-emoji {
+    font-size: 0.9rem;
+  }
+  
+  /* Monster Loot Section Small */
+  .monster-loot-section {
+    margin-bottom: 0.5rem;
+  }
+  
+  .monster-loot-title {
+    font-size: 0.7rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  .monster-loot-empty {
+    padding: 0.5rem;
+  }
+  
+  .monster-loot-empty i {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  .monster-loot-empty p {
+    font-size: 0.75rem;
+  }
+  
+  /* Loot Item Card Small */
+  .loot-item-card {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  .loot-item-info {
+    gap: 0.25rem;
+  }
+  
+  .loot-item-name {
+    font-size: 0.75rem;
+    margin-bottom: 0.2rem;
+  }
+  
+  .loot-item-category {
+    font-size: 0.6rem;
+  }
+  
+  .loot-item-prices {
+    gap: 0.25rem;
+  }
+  
+  .loot-item-buy,
+  .loot-item-sell {
+    font-size: 0.6rem;
+    padding: 0.06rem 0.2rem;
+  }
+  
+  /* Monster Loot List Small */
+  .monster-loot-list {
+    gap: 0.3rem;
+    max-height: 160px;
+  }
+  
+  /* Loot Count Small */
+  .loot-count {
+    font-size: 0.6rem;
+    padding: 0.06rem 0.2rem;
+  }
+  
+  .loot-count i {
+    font-size: 0.55rem;
+  }
+  
+  .loot-count strong {
+    font-size: 0.6rem;
+  }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+  .monster-card {
+    min-height: 60px;
+  }
+  
+  .monster-card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  .monster-location-tag:active,
+  .monster-job-tag:active {
+    transform: scale(0.95);
+  }
+  
+  .loot-item-card:active {
+    transform: scale(0.98);
+  }
+  
+  .loot-item-buy:active,
+  .loot-item-sell:active {
+    transform: scale(0.95);
+  }
+}
+
+/* Landscape mobile optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .monster-details-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .monster-card {
+    padding: 0.75rem;
+  }
+  
+  .model-details-item.monster-card {
+    padding: 0.75rem;
+  }
+  
+  .monster-name {
+    font-size: 1rem;
+  }
+  
+  .monster-image {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .monster-image img {
+    width: 75%;
+    height: 75%;
+  }
+  
+  .monster-type {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+  }
+  
+  .monster-stats {
+    gap: 0.5rem;
+  }
+  
+  .stat-row {
+    height: 16px;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+  }
+  
+  .stat-value {
+    font-size: 0.75rem;
+  }
 }

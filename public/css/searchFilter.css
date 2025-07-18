@@ -416,53 +416,532 @@ select:focus {
   padding: 32px 0;
 }
 
-/* ============================================================================
-   Mobile Optimizations
-============================================================================ */
+
+/* ==========================================================================
+   ENHANCED MOBILE RESPONSIVE STYLES
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  /* Filter Bar Tablet */
+  .search-filter-bar,
+  .character-item-filter-bar,
+  .village-shop-filters,
+  .command-filters {
+    padding: 0.8rem;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  /* Filter Controls Tablet */
+  .search-filter-control {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  
+  .search-filter-control input,
+  .search-filter-control select {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  /* Clear Button Tablet */
+  .clear-filters-btn,
+  .character-item-clear-filters {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+  }
+  
+  /* Search Input Wrapper Tablet */
+  .search-input-wrapper {
+    max-width: 350px;
+  }
+  
+  /* Filter Controls Tablet */
+  .filter-controls {
+    gap: 0.3rem;
+  }
+  
+  .filter-controls select {
+    min-width: 120px;
+  }
+  
+  /* Results Info Tablet */
+  .village-shop-results-info,
+  .commands-results-info,
+  .monster-results-info {
+    margin: 1.25rem 1rem;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.85rem;
+  }
+  
+  .commands-results-info p {
+    font-size: 0.9rem;
+    gap: 0.5rem;
+  }
+  
+  .commands-results-info i {
+    font-size: 1rem;
+    padding: 0.4rem;
+  }
+  
+  /* Category Filters Tablet */
+  .category-filters {
+    gap: 0.5rem;
+  }
+  
+  .category-filter {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+    gap: 0.4rem;
+  }
+  
+  .category-filter i {
+    font-size: 0.9rem;
+  }
+}
+
 @media (max-width: 768px) {
+  /* Filter Bar Mobile */
   .search-filter-bar,
   .character-item-filter-bar,
   .village-shop-filters,
   .command-filters {
     flex-direction: column;
+    align-items: stretch;
     gap: 0.6rem;
     padding: 0.8rem;
+    margin-bottom: 1rem;
   }
   
+  /* Filter Controls Mobile */
   .search-filter-control {
-    max-width: none;
     width: 100%;
+    max-width: none;
+    flex: none;
   }
   
   .search-filter-control.search-input {
     max-width: none;
   }
   
+  .search-filter-control input,
+  .search-filter-control select {
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+  }
+  
+  .search-filter-control input {
+    padding-left: 2.5rem;
+  }
+  
+  .search-filter-control select {
+    padding-right: 2.25rem;
+  }
+  
+  /* Clear Button Mobile */
   .clear-filters-btn,
   .character-item-clear-filters {
     width: 100%;
-    margin-top: 0.5rem;
+    margin-top: 0.4rem;
+    padding: 0.7rem 1.2rem;
+    font-size: 0.85rem;
+  }
+  
+  /* Search Input Wrapper Mobile */
+  .search-input-wrapper {
+    max-width: none;
+    width: 100%;
+  }
+  
+  #commands-search,
+  #search-input {
+    padding: 0.7rem 1rem 0.7rem 2.25rem;
+    font-size: 0.85rem;
+  }
+  
+  .search-input-wrapper i {
+    left: 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Filter Controls Mobile */
+  .filter-controls {
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  .filter-controls select {
+    min-width: 0;
+    width: 100%;
+  }
+  
+  .filter-controls .clear-filters-btn {
+    width: 100%;
+  }
+  
+  /* Results Info Mobile */
+  .village-shop-results-info,
+  .commands-results-info,
+  .monster-results-info {
+    margin: 1rem 0.75rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .commands-results-info {
+    margin: 1.25rem 0;
+    padding: 0.75rem 1rem;
+  }
+  
+  .commands-results-info p {
+    font-size: 0.85rem;
+    gap: 0.4rem;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .commands-results-info i {
+    font-size: 0.9rem;
+    padding: 0.3rem;
+  }
+  
+  /* Category Filters Mobile */
+  .category-filters {
+    gap: 0.4rem;
+    justify-content: center;
+  }
+  
+  .category-filter {
+    padding: 0.5rem 0.7rem;
+    font-size: 0.8rem;
+    gap: 0.3rem;
+  }
+  
+  .category-filter i {
+    font-size: 0.85rem;
+  }
+  
+  /* Monster Search Mobile */
+  .monster-search-input {
+    min-width: 0;
+    width: 100%;
+  }
+  
+  .monster-search-input input[type="text"] {
+    padding-left: 2.25rem;
+    font-size: 0.85rem;
+  }
+  
+  .monster-loading {
+    font-size: 1rem;
+    padding: 24px 0;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
+  /* Filter Bar Extra Small */
   .search-filter-bar,
   .character-item-filter-bar,
   .village-shop-filters,
   .command-filters {
     padding: 0.6rem;
     gap: 0.5rem;
+    margin-bottom: 0.75rem;
   }
   
+  /* Filter Controls Extra Small */
   .search-filter-control input,
   .search-filter-control select {
-    padding: 0.7rem 1rem;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  .search-filter-control input {
+    padding-left: 2.25rem;
+  }
+  
+  .search-filter-control select {
+    padding-right: 2rem;
+  }
+  
+  /* Clear Button Extra Small */
+  .clear-filters-btn,
+  .character-item-clear-filters {
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+    margin-top: 0.3rem;
+  }
+  
+  /* Search Input Wrapper Extra Small */
+  #commands-search,
+  #search-input {
+    padding: 0.6rem 0.8rem 0.6rem 2rem;
+    font-size: 0.8rem;
+  }
+  
+  .search-input-wrapper i {
+    left: 0.6rem;
+    font-size: 0.75rem;
+  }
+  
+  /* Filter Controls Extra Small */
+  .filter-controls {
+    gap: 0.4rem;
+  }
+  
+  /* Results Info Extra Small */
+  .village-shop-results-info,
+  .commands-results-info,
+  .monster-results-info {
+    margin: 0.75rem 0.5rem;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.75rem;
+  }
+  
+  .commands-results-info {
+    margin: 1rem 0;
+    padding: 0.6rem 0.8rem;
+  }
+  
+  .commands-results-info p {
+    font-size: 0.8rem;
+    gap: 0.3rem;
+  }
+  
+  .commands-results-info i {
+    font-size: 0.85rem;
+    padding: 0.25rem;
+  }
+  
+  /* Category Filters Extra Small */
+  .category-filters {
+    gap: 0.3rem;
+  }
+  
+  .category-filter {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+    gap: 0.25rem;
+  }
+  
+  .category-filter i {
+    font-size: 0.8rem;
+  }
+  
+  /* Monster Search Extra Small */
+  .monster-search-input input[type="text"] {
+    padding-left: 2rem;
+    font-size: 0.8rem;
+  }
+  
+  .monster-loading {
     font-size: 0.9rem;
+    padding: 20px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Filter Bar Small */
+  .search-filter-bar,
+  .character-item-filter-bar,
+  .village-shop-filters,
+  .command-filters {
+    padding: 0.5rem;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Filter Controls Small */
+  .search-filter-control input,
+  .search-filter-control select {
+    padding: 0.5rem 0.7rem;
+    font-size: 0.75rem;
+  }
+  
+  .search-filter-control input {
+    padding-left: 2rem;
+  }
+  
+  .search-filter-control select {
+    padding-right: 1.75rem;
+  }
+  
+  /* Clear Button Small */
+  .clear-filters-btn,
+  .character-item-clear-filters {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+  }
+  
+  /* Search Input Wrapper Small */
+  #commands-search,
+  #search-input {
+    padding: 0.5rem 0.7rem 0.5rem 1.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .search-input-wrapper i {
+    left: 0.5rem;
+    font-size: 0.7rem;
+  }
+  
+  /* Filter Controls Small */
+  .filter-controls {
+    gap: 0.3rem;
+  }
+  
+  /* Results Info Small */
+  .village-shop-results-info,
+  .commands-results-info,
+  .monster-results-info {
+    margin: 0.5rem 0.4rem;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.7rem;
+  }
+  
+  .commands-results-info {
+    margin: 0.75rem 0;
+    padding: 0.5rem 0.6rem;
+  }
+  
+  .commands-results-info p {
+    font-size: 0.75rem;
+    gap: 0.25rem;
+  }
+  
+  .commands-results-info i {
+    font-size: 0.8rem;
+    padding: 0.2rem;
+  }
+  
+  /* Category Filters Small */
+  .category-filters {
+    gap: 0.25rem;
+  }
+  
+  .category-filter {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.7rem;
+    gap: 0.2rem;
+  }
+  
+  .category-filter i {
+    font-size: 0.75rem;
+  }
+  
+  /* Monster Search Small */
+  .monster-search-input input[type="text"] {
+    padding-left: 1.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .monster-loading {
+    font-size: 0.85rem;
+    padding: 16px 0;
+  }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+  .search-filter-control input,
+  .search-filter-control select {
+    min-height: 44px;
   }
   
   .clear-filters-btn,
   .character-item-clear-filters {
-    padding: 0.7rem 1.2rem;
-    font-size: 0.9rem;
+    min-height: 44px;
+  }
+  
+  .category-filter {
+    min-height: 44px;
+  }
+  
+  .search-filter-control input:active,
+  .search-filter-control select:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  .clear-filters-btn:active,
+  .character-item-clear-filters:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+  }
+  
+  .category-filter:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* Landscape mobile optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .search-filter-bar,
+  .character-item-filter-bar,
+  .village-shop-filters,
+  .command-filters {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.6rem;
+  }
+  
+  .search-filter-control {
+    flex: 1 1 auto;
+    min-width: 150px;
+  }
+  
+  .clear-filters-btn,
+  .character-item-clear-filters {
+    flex: 0 0 auto;
+    width: auto;
+    margin-top: 0;
+  }
+  
+  .filter-controls {
+    flex-direction: row;
+    gap: 0.4rem;
+  }
+  
+  .filter-controls select {
+    min-width: 120px;
+  }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .search-filter-control input,
+  .search-filter-control select {
+    border-width: 0.5px;
+  }
+  
+  .search-filter-bar,
+  .character-item-filter-bar,
+  .village-shop-filters,
+  .command-filters {
+    border-width: 0.5px;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .search-filter-control input,
+  .search-filter-control select,
+  .clear-filters-btn,
+  .character-item-clear-filters,
+  .category-filter {
+    transition: none;
+  }
+  
+  .search-filter-control input:active,
+  .search-filter-control select:active,
+  .clear-filters-btn:active,
+  .character-item-clear-filters:active,
+  .category-filter:active {
+    transform: none;
   }
 }
