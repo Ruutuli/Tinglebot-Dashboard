@@ -1480,6 +1480,24 @@ app.get('/api/character-of-week', async (req, res) => {
       currentCharacter.characterId.icon = filename;
     }
     
+    // Calculate rotation information
+    const now = new Date();
+    const nextRotation = getNextSundayMidnight(currentCharacter.startDate);
+    const timeUntilRotation = nextRotation.getTime() - now.getTime();
+    
+    const daysUntilRotation = Math.floor(timeUntilRotation / (1000 * 60 * 60 * 24));
+    const hoursUntilRotation = Math.floor((timeUntilRotation % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const isSunday = now.getUTCDay() === 0;
+    
+    // Add rotation info to the response
+    currentCharacter.rotationInfo = {
+      nextRotation: nextRotation.toISOString(),
+      daysUntilRotation,
+      hoursUntilRotation,
+      isSunday,
+      timeUntilRotation
+    };
+    
     
     res.json({ data: currentCharacter });
   } catch (error) {
@@ -1516,9 +1534,9 @@ app.post('/api/character-of-week', requireAuth, async (req, res) => {
       { isActive: false }
     );
     
-    // Calculate end date (7 days from now)
+    // Calculate end date (next Sunday midnight)
     const startDate = new Date();
-    const endDate = new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+    const endDate = getNextSundayMidnight(startDate);
     
     // Create new character of the week
     const newCharacterOfWeek = new CharacterOfWeek({
@@ -1584,9 +1602,9 @@ app.post('/api/character-of-week/random', requireAuth, async (req, res) => {
       { isActive: false }
     );
     
-    // Calculate end date (7 days from now)
+    // Calculate end date (next Sunday midnight)
     const startDate = new Date();
-    const endDate = new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+    const endDate = getNextSundayMidnight(startDate);
     
     // Create new character of the week
     const newCharacterOfWeek = new CharacterOfWeek({
@@ -1641,9 +1659,9 @@ app.post('/api/character-of-week/trigger-first', requireAuth, async (req, res) =
     // Select random character
     const randomCharacter = characters[Math.floor(Math.random() * characters.length)];
     
-    // Calculate end date (7 days from now)
+    // Calculate end date (next Sunday midnight)
     const startDate = new Date();
-    const endDate = new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+    const endDate = getNextSundayMidnight(startDate);
     
     // Create new character of the week
     const newCharacterOfWeek = new CharacterOfWeek({
@@ -1672,60 +1690,106 @@ app.post('/api/character-of-week/trigger-first', requireAuth, async (req, res) =
 // ------------------- Function: setupWeeklyCharacterRotation -------------------
 // Sets up the weekly character rotation scheduler and initializes on server start
 const setupWeeklyCharacterRotation = async () => {
-
+  console.log('[server.js]: 🔄 Setting up weekly character rotation scheduler');
   
   // Check if there's already an active character of the week
   const existingCharacter = await CharacterOfWeek.findOne({ isActive: true });
   
   if (existingCharacter) {
-
+    console.log(`[server.js]: 📅 Found existing character of the week: ${existingCharacter.characterName}`);
     
-    // Check if the existing character has been active for more than 7 days
-    const now = new Date();
-    const daysActive = (now - existingCharacter.startDate) / (1000 * 60 * 60 * 24);
+    // Check if the existing character should be rotated based on Sunday midnight schedule
+    const shouldRotate = checkIfShouldRotate(existingCharacter.startDate);
     
-    if (daysActive >= 7) {
+    if (shouldRotate) {
+      console.log('[server.js]: 🔄 Rotating character of the week due to Sunday midnight schedule');
       await rotateCharacterOfWeek();
     } else {
+      console.log('[server.js]: ✅ Current character of the week is still valid');
     }
   } else {
+    console.log('[server.js]: 🔄 No active character of the week found, creating first one');
     await rotateCharacterOfWeek();
   }
   
-  // Setup weekly scheduler
-  const scheduleNextRotation = () => {
-    const now = new Date();
-    const nextWeek = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));
-    
-    
-    setTimeout(async () => {
-      try {
-        await rotateCharacterOfWeek();
-        
-        // Schedule next rotation
-        scheduleNextRotation();
-        
-      } catch (error) {
-        console.error('[server.js]: ❌ Error in weekly character rotation:', error);
-        // Schedule next rotation even if this one failed
-        scheduleNextRotation();
-      }
-    }, 7 * 24 * 60 * 60 * 1000); // 7 days
-  };
+  // Setup weekly scheduler for Sunday midnight EST
+  scheduleNextSundayMidnightRotation();
+};
+
+// ------------------- Function: checkIfShouldRotate -------------------
+// Checks if the character should be rotated based on Sunday midnight schedule
+const checkIfShouldRotate = (startDate) => {
+  const now = new Date();
+  const start = new Date(startDate);
   
-  // Start the scheduler
-  scheduleNextRotation();
+  // Get the next Sunday midnight EST from the start date
+  const nextSundayMidnight = getNextSundayMidnight(start);
   
+  // If current time is past the next Sunday midnight, rotate
+  return now >= nextSundayMidnight;
+};
+
+// ------------------- Function: getNextSundayMidnight -------------------
+// Gets the next Sunday midnight EST from a given date
+const getNextSundayMidnight = (fromDate) => {
+  const date = new Date(fromDate);
+  
+  // Set to EST timezone (UTC-5, or UTC-4 during daylight saving)
+  // For simplicity, we'll use UTC-5 (EST) - you may want to handle DST properly
+  const estOffset = -5 * 60 * 60 * 1000; // 5 hours in milliseconds
+  
+  // Get the day of week (0 = Sunday, 1 = Monday, etc.)
+  const dayOfWeek = date.getUTCDay();
+  
+  // Calculate days until next Sunday
+  const daysUntilSunday = dayOfWeek === 0 ? 7 : 7 - dayOfWeek;
+  
+  // Create the next Sunday midnight EST
+  const nextSunday = new Date(date);
+  nextSunday.setUTCDate(date.getUTCDate() + daysUntilSunday);
+  nextSunday.setUTCHours(5, 0, 0, 0); // 5 AM UTC = 12 AM EST
+  
+  return nextSunday;
+};
+
+// ------------------- Function: scheduleNextSundayMidnightRotation -------------------
+// Schedules the next rotation for Sunday midnight EST
+const scheduleNextSundayMidnightRotation = () => {
+  const now = new Date();
+  const nextSundayMidnight = getNextSundayMidnight(now);
+  
+  const timeUntilNextRotation = nextSundayMidnight.getTime() - now.getTime();
+  
+  console.log(`[server.js]: 📅 Next character rotation scheduled for: ${nextSundayMidnight.toLocaleString('en-US', { timeZone: 'America/New_York' })}`);
+  console.log(`[server.js]: ⏰ Time until next rotation: ${Math.floor(timeUntilNextRotation / (1000 * 60 * 60))} hours, ${Math.floor((timeUntilNextRotation % (1000 * 60 * 60)) / (1000 * 60))} minutes`);
+  
+  setTimeout(async () => {
+    try {
+      console.log('[server.js]: 🔄 Executing scheduled character rotation');
+      await rotateCharacterOfWeek();
+      
+      // Schedule the next rotation
+      scheduleNextSundayMidnightRotation();
+      
+    } catch (error) {
+      console.error('[server.js]: ❌ Error in scheduled weekly character rotation:', error);
+      // Schedule next rotation even if this one failed
+      scheduleNextSundayMidnightRotation();
+    }
+  }, timeUntilNextRotation);
 };
 
 // ------------------- Function: rotateCharacterOfWeek -------------------
 // Helper function to rotate the character of the week
 const rotateCharacterOfWeek = async () => {
   try {
+    console.log('[server.js]: 🔄 Starting character of the week rotation');
+    
     // Get all active characters
     const characters = await Character.find({}).lean();
     
     if (characters.length === 0) {
+      console.log('[server.js]: ⚠️ No characters found for rotation');
       return;
     }
     
@@ -1746,15 +1810,19 @@ const rotateCharacterOfWeek = async () => {
     // Select random character
     const randomCharacter = characterPool[Math.floor(Math.random() * characterPool.length)];
     
+    console.log(`[server.js]: 🎲 Selected character: ${randomCharacter.name}`);
+    
     // Deactivate current character of the week
     await CharacterOfWeek.updateMany(
       { isActive: true },
       { isActive: false }
     );
     
-    // Calculate end date (7 days from now)
+    // Calculate start and end dates based on Sunday midnight schedule
     const startDate = new Date();
-    const endDate = new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+    const endDate = getNextSundayMidnight(startDate);
+    
+    console.log(`[server.js]: 📅 Character will be active until: ${endDate.toLocaleString('en-US', { timeZone: 'America/New_York' })}`);
     
     // Create new character of the week
     const newCharacterOfWeek = new CharacterOfWeek({
@@ -1769,7 +1837,10 @@ const rotateCharacterOfWeek = async () => {
     
     await newCharacterOfWeek.save();
     
+    console.log(`[server.js]: ✅ Successfully rotated to new character of the week: ${randomCharacter.name}`);
+    
   } catch (error) {
+    console.error('[server.js]: ❌ Error in rotateCharacterOfWeek:', error);
     throw error;
   }
 };
@@ -1783,11 +1854,11 @@ app.post('/api/character-of-week/trigger-simple', async (req, res) => {
     const existingCharacter = await CharacterOfWeek.findOne({ isActive: true });
     if (existingCharacter) {
       
-      // Check if the existing character has been active for more than 7 days
-      const now = new Date();
-      const daysActive = (now - existingCharacter.startDate) / (1000 * 60 * 60 * 24);
+      // Check if the existing character should be rotated based on Sunday midnight schedule
+      const shouldRotate = checkIfShouldRotate(existingCharacter.startDate);
       
-      if (daysActive >= 7) {
+      if (shouldRotate) {
+        console.log('[server.js]: 🔄 Triggering rotation due to Sunday midnight schedule');
         await rotateCharacterOfWeek();
         const newCharacter = await CharacterOfWeek.findOne({ isActive: true }).populate('characterId');
         return res.json({ 
@@ -1795,9 +1866,13 @@ app.post('/api/character-of-week/trigger-simple', async (req, res) => {
           message: `Rotated character of the week: ${newCharacter.characterName}` 
         });
       } else {
+        const now = new Date();
+        const nextRotation = getNextSundayMidnight(existingCharacter.startDate);
+        const daysUntilRotation = (nextRotation - now) / (1000 * 60 * 60 * 24);
+        
         return res.json({ 
           data: existingCharacter,
-          message: `Character of the week already exists: ${existingCharacter.characterName} (${daysActive.toFixed(1)} days active)` 
+          message: `Character of the week already exists: ${existingCharacter.characterName} (${daysUntilRotation.toFixed(1)} days until Sunday midnight rotation)` 
         });
       }
     }
@@ -1820,6 +1895,7 @@ app.post('/api/character-of-week/trigger-simple', async (req, res) => {
       message: `Created character of the week: ${newCharacter.characterName}` 
     });
   } catch (error) { 
+    console.error('[server.js]: ❌ Error in triggerFirstCharacterOfWeekSimple:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -2497,3 +2573,33 @@ async function countSpiritOrbsBatch(characterNames) {
   
   return spiritOrbCounts;
 }
+
+// ------------------- Function: testSundayMidnightCalculation -------------------
+// Test endpoint to verify Sunday midnight calculation (for debugging)
+app.get('/api/test-sunday-midnight', async (req, res) => {
+  try {
+    const now = new Date();
+    const nextSunday = getNextSundayMidnight(now);
+    const timeUntilNext = nextSunday.getTime() - now.getTime();
+    
+    const result = {
+      currentTime: now.toISOString(),
+      currentTimeEST: now.toLocaleString('en-US', { timeZone: 'America/New_York' }),
+      nextSundayMidnight: nextSunday.toISOString(),
+      nextSundayMidnightEST: nextSunday.toLocaleString('en-US', { timeZone: 'America/New_York' }),
+      timeUntilNext: {
+        milliseconds: timeUntilNext,
+        hours: Math.floor(timeUntilNext / (1000 * 60 * 60)),
+        minutes: Math.floor((timeUntilNext % (1000 * 60 * 60)) / (1000 * 60)),
+        days: Math.floor(timeUntilNext / (1000 * 60 * 60 * 24))
+      },
+      currentDayOfWeek: now.getUTCDay(),
+      isSunday: now.getUTCDay() === 0
+    };
+    
+    res.json(result);
+  } catch (error) {
+    console.error('[server.js]: ❌ Error in test endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
