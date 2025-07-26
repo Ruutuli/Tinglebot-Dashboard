@@ -662,18 +662,59 @@ app.get('/api/stats/characters', async (req, res) => {
     });
 
     // Get characters per race
-    const perRaceAgg = await Character.aggregate([{ $group: { _id: "$race", count: { $sum: 1 } } }]);
+    const perRaceAgg = await Character.aggregate([
+      { 
+        $match: { 
+          race: { 
+            $exists: true, 
+            $ne: null, 
+            $ne: '',
+            $ne: 'undefined',
+            $ne: 'null',
+            $ne: 'Unknown',
+            $ne: 'unknown'
+          } 
+        } 
+      },
+      { $group: { _id: "$race", count: { $sum: 1 } } }
+    ]);
     const charactersPerRace = {};
-    perRaceAgg.forEach(r => charactersPerRace[r._id || 'Unknown'] = r.count);
+    perRaceAgg.forEach(r => {
+      if (r._id && 
+          r._id !== 'undefined' && 
+          r._id !== 'null' && 
+          r._id !== 'Unknown' && 
+          r._id !== 'unknown' &&
+          r._id !== undefined &&
+          r._id !== null &&
+          typeof r._id === 'string' &&
+          r._id.trim && r._id.trim() !== '') {
+        charactersPerRace[r._id] = r.count;
+      }
+    });
+
+
 
     // Get characters per job
     const perJobAgg = await Character.aggregate([
+      { $match: { job: { $exists: true, $ne: null, $ne: '' } } },
       { $project: { job: { $toLower: { $ifNull: ["$job", "unknown"] } } } },
       { $group: { _id: { $concat: [{ $toUpper: { $substr: ["$job", 0, 1] } }, { $substr: ["$job", 1, { $strLenCP: "$job" }] }] }, count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]);
     const charactersPerJob = {};
-    perJobAgg.forEach(r => charactersPerJob[r._id] = r.count);
+    perJobAgg.forEach(r => {
+      if (r._id && 
+          r._id !== 'undefined' && 
+          r._id !== 'null' && 
+          r._id !== 'unknown' && 
+          r._id !== 'Unknown' &&
+          r._id.trim && r._id.trim() !== '') {
+        charactersPerJob[r._id] = r.count;
+      }
+    });
+
+
 
     // Get upcoming birthdays
     const today = new Date();
@@ -800,13 +841,16 @@ app.get('/api/stats/characters', async (req, res) => {
       debuffedCount,
       debuffedCharacters,
       kodCharacters,
-      blightedCharacters
+      blightedCharacters,
+      timestamp: Date.now() // Add timestamp for cache busting
     });
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching character stats:', error);
     res.status(500).json({ error: 'Failed to fetch character stats' });
   }
 });
+
+
 
 // ------------------- Function: getCalendarData -------------------
 // Returns calendar data including Hyrulean calendar and Blood Moon dates

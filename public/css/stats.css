@@ -1168,3 +1168,186 @@
     font-size: 0.75rem;
   }
 }
+
+/* ============================================================================
+   Pie Chart Breakdown Styles
+============================================================================ */
+
+.pie-breakdown {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+  height: fit-content;
+  min-width: 200px;
+}
+
+.breakdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.breakdown-header h4 {
+  color: var(--botw-blue);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.breakdown-total {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: background 0.2s ease;
+}
+
+.breakdown-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.breakdown-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.breakdown-info {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.breakdown-label {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.breakdown-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+
+.breakdown-value {
+  color: var(--botw-white);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.breakdown-percentage {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.breakdown-empty {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 2rem;
+  font-style: italic;
+}
+
+/* Mobile responsive for pie chart breakdown */
+@media (max-width: 768px) {
+  .pie-breakdown {
+    padding: 1rem;
+    min-width: 150px;
+  }
+  
+  .breakdown-header h4 {
+    font-size: 1rem;
+  }
+  
+  .breakdown-total {
+    font-size: 0.8rem;
+  }
+  
+  .breakdown-item {
+    gap: 0.5rem;
+    padding: 0.4rem;
+  }
+  
+  .breakdown-color {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .breakdown-label {
+    font-size: 0.8rem;
+  }
+  
+  .breakdown-value {
+    font-size: 0.9rem;
+  }
+  
+  .breakdown-percentage {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .pie-breakdown {
+    padding: 0.75rem;
+    min-width: 120px;
+  }
+  
+  .breakdown-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .breakdown-header h4 {
+    font-size: 0.9rem;
+  }
+  
+  .breakdown-total {
+    font-size: 0.75rem;
+  }
+  
+  .breakdown-item {
+    gap: 0.4rem;
+    padding: 0.3rem;
+  }
+  
+  .breakdown-color {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .breakdown-label {
+    font-size: 0.75rem;
+  }
+  
+  .breakdown-value {
+    font-size: 0.8rem;
+  }
+  
+  .breakdown-percentage {
+    font-size: 0.65rem;
+  }
+}

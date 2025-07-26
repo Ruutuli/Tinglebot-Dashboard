@@ -169,51 +169,7 @@
   margin-right: 0.5rem;
 }
 
-/* --------------------------------------------------------------------------
-   Rotation Info & Notes
---------------------------------------------------------------------------- */
-.character-of-week-rotation-info {
-  position: relative;
-  z-index: 2;
-  margin: 1rem 0;
-  padding: 1rem;
-  border: 2px solid #FFD700;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.1));
-}
 
-.character-of-week-rotation-info i {
-  font-size: 1.1rem;
-  color: #FFD700;
-  margin-right: 0.5rem;
-}
-
-.character-of-week-rotation-info span {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #FFD700;
-}
-
-.rotation-schedule-note {
-  margin-top: 0.75rem;
-  padding: 0.5rem;
-  background: rgba(255, 215, 0, 0.1);
-  border-left: 3px solid #FFD700;
-  border-radius: 6px;
-}
-
-.rotation-schedule-note i {
-  font-size: 0.9rem;
-  color: #FFA500;
-  margin-right: 0.5rem;
-}
-
-.rotation-schedule-note span {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--botw-beige);
-  opacity: 0.9;
-}
 
 /* --------------------------------------------------------------------------
    CTA Links
