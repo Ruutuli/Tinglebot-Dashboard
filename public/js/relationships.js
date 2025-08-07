@@ -1566,14 +1566,16 @@ async function loadAvailableCharacters(preSelectedTargetId = null) {
       const option = document.createElement('option');
       option.value = character._id;
       
-      // Create display text with mod character information
-      let displayText = character.name;
+      // Create display text in format: Character name | Village
+      const homeVillage = character.homeVillage || 'Unknown Village';
+      // Capitalize first letter of village name
+      const capitalizedVillage = homeVillage.charAt(0).toUpperCase() + homeVillage.slice(1).toLowerCase();
+      let displayText = `${character.name} | ${capitalizedVillage}`;
+      
+      // Add mod indicator if it's a mod character
       if (character.isModCharacter) {
         const modTitle = character.modTitle || 'Mod';
-        const modType = character.modType || '';
-        displayText = `${character.name} (${modTitle}) - ${character.race} • ${character.job} • ${modType}`;
-      } else {
-        displayText = `${character.name} - ${character.race} • ${character.job}`;
+        displayText = `${character.name} (${modTitle}) | ${capitalizedVillage}`;
       }
       
       option.textContent = displayText;
