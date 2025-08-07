@@ -1812,7 +1812,7 @@ function drawRelationshipWebEdges() {
     
     if (edge.bidirectional) {
       // Bidirectional relationship - draw two separate lines with arrows
-      const lineOffset = 4; // Closer distance between lines
+      const lineOffset = 6; // Increased distance between lines for better visibility
       
       // Draw source to target line (left)
       const leftSourceX = edge.source.x - Math.cos(perpendicularAngle) * lineOffset;
@@ -1830,7 +1830,7 @@ function drawRelationshipWebEdges() {
       const rightTargetY = edge.target.y + Math.sin(perpendicularAngle) * lineOffset;
       
       drawRelationshipLine(rightSourceX, rightSourceY, rightTargetX, rightTargetY, edge.targetToSource.colors);
-      drawDirectionalArrow(rightTargetX, rightTargetY, lineAngle + Math.PI, edge.targetToSource.colors);
+      drawDirectionalArrow(rightSourceX, rightSourceY, lineAngle + Math.PI, edge.targetToSource.colors);
       
     } else {
       // Unidirectional relationship - draw single line with arrow
@@ -1863,7 +1863,7 @@ function drawRelationshipLine(startX, startY, endX, endY, colors) {
 }
 
 function drawDirectionalArrow(x, y, angle, color) {
-  const arrowLength = 10;
+  const arrowLength = 12;
   const arrowAngle = Math.PI / 6; // 30 degrees for sharper arrows
   
   // Position arrow right at the edge of the target node
