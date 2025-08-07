@@ -17,7 +17,12 @@ export const relationshipsModule = {
   saveRelationship,
   deleteRelationship,
   backToCharacterSelection,
-  closeModal
+  showAllRelationships,
+  loadAllRelationships,
+  showCharacterRelationshipsModal,
+  closeModal,
+  showRelationshipWeb,
+  backToRelationshipList
 };
 
 // Make module available globally
@@ -200,7 +205,8 @@ function hideAllStates() {
     'relationships-character-selection',
     'relationships-management',
     'relationships-loading',
-    'relationships-error'
+    'relationships-error',
+    'relationships-all-view'
   ];
   
   states.forEach(id => {
@@ -305,7 +311,25 @@ async function selectCharacter(character) {
   console.log('🎯 Selected character:', character.name);
   
   currentCharacter = character;
+  
+  // Update character information display
   document.getElementById('relationships-character-name').textContent = character.name;
+  
+  // Update character avatar
+  const avatarElement = document.getElementById('relationships-character-avatar');
+  avatarElement.src = formatCharacterIconUrl(character.icon);
+  avatarElement.alt = `${character.name}'s Avatar`;
+  
+  // Update character details
+  const raceJobElement = document.getElementById('relationships-character-race-job');
+  const villageElement = document.getElementById('relationships-character-village');
+  
+  const race = character.race || 'Unknown Race';
+  const job = character.job || 'Unknown Job';
+  const village = character.currentVillage || character.homeVillage || 'Unknown Village';
+  
+  raceJobElement.textContent = `${race} • ${job}`;
+  villageElement.textContent = village;
   
   hideAllStates();
   document.getElementById('relationships-management').style.display = 'block';
@@ -416,7 +440,6 @@ function renderRelationships() {
               <div class="relationship-item-types">
                 ${typesDisplay}
               </div>
-              ${relationship.notes ? `<div class="relationship-notes">${relationship.notes}</div>` : ''}
               ${relationship.isMutual ? '<div class="relationship-mutual"><i class="fas fa-sync-alt"></i> Mutual</div>' : ''}
               <div class="relationship-item-actions">
                 <button class="edit-relationship-btn" onclick="relationshipsModule.editRelationship('${relationship._id}')">
@@ -430,6 +453,30 @@ function renderRelationships() {
           `;
         }).join('')}
       </div>
+      ${(() => {
+        const relationshipsWithNotes = characterRelationships.filter(rel => rel.notes && rel.notes.trim());
+        if (relationshipsWithNotes.length === 0) return '';
+        
+        return `
+          <div class="relationship-notes-section">
+            <div class="relationship-notes-header">
+              <i class="fas fa-sticky-note"></i>
+              <h4>Relationship Notes</h4>
+            </div>
+            <div class="relationship-notes-content">
+              ${relationshipsWithNotes.map(relationship => {
+                return `
+                  <div class="relationship-note-item">
+                    <div class="relationship-note-text">
+                      ${relationship.notes}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      })()}
     `;
     
     relationshipsList.appendChild(groupCard);
@@ -512,6 +559,26 @@ function findCharacterById(characterId) {
     }
   }
   
+  // Handle ObjectId from MongoDB (if it's an object with toString method)
+  if (characterId && typeof characterId.toString === 'function') {
+    const idString = characterId.toString();
+    console.log('🔍 Converting ObjectId to string:', idString);
+    
+    // First check user characters
+    let character = userCharacters.find(c => c._id === idString);
+    if (character) {
+      console.log('✅ Found character in user characters:', character.name);
+      return character;
+    }
+    
+    // Then check all characters (if loaded)
+    character = allCharacters.find(c => c._id === idString);
+    if (character) {
+      console.log('✅ Found character in all characters:', character.name);
+      return character;
+    }
+  }
+  
   console.log('❌ Character not found. User characters count:', userCharacters.length);
   console.log('❌ All characters count:', allCharacters.length);
   console.log('❌ Sample user character IDs:', userCharacters.slice(0, 3).map(c => c._id));
@@ -525,6 +592,232 @@ function backToCharacterSelection() {
   currentCharacter = null;
   relationships = [];
   renderCharacterSelector();
+}
+
+// ============================================================================
+// ------------------- All Relationships View -------------------
+// ============================================================================
+async function showAllRelationships() {
+  console.log('🌍 Showing all relationships view');
+  hideAllStates();
+  document.getElementById('relationships-all-view').style.display = 'block';
+  await loadAllRelationships();
+}
+
+async function loadAllRelationships() {
+  console.log('🌍 Loading all relationships');
+  
+  try {
+    showLoadingState();
+    
+    // Fetch all relationships from the server
+    const response = await fetch('/api/relationships/all', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('🌍 All relationships data:', data);
+    
+    relationships = data.relationships || [];
+    allCharacters = data.characters || [];
+    
+    // Hide loading and show the all relationships view
+    hideAllStates();
+    document.getElementById('relationships-all-view').style.display = 'block';
+    
+    renderAllRelationships();
+    
+  } catch (error) {
+    console.error('❌ Error loading all relationships:', error);
+    showErrorState('Failed to load all relationships');
+  }
+}
+
+function renderAllRelationships() {
+  console.log('🌍 Rendering all relationships');
+  console.log('🌍 All characters count:', allCharacters.length);
+  console.log('🌍 Relationships count:', relationships.length);
+  
+  const container = document.getElementById('relationships-all-list');
+  if (!container) {
+    console.error('❌ Container not found for all relationships');
+    return;
+  }
+
+  console.log('🌍 Container found:', container);
+
+  // Group relationships by character
+  const relationshipsByCharacter = {};
+  
+  relationships.forEach(relationship => {
+    // Handle both populated character objects and character IDs
+    const characterId = relationship.characterId._id || relationship.characterId;
+    if (!relationshipsByCharacter[characterId]) {
+      relationshipsByCharacter[characterId] = [];
+    }
+    relationshipsByCharacter[characterId].push(relationship);
+  });
+
+  console.log('🌍 Relationships by character:', relationshipsByCharacter);
+
+  // Create character cards for ALL characters
+  const characterCards = allCharacters.map(character => {
+    const characterId = character._id;
+    const characterRelationships = relationshipsByCharacter[characterId] || [];
+    const hasRelationships = characterRelationships.length > 0;
+
+    console.log(`🌍 Creating card for ${character.name} (${characterId}) - has relationships: ${hasRelationships}`);
+
+    return `
+      <div class="all-relationships-character-card ${hasRelationships ? 'has-relationships' : 'no-relationships'}" onclick="relationshipsModule.showCharacterRelationshipsModal('${characterId}')">
+        <div class="all-relationships-character-info">
+          <img src="${formatCharacterIconUrl(character.icon)}" alt="${character.name}" class="all-relationships-character-avatar">
+          <div class="all-relationships-character-details">
+            <div class="all-relationships-character-name">${character.name}</div>
+            <div class="all-relationships-character-info-text">
+              ${(character.race || 'Unknown').charAt(0).toUpperCase() + (character.race || 'Unknown').slice(1)} • ${(character.job || 'Unknown').charAt(0).toUpperCase() + (character.job || 'Unknown').slice(1)} • ${(character.currentVillage || character.homeVillage || 'Unknown').charAt(0).toUpperCase() + (character.currentVillage || character.homeVillage || 'Unknown').slice(1)}
+            </div>
+          </div>
+        </div>
+        <div class="all-relationships-character-stats">
+          ${hasRelationships ? 
+            `<span class="relationship-count">${characterRelationships.length} relationship${characterRelationships.length !== 1 ? 's' : ''}</span>` : 
+            `<span class="no-relationships">No relationships</span>`
+          }
+          <i class="fas fa-chevron-right"></i>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  console.log('🌍 Character cards HTML length:', characterCards.length);
+  container.innerHTML = characterCards;
+  console.log('🌍 Container innerHTML set');
+}
+
+// ============================================================================
+// ------------------- Character Relationships Modal -------------------
+// ============================================================================
+function showCharacterRelationshipsModal(characterId) {
+  console.log('👤 Showing character relationships modal for:', characterId);
+  
+  // Find the character
+  const character = findCharacterById(characterId);
+  if (!character) {
+    console.error('❌ Character not found for modal:', characterId);
+    return;
+  }
+  
+  // Find all relationships for this character
+  const characterRelationships = relationships.filter(rel => {
+    const relCharacterId = rel.characterId._id || rel.characterId;
+    return relCharacterId === characterId;
+  });
+  
+  // Create modal if it doesn't exist
+  if (!document.getElementById('character-relationships-modal')) {
+    createCharacterRelationshipsModal();
+  }
+  
+  const modal = document.getElementById('character-relationships-modal');
+  const modalContent = modal.querySelector('.character-relationships-modal-content');
+  
+  // Populate modal content
+  modalContent.innerHTML = `
+    <div class="character-relationships-modal-header">
+      <div class="character-relationships-modal-character-info">
+        <img src="${formatCharacterIconUrl(character.icon)}" alt="${character.name}" class="character-relationships-modal-avatar">
+        <div class="character-relationships-modal-character-details">
+          <h3><i class="fas fa-heart"></i> ${character.name}</h3>
+          <p>${(character.race || 'Unknown').charAt(0).toUpperCase() + (character.race || 'Unknown').slice(1)} • ${(character.job || 'Unknown').charAt(0).toUpperCase() + (character.job || 'Unknown').slice(1)} • ${(character.currentVillage || character.homeVillage || 'Unknown').charAt(0).toUpperCase() + (character.currentVillage || character.homeVillage || 'Unknown').slice(1)}</p>
+        </div>
+      </div>
+      <button class="character-relationships-close-modal">&times;</button>
+    </div>
+    
+    <div class="character-relationships-modal-body">
+      ${characterRelationships.length === 0 ? `
+        <div class="empty-relationships">
+          <i class="fas fa-heart-broken"></i>
+          <h3>No Relationships</h3>
+          <p>${character.name} doesn't have any relationships recorded yet.</p>
+        </div>
+      ` : `
+        <div class="character-relationships-header">
+          <h4><i class="fas fa-users"></i> Relationships (${characterRelationships.length})</h4>
+        </div>
+        <div class="character-relationships-list">
+          ${characterRelationships.map(rel => {
+            const targetCharacter = rel.targetCharacterId._id ? rel.targetCharacterId : findCharacterById(rel.targetCharacterId);
+            if (!targetCharacter) return '';
+            
+            const relationshipTypes = rel.relationshipTypes || rel.types || [];
+            const typeLabels = relationshipTypes.map(type => {
+              const typeInfo = RELATIONSHIP_TYPES[type] || RELATIONSHIP_TYPES.OTHER;
+              return typeInfo.emoji + ' ' + typeInfo.label;
+            }).join(', ');
+            
+            return `
+              <div class="character-relationship-item">
+                <div class="character-relationship-target">
+                  <img src="${formatCharacterIconUrl(targetCharacter.icon)}" alt="${targetCharacter.name}" class="character-relationship-target-avatar">
+                  <div class="character-relationship-target-info">
+                    <div class="character-relationship-target-name">
+                      <i class="fas fa-user"></i> ${targetCharacter.name}
+                    </div>
+                    <div class="character-relationship-target-details">
+                      ${(targetCharacter.race || 'Unknown').charAt(0).toUpperCase() + (targetCharacter.race || 'Unknown').slice(1)} • ${(targetCharacter.job || 'Unknown').charAt(0).toUpperCase() + (targetCharacter.job || 'Unknown').slice(1)} • ${(targetCharacter.currentVillage || targetCharacter.homeVillage || 'Unknown').charAt(0).toUpperCase() + (targetCharacter.currentVillage || targetCharacter.homeVillage || 'Unknown').slice(1)}
+                    </div>
+                  </div>
+                </div>
+                <div class="character-relationship-details">
+                  ${typeLabels ? `<div class="character-relationship-types">${typeLabels}</div>` : ''}
+                  ${rel.isMutual ? '<div class="character-relationship-mutual"><i class="fas fa-sync-alt"></i> Mutual Relationship</div>' : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `}
+    </div>
+  `;
+  
+  // Show modal
+  modal.classList.add('active');
+  
+  // Setup close button
+  const closeBtn = modal.querySelector('.character-relationships-close-modal');
+  closeBtn.onclick = () => {
+    modal.classList.remove('active');
+  };
+  
+  // Close on backdrop click
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('active');
+    }
+  };
+}
+
+function createCharacterRelationshipsModal() {
+  const modal = document.createElement('div');
+  modal.id = 'character-relationships-modal';
+  modal.className = 'character-relationships-modal';
+  
+  modal.innerHTML = `
+    <div class="character-relationships-modal-content">
+      <!-- Content will be populated dynamically -->
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
 }
 
 // ============================================================================
@@ -855,6 +1148,21 @@ function formatCharacterIconUrl(icon) {
   return icon;
 }
 
+function loadCharacterImage(character) {
+  const characterId = character._id || character.id;
+  const iconUrl = formatCharacterIconUrl(character.icon);
+  
+  const img = new Image();
+  img.onload = function() {
+    characterImages.set(characterId, img);
+  };
+  img.onerror = function() {
+    console.warn(`Failed to load character image for ${character.name}: ${iconUrl}`);
+    // Don't cache failed images
+  };
+  img.src = iconUrl;
+}
+
 function showNotification(message, type = 'info') {
   // Create notification element
   const notification = document.createElement('div');
@@ -933,4 +1241,580 @@ if (!document.getElementById('notification-styles')) {
   style.id = 'notification-styles';
   style.textContent = notificationStyles;
   document.head.appendChild(style);
+}
+
+// ============================================================================
+// ------------------- Relationship Web Visualization -------------------
+// ============================================================================
+
+let relationshipWebCanvas = null;
+let relationshipWebCtx = null;
+let relationshipWebNodes = [];
+let relationshipWebEdges = [];
+let relationshipWebAnimationId = null;
+let relationshipWebMouse = { x: 0, y: 0 };
+let relationshipWebDraggedNode = null;
+let characterImages = new Map(); // Cache for character images
+
+function showRelationshipWeb() {
+  console.log('🕸️ Showing relationship web');
+  
+  // Hide the list view and show the web view
+  document.getElementById('relationships-all-list').style.display = 'none';
+  document.querySelector('.relationship-web-view').style.display = 'block';
+  
+  // Initialize the canvas
+  initRelationshipWeb();
+  
+  // Generate the network data
+  generateRelationshipWebData();
+  
+  // Start the animation
+  animateRelationshipWeb();
+}
+
+function backToRelationshipList() {
+  console.log('📋 Back to relationship list');
+  
+  // Stop the animation
+  if (relationshipWebAnimationId) {
+    cancelAnimationFrame(relationshipWebAnimationId);
+    relationshipWebAnimationId = null;
+  }
+  
+  // Hide the web view and show the list view
+  document.querySelector('.relationship-web-view').style.display = 'none';
+  document.getElementById('relationships-all-list').style.display = 'grid';
+}
+
+function initRelationshipWeb() {
+  const canvas = document.getElementById('relationship-web-canvas');
+  if (!canvas) {
+    console.error('❌ Relationship web canvas not found');
+    return;
+  }
+  
+  relationshipWebCanvas = canvas;
+  relationshipWebCtx = canvas.getContext('2d');
+  
+  // Set canvas size
+  const container = canvas.parentElement;
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
+  
+  // Set up high-quality rendering
+  relationshipWebCtx.imageSmoothingEnabled = true;
+  relationshipWebCtx.imageSmoothingQuality = 'high';
+  
+  // Setup event listeners
+  canvas.addEventListener('mousedown', handleRelationshipWebMouseDown);
+  canvas.addEventListener('mousemove', handleRelationshipWebMouseMove);
+  canvas.addEventListener('mouseup', handleRelationshipWebMouseUp);
+  canvas.addEventListener('wheel', handleRelationshipWebWheel);
+}
+
+function generateRelationshipWebData() {
+  relationshipWebNodes = [];
+  relationshipWebEdges = [];
+  
+  // First pass: identify which characters have relationships
+  const charactersWithRelationships = new Set();
+  
+  relationships.forEach(relationship => {
+    const sourceId = relationship.characterId._id || relationship.characterId;
+    const targetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
+    
+    charactersWithRelationships.add(sourceId);
+    charactersWithRelationships.add(targetId);
+  });
+  
+  // Only create nodes for characters that have relationships
+  allCharacters.forEach((character, index) => {
+    const characterId = character._id || character.id;
+    
+    // Only include characters that have relationships
+    if (charactersWithRelationships.has(characterId)) {
+      relationshipWebNodes.push({
+        id: characterId,
+        name: character.name,
+        x: Math.random() * (relationshipWebCanvas.width - 200) + 100,
+        y: Math.random() * (relationshipWebCanvas.height - 200) + 100,
+        vx: 0,
+        vy: 0,
+        radius: 20,
+        character: character,
+        hasRelationships: true // All characters in the web have relationships
+      });
+      
+      // Preload character image if not already cached
+      if (character.icon && !characterImages.has(characterId)) {
+        loadCharacterImage(character);
+      }
+    }
+  });
+  
+  // Create edges for relationships
+  const relationshipMap = new Map(); // Track relationships between character pairs
+  
+  console.log('🔍 Processing relationships:', relationships.length);
+  relationships.forEach(relationship => {
+    const actualSourceId = relationship.characterId._id || relationship.characterId;
+    const actualTargetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
+    
+    console.log('📋 Relationship:', {
+      source: actualSourceId,
+      target: actualTargetId,
+      types: relationship.relationshipTypes
+    });
+    
+    const sourceNode = relationshipWebNodes.find(node => node.id === actualSourceId);
+    const targetNode = relationshipWebNodes.find(node => node.id === actualTargetId);
+    
+    if (sourceNode && targetNode) {
+      // Create a unique key for this character pair (sorted to ensure consistency)
+      const pairKey = [actualSourceId, actualTargetId].sort().join('_');
+      
+      if (!relationshipMap.has(pairKey)) {
+        relationshipMap.set(pairKey, {
+          source: sourceNode,
+          target: targetNode,
+          sourceToTarget: null,
+          targetToSource: null
+        });
+      }
+      
+      const pair = relationshipMap.get(pairKey);
+      
+      // Store the relationship based on the actual direction from the relationship data
+      // The relationship.characterId is the source, relationship.targetCharacterId is the target
+      const relationshipSourceId = relationship.characterId._id || relationship.characterId;
+      const relationshipTargetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
+      
+      if (actualSourceId === relationshipSourceId && actualTargetId === relationshipTargetId) {
+        // This is source -> target relationship
+        pair.sourceToTarget = {
+          types: relationship.relationshipTypes,
+          colors: relationship.relationshipTypes.map(type => RELATIONSHIP_TYPES[type]?.color || '#8d6e63')
+        };
+      } else if (actualSourceId === relationshipTargetId && actualTargetId === relationshipSourceId) {
+        // This is target -> source relationship
+        pair.targetToSource = {
+          types: relationship.relationshipTypes,
+          colors: relationship.relationshipTypes.map(type => RELATIONSHIP_TYPES[type]?.color || '#8d6e63')
+        };
+      }
+    }
+  });
+  
+  // Convert the relationship map to edges
+  relationshipMap.forEach((pair, key) => {
+    console.log('🔗 Processing relationship pair:', key, {
+      sourceToTarget: pair.sourceToTarget,
+      targetToSource: pair.targetToSource
+    });
+    
+    if (pair.sourceToTarget && pair.targetToSource) {
+      // Bidirectional relationship - create two parallel lines
+      console.log('🔄 Creating bidirectional relationship');
+      relationshipWebEdges.push({
+        source: pair.source,
+        target: pair.target,
+        bidirectional: true,
+        sourceToTarget: pair.sourceToTarget,
+        targetToSource: pair.targetToSource
+      });
+    } else if (pair.sourceToTarget) {
+      // Unidirectional relationship - create single line from source to target
+      console.log('➡️ Creating unidirectional relationship (source to target)');
+      relationshipWebEdges.push({
+        source: pair.source,
+        target: pair.target,
+        bidirectional: false,
+        direction: 'sourceToTarget',
+        types: pair.sourceToTarget.types,
+        colors: pair.sourceToTarget.colors
+      });
+    } else if (pair.targetToSource) {
+      // Unidirectional relationship - create single line from target to source
+      console.log('⬅️ Creating unidirectional relationship (target to source)');
+      relationshipWebEdges.push({
+        source: pair.target,
+        target: pair.source,
+        bidirectional: false,
+        direction: 'targetToSource',
+        types: pair.targetToSource.types,
+        colors: pair.targetToSource.colors
+      });
+    }
+  });
+}
+
+function animateRelationshipWeb() {
+  if (!relationshipWebCtx) return;
+  
+  // Clear canvas
+  relationshipWebCtx.clearRect(0, 0, relationshipWebCanvas.width, relationshipWebCanvas.height);
+  
+  // Apply forces
+  applyRelationshipWebForces();
+  
+  // Draw edges
+  drawRelationshipWebEdges();
+  
+  // Draw nodes
+  drawRelationshipWebNodes();
+  
+  // Continue animation
+  relationshipWebAnimationId = requestAnimationFrame(animateRelationshipWeb);
+}
+
+function applyRelationshipWebForces() {
+  relationshipWebNodes.forEach(node => {
+    // Only apply forces if node is not being dragged
+    if (relationshipWebDraggedNode === node) {
+      // Reset velocity when dragging to prevent drift
+      node.vx = 0;
+      node.vy = 0;
+      return;
+    }
+    
+    // Repulsion between nodes (keep them from overlapping)
+    relationshipWebNodes.forEach(otherNode => {
+      if (node === otherNode) return;
+      
+      const dx = otherNode.x - node.x;
+      const dy = otherNode.y - node.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance > 0 && distance < 60) {
+        const force = (60 - distance) / distance * 0.02; // Very light repulsion
+        node.vx -= (dx / distance) * force;
+        node.vy -= (dy / distance) * force;
+      }
+    });
+    
+    // No center attraction - let nodes stay where they are
+    // Only apply very light damping to prevent infinite movement
+    node.vx *= 0.98;
+    node.vy *= 0.98;
+    
+    // Update position
+    node.x += node.vx;
+    node.y += node.vy;
+    
+    // Keep nodes within bounds
+    node.x = Math.max(node.radius, Math.min(relationshipWebCanvas.width - node.radius, node.x));
+    node.y = Math.max(node.radius, Math.min(relationshipWebCanvas.height - node.radius, node.y));
+  });
+}
+
+function drawRelationshipWebEdges() {
+  relationshipWebEdges.forEach(edge => {
+    // Calculate line properties
+    const dx = edge.target.x - edge.source.x;
+    const dy = edge.target.y - edge.source.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance === 0) return; // Skip if nodes are at same position
+    
+    const lineAngle = Math.atan2(dy, dx);
+    const perpendicularAngle = lineAngle + Math.PI / 2;
+    
+    if (edge.bidirectional) {
+      // Bidirectional relationship - draw two separate lines with arrows
+      const lineOffset = 6; // Distance between lines
+      
+      // Draw source to target line (upper)
+      const upperSourceX = edge.source.x + Math.cos(perpendicularAngle) * lineOffset;
+      const upperSourceY = edge.source.y + Math.sin(perpendicularAngle) * lineOffset;
+      const upperTargetX = edge.target.x + Math.cos(perpendicularAngle) * lineOffset;
+      const upperTargetY = edge.target.y + Math.sin(perpendicularAngle) * lineOffset;
+      
+      // Check if source to target has multiple relationship types
+      if (edge.sourceToTarget.colors.length > 1) {
+        // Draw gradient line for multiple relationship types
+        const gradient = relationshipWebCtx.createLinearGradient(
+          upperSourceX, upperSourceY, upperTargetX, upperTargetY
+        );
+        edge.sourceToTarget.colors.forEach((color, index) => {
+          const stop = index / (edge.sourceToTarget.colors.length - 1);
+          gradient.addColorStop(stop, color);
+        });
+        
+        relationshipWebCtx.beginPath();
+        relationshipWebCtx.moveTo(upperSourceX, upperSourceY);
+        relationshipWebCtx.lineTo(upperTargetX, upperTargetY);
+        relationshipWebCtx.strokeStyle = gradient;
+        relationshipWebCtx.lineWidth = 3;
+        relationshipWebCtx.stroke();
+      } else {
+        // Draw solid color line for single relationship type
+        relationshipWebCtx.beginPath();
+        relationshipWebCtx.moveTo(upperSourceX, upperSourceY);
+        relationshipWebCtx.lineTo(upperTargetX, upperTargetY);
+        relationshipWebCtx.strokeStyle = edge.sourceToTarget.colors[0];
+        relationshipWebCtx.lineWidth = 3;
+        relationshipWebCtx.stroke();
+      }
+      
+      // Draw target to source line (lower)
+      const lowerSourceX = edge.source.x - Math.cos(perpendicularAngle) * lineOffset;
+      const lowerSourceY = edge.source.y - Math.sin(perpendicularAngle) * lineOffset;
+      const lowerTargetX = edge.target.x - Math.cos(perpendicularAngle) * lineOffset;
+      const lowerTargetY = edge.target.y - Math.sin(perpendicularAngle) * lineOffset;
+      
+      // Check if target to source has multiple relationship types
+      if (edge.targetToSource.colors.length > 1) {
+        // Draw gradient line for multiple relationship types
+        const gradient = relationshipWebCtx.createLinearGradient(
+          lowerSourceX, lowerSourceY, lowerTargetX, lowerTargetY
+        );
+        edge.targetToSource.colors.forEach((color, index) => {
+          const stop = index / (edge.targetToSource.colors.length - 1);
+          gradient.addColorStop(stop, color);
+        });
+        
+        relationshipWebCtx.beginPath();
+        relationshipWebCtx.moveTo(lowerSourceX, lowerSourceY);
+        relationshipWebCtx.lineTo(lowerTargetX, lowerTargetY);
+        relationshipWebCtx.strokeStyle = gradient;
+        relationshipWebCtx.lineWidth = 3;
+        relationshipWebCtx.stroke();
+      } else {
+        // Draw solid color line for single relationship type
+        relationshipWebCtx.beginPath();
+        relationshipWebCtx.moveTo(lowerSourceX, lowerSourceY);
+        relationshipWebCtx.lineTo(lowerTargetX, lowerTargetY);
+        relationshipWebCtx.strokeStyle = edge.targetToSource.colors[0];
+        relationshipWebCtx.lineWidth = 3;
+        relationshipWebCtx.stroke();
+      }
+      
+      // Draw directional ticks
+      const tickLength = 10;
+      const tickDistance = 35; // Much further from bubbles
+      
+      // Upper line tick (source to target) - single sided like ↼
+      const upperTargetTickX = upperTargetX - Math.cos(lineAngle) * tickDistance;
+      const upperTargetTickY = upperTargetY - Math.sin(lineAngle) * tickDistance;
+      
+      // Draw angled tick pointing to target (like →)
+      relationshipWebCtx.beginPath();
+      relationshipWebCtx.moveTo(upperTargetTickX, upperTargetTickY);
+      relationshipWebCtx.lineTo(
+        upperTargetTickX - Math.cos(perpendicularAngle - Math.PI/4) * tickLength,
+        upperTargetTickY - Math.sin(perpendicularAngle - Math.PI/4) * tickLength
+      );
+      relationshipWebCtx.strokeStyle = edge.sourceToTarget.colors[0];
+      relationshipWebCtx.lineWidth = 4;
+      relationshipWebCtx.stroke();
+      
+      // Lower line tick (target to source) - single sided like ↼
+      const lowerTargetTickX = lowerTargetX - Math.cos(lineAngle) * tickDistance;
+      const lowerTargetTickY = lowerTargetY - Math.sin(lineAngle) * tickDistance;
+      
+      // Draw angled tick pointing to source (like →)
+      relationshipWebCtx.beginPath();
+      relationshipWebCtx.moveTo(lowerTargetTickX, lowerTargetTickY);
+      relationshipWebCtx.lineTo(
+        lowerTargetTickX - Math.cos(perpendicularAngle - Math.PI/4) * tickLength,
+        lowerTargetTickY - Math.sin(perpendicularAngle - Math.PI/4) * tickLength
+      );
+      relationshipWebCtx.strokeStyle = edge.targetToSource.colors[0];
+      relationshipWebCtx.lineWidth = 4;
+      relationshipWebCtx.stroke();
+      
+    } else {
+      // Unidirectional relationship - draw single line with tick
+      const tickLength = 10;
+      const tickDistance = 35; // Much further from bubbles
+      
+      // Check if this relationship has multiple types
+      if (edge.colors.length > 1) {
+        // Draw gradient line for multiple relationship types
+        const gradient = relationshipWebCtx.createLinearGradient(
+          edge.source.x, edge.source.y, edge.target.x, edge.target.y
+        );
+        edge.colors.forEach((color, index) => {
+          const stop = index / (edge.colors.length - 1);
+          gradient.addColorStop(stop, color);
+        });
+        
+        relationshipWebCtx.beginPath();
+        relationshipWebCtx.moveTo(edge.source.x, edge.source.y);
+        relationshipWebCtx.lineTo(edge.target.x, edge.target.y);
+        relationshipWebCtx.strokeStyle = gradient;
+        relationshipWebCtx.lineWidth = 3;
+        relationshipWebCtx.stroke();
+      } else {
+        // Draw solid color line for single relationship type
+        relationshipWebCtx.beginPath();
+        relationshipWebCtx.moveTo(edge.source.x, edge.source.y);
+        relationshipWebCtx.lineTo(edge.target.x, edge.target.y);
+        relationshipWebCtx.strokeStyle = edge.colors[0];
+        relationshipWebCtx.lineWidth = 3;
+        relationshipWebCtx.stroke();
+      }
+      
+      // Draw directional tick at target end - single sided like ↼
+      const targetTickX = edge.target.x - Math.cos(lineAngle) * tickDistance;
+      const targetTickY = edge.target.y - Math.sin(lineAngle) * tickDistance;
+      
+      // Draw angled tick pointing to target (like →)
+      relationshipWebCtx.beginPath();
+      relationshipWebCtx.moveTo(targetTickX, targetTickY);
+      relationshipWebCtx.lineTo(
+        targetTickX - Math.cos(perpendicularAngle - Math.PI/4) * tickLength,
+        targetTickY - Math.sin(perpendicularAngle - Math.PI/4) * tickLength
+      );
+      relationshipWebCtx.strokeStyle = edge.colors[0];
+      relationshipWebCtx.lineWidth = 4;
+      relationshipWebCtx.stroke();
+    }
+  });
+}
+
+function drawRelationshipWebNodes() {
+  relationshipWebNodes.forEach(node => {
+    // Increase clickable area by making nodes larger
+    const displayRadius = node.radius + 5; // Larger visual radius for better clickability
+    
+    // Draw node circle with enhanced styling
+    relationshipWebCtx.beginPath();
+    relationshipWebCtx.arc(node.x, node.y, displayRadius, 0, 2 * Math.PI);
+    
+    // Enhanced fill with gradient-like effect
+    const gradient = relationshipWebCtx.createRadialGradient(
+      node.x - 5, node.y - 5, 0,
+      node.x, node.y, displayRadius
+    );
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+    gradient.addColorStop(1, 'rgba(240, 240, 240, 0.9)');
+    relationshipWebCtx.fillStyle = gradient;
+    relationshipWebCtx.fill();
+    
+    // All characters in the web have relationships, so give them prominent borders
+    relationshipWebCtx.strokeStyle = '#4CAF50'; // Green for connected
+    relationshipWebCtx.lineWidth = 4;
+    
+    // No glow effect
+    relationshipWebCtx.shadowBlur = 0;
+    relationshipWebCtx.stroke();
+    
+    // Reset shadow
+    relationshipWebCtx.shadowBlur = 0;
+    
+    // Draw character icon if available
+    if (node.character && node.character.icon) {
+      const characterId = node.character._id || node.character.id;
+      const cachedImage = characterImages.get(characterId);
+      
+      if (cachedImage) {
+        const iconSize = displayRadius * 1.8; // Much bigger icon, extends beyond bubble
+        const iconX = node.x - iconSize / 2;
+        const iconY = node.y - iconSize / 2;
+        
+        // Create a circular clip for the icon
+        relationshipWebCtx.save();
+        relationshipWebCtx.beginPath();
+        relationshipWebCtx.arc(node.x, node.y, displayRadius, 0, 2 * Math.PI);
+        relationshipWebCtx.clip();
+        
+        // Draw the actual character image
+        relationshipWebCtx.drawImage(cachedImage, iconX, iconY, iconSize, iconSize);
+        
+        relationshipWebCtx.restore();
+      } else {
+        // Draw a placeholder while image is loading
+        const iconSize = displayRadius * 1.8; // Much bigger placeholder
+        const iconX = node.x - iconSize / 2;
+        const iconY = node.y - iconSize / 2;
+        
+        // Create a circular clip for the icon
+        relationshipWebCtx.save();
+        relationshipWebCtx.beginPath();
+        relationshipWebCtx.arc(node.x, node.y, displayRadius, 0, 2 * Math.PI);
+        relationshipWebCtx.clip();
+        
+        // Draw a simple character silhouette as placeholder
+        relationshipWebCtx.fillStyle = '#666';
+        relationshipWebCtx.fillRect(iconX, iconY, iconSize, iconSize);
+        
+        relationshipWebCtx.fillStyle = '#333';
+        relationshipWebCtx.beginPath();
+        relationshipWebCtx.arc(node.x, node.y - 6, 8, 0, 2 * Math.PI); // Much bigger head
+        relationshipWebCtx.fill();
+        relationshipWebCtx.beginPath();
+        relationshipWebCtx.arc(node.x, node.y + 10, 12, 0, 2 * Math.PI); // Much bigger body
+        relationshipWebCtx.fill();
+        
+        relationshipWebCtx.restore();
+      }
+    }
+    
+    // Draw character name with improved styling
+    relationshipWebCtx.fillStyle = '#FFFFFF'; // White text
+    relationshipWebCtx.globalAlpha = 1; // All characters in web have relationships
+    relationshipWebCtx.font = 'bold 12px Arial, sans-serif';
+    relationshipWebCtx.textAlign = 'center';
+    relationshipWebCtx.textBaseline = 'middle';
+    
+    // Add text shadow for better readability
+    relationshipWebCtx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+    relationshipWebCtx.shadowBlur = 3;
+    relationshipWebCtx.shadowOffsetX = 1;
+    relationshipWebCtx.shadowOffsetY = 1;
+    
+    // Draw the name
+    relationshipWebCtx.fillText(node.name, node.x, node.y + displayRadius + 20);
+    
+    // Reset effects
+    relationshipWebCtx.globalAlpha = 1;
+    relationshipWebCtx.shadowBlur = 0;
+    relationshipWebCtx.shadowOffsetX = 0;
+    relationshipWebCtx.shadowOffsetY = 0;
+  });
+}
+
+function handleRelationshipWebMouseDown(event) {
+  const rect = relationshipWebCanvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  
+  relationshipWebNodes.forEach(node => {
+    const dx = x - node.x;
+    const dy = y - node.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Use larger clickable area for better usability
+    const clickableRadius = node.radius + 8;
+    
+    if (distance < clickableRadius) {
+      relationshipWebDraggedNode = node;
+      relationshipWebMouse.x = x;
+      relationshipWebMouse.y = y;
+    }
+  });
+}
+
+function handleRelationshipWebMouseMove(event) {
+  if (relationshipWebDraggedNode) {
+    const rect = relationshipWebCanvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    relationshipWebDraggedNode.x = x;
+    relationshipWebDraggedNode.y = y;
+    relationshipWebDraggedNode.vx = 0;
+    relationshipWebDraggedNode.vy = 0;
+  }
+}
+
+function handleRelationshipWebMouseUp() {
+  relationshipWebDraggedNode = null;
+}
+
+function handleRelationshipWebWheel(event) {
+  event.preventDefault();
+  // Could implement zoom functionality here
 }

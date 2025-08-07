@@ -910,14 +910,14 @@
 
         <!-- Guest Message -->
         <div id="relationships-guest-message" class="guest-message" style="display: none;">
-          <div class="guest-message-content">
+          <div class="relationship-guest-message-content">
             <i class="fas fa-heart"></i>
             <h2>Login Required</h2>
             <p>Please log in with Discord to manage character relationships.</p>
-            <button class="login-button" onclick="auth.login()">
-              <i class="fab fa-discord"></i>
-              Login with Discord
-            </button>
+                    <button class="login-button" onclick="window.location.href='/login'">
+          <i class="fab fa-discord"></i>
+          Login with Discord
+        </button>
           </div>
         </div>
 
@@ -926,6 +926,12 @@
           <div class="character-selection-header">
             <h2>Select a Character</h2>
             <p>Choose which character to manage relationships for</p>
+            <div class="character-selection-actions">
+              <button class="view-all-relationships-btn" onclick="relationshipsModule.showAllRelationships()">
+                <i class="fas fa-globe"></i>
+                View All Characters' Relationships
+              </button>
+            </div>
           </div>
           <div id="relationships-character-grid" class="relationship-character-grid">
             <!-- Character cards will be loaded here -->
@@ -935,17 +941,28 @@
         <!-- Relationships Management -->
         <div id="relationships-management" class="relationships-management" style="display: none;">
           <div class="relationships-header">
-            <div class="relationships-header-info">
-              <h2 id="relationships-character-name">Character Name</h2>
+            <div class="relationships-header-main">
+              <div class="selected-character-info">
+                <img id="relationships-character-avatar" src="/images/ankleicon.png" alt="Character Avatar" class="relationships-character-avatar" />
+                <div class="selected-character-details">
+                  <h2 id="relationships-character-name">Character Name</h2>
+                  <div id="relationships-character-details" class="relationships-character-details">
+                    <span id="relationships-character-race-job">Race • Job</span>
+                    <span id="relationships-character-village">Village</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="relationships-header-actions">
               <button class="back-to-characters" onclick="relationshipsModule.backToCharacterSelection()">
                 <i class="fas fa-arrow-left"></i>
                 Back to Characters
               </button>
+              <button class="add-relationship-btn" onclick="relationshipsModule.showAddRelationshipModal()">
+                <i class="fas fa-plus"></i>
+                Add Relationship
+              </button>
             </div>
-            <button class="add-relationship-btn" onclick="relationshipsModule.showAddRelationshipModal()">
-              <i class="fas fa-plus"></i>
-              Add Relationship
-            </button>
           </div>
 
           <div id="relationships-list" class="relationships-list">
@@ -957,6 +974,55 @@
         <div id="relationships-loading" class="loading-state" style="display: none;">
           <div class="loading-spinner"></div>
           <p>Loading relationships...</p>
+        </div>
+
+        <!-- All Relationships View -->
+        <div id="relationships-all-view" class="relationships-all-view" style="display: none;">
+          <div class="relationships-all-header">
+            <div class="relationships-all-header-main">
+              <h2><i class="fas fa-globe"></i> All Characters' Relationships</h2>
+              <p>View relationships between all characters in the world</p>
+            </div>
+            <div class="relationships-all-header-actions">
+              <button class="view-relationship-web-btn" onclick="relationshipsModule.showRelationshipWeb()">
+                <i class="fas fa-project-diagram"></i>
+                View Relationship Web
+              </button>
+              <button class="back-to-character-selection" onclick="relationshipsModule.backToCharacterSelection()">
+                <i class="fas fa-arrow-left"></i>
+                Back to Character Selection
+              </button>
+            </div>
+          </div>
+          <div id="relationships-all-list" class="relationships-all-list">
+            <!-- All relationships will be loaded here -->
+          </div>
+          <div class="relationship-web-view" style="display: none;">
+            <div class="relationship-web-header">
+              <h3><i class="fas fa-project-diagram"></i> Relationship Web</h3>
+              <button class="back-to-list-btn" onclick="relationshipsModule.backToRelationshipList()">
+                <i class="fas fa-list"></i>
+                Back to List
+              </button>
+            </div>
+            <div class="relationship-web-legend">
+              <h4>Relationship Types:</h4>
+              <div class="legend-items">
+                <div class="legend-item"><span class="legend-color lovers"></span>Lovers</div>
+                <div class="legend-item"><span class="legend-color crush"></span>Crush</div>
+                <div class="legend-item"><span class="legend-color close-friend"></span>Close Friend</div>
+                <div class="legend-item"><span class="legend-color friend"></span>Friend</div>
+                <div class="legend-item"><span class="legend-color acquaintance"></span>Acquaintance</div>
+                <div class="legend-item"><span class="legend-color dislike"></span>Dislike</div>
+                <div class="legend-item"><span class="legend-color hate"></span>Hate</div>
+                <div class="legend-item"><span class="legend-color neutral"></span>Neutral</div>
+                <div class="legend-item"><span class="legend-color other"></span>Other</div>
+              </div>
+            </div>
+            <div class="relationship-web-container">
+              <canvas id="relationship-web-canvas"></canvas>
+            </div>
+          </div>
         </div>
 
         <!-- Error State -->

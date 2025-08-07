@@ -1980,6 +1980,55 @@ app.delete('/api/relationships/:relationshipId', requireAuth, async (req, res) =
   }
 });
 
+// ------------------- Function: getAllRelationships -------------------
+// Returns all relationships and characters for the "View All Relationships" feature
+app.get('/api/relationships/all', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.discordId;
+    
+    // Get all relationships for the authenticated user
+    const relationships = await Relationship.find({ userId })
+      .populate('characterId', 'name race job currentVillage homeVillage icon')
+      .populate('targetCharacterId', 'name race job currentVillage homeVillage icon')
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    // Get all characters for reference
+    const characters = await Character.find({})
+      .select('name race job currentVillage homeVillage icon userId')
+      .sort({ name: 1 })
+      .lean();
+    
+    // Transform icon URLs for characters
+    characters.forEach(character => {
+      if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
+        const filename = character.icon.split('/').pop();
+        character.icon = filename;
+      }
+    });
+    
+    // Transform icon URLs for relationships
+    relationships.forEach(relationship => {
+      if (relationship.characterId && relationship.characterId.icon && relationship.characterId.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
+        const filename = relationship.characterId.icon.split('/').pop();
+        relationship.characterId.icon = filename;
+      }
+      if (relationship.targetCharacterId && relationship.targetCharacterId.icon && relationship.targetCharacterId.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
+        const filename = relationship.targetCharacterId.icon.split('/').pop();
+        relationship.targetCharacterId.icon = filename;
+      }
+    });
+    
+    res.json({ 
+      relationships,
+      characters
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching all relationships:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ------------------- Function: getCharactersForRelationships -------------------
 // Returns all characters for relationship selection (excluding user's own characters)
 app.get('/api/characters', async (req, res) => {

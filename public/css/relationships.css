@@ -28,6 +28,34 @@
   font-size: 1rem;
 }
 
+.character-selection-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.view-all-relationships-btn {
+  background: var(--primary-color);
+  color: var(--text-color);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.view-all-relationships-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 163, 218, 0.3);
+}
+
 .relationship-character-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -118,26 +146,508 @@
   padding: 1rem 0;
 }
 
-.relationships-header {
+/* ============================================================================
+   All Relationships View Styling
+============================================================================ */
+
+.relationships-all-view {
+  padding: 1rem 0;
+}
+
+.relationships-all-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 2rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
-.relationships-header-info {
+.relationships-all-header-main {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
 }
 
-.relationships-header-info h2 {
+.relationships-all-header-main h2 {
   color: var(--text-color);
   font-size: 1.75rem;
   margin: 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.relationships-all-header-main p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.relationships-all-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.back-to-character-selection {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back-to-character-selection:hover {
+  background: var(--card-background);
+  color: var(--text-color);
+  border-color: var(--primary-color);
+}
+
+.relationships-all-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+/* All Relationships Character Cards */
+.all-relationships-character-card {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.all-relationships-character-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary-color);
+}
+
+.all-relationships-character-card.has-relationships {
+  border-left: 4px solid var(--primary-color);
+}
+
+.all-relationships-character-card.no-relationships {
+  border-left: 4px solid var(--border-color);
+  opacity: 0.7;
+}
+
+.all-relationships-character-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.all-relationships-character-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.all-relationships-character-details {
+  flex: 1;
+}
+
+.all-relationships-character-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 0.25rem;
+}
+
+.all-relationships-character-info-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.all-relationships-character-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.relationship-count {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.no-relationships {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.all-relationships-character-stats i {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+/* Character Relationships Modal */
+.character-relationships-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.character-relationships-modal.active {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+.character-relationships-modal-content {
+  background: var(--card-background);
+  border-radius: var(--card-radius);
+  padding: 2rem;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.character-relationships-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.character-relationships-modal-character-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.character-relationships-modal-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.character-relationships-modal-character-details h3 {
+  color: var(--text-color);
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.character-relationships-modal-character-details h3 i {
+  color: var(--primary-color);
+  font-size: 1.2rem;
+}
+
+.character-relationships-modal-character-details p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.character-relationships-close-modal {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.character-relationships-close-modal:hover {
+  color: var(--text-color);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.character-relationships-modal-body {
+  margin-top: 1rem;
+}
+
+.character-relationships-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.character-relationships-header h4 {
+  color: var(--text-color);
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.character-relationships-header h4 i {
+  color: var(--primary-color);
+}
+
+.character-relationships-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.character-relationship-item {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.character-relationship-item:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.character-relationship-target {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.character-relationship-target-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.character-relationship-target-info {
+  flex: 1;
+}
+
+.character-relationship-target-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.character-relationship-target-name i {
+  color: var(--primary-color);
+  font-size: 0.9rem;
+}
+
+.character-relationship-target-details {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.character-relationship-details {
+  margin-left: 3.5rem;
+}
+
+.character-relationship-types {
+  font-size: 0.9rem;
+  color: var(--primary-color);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.character-relationship-types i {
+  color: var(--primary-color);
+  font-size: 0.8rem;
+}
+
+
+
+.character-relationship-mutual {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.character-relationship-mutual i {
+  font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .character-relationships-modal-content {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  
+  .character-relationships-modal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .character-relationships-modal-character-info {
+    width: 100%;
+  }
+  
+  .character-relationship-target {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: center;
+    gap: 0.5rem;
+  }
+  
+  .character-relationship-details {
+    margin-left: 0;
+  }
+}
+
+.relationships-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.relationships-header-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.relationships-header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.selected-character-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.selected-character-info::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--primary-color);
+  border-radius: 0 2px 2px 0;
+}
+
+.selected-character-info:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.relationships-character-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.relationships-character-avatar:hover {
+  border-color: var(--primary-color);
+  transform: scale(1.05);
+}
+
+.selected-character-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.selected-character-details h2 {
+  color: var(--text-color);
+  font-size: 1.75rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.relationships-character-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.relationships-character-details span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.relationships-character-details span:before {
+  content: '•';
+  color: var(--border-color);
+  font-weight: bold;
+}
+
+.relationships-character-details span:first-child:before {
+  content: '';
 }
 
 .back-to-characters {
@@ -368,6 +878,66 @@
   padding: 1rem;
 }
 
+/* Relationship Notes Section */
+.relationship-notes-section {
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-color);
+  margin-top: 0.5rem;
+}
+
+.relationship-notes-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1rem 0.5rem 1rem;
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.relationship-notes-header i {
+  color: var(--primary-color);
+  font-size: 1rem;
+}
+
+.relationship-notes-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.relationship-notes-content {
+  padding: 0 1rem 1rem 1rem;
+}
+
+.relationship-note-item {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.relationship-note-item:last-child {
+  margin-bottom: 0;
+}
+
+.relationship-note-item:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.relationship-note-text {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  background: var(--bg-primary);
+  padding: 0.75rem;
+  border-radius: 6px;
+  border-left: 3px solid var(--primary-color);
+}
+
 .relationship-item {
   display: flex;
   justify-content: space-between;
@@ -530,7 +1100,7 @@
 
 .relationship-type-options {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
   margin-top: 0.5rem;
 }
@@ -550,6 +1120,8 @@
   color: var(--text-color);
   transform: scale(1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .relationship-type-option:hover {
@@ -576,17 +1148,28 @@
 }
 
 .relationship-type-option .relationship-type-emoji {
-  font-size: 1.25rem;
-  min-width: 1.5rem;
+  font-size: 1.1rem;
+  min-width: 1.25rem;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .relationship-type-option span:last-child {
   flex: 1;
-  font-size: 0.9rem;
-  line-height: 1.3;
+  font-size: 0.85rem;
+  line-height: 1.2;
   word-wrap: break-word;
   hyphens: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  position: relative;
+}
+
+.relationship-type-option:hover span:last-child {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 /* Custom checkbox styling */
@@ -706,10 +1289,50 @@
     gap: 1rem;
   }
 
-  .relationships-header-info {
+  .relationships-header-main {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .relationships-header-actions {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .relationships-all-header {
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
+  }
+
+  .relationships-all-header-main {
+    text-align: center;
+  }
+
+  .relationships-all-header-actions {
+    justify-content: center;
+  }
+
+  .relationships-all-list {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .selected-character-info {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+  
+  .relationships-character-avatar {
+    width: 50px;
+    height: 50px;
   }
 
   .relationships-list {
@@ -789,6 +1412,121 @@
 
 
 /* ============================================================================
+   Guest Message Styling
+============================================================================ */
+
+.relationship-guest-message-content {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: 0 auto;
+  transition: all 0.3s ease;
+}
+
+.relationship-guest-message-content:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary-color);
+}
+
+.relationship-guest-message-content i.fas.fa-heart {
+  font-size: 3rem;
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  display: block;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.relationship-guest-message-content h2 {
+  color: var(--text-color);
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.relationship-guest-message-content p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.relationship-guest-message-content .login-button {
+  background: var(--primary-color);
+  color: var(--text-color);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.relationship-guest-message-content .login-button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 163, 218, 0.3);
+}
+
+.relationship-guest-message-content .login-button i {
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .relationship-guest-message-content {
+    padding: 2rem 1.5rem;
+    margin: 0 1rem;
+  }
+  
+  .relationship-guest-message-content h2 {
+    font-size: 1.5rem;
+  }
+  
+  .relationship-guest-message-content i.fas.fa-heart {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .relationship-guest-message-content {
+    padding: 1.5rem 1rem;
+  }
+  
+  .relationship-guest-message-content h2 {
+    font-size: 1.25rem;
+  }
+  
+  .relationship-guest-message-content p {
+    font-size: 0.9rem;
+  }
+  
+  .relationship-guest-message-content .login-button {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* ============================================================================
    Empty State
 ============================================================================ */
 
@@ -853,4 +1591,160 @@
 
 .relationship-type.other {
   color: #8d6e63;
+}
+
+/* ============================================================================
+   Relationship Web Styling
+============================================================================ */
+
+.view-relationship-web-btn {
+  background: var(--primary-color);
+  color: var(--text-color);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: 0.75rem;
+}
+
+.view-relationship-web-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.relationship-web-view {
+  padding: 1rem 0;
+}
+
+.relationship-web-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.relationship-web-header h3 {
+  color: var(--text-color);
+  font-size: 1.5rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.relationship-web-header h3 i {
+  color: var(--primary-color);
+}
+
+.back-to-list-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back-to-list-btn:hover {
+  background: var(--card-background);
+  color: var(--text-color);
+  border-color: var(--primary-color);
+}
+
+.relationship-web-legend {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.relationship-web-legend h4 {
+  color: var(--text-color);
+  font-size: 1rem;
+  margin: 0 0 0.75rem 0;
+  font-weight: 600;
+}
+
+.legend-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-color.lovers { background: #ff6b6b; }
+.legend-color.crush { background: #ffa726; }
+.legend-color.close-friend { background: #ffd54f; }
+.legend-color.friend { background: #81c784; }
+.legend-color.acquaintance { background: #64b5f6; }
+.legend-color.dislike { background: #ba68c8; }
+.legend-color.hate { background: #424242; }
+.legend-color.neutral { background: #bdbdbd; }
+.legend-color.other { background: #8d6e63; }
+
+.relationship-web-container {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 2px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  height: 600px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+#relationship-web-canvas {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  cursor: grab;
+}
+
+#relationship-web-canvas:active {
+  cursor: grabbing;
+}
+
+@media (max-width: 768px) {
+  .relationship-web-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .relationship-web-header h3 {
+    text-align: center;
+  }
+  
+  .legend-items {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .relationship-web-container {
+    height: 400px;
+  }
 }
