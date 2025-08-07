@@ -341,10 +341,6 @@ class UserLookup {
           <h3>User Information</h3>
           <div class="user-details-grid">
             <div class="user-details-item">
-              <span class="label">Discord ID:</span>
-              <span class="value">${data.user.discordId}</span>
-            </div>
-            <div class="user-details-item">
               <span class="label">Tokens:</span>
               <span class="value">${data.user.tokens || 0}</span>
             </div>

@@ -1046,33 +1046,7 @@
   padding: 1.5rem;
 }
 
-/* Custom scrollbar for modal */
-.user-details-modal-body::-webkit-scrollbar {
-  width: 8px;
-}
-
-.user-details-modal-body::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-  margin: 4px 0;
-}
-
-.user-details-modal-body::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.user-details-modal-body::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
-  transform: scaleX(1.1);
-}
-
-/* Firefox scrollbar */
-.user-details-modal-body {
-  scrollbar-width: thin;
-  scrollbar-color: var(--accent) rgba(255, 255, 255, 0.05);
-}
+/* Custom scrollbar styling is now handled globally in styles.css */
 
 .user-details-section {
   margin-bottom: 2rem;
@@ -1596,13 +1570,21 @@
   align-items: center;
   gap: 0.75rem;
   min-width: 44px;
-  min-height: 44px;
-  padding: 0.5rem 1rem;
+  height: 40px;
+  padding: 0.5rem 0.875rem;
   background: var(--glass-bg);
-  border-radius: 1rem;
+  border-radius: 0.875rem;
   position: relative;
   cursor: pointer;
   transition: background-color 0.2s ease;
+}
+
+.user-menu .user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--glass-border);
+  transition: all 0.2s ease;
 }
 
 .user-menu:hover {
