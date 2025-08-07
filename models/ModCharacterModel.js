@@ -15,10 +15,10 @@ const GearSchema = new Schema({
 }, { _id: false });
 
 // ============================================================================
-// ------------------- Define the main character schema -------------------
-// Everything related to character data
+// ------------------- Define the main mod character schema -------------------
+// Everything related to mod character data - unlimited hearts/stamina
 // ============================================================================
-const characterSchema = new Schema({
+const modCharacterSchema = new Schema({
   // ------------------- Basic character information -------------------
   userId: { type: String, required: true, index: true },
   name: { type: String, required: true },
@@ -36,11 +36,19 @@ const characterSchema = new Schema({
   icon: { type: String, required: true },
   birthday: { type: String, default: '' },
 
-  // ------------------- Health and stamina -------------------
-  maxHearts: { type: Number, required: true },
-  currentHearts: { type: Number, required: true },
-  maxStamina: { type: Number, required: true },
-  currentStamina: { type: Number, required: true },
+  // ------------------- Mod Character Special Properties -------------------
+  isModCharacter: { type: Boolean, default: true },
+  modTitle: { type: String, required: true }, // Oracle, Dragon, Sage, etc.
+  modType: { type: String, required: true }, // Power, Courage, Wisdom, Light, Water, Forest, Shadow
+  modOwner: { type: String, required: true }, // The mod who owns this character
+  unlimitedHearts: { type: Boolean, default: true },
+  unlimitedStamina: { type: Boolean, default: true },
+
+  // ------------------- Health and stamina (unlimited for mod characters) -------------------
+  maxHearts: { type: Number, default: 999 }, // Unlimited hearts
+  currentHearts: { type: Number, default: 999 }, // Always full
+  maxStamina: { type: Number, default: 999 }, // Unlimited stamina
+  currentStamina: { type: Number, default: 999 }, // Always full
   lastStaminaUsage: { type: Date, default: null },
   lastSpecialWeatherGather: { type: Date, default: null },
 
@@ -58,7 +66,7 @@ const characterSchema = new Schema({
   // ------------------- Inventory and links -------------------
   inventory: { type: String, required: true },
   appLink: { type: String, required: true },
-  inventorySynced: { type: Boolean, default: false },
+  inventorySynced: { type: Boolean, default: true }, // Mod characters are always synced
 
   // ------------------- Vendor and shop details -------------------
   vendingPoints: { type: Number, default: 0 },
@@ -75,7 +83,7 @@ const characterSchema = new Schema({
   },
   vendingSync: { type: Boolean, default: false },
 
-  // ------------------- Special status -------------------
+  // ------------------- Special status (mod characters are immune to most negative effects) -------------------
   blighted: { type: Boolean, default: false },
   blightedAt: { type: Date, default: null },
   blightStage: { type: Number, default: 0 },
@@ -101,20 +109,12 @@ const characterSchema = new Schema({
   failedFleeAttempts: { type: Number, default: 0 },
   inJail: { type: Boolean, default: false },
   jailReleaseTime: { type: Date, default: null },
-  canBeStolenFrom: { type: Boolean, default: true },
+  canBeStolenFrom: { type: Boolean, default: false }, // Mod characters cannot be stolen from
   dailyRoll: {
     type: Map,
     of: Schema.Types.Mixed,
     default: new Map()
   },
-  travelLog: [
-    {
-      from: { type: String },
-      to: { type: String },
-      date: { type: Date },
-      success: { type: Boolean }
-    }
-  ],
 
   // ------------------- Additional features -------------------
   jobVoucher: {
@@ -138,36 +138,54 @@ const characterSchema = new Schema({
     type: Schema.Types.ObjectId, 
     ref: 'Mount', 
     default: null 
-  },
+  }
 
-  // ------------------- Help Wanted Quest Tracking -------------------
-  // Tracks Help Wanted quest completions, cooldowns, and history for this character
-  helpWanted: {
-    lastCompletion: { type: String, default: null }, // YYYY-MM-DD
-    cooldownUntil: { type: Date, default: null },
-    completions: [
-      {
-        date: { type: String }, // YYYY-MM-DD
-        village: { type: String },
-        questType: { type: String }
-      }
-    ]
-  },
-
-  // ------------------- Boosting System -------------------
-  // Tracks which character is currently boosting this character
-  boostedBy: { type: String, default: null }
-
-}, { collection: 'characters' });
+}, { collection: 'modcharacters' });
 
 // ============================================================================
 // ------------------- Pre-save hook -------------------
-// Ensures jobVoucher is always false on save
+// Ensures mod character properties are always set correctly
 // ============================================================================
-characterSchema.pre('save', function (next) {
-  if (this.isNew || this.isModified('jobVoucher')) {
-    this.jobVoucher = false;
-  }
+modCharacterSchema.pre('save', function (next) {
+  // Ensure mod character flags are set
+  this.isModCharacter = true;
+  this.unlimitedHearts = true;
+  this.unlimitedStamina = true;
+  
+  // Ensure hearts and stamina are always at max for mod characters
+  this.currentHearts = this.maxHearts;
+  this.currentStamina = this.maxStamina;
+  
+  // Ensure mod characters are immune to negative effects
+  this.blighted = false;
+  this.blightedAt = null;
+  this.blightStage = 0;
+  this.blightPaused = false;
+  this.ko = false;
+  this.debuff = {
+    active: false,
+    endDate: null
+  };
+  this.inJail = false;
+  this.jailReleaseTime = null;
+  this.canBeStolenFrom = false; // Mod characters cannot be stolen from
+  
+  // Reset blight effects
+  this.blightEffects = {
+    rollMultiplier: 1.0,
+    noMonsters: false,
+    noGathering: false
+  };
+  
+  // Allow job vouchers for mod characters (don't force to false)
+  // Job vouchers are a special feature for mod characters
+  
+  // Ensure all mod characters use the shared inventory
+  const MOD_SHARED_INVENTORY_LINK = 'https://docs.google.com/spreadsheets/d/17XE0IOXSjVx47HVQ4FdcvEXm7yeg51KVkoiamD5dmKs/edit?usp=sharing';
+  this.inventory = MOD_SHARED_INVENTORY_LINK;
+  
+  // Ensure mod characters are always considered synced
+  this.inventorySynced = true;
   
   next();
 });
@@ -175,6 +193,6 @@ characterSchema.pre('save', function (next) {
 // ============================================================================
 // ------------------- Define and export model -------------------
 // ============================================================================
-const Character = mongoose.model('Character', characterSchema);
+const ModCharacter = mongoose.model('ModCharacter', modCharacterSchema);
 
-module.exports = Character;
+module.exports = ModCharacter; 

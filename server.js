@@ -37,6 +37,7 @@ const {
 
 // Import models
 const Character = require('./models/CharacterModel');
+const ModCharacter = require('./models/ModCharacterModel');
 const Quest = require('./models/QuestModel');
 const Item = require('./models/ItemModel');
 const Monster = require('./models/MonsterModel');
@@ -1543,13 +1544,16 @@ app.get('/api/character/:id', async (req, res) => {
 });
 
 // ------------------- Function: getUserCharacters -------------------
-// Returns all characters belonging to the authenticated user
+// Returns all characters belonging to the authenticated user (including mod characters)
 app.get('/api/user/characters', requireAuth, async (req, res) => {
   try {
     const userId = req.user.discordId;
     
+    const regularCharacters = await Character.find({ userId }).lean();
+    const modCharacters = await ModCharacter.find({ userId }).lean();
     
-    const characters = await Character.find({ userId }).lean();
+    // Combine both character types
+    const characters = [...regularCharacters, ...modCharacters];
     
     // Transform icon URLs for characters and count spirit orbs from inventory
     characters.forEach(character => {
@@ -1570,7 +1574,6 @@ app.get('/api/user/characters', requireAuth, async (req, res) => {
     characters.forEach(character => {
       character.spiritOrbs = spiritOrbCounts[character.name] || 0;
     });
-    
     
     res.json({ data: characters });
   } catch (error) {
@@ -1823,8 +1826,11 @@ app.get('/api/relationships/character/:characterId', requireAuth, async (req, re
     const { characterId } = req.params;
     const userId = req.user.discordId;
     
-    // Verify the character belongs to the authenticated user
-    const character = await Character.findOne({ _id: characterId, userId });
+    // Verify the character belongs to the authenticated user (check both regular and mod characters)
+    let character = await Character.findOne({ _id: characterId, userId });
+    if (!character) {
+      character = await ModCharacter.findOne({ _id: characterId, userId });
+    }
     if (!character) {
       return res.status(404).json({ error: 'Character not found or access denied' });
     }
@@ -1854,14 +1860,20 @@ app.post('/api/relationships', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
-    // Verify the character belongs to the authenticated user
-    const character = await Character.findOne({ _id: characterId, userId });
+    // Verify the character belongs to the authenticated user (check both regular and mod characters)
+    let character = await Character.findOne({ _id: characterId, userId });
+    if (!character) {
+      character = await ModCharacter.findOne({ _id: characterId, userId });
+    }
     if (!character) {
       return res.status(404).json({ error: 'Character not found or access denied' });
     }
     
-    // Verify target character exists
-    const targetCharacter = await Character.findById(targetCharacterId);
+    // Verify target character exists (check both regular and mod characters)
+    let targetCharacter = await Character.findById(targetCharacterId);
+    if (!targetCharacter) {
+      targetCharacter = await ModCharacter.findById(targetCharacterId);
+    }
     if (!targetCharacter) {
       return res.status(404).json({ error: 'Target character not found' });
     }
@@ -1926,14 +1938,20 @@ app.put('/api/relationships/:relationshipId', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Relationship not found or access denied' });
     }
     
-    // Verify the character belongs to the authenticated user
-    const character = await Character.findOne({ _id: characterId, userId });
+    // Verify the character belongs to the authenticated user (check both regular and mod characters)
+    let character = await Character.findOne({ _id: characterId, userId });
+    if (!character) {
+      character = await ModCharacter.findOne({ _id: characterId, userId });
+    }
     if (!character) {
       return res.status(404).json({ error: 'Character not found or access denied' });
     }
     
-    // Verify target character exists
-    const targetCharacter = await Character.findById(targetCharacterId);
+    // Verify target character exists (check both regular and mod characters)
+    let targetCharacter = await Character.findById(targetCharacterId);
+    if (!targetCharacter) {
+      targetCharacter = await ModCharacter.findById(targetCharacterId);
+    }
     if (!targetCharacter) {
       return res.status(404).json({ error: 'Target character not found' });
     }
@@ -1986,20 +2004,27 @@ app.delete('/api/relationships/:relationshipId', requireAuth, async (req, res) =
 // Returns all relationships and characters for the "View All Relationships" feature
 app.get('/api/relationships/all', requireAuth, async (req, res) => {
   try {
-    const userId = req.user.discordId;
-    
-    // Get all relationships for the authenticated user
-    const relationships = await Relationship.find({ userId })
-      .populate('characterId', 'name race job currentVillage homeVillage icon')
-      .populate('targetCharacterId', 'name race job currentVillage homeVillage icon')
+    // Get ALL relationships (not just the user's)
+    const relationships = await Relationship.find({})
+      .populate('characterId', 'name race job currentVillage homeVillage icon userId')
+      .populate('targetCharacterId', 'name race job currentVillage homeVillage icon userId')
       .sort({ createdAt: -1 })
       .lean();
     
-    // Get all characters for reference
-    const characters = await Character.find({})
-      .select('name race job currentVillage homeVillage icon userId')
+    // Get all regular characters for reference
+    const regularCharacters = await Character.find({})
+      .select('name race job currentVillage homeVillage icon userId isModCharacter')
       .sort({ name: 1 })
       .lean();
+    
+    // Get all mod characters for reference
+    const modCharacters = await ModCharacter.find({})
+      .select('name race job currentVillage homeVillage icon userId isModCharacter modTitle modType')
+      .sort({ name: 1 })
+      .lean();
+    
+    // Combine both character types
+    const characters = [...regularCharacters, ...modCharacters];
     
     // Transform icon URLs for characters
     characters.forEach(character => {
@@ -2032,13 +2057,21 @@ app.get('/api/relationships/all', requireAuth, async (req, res) => {
 });
 
 // ------------------- Function: getCharactersForRelationships -------------------
-// Returns all characters for relationship selection (excluding user's own characters)
+// Returns all characters for relationship selection (including mod characters)
 app.get('/api/characters', async (req, res) => {
   try {
-    const characters = await Character.find({})
-      .select('name race job currentVillage homeVillage icon userId')
+    const regularCharacters = await Character.find({})
+      .select('name race job currentVillage homeVillage icon userId isModCharacter')
       .sort({ name: 1 })
       .lean();
+    
+    const modCharacters = await ModCharacter.find({})
+      .select('name race job currentVillage homeVillage icon userId isModCharacter modTitle modType')
+      .sort({ name: 1 })
+      .lean();
+    
+    // Combine both character types
+    const characters = [...regularCharacters, ...modCharacters];
     
     // Transform icon URLs
     characters.forEach(character => {
@@ -2542,23 +2575,37 @@ app.get('/api/inventory/characters', async (req, res) => {
 });
 
 // ------------------- Function: getCharacterList -------------------
-// Returns basic character info without inventory data (fast loading)
+// Returns basic character info without inventory data (fast loading, including mod characters)
 app.get('/api/characters/list', async (req, res) => {
   try {
-  
-    
-    const characters = await Character.find({}, {
+    const regularCharacters = await Character.find({}, {
       name: 1,
       icon: 1,
       race: 1,
       job: 1,
       homeVillage: 1,
-      currentVillage: 1
+      currentVillage: 1,
+      isModCharacter: 1
     }).lean();
+    
+    const modCharacters = await ModCharacter.find({}, {
+      name: 1,
+      icon: 1,
+      race: 1,
+      job: 1,
+      homeVillage: 1,
+      currentVillage: 1,
+      isModCharacter: 1,
+      modTitle: 1,
+      modType: 1
+    }).lean();
+    
+    // Combine both character types
+    const allCharacters = [...regularCharacters, ...modCharacters];
     
     // Filter out excluded characters
     const excludedCharacters = ['Tingle', 'Tingle test', 'John'];
-    const filteredCharacters = characters.filter(char => 
+    const filteredCharacters = allCharacters.filter(char => 
       !excludedCharacters.includes(char.name)
     );
     
@@ -2568,10 +2615,12 @@ app.get('/api/characters/list', async (req, res) => {
       race: char.race,
       job: char.job,
       homeVillage: char.homeVillage,
-      currentVillage: char.currentVillage
+      currentVillage: char.currentVillage,
+      isModCharacter: char.isModCharacter || false,
+      modTitle: char.modTitle || null,
+      modType: char.modType || null
     }));
     
-
     res.json({ data: characterList });
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching character list:', error);
@@ -3011,3 +3060,4 @@ app.get('/api/debug/users/duplicates', async (req, res) => {
     res.status(500).json({ error: 'Failed to check for duplicate users' });
   }
 });
+

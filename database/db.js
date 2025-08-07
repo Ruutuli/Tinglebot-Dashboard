@@ -22,6 +22,7 @@ const inventoryUtils = require("../utils/inventoryUtils");
 
 // ------------------- Models -------------------
 const Character = require("../models/CharacterModel");
+const ModCharacter = require("../models/ModCharacterModel");
 const Monster = require("../models/MonsterModel");
 const Quest = require("../models/QuestModel");
 const RelicModel = require("../models/RelicModel");
@@ -216,7 +217,6 @@ async function connectToVending() {
     maxIdleTimeMS: 60000,
     family: 4
    });
-   console.log(`[db.js]: 🔌 Connected to Vending database`);
   }
   return vendingDbConnection;
  } catch (error) {
@@ -261,9 +261,6 @@ const fetchCharacterByName = async (characterName) => {
   });
 
   if (!character) {
-   console.log(
-    `[characterService]: logs - Character "${actualName}" not found in database.`
-   );
    return null;
   }
   return character;
@@ -294,15 +291,12 @@ const fetchBlightedCharactersByUserId = async (userId) => {
 const fetchAllCharacters = async () => {
  try {
   await connectToTinglebot();
-  const allCharacters = await Character.find().lean().exec();
+  const regularCharacters = await Character.find().lean().exec();
+  const modCharacters = await ModCharacter.find().lean().exec();
   
-  // Filter out excluded characters
-  const excludedCharacters = ['Tingle', 'Tingle test', 'John'];
-  const filteredCharacters = allCharacters.filter(character => 
-    !excludedCharacters.includes(character.name)
-  );
-  
-  return filteredCharacters;
+  // Combine both character types
+  const allCharacters = [...regularCharacters, ...modCharacters];
+  return allCharacters;
  } catch (error) {
   handleError(error, "db.js");
   console.error(
@@ -316,12 +310,17 @@ const fetchAllCharacters = async () => {
 const fetchCharacterById = async (characterId) => {
  try {
   await connectToTinglebot();
-  const character = await Character.findById(characterId);
+  
+  // Try to find in regular characters first
+  let character = await Character.findById(characterId);
+  
+  // If not found in regular characters, try mod characters
   if (!character) {
-   console.error(
-    `[characterService]: logs - Character with ID "${characterId}" not found.`
-   );
-   throw new Error("Character not found");
+   character = await ModCharacter.findById(characterId);
+  }
+  
+  if (!character) {
+   return null; // Return null instead of throwing error
   }
   return character;
  } catch (error) {
@@ -337,8 +336,12 @@ const fetchCharacterById = async (characterId) => {
 const fetchCharactersByUserId = async (userId) => {
   try {
     await connectToTinglebot();
-    const characters = await Character.find({ userId }).lean().exec();
-    return characters;
+    const regularCharacters = await Character.find({ userId }).lean().exec();
+    const modCharacters = await ModCharacter.find({ userId }).lean().exec();
+    
+    // Combine both character types
+    const allCharacters = [...regularCharacters, ...modCharacters];
+    return allCharacters;
   } catch (error) {
     handleError(error, "db.js");
     throw error;
@@ -361,7 +364,6 @@ const fetchCharacterByNameAndUserId = async (characterName, userId) => {
   });
 
   if (!character) {
-    console.log(`[characterService]: 🔍 Character "${actualName}" not found for userId: ${userId}`);
     return null;
   }
 
@@ -377,7 +379,12 @@ const fetchCharacterByNameAndUserId = async (characterName, userId) => {
 const fetchAllCharactersExceptUser = async (userId) => {
  try {
   await connectToTinglebot();
-  return await Character.find({ userId: { $ne: userId } }).exec();
+  const regularCharacters = await Character.find({ userId: { $ne: userId } }).exec();
+  const modCharacters = await ModCharacter.find({ userId: { $ne: userId } }).exec();
+  
+  // Combine both character types
+  const allCharacters = [...regularCharacters, ...modCharacters];
+  return allCharacters;
  } catch (error) {
   handleError(error, "db.js");
   console.error(
@@ -476,6 +483,28 @@ const getCharacterInventoryCollection = async (characterName) => {
  }
 };
 
+// ------------------- getCharacterInventoryCollectionWithModSupport -------------------
+const getCharacterInventoryCollectionWithModSupport = async (characterOrName) => {
+ try {
+  await connectToInventories();
+  let collectionName;
+  if (typeof characterOrName === 'object' && characterOrName.isModCharacter) {
+    collectionName = characterOrName.name.toLowerCase(); // Now uses individual collection
+  } else if (typeof characterOrName === 'object') {
+    collectionName = characterOrName.name.toLowerCase();
+  } else { // string
+    collectionName = characterOrName.trim().toLowerCase();
+  }
+  return await getInventoryCollection(collectionName);
+ } catch (error) {
+  handleError(error, "db.js");
+  console.error(
+   `[characterService]: logs - Error in getCharacterInventoryCollectionWithModSupport: ${error.message}`
+  );
+  throw error;
+ }
+};
+
 // ------------------- createCharacterInventory -------------------
 const createCharacterInventory = async (characterName, characterId, job) => {
  try {
@@ -514,6 +543,144 @@ const deleteCharacterInventoryCollection = async (characterName) => {
   console.error(
    `[characterService]: logs - Error in deleteCharacterInventoryCollection for "${characterName}": ${error.message}`
   );
+  throw error;
+ }
+};
+
+// ------------------- getModSharedInventoryCollection -------------------
+const getModSharedInventoryCollection = async () => {
+ try {
+  await connectToInventories();
+  const collectionName = 'mod_shared_inventory';
+  return await getInventoryCollection(collectionName);
+ } catch (error) {
+  handleError(error, "db.js");
+  console.error(
+   `[characterService]: logs - Error in getModSharedInventoryCollection: ${error.message}`
+  );
+  throw error;
+ }
+};
+
+// ============================================================================
+// ------------------- Mod Character Database Functions -------------------
+// Functions for managing mod characters with unlimited hearts/stamina
+// ============================================================================
+
+const fetchModCharacterByNameAndUserId = async (characterName, userId) => {
+ try {
+  await connectToTinglebot();
+  // Get the actual name part before the "|" if it exists
+  const actualName = characterName.split('|')[0].trim();
+  
+  // Escape special regex characters in the character name
+  const escapedName = actualName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  
+  const modCharacter = await ModCharacter.findOne({
+    name: new RegExp(`^${escapedName}$`, "i"),
+    userId
+  });
+
+  if (!modCharacter) {
+    return null;
+  }
+
+  return modCharacter;
+ } catch (error) {
+  handleError(error, "db.js", {
+   function: "fetchModCharacterByNameAndUserId",
+   characterName: characterName,
+   userId: userId,
+  });
+  throw error;
+ }
+};
+
+const fetchModCharactersByUserId = async (userId) => {
+ try {
+  await connectToTinglebot();
+  const modCharacters = await ModCharacter.find({ userId: userId });
+  return modCharacters;
+ } catch (error) {
+  handleError(error, "db.js", {
+   function: "fetchModCharactersByUserId",
+   userId: userId,
+  });
+  throw error;
+ }
+};
+
+const fetchAllModCharacters = async () => {
+ try {
+  await connectToTinglebot();
+  const modCharacters = await ModCharacter.find({});
+  return modCharacters;
+ } catch (error) {
+  handleError(error, "db.js", {
+   function: "fetchAllModCharacters",
+  });
+  throw error;
+ }
+};
+
+const createModCharacter = async (modCharacterData) => {
+ try {
+  await connectToTinglebot();
+  const modCharacter = new ModCharacter(modCharacterData);
+  const savedModCharacter = await modCharacter.save();
+  return savedModCharacter;
+ } catch (error) {
+  handleError(error, "db.js", {
+   function: "createModCharacter",
+   modCharacterData: modCharacterData,
+  });
+  throw error;
+ }
+};
+
+const updateModCharacterById = async (modCharacterId, updateData) => {
+ try {
+  await connectToTinglebot();
+  const updatedModCharacter = await ModCharacter.findByIdAndUpdate(
+   modCharacterId,
+   updateData,
+   { new: true }
+  );
+  return updatedModCharacter;
+ } catch (error) {
+  handleError(error, "db.js", {
+   function: "updateModCharacterById",
+   modCharacterId: modCharacterId,
+   updateData: updateData,
+  });
+  throw error;
+ }
+};
+
+const deleteModCharacterById = async (modCharacterId) => {
+ try {
+  await connectToTinglebot();
+  const deletedModCharacter = await ModCharacter.findByIdAndDelete(modCharacterId);
+  return deletedModCharacter;
+ } catch (error) {
+  handleError(error, "db.js", {
+   function: "deleteModCharacterById",
+   modCharacterId: modCharacterId,
+  });
+  throw error;
+ }
+};
+
+const fetchModCharacterById = async (modCharacterId) => {
+ try {
+  await connectToTinglebot();
+  const modCharacter = await ModCharacter.findById(modCharacterId);
+  return modCharacter;
+ } catch (error) {
+  handleError(error, "db.js", {
+   function: "fetchModCharacterById",
+   modCharacterId: modCharacterId,
+  });
   throw error;
  }
 };
@@ -588,7 +755,8 @@ async function upgradePetLevel(characterId, petName, newLevel) {
    { 
      $set: { 
        level: newLevel,
-       rollsRemaining: Math.min(newLevel, 3) // Reset rolls based on new level
+       rollsRemaining: Math.min(newLevel, 3), // Reset rolls based on new level
+       lastRollDate: null // Clear daily roll restriction so pet can roll immediately
      } 
    }
   );
@@ -669,7 +837,8 @@ async function restorePetLevel(characterId, petName, level) {
    { 
      $set: { 
        level: level,
-       rollsRemaining: Math.min(level, 3) // Also update rolls to match level
+       rollsRemaining: Math.min(level, 3), // Also update rolls to match level
+       lastRollDate: null // Clear daily roll restriction so pet can roll immediately
      } 
    }
   );
@@ -697,7 +866,7 @@ async function forceResetPetRolls(characterId, petName) {
     
     await Pet.updateOne(
       { _id: pet._id },
-      { $set: { rollsRemaining: newRolls } }
+      { $set: { rollsRemaining: newRolls, lastRollDate: null } }
     );
     
     console.log(`[db.js]: ✅ Force reset pet "${pet.name}" (${pet.ownerName}) from ${oldRolls} to ${newRolls} rolls`);
@@ -718,9 +887,7 @@ async function forceResetPetRolls(characterId, petName) {
 const fetchAllItems = async () => {
     try {
         const db = await connectToInventoriesForItems();
-        console.log(`[db.js]: 🔍 Fetching items from collection 'items' in database '${db.databaseName}'`);
         const items = await db.collection("items").find().toArray();
-        console.log(`[db.js]: ✅ Found ${items.length} items in collection`);
         return items;
     } catch (error) {
         handleError(error, "itemService.js");
@@ -739,7 +906,6 @@ async function fetchItemByName(itemName) {
             itemName: new RegExp(`^${escapedName}$`, "i"),
         });
         if (!item) {
-            console.warn(`[itemService.js]: ⚠️ No item found for "${normalizedItemName}"`);
             return null;
         }
         return item;
@@ -767,8 +933,20 @@ const fetchItemById = async (itemId) => {
 const fetchItemsByMonster = async (monsterName) => {
     try {
         const db = await connectToInventoriesForItems();
+        
+        // Map monster names to their corresponding item field names
+        const monsterToFieldMap = {
+            'Frox': 'littleFrox',
+            'Little Frox': 'littleFrox'
+        };
+        
+        const fieldName = monsterToFieldMap[monsterName] || monsterName;
         const query = {
-            $or: [{ monsterList: monsterName }, { [monsterName]: true }],
+            $or: [
+                { monsterList: monsterName }, 
+                { monsterList: { $in: [monsterName] } },
+                { [fieldName]: true }
+            ],
         };
         const items = await db.collection("items").find(query).toArray();
         return items.filter((item) => item.itemName && item.itemRarity);
@@ -886,7 +1064,6 @@ const fetchItemsByCategory = async (category) => {
             .toArray();
 
         if (!items || items.length === 0) {
-            console.warn(`[itemService.js]: ⚠️ No items found in category: ${category}`);
             return [];
         }
         return items;
@@ -1297,19 +1474,26 @@ async function syncTokenTracker(userId) {
   }
 
   // Check if there are any earned entries
-  const hasEarnedEntries = sheetData.slice(1).some(row => row[3] === "earned");
-  if (!hasEarnedEntries) {
-    throw new Error("No 'earned' entries found in your token tracker. Please add at least one entry with type 'earned' in column E.");
+  const earnedRows = sheetData.slice(1).filter(row => row[3] === "earned");
+  if (!earnedRows.length) {
+    // Allow setup even with no earned entries - set tokens to 0
+    user.tokens = 0;
+    user.tokensSynced = true;
+    await user.save();
+    return user;
   }
 
   let totalEarned = 0;
   let totalSpent = 0;
 
-  sheetData.slice(1).forEach((row) => {
-    if (row.length < 5) return; // Skip invalid rows
+  sheetData.slice(1).forEach((row, idx) => {
+    if (row.length < 5) {
+      return; // Skip invalid rows
+    }
     const amount = parseInt(row[4]);
-    if (isNaN(amount)) return; // Skip rows with invalid amounts
-    
+    if (isNaN(amount)) {
+      return; // Skip rows with invalid amounts
+    }
     if (row[3] === "earned") {
       totalEarned += amount;
     } else if (row[3] === "spent") {
@@ -1324,12 +1508,12 @@ async function syncTokenTracker(userId) {
   return user;
  } catch (error) {
   // Only log non-validation errors
-  if (!error.message.includes('No \'earned\' entries found') && 
-      !error.message.includes('Invalid sheet format') && 
+  if (!error.message.includes('Invalid sheet format') && 
       !error.message.includes('Invalid URL')) {
     handleError(error, "tokenService.js");
     console.error("[tokenService.js]: ❌ Error syncing token tracker:", error);
   }
+  console.error(`[syncTokenTracker]: Error: ${error.message}`);
   throw error; // Pass the original error to maintain the specific error message
  }
 }
@@ -1392,7 +1576,7 @@ async function appendSpentTokens(userId, purchaseName, amount, link = "") {
   const spreadsheetId = extractSpreadsheetId(tokenTrackerLink);
   const auth = await authorizeSheets();
   const newRow = [purchaseName, link, "", "spent", `-${amount}`];
-  await safeAppendDataToSheet(character.inventory, character, "loggedTracker!B7:F", [newRow]);
+  await safeAppendDataToSheet(tokenTrackerLink, user, "loggedTracker!B7:F", [newRow]);
  } catch (error) {
   handleError(error, "tokenService.js");
   console.error(
@@ -1481,12 +1665,7 @@ async function updateUserTokens(discordId, amount, activity, link = "") {
   const range = "loggedTracker!B:F";
   const dateTime = new Date().toISOString();
   const values = [["Update", activity, link, amount.toString(), dateTime]];
-  if (character?.name && character?.inventory && character?.userId) {
-    await safeAppendDataToSheet(character.inventory, character, range, values);
-} else {
-    console.error('[safeAppendDataToSheet]: Invalid character object detected before syncing.');
-}
-
+  await safeAppendDataToSheet(user.tokenTracker, user, range, values);
  }
 
  return user;
@@ -1952,6 +2131,7 @@ inventoryUtils.initializeInventoryUtils({
  connectToInventories,
  fetchItemByName,
  fetchCharacterById,
+ fetchModCharacterById,
  getInventoryCollection,
 });
 
@@ -1965,7 +2145,7 @@ inventoryUtils.initializeInventoryUtils({
 const recordBlightRoll = async (characterId, characterName, userId, rollValue, previousStage, newStage, notes = '') => {
   try {
     await connectToTinglebot();
-    const BlightRollHistory = require('./models/BlightRollHistoryModel');
+    const BlightRollHistory = require('../models/BlightRollHistoryModel');
     
     const rollRecord = new BlightRollHistory({
       characterId,
@@ -1990,7 +2170,7 @@ const recordBlightRoll = async (characterId, characterName, userId, rollValue, p
 const getCharacterBlightHistory = async (characterId, limit = 10) => {
   try {
     await connectToTinglebot();
-    const BlightRollHistory = require('./models/BlightRollHistoryModel');
+    const BlightRollHistory = require('../models/BlightRollHistoryModel');
     
     return await BlightRollHistory.find({ characterId })
       .sort({ timestamp: -1 })
@@ -2008,7 +2188,7 @@ const getCharacterBlightHistory = async (characterId, limit = 10) => {
 const getUserBlightHistory = async (userId, limit = 20) => {
   try {
     await connectToTinglebot();
-    const BlightRollHistory = require('./models/BlightRollHistoryModel');
+    const BlightRollHistory = require('../models/BlightRollHistoryModel');
     
     return await BlightRollHistory.find({ userId })
       .sort({ timestamp: -1 })
@@ -2079,8 +2259,18 @@ module.exports = {
  fetchBlightedCharactersByUserId,
  updateCharacterInventorySynced,
  getCharacterInventoryCollection,
+ getCharacterInventoryCollectionWithModSupport,
  createCharacterInventory,
  deleteCharacterInventoryCollection,
+ getModSharedInventoryCollection,
+ // Mod Character Functions
+ fetchModCharacterByNameAndUserId,
+ fetchModCharactersByUserId,
+ fetchAllModCharacters,
+ createModCharacter,
+ updateModCharacterById,
+ deleteModCharacterById,
+ fetchModCharacterById,
  addPetToCharacter,
  updatePetRolls,
  upgradePetLevel,

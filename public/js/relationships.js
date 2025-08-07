@@ -104,6 +104,13 @@ export const relationshipsModule = {
   closeModal,
   showRelationshipWeb,
   backToRelationshipList,
+  toggleFullscreen,
+  resetZoom,
+  centerView,
+  toggleUserCharacters,
+  toggleRelationshipLines,
+  toggleNodeLabels,
+  toggleLayoutFreeze,
   RELATIONSHIP_CONFIG // Export the config for use in other modules
 };
 
@@ -170,6 +177,16 @@ function setupEventListeners() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeModal();
+    }
+  });
+  
+  // Escape key to exit fullscreen
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const webView = document.querySelector('.relationship-web-view');
+      if (webView && webView.classList.contains('fullscreen')) {
+        toggleFullscreen();
+      }
     }
   });
 }
@@ -383,6 +400,9 @@ function createCharacterCard(character) {
   const avatarUrl = formatCharacterIconUrl(character.icon);
   const displayInfo = getCharacterDisplayInfo(character);
   
+  // Add mod character indicator
+  const modIndicator = character.isModCharacter ? '<div class="mod-character-badge">👑 Mod</div>' : '';
+  
   card.innerHTML = `
     <div class="relationship-character-card-header">
       <img src="${avatarUrl}" alt="${character.name}" class="relationship-character-avatar" />
@@ -390,6 +410,7 @@ function createCharacterCard(character) {
         <h3>${displayInfo.name}</h3>
         <p>${displayInfo.info}</p>
         <p>${displayInfo.village}</p>
+        ${modIndicator}
       </div>
     </div>
     <div class="relationship-character-card-footer">
@@ -408,7 +429,13 @@ async function selectCharacter(character) {
   currentCharacter = character;
   
   // Update character information display
-  document.getElementById('relationships-character-name').textContent = character.name;
+  const characterNameElement = document.getElementById('relationships-character-name');
+  characterNameElement.textContent = character.name;
+  
+  // Add mod character indicator to the name if applicable
+  if (character.isModCharacter) {
+    characterNameElement.innerHTML = `${character.name} <span class="mod-character-badge">👑 Mod</span>`;
+  }
   
   // Update character avatar
   const avatarElement = document.getElementById('relationships-character-avatar');
@@ -662,9 +689,20 @@ function getCharacterDisplayInfo(character) {
   const job = character.job || 'Unknown';
   const village = character.currentVillage || character.homeVillage || 'Unknown Village';
   
+  // Handle mod characters
+  let displayName = character.name;
+  let displayInfo = `${race.charAt(0).toUpperCase() + race.slice(1)} • ${job.charAt(0).toUpperCase() + job.slice(1)}`;
+  
+  if (character.isModCharacter) {
+    const modTitle = character.modTitle || 'Mod';
+    const modType = character.modType || '';
+    displayName = `${character.name} (${modTitle})`;
+    displayInfo = `${race.charAt(0).toUpperCase() + race.slice(1)} • ${job.charAt(0).toUpperCase() + job.slice(1)} • ${modType}`;
+  }
+  
   return {
-    name: character.name,
-    info: `${race.charAt(0).toUpperCase() + race.slice(1)} • ${job.charAt(0).toUpperCase() + job.slice(1)}`,
+    name: displayName,
+    info: displayInfo,
     village: village.charAt(0).toUpperCase() + village.slice(1)
   };
 }
@@ -819,6 +857,9 @@ function renderAllRelationships() {
 
     const displayInfo = getCharacterDisplayInfo(character);
     
+    // Add mod character indicator
+    const modIndicator = character.isModCharacter ? '<div class="mod-character-badge">👑 Mod</div>' : '';
+    
     return `
       <div class="all-relationships-character-card ${hasRelationships ? 'has-relationships' : 'no-relationships'}" onclick="relationshipsModule.showCharacterRelationshipsModal('${characterId}')">
         <div class="all-relationships-character-info">
@@ -828,6 +869,7 @@ function renderAllRelationships() {
             <div class="all-relationships-character-info-text">
               ${displayInfo.info} • ${displayInfo.village}
             </div>
+            ${modIndicator}
           </div>
         </div>
         <div class="all-relationships-character-stats">
@@ -875,6 +917,8 @@ function showCharacterRelationshipsModal(characterId) {
   
   // Populate modal content
   const displayInfo = getCharacterDisplayInfo(character);
+  const modIndicator = character.isModCharacter ? '<div class="mod-character-badge">👑 Mod</div>' : '';
+  
   modalContent.innerHTML = `
     <div class="character-relationships-modal-header">
       <div class="character-relationships-modal-character-info">
@@ -882,6 +926,7 @@ function showCharacterRelationshipsModal(characterId) {
         <div class="character-relationships-modal-character-details">
           <h3><i class="fas fa-heart"></i> ${character.name}</h3>
           <p>${displayInfo.info} • ${displayInfo.village}</p>
+          ${modIndicator}
         </div>
       </div>
       <button class="character-relationships-close-modal">&times;</button>
@@ -1173,7 +1218,18 @@ async function loadAvailableCharacters(preSelectedTargetId = null) {
     availableCharacters.forEach(character => {
       const option = document.createElement('option');
       option.value = character._id;
-      option.textContent = character.name;
+      
+      // Create display text with mod character information
+      let displayText = character.name;
+      if (character.isModCharacter) {
+        const modTitle = character.modTitle || 'Mod';
+        const modType = character.modType || '';
+        displayText = `${character.name} (${modTitle}) - ${character.race} • ${character.job} • ${modType}`;
+      } else {
+        displayText = `${character.name} - ${character.race} • ${character.job}`;
+      }
+      
+      option.textContent = displayText;
       select.appendChild(option);
     });
     
@@ -1535,6 +1591,16 @@ let relationshipWebEdges = [];
 let relationshipWebAnimationId = null;
 let relationshipWebMouse = { x: 0, y: 0 };
 let relationshipWebDraggedNode = null;
+let relationshipWebIsDragging = false;
+let relationshipWebLastMouseX = 0;
+let relationshipWebLastMouseY = 0;
+let relationshipWebZoom = 1;
+let relationshipWebPanX = 0;
+let relationshipWebPanY = 0;
+let relationshipWebShowUserOnly = false; // Track if showing only user characters
+let relationshipWebShowLines = true; // Track if showing relationship lines
+let relationshipWebShowLabels = true; // Track if showing character names
+let relationshipWebLayoutFrozen = false; // Track if layout is frozen
 let characterImages = new Map(); // Cache for character images
 
 // Relationship colors extracted from centralized config
@@ -1568,9 +1634,73 @@ function backToRelationshipList() {
     relationshipWebAnimationId = null;
   }
   
+  // Exit fullscreen if active
+  if (document.querySelector('.relationship-web-view').classList.contains('fullscreen')) {
+    toggleFullscreen();
+  }
+  
   // Hide the web view and show the list view
   document.querySelector('.relationship-web-view').style.display = 'none';
   document.getElementById('relationships-all-list').style.display = 'grid';
+}
+
+function toggleFullscreen() {
+  console.log('🖥️ Toggling fullscreen');
+  
+  const webView = document.querySelector('.relationship-web-view');
+  const fullscreenBtn = document.querySelector('.fullscreen-btn');
+  const canvas = document.getElementById('relationship-web-canvas');
+  
+  console.log('🔍 Elements found:', {
+    webView: !!webView,
+    fullscreenBtn: !!fullscreenBtn,
+    canvas: !!canvas
+  });
+  
+  if (!webView || !fullscreenBtn || !canvas) {
+    console.error('❌ Required elements not found for fullscreen toggle');
+    return;
+  }
+  
+  if (webView.classList.contains('fullscreen')) {
+    // Exit fullscreen
+    webView.classList.remove('fullscreen');
+    fullscreenBtn.classList.remove('fullscreen');
+    fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i> Fullscreen';
+    
+    // Reset canvas size
+    const container = canvas.parentElement;
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+    
+    console.log('📱 Exited fullscreen');
+  } else {
+    // Enter fullscreen
+    webView.classList.add('fullscreen');
+    fullscreenBtn.classList.add('fullscreen');
+    fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i> Exit Fullscreen';
+    
+    // Set canvas to full viewport size (accounting for legend space)
+    const container = canvas.parentElement;
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+    
+    console.log('🖥️ Entered fullscreen');
+    console.log('📏 Canvas dimensions:', {
+      width: canvas.width,
+      height: canvas.height,
+      containerWidth: container.clientWidth,
+      containerHeight: container.clientHeight,
+      windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight
+    });
+  }
+  
+  // Restart animation to ensure proper rendering
+  if (relationshipWebAnimationId) {
+    cancelAnimationFrame(relationshipWebAnimationId);
+  }
+  animateRelationshipWeb();
 }
 
 function initRelationshipWeb() {
@@ -1597,16 +1727,228 @@ function initRelationshipWeb() {
   canvas.addEventListener('mousemove', handleRelationshipWebMouseMove);
   canvas.addEventListener('mouseup', handleRelationshipWebMouseUp);
   canvas.addEventListener('wheel', handleRelationshipWebWheel);
+  
+  // Setup window resize handler
+  window.addEventListener('resize', handleRelationshipWebResize);
+  
+  // Setup toggle for isolated characters
+  const isolatedToggle = document.getElementById('show-isolated-characters');
+  if (isolatedToggle) {
+    isolatedToggle.addEventListener('change', handleIsolatedToggleChange);
+  }
+}
+
+function resetZoom() {
+  console.log('🔍 Resetting zoom and pan');
+  relationshipWebZoom = 1;
+  relationshipWebPanX = 0;
+  relationshipWebPanY = 0;
+  
+  // Reset all node positions to center
+  const centerX = relationshipWebCanvas.width / 2;
+  const centerY = relationshipWebCanvas.height / 2;
+  
+  relationshipWebNodes.forEach(node => {
+    node.x = centerX + (Math.random() - 0.5) * 200;
+    node.y = centerY + (Math.random() - 0.5) * 200;
+    node.vx = 0;
+    node.vy = 0;
+  });
+  
+  showNotification('Zoom and view reset', 'info');
+}
+
+function centerView() {
+  console.log('🎯 Centering view');
+  
+  // Calculate the center of all visible nodes
+  const visibleNodes = relationshipWebNodes.filter(node => node.visible !== false);
+  if (visibleNodes.length === 0) return;
+  
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+  
+  visibleNodes.forEach(node => {
+    minX = Math.min(minX, node.x);
+    maxX = Math.max(maxX, node.x);
+    minY = Math.min(minY, node.y);
+    maxY = Math.max(maxY, node.y);
+  });
+  
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const canvasCenterX = relationshipWebCanvas.width / 2;
+  const canvasCenterY = relationshipWebCanvas.height / 2;
+  
+  // Adjust pan to center the nodes
+  relationshipWebPanX = canvasCenterX - centerX;
+  relationshipWebPanY = canvasCenterY - centerY;
+  
+  showNotification('View centered on characters', 'info');
+}
+
+function toggleUserCharacters() {
+  console.log('👤 Toggling user characters filter');
+  relationshipWebShowUserOnly = !relationshipWebShowUserOnly;
+  
+  // Update button text
+  const userBtn = document.querySelector('.web-control-btn[onclick*="toggleUserCharacters"]');
+  if (userBtn) {
+    const icon = userBtn.querySelector('i');
+    const text = userBtn.textContent.trim();
+    
+    if (relationshipWebShowUserOnly) {
+      icon.className = 'fas fa-users';
+      userBtn.innerHTML = '<i class="fas fa-users"></i> All Characters';
+      showNotification('Showing only your characters and their relationships', 'info');
+    } else {
+      icon.className = 'fas fa-user';
+      userBtn.innerHTML = '<i class="fas fa-user"></i> My Characters';
+      showNotification('Showing all characters', 'info');
+    }
+  }
+  
+  // Regenerate the web data with the new filter
+  generateRelationshipWebData();
+  
+  // Reset view
+  resetZoom();
+}
+
+function toggleRelationshipLines() {
+  console.log('📊 Toggling relationship lines visibility');
+  relationshipWebShowLines = !relationshipWebShowLines;
+  
+  // Update button text
+  const linesBtn = document.querySelector('.web-control-btn[onclick*="toggleRelationshipLines"]');
+  if (linesBtn) {
+    if (relationshipWebShowLines) {
+      linesBtn.innerHTML = '<i class="fas fa-project-diagram"></i> Hide Lines';
+      showNotification('Relationship lines shown', 'info');
+    } else {
+      linesBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Show Lines';
+      showNotification('Relationship lines hidden', 'info');
+    }
+  }
+}
+
+function toggleNodeLabels() {
+  console.log('🏷️ Toggling node labels visibility');
+  relationshipWebShowLabels = !relationshipWebShowLabels;
+  
+  // Update button text
+  const labelsBtn = document.querySelector('.web-control-btn[onclick*="toggleNodeLabels"]');
+  if (labelsBtn) {
+    if (relationshipWebShowLabels) {
+      labelsBtn.innerHTML = '<i class="fas fa-tag"></i> Hide Names';
+      showNotification('Character names shown', 'info');
+    } else {
+      labelsBtn.innerHTML = '<i class="fas fa-eye"></i> Show Names';
+      showNotification('Character names hidden', 'info');
+    }
+  }
+}
+
+function toggleLayoutFreeze() {
+  console.log('🔒 Toggling layout freeze');
+  relationshipWebLayoutFrozen = !relationshipWebLayoutFrozen;
+  
+  // Update button text
+  const freezeBtn = document.querySelector('.web-control-btn[onclick*="toggleLayoutFreeze"]');
+  if (freezeBtn) {
+    if (relationshipWebLayoutFrozen) {
+      freezeBtn.innerHTML = '<i class="fas fa-unlock"></i> Unfreeze Layout';
+      showNotification('Layout frozen - drag characters to reposition', 'info');
+    } else {
+      freezeBtn.innerHTML = '<i class="fas fa-lock"></i> Freeze Layout';
+      showNotification('Layout unfrozen - characters will auto-organize', 'info');
+    }
+  }
+}
+
+function handleRelationshipWebResize() {
+  const webView = document.querySelector('.relationship-web-view');
+  const canvas = document.getElementById('relationship-web-canvas');
+  
+  if (webView && webView.classList.contains('fullscreen')) {
+    // Resize canvas for fullscreen using container dimensions
+    const container = canvas.parentElement;
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+  } else if (canvas) {
+    // Resize canvas for normal view
+    const container = canvas.parentElement;
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+  }
+}
+
+function handleIsolatedToggleChange() {
+  console.log('🔄 Toggling isolated characters visibility');
+  
+  const showIsolated = document.getElementById('show-isolated-characters').checked;
+  
+  // Update the nodes to show/hide isolated characters
+  relationshipWebNodes.forEach(node => {
+    if (!node.hasRelationships) {
+      node.visible = showIsolated;
+    }
+  });
+  
+  // Restart animation to apply changes
+  if (relationshipWebAnimationId) {
+    cancelAnimationFrame(relationshipWebAnimationId);
+  }
+  animateRelationshipWeb();
 }
 
 function generateRelationshipWebData() {
   relationshipWebNodes = [];
   relationshipWebEdges = [];
   
+  // Determine which characters to show based on filter
+  let charactersToShow = allCharacters;
+  let relationshipsToShow = relationships;
+  
+  if (relationshipWebShowUserOnly) {
+    // Get user's character IDs
+    const userCharacterIds = new Set(userCharacters.map(char => char._id || char.id));
+    
+    // Filter characters to only show user's characters and those they have relationships with
+    const relatedCharacterIds = new Set();
+    
+    // Add user's characters
+    userCharacterIds.forEach(id => relatedCharacterIds.add(id));
+    
+    // Add characters that have relationships with user's characters
+    relationships.forEach(relationship => {
+      const sourceId = relationship.characterId._id || relationship.characterId;
+      const targetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
+      
+      if (userCharacterIds.has(sourceId)) {
+        relatedCharacterIds.add(targetId);
+      }
+      if (userCharacterIds.has(targetId)) {
+        relatedCharacterIds.add(sourceId);
+      }
+    });
+    
+    // Filter characters and relationships
+    charactersToShow = allCharacters.filter(char => 
+      relatedCharacterIds.has(char._id || char.id)
+    );
+    
+    relationshipsToShow = relationships.filter(relationship => {
+      const sourceId = relationship.characterId._id || relationship.characterId;
+      const targetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
+      return userCharacterIds.has(sourceId) || userCharacterIds.has(targetId);
+    });
+  }
+  
   // First pass: identify which characters have relationships
   const charactersWithRelationships = new Set();
   
-  relationships.forEach(relationship => {
+  relationshipsToShow.forEach(relationship => {
     const sourceId = relationship.characterId._id || relationship.characterId;
     const targetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
     
@@ -1614,36 +1956,40 @@ function generateRelationshipWebData() {
     charactersWithRelationships.add(targetId);
   });
   
-  // Only create nodes for characters that have relationships
-  allCharacters.forEach((character, index) => {
+  // Create nodes for the filtered characters
+  charactersToShow.forEach((character, index) => {
     const characterId = character._id || character.id;
+    const hasRelationships = charactersWithRelationships.has(characterId);
+    const isUserCharacter = userCharacters.some(userChar => 
+      (userChar._id || userChar.id) === characterId
+    );
     
-    // Only include characters that have relationships
-    if (charactersWithRelationships.has(characterId)) {
-      relationshipWebNodes.push({
-        id: characterId,
-        name: character.name,
-        x: Math.random() * (relationshipWebCanvas.width - 200) + 100,
-        y: Math.random() * (relationshipWebCanvas.height - 200) + 100,
-        vx: 0,
-        vy: 0,
-        radius: 25,
-        character: character,
-        hasRelationships: true
-      });
-      
-      // Preload character image if not already cached
-      if (character.icon && !characterImages.has(characterId)) {
-        loadCharacterImage(character);
-      }
+    relationshipWebNodes.push({
+      id: characterId,
+      name: character.name,
+      x: Math.random() * (relationshipWebCanvas.width - 200) + 100,
+      y: Math.random() * (relationshipWebCanvas.height - 200) + 100,
+      vx: 0,
+      vy: 0,
+      radius: 25,
+      character: character,
+      hasRelationships: hasRelationships,
+      isUserCharacter: isUserCharacter,
+      visible: true, // All nodes start visible
+      recentlyDragged: false // Track if node was recently dragged
+    });
+    
+    // Preload character image if not already cached
+    if (character.icon && !characterImages.has(characterId)) {
+      loadCharacterImage(character);
     }
   });
   
   // Create edges for relationships
   const relationshipMap = new Map(); // Track relationships between character pairs
   
-  console.log('🔍 Processing relationships:', relationships.length);
-  relationships.forEach(relationship => {
+  console.log('🔍 Processing relationships:', relationshipsToShow.length);
+  relationshipsToShow.forEach(relationship => {
     const sourceId = relationship.characterId._id || relationship.characterId;
     const targetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
     
@@ -1746,14 +2092,26 @@ function animateRelationshipWeb() {
   // Clear canvas
   relationshipWebCtx.clearRect(0, 0, relationshipWebCanvas.width, relationshipWebCanvas.height);
   
+  // Save context for transformations
+  relationshipWebCtx.save();
+  
+  // Apply zoom and pan transformations
+  relationshipWebCtx.translate(relationshipWebPanX, relationshipWebPanY);
+  relationshipWebCtx.scale(relationshipWebZoom, relationshipWebZoom);
+  
   // Apply forces
   applyRelationshipWebForces();
   
-  // Draw edges
-  drawRelationshipWebEdges();
+  // Draw edges (only if enabled)
+  if (relationshipWebShowLines) {
+    drawRelationshipWebEdges();
+  }
   
   // Draw nodes
   drawRelationshipWebNodes();
+  
+  // Restore context
+  relationshipWebCtx.restore();
   
   // Continue animation
   relationshipWebAnimationId = requestAnimationFrame(animateRelationshipWeb);
@@ -1761,9 +2119,9 @@ function animateRelationshipWeb() {
 
 function applyRelationshipWebForces() {
   relationshipWebNodes.forEach(node => {
-    // Only apply forces if node is not being dragged
-    if (relationshipWebDraggedNode === node) {
-      // Reset velocity when dragging to prevent drift
+    // Only apply forces if node is not being dragged and layout is not frozen
+    if (relationshipWebDraggedNode === node || relationshipWebLayoutFrozen) {
+      // Reset velocity when dragging or frozen to prevent movement
       node.vx = 0;
       node.vy = 0;
       return;
@@ -1777,24 +2135,55 @@ function applyRelationshipWebForces() {
       const dy = otherNode.y - node.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      if (distance > 0 && distance < 80) {
-        const force = (80 - distance) / distance * 0.015;
+      if (distance > 0 && distance < 100) {
+        const force = (100 - distance) / distance * 0.02;
         node.vx -= (dx / distance) * force;
         node.vy -= (dy / distance) * force;
       }
     });
     
+    // Attraction between connected nodes (reduced force)
+    relationshipWebEdges.forEach(edge => {
+      if (edge.source === node) {
+        const dx = edge.target.x - node.x;
+        const dy = edge.target.y - node.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 0 && distance < 150) { // Reduced attraction distance
+          const force = (distance - 100) / distance * 0.005; // Reduced force
+          node.vx += (dx / distance) * force;
+          node.vy += (dy / distance) * force;
+        }
+      }
+    });
+    
+    // Center attraction for better organization (only if not recently dragged)
+    if (!node.recentlyDragged) {
+      const centerX = relationshipWebCanvas.width / 2;
+      const centerY = relationshipWebCanvas.height / 2;
+      const dx = centerX - node.x;
+      const dy = centerY - node.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance > 0) {
+        const force = distance * 0.00005; // Reduced center attraction
+        node.vx += (dx / distance) * force;
+        node.vy += (dy / distance) * force;
+      }
+    }
+    
     // Light damping to prevent infinite movement
-    node.vx *= 0.98;
-    node.vy *= 0.98;
+    node.vx *= 0.95;
+    node.vy *= 0.95;
     
     // Update position
     node.x += node.vx;
     node.y += node.vy;
     
-    // Keep nodes within bounds
-    node.x = Math.max(node.radius, Math.min(relationshipWebCanvas.width - node.radius, node.x));
-    node.y = Math.max(node.radius, Math.min(relationshipWebCanvas.height - node.radius, node.y));
+    // Keep nodes within bounds with some padding
+    const padding = 50;
+    node.x = Math.max(node.radius + padding, Math.min(relationshipWebCanvas.width - node.radius - padding, node.x));
+    node.y = Math.max(node.radius + padding, Math.min(relationshipWebCanvas.height - node.radius - padding, node.y));
   });
 }
 
@@ -1812,7 +2201,7 @@ function drawRelationshipWebEdges() {
     
     if (edge.bidirectional) {
       // Bidirectional relationship - draw two separate lines with arrows
-      const lineOffset = 6; // Increased distance between lines for better visibility
+      const lineOffset = 3; // Increased distance between lines for better visibility
       
       // Draw source to target line (left)
       const leftSourceX = edge.source.x - Math.cos(perpendicularAngle) * lineOffset;
@@ -1858,7 +2247,7 @@ function drawRelationshipLine(startX, startY, endX, endY, colors) {
     relationshipWebCtx.strokeStyle = colors[0];
   }
   
-  relationshipWebCtx.lineWidth = 4;
+  relationshipWebCtx.lineWidth = 2;
   relationshipWebCtx.stroke();
 }
 
@@ -1899,6 +2288,11 @@ function drawDirectionalArrow(x, y, angle, color) {
 
 function drawRelationshipWebNodes() {
   relationshipWebNodes.forEach(node => {
+    // Skip nodes that are not visible (isolated characters when toggle is off)
+    if (node.visible === false) {
+      return;
+    }
+    
     const displayRadius = node.radius;
     
     // Draw node circle with enhanced styling
@@ -1915,9 +2309,20 @@ function drawRelationshipWebNodes() {
     relationshipWebCtx.fillStyle = gradient;
     relationshipWebCtx.fill();
     
-    // Border for connected characters
-    relationshipWebCtx.strokeStyle = '#4CAF50';
-    relationshipWebCtx.lineWidth = 3;
+    // Border styling based on whether character has relationships and if it's a user character
+    if (node.isUserCharacter) {
+      // Blue border for user's characters
+      relationshipWebCtx.strokeStyle = '#2196F3';
+      relationshipWebCtx.lineWidth = 4;
+    } else if (node.hasRelationships) {
+      // Green border for characters with relationships
+      relationshipWebCtx.strokeStyle = '#4CAF50';
+      relationshipWebCtx.lineWidth = 3;
+    } else {
+      // Gray border for characters without relationships
+      relationshipWebCtx.strokeStyle = '#9E9E9E';
+      relationshipWebCtx.lineWidth = 2;
+    }
     relationshipWebCtx.stroke();
     
     // Draw character icon if available
@@ -1926,7 +2331,7 @@ function drawRelationshipWebNodes() {
       const cachedImage = characterImages.get(characterId);
       
       if (cachedImage) {
-        const iconSize = displayRadius * 1.6;
+        const iconSize = displayRadius * 2.2; // Increased from 1.6 to 2.2
         const iconX = node.x - iconSize / 2;
         const iconY = node.y - iconSize / 2;
         
@@ -1942,7 +2347,7 @@ function drawRelationshipWebNodes() {
         relationshipWebCtx.restore();
       } else {
         // Draw a placeholder while image is loading
-        const iconSize = displayRadius * 1.6;
+        const iconSize = displayRadius * 2.2; // Increased from 1.6 to 2.2
         const iconX = node.x - iconSize / 2;
         const iconY = node.y - iconSize / 2;
         
@@ -1969,7 +2374,6 @@ function drawRelationshipWebNodes() {
     }
     
     // Draw character name with improved styling
-    relationshipWebCtx.fillStyle = '#FFFFFF';
     relationshipWebCtx.font = 'bold 13px Arial, sans-serif';
     relationshipWebCtx.textAlign = 'center';
     relationshipWebCtx.textBaseline = 'middle';
@@ -1980,8 +2384,17 @@ function drawRelationshipWebNodes() {
     relationshipWebCtx.shadowOffsetX = 1;
     relationshipWebCtx.shadowOffsetY = 1;
     
-    // Draw the name
-    relationshipWebCtx.fillText(node.name, node.x, node.y + displayRadius + 25);
+    // Draw the name with different styling based on relationships
+    if (node.hasRelationships) {
+      relationshipWebCtx.fillStyle = '#FFFFFF';
+    } else {
+      relationshipWebCtx.fillStyle = '#BDBDBD'; // Gray for characters without relationships
+    }
+    
+    // Only draw name if labels are enabled
+    if (relationshipWebShowLabels) {
+      relationshipWebCtx.fillText(node.name, node.x, node.y + displayRadius + 25);
+    }
     
     // Reset effects
     relationshipWebCtx.shadowBlur = 0;
@@ -1992,42 +2405,79 @@ function drawRelationshipWebNodes() {
 
 function handleRelationshipWebMouseDown(event) {
   const rect = relationshipWebCanvas.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
+  const x = (event.clientX - rect.left - relationshipWebPanX) / relationshipWebZoom;
+  const y = (event.clientY - rect.top - relationshipWebPanY) / relationshipWebZoom;
   
-  relationshipWebNodes.forEach(node => {
+  // Check if clicking on a node
+  relationshipWebDraggedNode = relationshipWebNodes.find(node => {
     const dx = x - node.x;
     const dy = y - node.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    const clickableRadius = node.radius + 10;
-    
-    if (distance < clickableRadius) {
-      relationshipWebDraggedNode = node;
-      relationshipWebMouse.x = x;
-      relationshipWebMouse.y = y;
-    }
+    return distance <= node.radius + 10;
   });
+  
+  if (relationshipWebDraggedNode) {
+    relationshipWebCanvas.style.cursor = 'grabbing';
+  } else {
+    // Start panning
+    relationshipWebIsDragging = true;
+    relationshipWebLastMouseX = event.clientX;
+    relationshipWebLastMouseY = event.clientY;
+    relationshipWebCanvas.style.cursor = 'grabbing';
+  }
 }
 
 function handleRelationshipWebMouseMove(event) {
   if (relationshipWebDraggedNode) {
     const rect = relationshipWebCanvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const x = (event.clientX - rect.left - relationshipWebPanX) / relationshipWebZoom;
+    const y = (event.clientY - rect.top - relationshipWebPanY) / relationshipWebZoom;
     
     relationshipWebDraggedNode.x = x;
     relationshipWebDraggedNode.y = y;
     relationshipWebDraggedNode.vx = 0;
     relationshipWebDraggedNode.vy = 0;
+    relationshipWebDraggedNode.recentlyDragged = true; // Mark as recently dragged
+    
+    // Reset the recently dragged flag after a delay
+    setTimeout(() => {
+      if (relationshipWebDraggedNode) {
+        relationshipWebDraggedNode.recentlyDragged = false;
+      }
+    }, 2000); // 2 seconds delay
+  } else if (relationshipWebIsDragging) {
+    // Handle panning
+    const deltaX = event.clientX - relationshipWebLastMouseX;
+    const deltaY = event.clientY - relationshipWebLastMouseY;
+    
+    relationshipWebPanX += deltaX;
+    relationshipWebPanY += deltaY;
+    
+    relationshipWebLastMouseX = event.clientX;
+    relationshipWebLastMouseY = event.clientY;
   }
 }
 
 function handleRelationshipWebMouseUp() {
   relationshipWebDraggedNode = null;
+  relationshipWebIsDragging = false;
+  relationshipWebCanvas.style.cursor = 'grab';
 }
 
 function handleRelationshipWebWheel(event) {
   event.preventDefault();
-  // Could implement zoom functionality here
+  
+  // Zoom functionality
+  const rect = relationshipWebCanvas.getBoundingClientRect();
+  const mouseX = event.clientX - rect.left;
+  const mouseY = event.clientY - rect.top;
+  
+  const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
+  const newZoom = Math.max(0.5, Math.min(3, relationshipWebZoom * zoomFactor));
+  
+  // Zoom towards mouse position
+  relationshipWebPanX = mouseX - (mouseX - relationshipWebPanX) * (newZoom / relationshipWebZoom);
+  relationshipWebPanY = mouseY - (mouseY - relationshipWebPanY) * (newZoom / relationshipWebZoom);
+  
+  relationshipWebZoom = newZoom;
 }

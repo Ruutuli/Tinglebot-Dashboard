@@ -1000,10 +1000,45 @@
           <div class="relationship-web-view" style="display: none;">
             <div class="relationship-web-header">
               <h3><i class="fas fa-project-diagram"></i> Relationship Web</h3>
-              <button class="back-to-list-btn" onclick="relationshipsModule.backToRelationshipList()">
-                <i class="fas fa-list"></i>
-                Back to List
-              </button>
+              <div class="relationship-web-header-actions">
+                <label class="toggle-isolated-btn">
+                  <input type="checkbox" id="show-isolated-characters" checked>
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Show Isolated Characters</span>
+                </label>
+                <button class="web-control-btn" onclick="relationshipsModule.resetZoom()" title="Reset Zoom">
+                  <i class="fas fa-search"></i>
+                  Reset Zoom
+                </button>
+                <button class="web-control-btn" onclick="relationshipsModule.centerView()" title="Center View">
+                  <i class="fas fa-crosshairs"></i>
+                  Center View
+                </button>
+                <button class="web-control-btn" onclick="relationshipsModule.toggleUserCharacters()" title="Show Only User Characters">
+                  <i class="fas fa-user"></i>
+                  My Characters
+                </button>
+                <button class="web-control-btn" onclick="relationshipsModule.toggleRelationshipLines()" title="Toggle Relationship Lines">
+                  <i class="fas fa-project-diagram"></i>
+                  Hide Lines
+                </button>
+                <button class="web-control-btn" onclick="relationshipsModule.toggleNodeLabels()" title="Toggle Character Names">
+                  <i class="fas fa-tag"></i>
+                  Hide Names
+                </button>
+                <button class="web-control-btn" onclick="relationshipsModule.toggleLayoutFreeze()" title="Freeze/Unfreeze Layout">
+                  <i class="fas fa-lock"></i>
+                  Freeze Layout
+                </button>
+                <button class="fullscreen-btn" onclick="relationshipsModule.toggleFullscreen()" title="Toggle Fullscreen" style="background: #4CAF50; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; font-weight: bold; cursor: pointer;">
+                  <i class="fas fa-expand"></i>
+                  FULLSCREEN
+                </button>
+                <button class="back-to-list-btn" onclick="relationshipsModule.backToRelationshipList()">
+                  <i class="fas fa-list"></i>
+                  Back to List
+                </button>
+              </div>
             </div>
             <div class="relationship-web-legend">
               <h4>Relationship Types:</h4>
@@ -1020,6 +1055,12 @@
                 <div class="legend-item"><span class="legend-color rival"></span>Rival</div>
                 <div class="legend-item"><span class="legend-color admire"></span>Admire</div>
                 <div class="legend-item"><span class="legend-color other"></span>Other</div>
+              </div>
+              <h4 style="margin-top: 1rem;">Character Nodes:</h4>
+              <div class="legend-items">
+                <div class="legend-item"><span class="legend-color user-character"></span>My Characters</div>
+                <div class="legend-item"><span class="legend-color connected"></span>Has Relationships</div>
+                <div class="legend-item"><span class="legend-color isolated"></span>No Relationships</div>
               </div>
             </div>
             <div class="relationship-web-container">
