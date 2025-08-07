@@ -514,6 +514,32 @@
   font-size: 0.8rem;
 }
 
+.character-relationship-notes {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  line-height: 1.4;
+}
+
+.character-relationship-notes i {
+  color: var(--primary-color);
+  font-size: 0.8rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+
+.character-relationship-notes span {
+  flex: 1;
+  word-wrap: break-word;
+}
+
 @media (max-width: 768px) {
   .character-relationships-modal-content {
     margin: 1rem;
@@ -1558,39 +1584,39 @@
 ============================================================================ */
 
 .relationship-type.lovers {
-  color: #ff6b6b;
+  color: var(--relationship-color-lovers);
 }
 
 .relationship-type.crush {
-  color: #ffa726;
+  color: var(--relationship-color-crush);
 }
 
 .relationship-type.close-friend {
-  color: #ffd54f;
+  color: var(--relationship-color-close-friend);
 }
 
 .relationship-type.friend {
-  color: #81c784;
+  color: var(--relationship-color-friend);
 }
 
 .relationship-type.acquaintance {
-  color: #64b5f6;
+  color: var(--relationship-color-acquaintance);
 }
 
 .relationship-type.dislike {
-  color: #ba68c8;
+  color: var(--relationship-color-dislike);
 }
 
 .relationship-type.hate {
-  color: #424242;
+  color: var(--relationship-color-hate);
 }
 
 .relationship-type.neutral {
-  color: #bdbdbd;
+  color: var(--relationship-color-neutral);
 }
 
 .relationship-type.other {
-  color: #8d6e63;
+  color: var(--relationship-color-other);
 }
 
 /* ============================================================================
@@ -1697,15 +1723,44 @@
   flex-shrink: 0;
 }
 
-.legend-color.lovers { background: #ff6b6b; }
-.legend-color.crush { background: #ffa726; }
-.legend-color.close-friend { background: #ffd54f; }
-.legend-color.friend { background: #81c784; }
-.legend-color.acquaintance { background: #64b5f6; }
-.legend-color.dislike { background: #ba68c8; }
-.legend-color.hate { background: #424242; }
-.legend-color.neutral { background: #bdbdbd; }
-.legend-color.other { background: #8d6e63; }
+.legend-color.lovers { background: var(--relationship-color-lovers); }         /* ❤️ Red */
+.legend-color.crush { background: var(--relationship-color-crush); }          /* 🧡 Orange */
+.legend-color.close-friend { background: var(--relationship-color-close-friend); }   /* 💛 Yellow */
+.legend-color.friend { background: var(--relationship-color-friend); }         /* 💚 Green */
+.legend-color.acquaintance { background: var(--relationship-color-acquaintance); }   /* 💙 Blue */
+.legend-color.dislike { background: var(--relationship-color-dislike); }        /* 💜 Purple */
+.legend-color.hate { background: var(--relationship-color-hate); }           /* 🖤 Black */
+.legend-color.neutral { background: var(--relationship-color-neutral); border: 1px solid #bdc3c7; } /* 🤍 White */
+.legend-color.family { background: var(--relationship-color-family); }          /* 👨‍👩‍👧‍👦 Warm coral */
+.legend-color.rival { background: var(--relationship-color-rival); }           /* ⚔️ Deep orange-red */
+.legend-color.admire { background: var(--relationship-color-admire); }         /* ⭐ Bright yellow */
+.legend-color.other { background: var(--relationship-color-other); }          /* 🟫 Brown */
+
+
+.legend-instructions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.legend-instructions p {
+  color: var(--text-color);
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.legend-instructions ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.legend-instructions li {
+  margin-bottom: 0.25rem;
+}
 
 .relationship-web-container {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);

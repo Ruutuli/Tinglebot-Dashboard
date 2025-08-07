@@ -1846,7 +1846,7 @@ app.get('/api/relationships/character/:characterId', requireAuth, async (req, re
 // Creates a new relationship between characters
 app.post('/api/relationships', requireAuth, async (req, res) => {
   try {
-    const { characterId, targetCharacterId, relationshipType, notes, isMutual } = req.body;
+    const { characterId, targetCharacterId, characterName, targetCharacterName, relationshipType, notes } = req.body;
     const userId = req.user.discordId;
     
     // Validate required fields
@@ -1881,9 +1881,10 @@ app.post('/api/relationships', requireAuth, async (req, res) => {
       userId,
       characterId,
       targetCharacterId,
+      characterName,
+      targetCharacterName,
       relationshipTypes: Array.isArray(relationshipType) ? relationshipType : [relationshipType],
-      notes: notes || '',
-      isMutual: isMutual || false
+      notes: notes || ''
     });
     
     await relationship.save();
@@ -1911,7 +1912,7 @@ app.post('/api/relationships', requireAuth, async (req, res) => {
 app.put('/api/relationships/:relationshipId', requireAuth, async (req, res) => {
   try {
     const { relationshipId } = req.params;
-    const { characterId, targetCharacterId, relationshipType, notes, isMutual } = req.body;
+    const { characterId, targetCharacterId, characterName, targetCharacterName, relationshipType, notes } = req.body;
     const userId = req.user.discordId;
     
     // Validate required fields
@@ -1939,9 +1940,10 @@ app.put('/api/relationships/:relationshipId', requireAuth, async (req, res) => {
     
     // Update the relationship
     relationship.targetCharacterId = targetCharacterId;
+    relationship.characterName = characterName;
+    relationship.targetCharacterName = targetCharacterName;
     relationship.relationshipTypes = Array.isArray(relationshipType) ? relationshipType : [relationshipType];
     relationship.notes = notes || '';
-    relationship.isMutual = isMutual || false;
     
     await relationship.save();
     

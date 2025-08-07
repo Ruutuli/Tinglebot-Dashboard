@@ -5,6 +5,75 @@
 ============================================================================ */
 
 // ============================================================================
+// ------------------- Centralized Relationship Configuration -------------------
+// ============================================================================
+
+// Centralized relationship type configuration
+const RELATIONSHIP_CONFIG = {
+  LOVERS: { 
+    emoji: '❤️', 
+    label: 'Lovers', 
+    color: '#e57373'  // Soft red
+  },
+  CRUSH: { 
+    emoji: '🧡', 
+    label: 'Crush', 
+    color: '#f4a261'  // Warm orange
+  },
+  CLOSE_FRIEND: { 
+    emoji: '💛', 
+    label: 'Close Friend', 
+    color: '#f6e05e'  // Golden yellow
+  },
+  FRIEND: { 
+    emoji: '💚', 
+    label: 'Friend', 
+    color: '#81c784'  // Muted green
+  },
+  ACQUAINTANCE: { 
+    emoji: '💙', 
+    label: 'Acquaintance', 
+    color: '#64b5f6'  // Soft blue
+  },
+  DISLIKE: { 
+    emoji: '💜', 
+    label: 'Dislike', 
+    color: '#ba68c8'  // Lavender purple
+  },
+  HATE: { 
+    emoji: '🖤', 
+    label: 'Hate', 
+    color: '#424242'  // Dark grayish black
+  },
+  NEUTRAL: { 
+    emoji: '🤍', 
+    label: 'Neutral', 
+    color: '#f5f5f5'  // Light gray
+  },
+  FAMILY: { 
+    emoji: '👨‍👩‍👧‍👦', 
+    label: 'Family', 
+    color: '#ff8a65'  // Warm coral
+  },
+  RIVAL: { 
+    emoji: '⚔️', 
+    label: 'Rival', 
+    color: '#d84315'  // Deep orange-red
+  },
+  ADMIRE: { 
+    emoji: '⭐', 
+    label: 'Admire', 
+    color: '#ffd54f'  // Bright yellow
+  },
+  OTHER: { 
+    emoji: '🤎', 
+    label: 'Other', 
+    color: '#a1887f'  // Soft brown
+  }
+};
+
+
+// ============================================================================
 // ------------------- Module Exports -------------------
 // ============================================================================
 export const relationshipsModule = {
@@ -15,6 +84,7 @@ export const relationshipsModule = {
   loadCharacterRelationships,
   showAddRelationshipModal,
   saveRelationship,
+  editRelationship,
   deleteRelationship,
   backToCharacterSelection,
   showAllRelationships,
@@ -22,11 +92,34 @@ export const relationshipsModule = {
   showCharacterRelationshipsModal,
   closeModal,
   showRelationshipWeb,
-  backToRelationshipList
+  backToRelationshipList,
+  RELATIONSHIP_CONFIG // Export the config for use in other modules
 };
 
 // Make module available globally
 window.relationshipsModule = relationshipsModule;
+window.RELATIONSHIP_CONFIG = RELATIONSHIP_CONFIG; // Make config globally available
+
+// Generate CSS variables for relationship colors
+function generateRelationshipCSSVariables() {
+  const style = document.createElement('style');
+  style.id = 'relationship-css-variables';
+  
+  let cssVariables = ':root {\n';
+  Object.entries(RELATIONSHIP_CONFIG).forEach(([key, config]) => {
+    const cssKey = key.toLowerCase().replace(/_/g, '-');
+    cssVariables += `  --relationship-color-${cssKey}: ${config.color};\n`;
+  });
+  cssVariables += '}';
+  
+  style.textContent = cssVariables;
+  document.head.appendChild(style);
+}
+
+// Initialize CSS variables when module loads
+document.addEventListener('DOMContentLoaded', () => {
+  generateRelationshipCSSVariables();
+});
 
 // ============================================================================
 // ------------------- Global Variables -------------------
@@ -36,18 +129,8 @@ let userCharacters = [];
 let allCharacters = [];
 let relationships = [];
 
-// Relationship types with emojis
-const RELATIONSHIP_TYPES = {
-  LOVERS: { emoji: '❤️', label: 'Lovers', color: '#ff6b6b' },
-  CRUSH: { emoji: '🧡', label: 'Crush', color: '#ffa726' },
-  CLOSE_FRIEND: { emoji: '💛', label: 'Close Friend', color: '#ffd54f' },
-  FRIEND: { emoji: '💚', label: 'Friend', color: '#81c784' },
-  ACQUAINTANCE: { emoji: '💙', label: 'Acquaintance', color: '#64b5f6' },
-  DISLIKE: { emoji: '💜', label: 'Dislike', color: '#ba68c8' },
-  HATE: { emoji: '🖤', label: 'Hate', color: '#424242' },
-  NEUTRAL: { emoji: '🤍', label: 'Neutral', color: '#bdbdbd' },
-  OTHER: { emoji: '🤎', label: 'Other', color: '#8d6e63' }
-};
+// Relationship types with emojis - now using centralized config
+const RELATIONSHIP_TYPES = RELATIONSHIP_CONFIG;
 
 // ============================================================================
 // ------------------- Initialization -------------------
@@ -780,6 +863,12 @@ function showCharacterRelationshipsModal(characterId) {
                 <div class="character-relationship-details">
                   ${typeLabels ? `<div class="character-relationship-types">${typeLabels}</div>` : ''}
                   ${rel.isMutual ? '<div class="character-relationship-mutual"><i class="fas fa-sync-alt"></i> Mutual Relationship</div>' : ''}
+                  ${rel.notes && rel.notes.trim() ? `
+                    <div class="character-relationship-notes">
+                      <i class="fas fa-sticky-note"></i>
+                      <span>${rel.notes}</span>
+                    </div>
+                  ` : ''}
                 </div>
               </div>
             `;
@@ -838,6 +927,9 @@ function showAddRelationshipModal(preSelectedTargetId = null) {
   const form = modal.querySelector('.relationship-form');
   form.reset();
   
+  // Reset relationship type options visual state
+  resetRelationshipTypeOptions();
+  
   // Load available characters for dropdown
   loadAvailableCharacters(preSelectedTargetId);
 }
@@ -877,13 +969,6 @@ function createRelationshipModal() {
         <div class="relationship-form-group">
           <label for="relationship-notes">Notes (Optional)</label>
           <textarea id="relationship-notes" name="notes" placeholder="Add any notes about this relationship..."></textarea>
-        </div>
-        
-        <div class="relationship-form-group">
-          <div class="checkbox-group">
-            <input type="checkbox" id="is-mutual" name="isMutual">
-            <label for="is-mutual">Mutual Relationship</label>
-          </div>
         </div>
         
         <div class="form-actions">
@@ -930,6 +1015,15 @@ function toggleRelationshipTypeOption(option) {
   } else {
     option.classList.remove('selected');
   }
+}
+
+function resetRelationshipTypeOptions() {
+  const options = document.querySelectorAll('.relationship-type-option');
+  options.forEach(option => {
+    const checkbox = option.querySelector('input[type="checkbox"]');
+    checkbox.checked = false;
+    option.classList.remove('selected');
+  });
 }
 
 async function loadAvailableCharacters(preSelectedTargetId = null) {
@@ -982,12 +1076,29 @@ async function saveRelationship(event) {
     return;
   }
   
+  // Get the target character name
+  const targetCharacterId = formData.get('targetCharacterId');
+  const targetCharacter = allCharacters.find(char => char._id === targetCharacterId);
+  
+  // Use stored names for editing, or get from characters for new relationships
+  const characterName = isEditMode ? form.dataset.characterName : currentCharacter.name;
+  const targetCharacterName = isEditMode ? form.dataset.targetCharacterName : (targetCharacter ? targetCharacter.name : 'Unknown Character');
+  
+  console.log('🔍 Character names for saving:', {
+    isEditMode,
+    characterName,
+    targetCharacterName,
+    storedCharacterName: form.dataset.characterName,
+    storedTargetCharacterName: form.dataset.targetCharacterName
+  });
+  
   const relationshipData = {
     characterId: currentCharacter._id,
-    targetCharacterId: formData.get('targetCharacterId'),
+    targetCharacterId: targetCharacterId,
+    characterName: characterName,
+    targetCharacterName: targetCharacterName,
     relationshipType: relationshipTypes,
-    notes: formData.get('notes'),
-    isMutual: formData.get('isMutual') === 'on'
+    notes: formData.get('notes')
   };
   
   try {
@@ -1050,7 +1161,6 @@ async function editRelationship(relationshipId) {
     const targetSelect = form.querySelector('#target-character');
     const typeCheckboxes = form.querySelectorAll('input[name="relationshipTypes"]');
     const notesTextarea = form.querySelector('#relationship-notes');
-    const mutualCheckbox = form.querySelector('#is-mutual');
     
     if (targetSelect) {
       targetSelect.value = typeof relationship.targetCharacterId === 'object' 
@@ -1059,6 +1169,13 @@ async function editRelationship(relationshipId) {
     }
     
     if (typeCheckboxes) {
+      // First reset all checkboxes
+      typeCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+        checkbox.closest('.relationship-type-option').classList.remove('selected');
+      });
+      
+      // Then set the ones for this relationship
       typeCheckboxes.forEach(checkbox => {
         if (relationship.relationshipTypes && relationship.relationshipTypes.includes(checkbox.value)) {
           checkbox.checked = true;
@@ -1071,10 +1188,6 @@ async function editRelationship(relationshipId) {
       notesTextarea.value = relationship.notes || '';
     }
     
-    if (mutualCheckbox) {
-      mutualCheckbox.checked = relationship.isMutual || false;
-    }
-    
     // Update modal title
     const modalTitle = modal.querySelector('.relationship-modal-header h3');
     if (modalTitle) {
@@ -1084,6 +1197,24 @@ async function editRelationship(relationshipId) {
     // Update form to handle edit mode
     form.dataset.editMode = 'true';
     form.dataset.relationshipId = relationshipId;
+    
+    // Store character names for editing
+    form.dataset.characterName = currentCharacter.name;
+    
+    // Get the target character name from the relationship data or find the character
+    let targetCharacterName = relationship.targetCharacterName;
+    if (!targetCharacterName) {
+      const targetCharacter = findCharacterById(relationship.targetCharacterId);
+      targetCharacterName = targetCharacter ? targetCharacter.name : 'Unknown Character';
+    }
+    form.dataset.targetCharacterName = targetCharacterName;
+    
+    console.log('🔍 Storing character names for editing:', {
+      characterName: form.dataset.characterName,
+      targetCharacterName: form.dataset.targetCharacterName,
+      relationshipTargetCharacterName: relationship.targetCharacterName,
+      relationshipTargetCharacterId: relationship.targetCharacterId
+    });
     
   }, 100);
 }
@@ -1256,6 +1387,11 @@ let relationshipWebMouse = { x: 0, y: 0 };
 let relationshipWebDraggedNode = null;
 let characterImages = new Map(); // Cache for character images
 
+// Relationship colors extracted from centralized config
+const RELATIONSHIP_COLORS = Object.fromEntries(
+  Object.entries(RELATIONSHIP_CONFIG).map(([key, value]) => [key, value.color])
+);
+
 function showRelationshipWeb() {
   console.log('🕸️ Showing relationship web');
   
@@ -1341,9 +1477,9 @@ function generateRelationshipWebData() {
         y: Math.random() * (relationshipWebCanvas.height - 200) + 100,
         vx: 0,
         vy: 0,
-        radius: 20,
+        radius: 25,
         character: character,
-        hasRelationships: true // All characters in the web have relationships
+        hasRelationships: true
       });
       
       // Preload character image if not already cached
@@ -1358,21 +1494,21 @@ function generateRelationshipWebData() {
   
   console.log('🔍 Processing relationships:', relationships.length);
   relationships.forEach(relationship => {
-    const actualSourceId = relationship.characterId._id || relationship.characterId;
-    const actualTargetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
+    const sourceId = relationship.characterId._id || relationship.characterId;
+    const targetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
     
     console.log('📋 Relationship:', {
-      source: actualSourceId,
-      target: actualTargetId,
+      source: sourceId,
+      target: targetId,
       types: relationship.relationshipTypes
     });
     
-    const sourceNode = relationshipWebNodes.find(node => node.id === actualSourceId);
-    const targetNode = relationshipWebNodes.find(node => node.id === actualTargetId);
+    const sourceNode = relationshipWebNodes.find(node => node.id === sourceId);
+    const targetNode = relationshipWebNodes.find(node => node.id === targetId);
     
     if (sourceNode && targetNode) {
       // Create a unique key for this character pair (sorted to ensure consistency)
-      const pairKey = [actualSourceId, actualTargetId].sort().join('_');
+      const pairKey = [sourceId, targetId].sort().join('_');
       
       if (!relationshipMap.has(pairKey)) {
         relationshipMap.set(pairKey, {
@@ -1385,22 +1521,25 @@ function generateRelationshipWebData() {
       
       const pair = relationshipMap.get(pairKey);
       
-      // Store the relationship based on the actual direction from the relationship data
-      // The relationship.characterId is the source, relationship.targetCharacterId is the target
-      const relationshipSourceId = relationship.characterId._id || relationship.characterId;
-      const relationshipTargetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
+      // Determine which direction this relationship represents
+      const sortedIds = [sourceId, targetId].sort();
+      const isSourceToTarget = sourceId === sortedIds[0] && targetId === sortedIds[1];
       
-      if (actualSourceId === relationshipSourceId && actualTargetId === relationshipTargetId) {
+      if (isSourceToTarget) {
         // This is source -> target relationship
         pair.sourceToTarget = {
-          types: relationship.relationshipTypes,
-          colors: relationship.relationshipTypes.map(type => RELATIONSHIP_TYPES[type]?.color || '#8d6e63')
+          types: relationship.relationshipTypes || [relationship.relationshipType] || ['OTHER'],
+          colors: (relationship.relationshipTypes || [relationship.relationshipType] || ['OTHER']).map(type => 
+            RELATIONSHIP_COLORS[type] || RELATIONSHIP_COLORS.OTHER
+          )
         };
-      } else if (actualSourceId === relationshipTargetId && actualTargetId === relationshipSourceId) {
+      } else {
         // This is target -> source relationship
         pair.targetToSource = {
-          types: relationship.relationshipTypes,
-          colors: relationship.relationshipTypes.map(type => RELATIONSHIP_TYPES[type]?.color || '#8d6e63')
+          types: relationship.relationshipTypes || [relationship.relationshipType] || ['OTHER'],
+          colors: (relationship.relationshipTypes || [relationship.relationshipType] || ['OTHER']).map(type => 
+            RELATIONSHIP_COLORS[type] || RELATIONSHIP_COLORS.OTHER
+          )
         };
       }
     }
@@ -1410,12 +1549,14 @@ function generateRelationshipWebData() {
   relationshipMap.forEach((pair, key) => {
     console.log('🔗 Processing relationship pair:', key, {
       sourceToTarget: pair.sourceToTarget,
-      targetToSource: pair.targetToSource
+      targetToSource: pair.targetToSource,
+      sourceName: pair.source.name,
+      targetName: pair.target.name
     });
     
     if (pair.sourceToTarget && pair.targetToSource) {
       // Bidirectional relationship - create two parallel lines
-      console.log('🔄 Creating bidirectional relationship');
+      console.log('🔄 Creating bidirectional relationship between', pair.source.name, 'and', pair.target.name);
       relationshipWebEdges.push({
         source: pair.source,
         target: pair.target,
@@ -1425,7 +1566,7 @@ function generateRelationshipWebData() {
       });
     } else if (pair.sourceToTarget) {
       // Unidirectional relationship - create single line from source to target
-      console.log('➡️ Creating unidirectional relationship (source to target)');
+      console.log('➡️ Creating unidirectional relationship (source to target):', pair.source.name, '->', pair.target.name);
       relationshipWebEdges.push({
         source: pair.source,
         target: pair.target,
@@ -1436,7 +1577,7 @@ function generateRelationshipWebData() {
       });
     } else if (pair.targetToSource) {
       // Unidirectional relationship - create single line from target to source
-      console.log('⬅️ Creating unidirectional relationship (target to source)');
+      console.log('⬅️ Creating unidirectional relationship (target to source):', pair.target.name, '->', pair.source.name);
       relationshipWebEdges.push({
         source: pair.target,
         target: pair.source,
@@ -1486,15 +1627,14 @@ function applyRelationshipWebForces() {
       const dy = otherNode.y - node.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      if (distance > 0 && distance < 60) {
-        const force = (60 - distance) / distance * 0.02; // Very light repulsion
+      if (distance > 0 && distance < 80) {
+        const force = (80 - distance) / distance * 0.015;
         node.vx -= (dx / distance) * force;
         node.vy -= (dy / distance) * force;
       }
     });
     
-    // No center attraction - let nodes stay where they are
-    // Only apply very light damping to prevent infinite movement
+    // Light damping to prevent infinite movement
     node.vx *= 0.98;
     node.vy *= 0.98;
     
@@ -1522,162 +1662,94 @@ function drawRelationshipWebEdges() {
     
     if (edge.bidirectional) {
       // Bidirectional relationship - draw two separate lines with arrows
-      const lineOffset = 6; // Distance between lines
+      const lineOffset = 4; // Closer distance between lines
       
-      // Draw source to target line (upper)
-      const upperSourceX = edge.source.x + Math.cos(perpendicularAngle) * lineOffset;
-      const upperSourceY = edge.source.y + Math.sin(perpendicularAngle) * lineOffset;
-      const upperTargetX = edge.target.x + Math.cos(perpendicularAngle) * lineOffset;
-      const upperTargetY = edge.target.y + Math.sin(perpendicularAngle) * lineOffset;
+      // Draw source to target line (left)
+      const leftSourceX = edge.source.x - Math.cos(perpendicularAngle) * lineOffset;
+      const leftSourceY = edge.source.y - Math.sin(perpendicularAngle) * lineOffset;
+      const leftTargetX = edge.target.x - Math.cos(perpendicularAngle) * lineOffset;
+      const leftTargetY = edge.target.y - Math.sin(perpendicularAngle) * lineOffset;
       
-      // Check if source to target has multiple relationship types
-      if (edge.sourceToTarget.colors.length > 1) {
-        // Draw gradient line for multiple relationship types
-        const gradient = relationshipWebCtx.createLinearGradient(
-          upperSourceX, upperSourceY, upperTargetX, upperTargetY
-        );
-        edge.sourceToTarget.colors.forEach((color, index) => {
-          const stop = index / (edge.sourceToTarget.colors.length - 1);
-          gradient.addColorStop(stop, color);
-        });
-        
-        relationshipWebCtx.beginPath();
-        relationshipWebCtx.moveTo(upperSourceX, upperSourceY);
-        relationshipWebCtx.lineTo(upperTargetX, upperTargetY);
-        relationshipWebCtx.strokeStyle = gradient;
-        relationshipWebCtx.lineWidth = 3;
-        relationshipWebCtx.stroke();
-      } else {
-        // Draw solid color line for single relationship type
-        relationshipWebCtx.beginPath();
-        relationshipWebCtx.moveTo(upperSourceX, upperSourceY);
-        relationshipWebCtx.lineTo(upperTargetX, upperTargetY);
-        relationshipWebCtx.strokeStyle = edge.sourceToTarget.colors[0];
-        relationshipWebCtx.lineWidth = 3;
-        relationshipWebCtx.stroke();
-      }
+      drawRelationshipLine(leftSourceX, leftSourceY, leftTargetX, leftTargetY, edge.sourceToTarget.colors);
+      drawDirectionalArrow(leftTargetX, leftTargetY, lineAngle, edge.sourceToTarget.colors);
       
-      // Draw target to source line (lower)
-      const lowerSourceX = edge.source.x - Math.cos(perpendicularAngle) * lineOffset;
-      const lowerSourceY = edge.source.y - Math.sin(perpendicularAngle) * lineOffset;
-      const lowerTargetX = edge.target.x - Math.cos(perpendicularAngle) * lineOffset;
-      const lowerTargetY = edge.target.y - Math.sin(perpendicularAngle) * lineOffset;
+      // Draw target to source line (right)
+      const rightSourceX = edge.source.x + Math.cos(perpendicularAngle) * lineOffset;
+      const rightSourceY = edge.source.y + Math.sin(perpendicularAngle) * lineOffset;
+      const rightTargetX = edge.target.x + Math.cos(perpendicularAngle) * lineOffset;
+      const rightTargetY = edge.target.y + Math.sin(perpendicularAngle) * lineOffset;
       
-      // Check if target to source has multiple relationship types
-      if (edge.targetToSource.colors.length > 1) {
-        // Draw gradient line for multiple relationship types
-        const gradient = relationshipWebCtx.createLinearGradient(
-          lowerSourceX, lowerSourceY, lowerTargetX, lowerTargetY
-        );
-        edge.targetToSource.colors.forEach((color, index) => {
-          const stop = index / (edge.targetToSource.colors.length - 1);
-          gradient.addColorStop(stop, color);
-        });
-        
-        relationshipWebCtx.beginPath();
-        relationshipWebCtx.moveTo(lowerSourceX, lowerSourceY);
-        relationshipWebCtx.lineTo(lowerTargetX, lowerTargetY);
-        relationshipWebCtx.strokeStyle = gradient;
-        relationshipWebCtx.lineWidth = 3;
-        relationshipWebCtx.stroke();
-      } else {
-        // Draw solid color line for single relationship type
-        relationshipWebCtx.beginPath();
-        relationshipWebCtx.moveTo(lowerSourceX, lowerSourceY);
-        relationshipWebCtx.lineTo(lowerTargetX, lowerTargetY);
-        relationshipWebCtx.strokeStyle = edge.targetToSource.colors[0];
-        relationshipWebCtx.lineWidth = 3;
-        relationshipWebCtx.stroke();
-      }
-      
-      // Draw directional ticks
-      const tickLength = 10;
-      const tickDistance = 35; // Much further from bubbles
-      
-      // Upper line tick (source to target) - single sided like ↼
-      const upperTargetTickX = upperTargetX - Math.cos(lineAngle) * tickDistance;
-      const upperTargetTickY = upperTargetY - Math.sin(lineAngle) * tickDistance;
-      
-      // Draw angled tick pointing to target (like →)
-      relationshipWebCtx.beginPath();
-      relationshipWebCtx.moveTo(upperTargetTickX, upperTargetTickY);
-      relationshipWebCtx.lineTo(
-        upperTargetTickX - Math.cos(perpendicularAngle - Math.PI/4) * tickLength,
-        upperTargetTickY - Math.sin(perpendicularAngle - Math.PI/4) * tickLength
-      );
-      relationshipWebCtx.strokeStyle = edge.sourceToTarget.colors[0];
-      relationshipWebCtx.lineWidth = 4;
-      relationshipWebCtx.stroke();
-      
-      // Lower line tick (target to source) - single sided like ↼
-      const lowerTargetTickX = lowerTargetX - Math.cos(lineAngle) * tickDistance;
-      const lowerTargetTickY = lowerTargetY - Math.sin(lineAngle) * tickDistance;
-      
-      // Draw angled tick pointing to source (like →)
-      relationshipWebCtx.beginPath();
-      relationshipWebCtx.moveTo(lowerTargetTickX, lowerTargetTickY);
-      relationshipWebCtx.lineTo(
-        lowerTargetTickX - Math.cos(perpendicularAngle - Math.PI/4) * tickLength,
-        lowerTargetTickY - Math.sin(perpendicularAngle - Math.PI/4) * tickLength
-      );
-      relationshipWebCtx.strokeStyle = edge.targetToSource.colors[0];
-      relationshipWebCtx.lineWidth = 4;
-      relationshipWebCtx.stroke();
+      drawRelationshipLine(rightSourceX, rightSourceY, rightTargetX, rightTargetY, edge.targetToSource.colors);
+      drawDirectionalArrow(rightTargetX, rightTargetY, lineAngle + Math.PI, edge.targetToSource.colors);
       
     } else {
-      // Unidirectional relationship - draw single line with tick
-      const tickLength = 10;
-      const tickDistance = 35; // Much further from bubbles
-      
-      // Check if this relationship has multiple types
-      if (edge.colors.length > 1) {
-        // Draw gradient line for multiple relationship types
-        const gradient = relationshipWebCtx.createLinearGradient(
-          edge.source.x, edge.source.y, edge.target.x, edge.target.y
-        );
-        edge.colors.forEach((color, index) => {
-          const stop = index / (edge.colors.length - 1);
-          gradient.addColorStop(stop, color);
-        });
-        
-        relationshipWebCtx.beginPath();
-        relationshipWebCtx.moveTo(edge.source.x, edge.source.y);
-        relationshipWebCtx.lineTo(edge.target.x, edge.target.y);
-        relationshipWebCtx.strokeStyle = gradient;
-        relationshipWebCtx.lineWidth = 3;
-        relationshipWebCtx.stroke();
-      } else {
-        // Draw solid color line for single relationship type
-        relationshipWebCtx.beginPath();
-        relationshipWebCtx.moveTo(edge.source.x, edge.source.y);
-        relationshipWebCtx.lineTo(edge.target.x, edge.target.y);
-        relationshipWebCtx.strokeStyle = edge.colors[0];
-        relationshipWebCtx.lineWidth = 3;
-        relationshipWebCtx.stroke();
-      }
-      
-      // Draw directional tick at target end - single sided like ↼
-      const targetTickX = edge.target.x - Math.cos(lineAngle) * tickDistance;
-      const targetTickY = edge.target.y - Math.sin(lineAngle) * tickDistance;
-      
-      // Draw angled tick pointing to target (like →)
-      relationshipWebCtx.beginPath();
-      relationshipWebCtx.moveTo(targetTickX, targetTickY);
-      relationshipWebCtx.lineTo(
-        targetTickX - Math.cos(perpendicularAngle - Math.PI/4) * tickLength,
-        targetTickY - Math.sin(perpendicularAngle - Math.PI/4) * tickLength
-      );
-      relationshipWebCtx.strokeStyle = edge.colors[0];
-      relationshipWebCtx.lineWidth = 4;
-      relationshipWebCtx.stroke();
+      // Unidirectional relationship - draw single line with arrow
+      drawRelationshipLine(edge.source.x, edge.source.y, edge.target.x, edge.target.y, edge.colors);
+      drawDirectionalArrow(edge.target.x, edge.target.y, lineAngle, edge.colors);
     }
   });
 }
 
+function drawRelationshipLine(startX, startY, endX, endY, colors) {
+  relationshipWebCtx.beginPath();
+  relationshipWebCtx.moveTo(startX, startY);
+  relationshipWebCtx.lineTo(endX, endY);
+  
+  if (colors.length > 1) {
+    // Draw gradient line for multiple relationship types
+    const gradient = relationshipWebCtx.createLinearGradient(startX, startY, endX, endY);
+    colors.forEach((color, index) => {
+      const stop = index / (colors.length - 1);
+      gradient.addColorStop(stop, color);
+    });
+    relationshipWebCtx.strokeStyle = gradient;
+  } else {
+    // Draw solid color line for single relationship type
+    relationshipWebCtx.strokeStyle = colors[0];
+  }
+  
+  relationshipWebCtx.lineWidth = 4;
+  relationshipWebCtx.stroke();
+}
+
+function drawDirectionalArrow(x, y, angle, color) {
+  const arrowLength = 10;
+  const arrowAngle = Math.PI / 6; // 30 degrees for sharper arrows
+  
+  // Position arrow right at the edge of the target node
+  const nodeRadius = 25; // Should match the node radius
+  const arrowX = x - Math.cos(angle) * nodeRadius;
+  const arrowY = y - Math.sin(angle) * nodeRadius;
+  
+  // Use the source color for arrows (first color in the array for gradients)
+  const arrowColor = Array.isArray(color) ? color[0] : color;
+  
+  // Draw filled arrow head for better visibility
+  relationshipWebCtx.beginPath();
+  relationshipWebCtx.moveTo(arrowX, arrowY);
+  relationshipWebCtx.lineTo(
+    arrowX - Math.cos(angle - arrowAngle) * arrowLength,
+    arrowY - Math.sin(angle - arrowAngle) * arrowLength
+  );
+  relationshipWebCtx.lineTo(
+    arrowX - Math.cos(angle + arrowAngle) * arrowLength,
+    arrowY - Math.sin(angle + arrowAngle) * arrowLength
+  );
+  relationshipWebCtx.closePath();
+  
+  // Fill the arrow head
+  relationshipWebCtx.fillStyle = arrowColor;
+  relationshipWebCtx.fill();
+  
+  // Add a subtle border for definition
+  relationshipWebCtx.strokeStyle = arrowColor;
+  relationshipWebCtx.lineWidth = 1;
+  relationshipWebCtx.stroke();
+}
+
 function drawRelationshipWebNodes() {
   relationshipWebNodes.forEach(node => {
-    // Increase clickable area by making nodes larger
-    const displayRadius = node.radius + 5; // Larger visual radius for better clickability
+    const displayRadius = node.radius;
     
     // Draw node circle with enhanced styling
     relationshipWebCtx.beginPath();
@@ -1693,16 +1765,10 @@ function drawRelationshipWebNodes() {
     relationshipWebCtx.fillStyle = gradient;
     relationshipWebCtx.fill();
     
-    // All characters in the web have relationships, so give them prominent borders
-    relationshipWebCtx.strokeStyle = '#4CAF50'; // Green for connected
-    relationshipWebCtx.lineWidth = 4;
-    
-    // No glow effect
-    relationshipWebCtx.shadowBlur = 0;
+    // Border for connected characters
+    relationshipWebCtx.strokeStyle = '#4CAF50';
+    relationshipWebCtx.lineWidth = 3;
     relationshipWebCtx.stroke();
-    
-    // Reset shadow
-    relationshipWebCtx.shadowBlur = 0;
     
     // Draw character icon if available
     if (node.character && node.character.icon) {
@@ -1710,7 +1776,7 @@ function drawRelationshipWebNodes() {
       const cachedImage = characterImages.get(characterId);
       
       if (cachedImage) {
-        const iconSize = displayRadius * 1.8; // Much bigger icon, extends beyond bubble
+        const iconSize = displayRadius * 1.6;
         const iconX = node.x - iconSize / 2;
         const iconY = node.y - iconSize / 2;
         
@@ -1726,7 +1792,7 @@ function drawRelationshipWebNodes() {
         relationshipWebCtx.restore();
       } else {
         // Draw a placeholder while image is loading
-        const iconSize = displayRadius * 1.8; // Much bigger placeholder
+        const iconSize = displayRadius * 1.6;
         const iconX = node.x - iconSize / 2;
         const iconY = node.y - iconSize / 2;
         
@@ -1742,10 +1808,10 @@ function drawRelationshipWebNodes() {
         
         relationshipWebCtx.fillStyle = '#333';
         relationshipWebCtx.beginPath();
-        relationshipWebCtx.arc(node.x, node.y - 6, 8, 0, 2 * Math.PI); // Much bigger head
+        relationshipWebCtx.arc(node.x, node.y - 6, 8, 0, 2 * Math.PI);
         relationshipWebCtx.fill();
         relationshipWebCtx.beginPath();
-        relationshipWebCtx.arc(node.x, node.y + 10, 12, 0, 2 * Math.PI); // Much bigger body
+        relationshipWebCtx.arc(node.x, node.y + 10, 12, 0, 2 * Math.PI);
         relationshipWebCtx.fill();
         
         relationshipWebCtx.restore();
@@ -1753,9 +1819,8 @@ function drawRelationshipWebNodes() {
     }
     
     // Draw character name with improved styling
-    relationshipWebCtx.fillStyle = '#FFFFFF'; // White text
-    relationshipWebCtx.globalAlpha = 1; // All characters in web have relationships
-    relationshipWebCtx.font = 'bold 12px Arial, sans-serif';
+    relationshipWebCtx.fillStyle = '#FFFFFF';
+    relationshipWebCtx.font = 'bold 13px Arial, sans-serif';
     relationshipWebCtx.textAlign = 'center';
     relationshipWebCtx.textBaseline = 'middle';
     
@@ -1766,10 +1831,9 @@ function drawRelationshipWebNodes() {
     relationshipWebCtx.shadowOffsetY = 1;
     
     // Draw the name
-    relationshipWebCtx.fillText(node.name, node.x, node.y + displayRadius + 20);
+    relationshipWebCtx.fillText(node.name, node.x, node.y + displayRadius + 25);
     
     // Reset effects
-    relationshipWebCtx.globalAlpha = 1;
     relationshipWebCtx.shadowBlur = 0;
     relationshipWebCtx.shadowOffsetX = 0;
     relationshipWebCtx.shadowOffsetY = 0;
@@ -1786,8 +1850,7 @@ function handleRelationshipWebMouseDown(event) {
     const dy = y - node.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // Use larger clickable area for better usability
-    const clickableRadius = node.radius + 8;
+    const clickableRadius = node.radius + 10;
     
     if (distance < clickableRadius) {
       relationshipWebDraggedNode = node;

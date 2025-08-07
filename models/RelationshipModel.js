@@ -18,10 +18,20 @@ const relationshipSchema = new mongoose.Schema({
     required: true,
     index: true
   },
+  characterName: {
+    type: String,
+    required: true,
+    index: true
+  },
+  targetCharacterName: {
+    type: String,
+    required: true,
+    index: true
+  },
   relationshipTypes: {
     type: [String],
     required: true,
-    enum: ['LOVERS', 'CRUSH', 'CLOSE_FRIEND', 'FRIEND', 'ACQUAINTANCE', 'DISLIKE', 'HATE', 'NEUTRAL', 'OTHER'],
+    enum: ['LOVERS', 'CRUSH', 'CLOSE_FRIEND', 'FRIEND', 'ACQUAINTANCE', 'DISLIKE', 'HATE', 'NEUTRAL', 'FAMILY', 'RIVAL', 'ADMIRE', 'OTHER'],
     default: ['NEUTRAL']
   },
   notes: {
@@ -29,10 +39,7 @@ const relationshipSchema = new mongoose.Schema({
     maxlength: 1000,
     default: ''
   },
-  isMutual: {
-    type: Boolean,
-    default: false
-  }
+
 }, {
   timestamps: true,
   collection: 'relationships'
@@ -47,37 +54,7 @@ relationshipSchema.index({ userId: 1, characterId: 1 });
 // Index for efficient querying by target character
 relationshipSchema.index({ targetCharacterId: 1 });
 
-// Virtual for relationship types display info
-relationshipSchema.virtual('typesInfo').get(function() {
-  const typeMap = {
-    LOVERS: { emoji: '❤️', label: 'Lovers', color: '#ff6b6b' },
-    CRUSH: { emoji: '🧡', label: 'Crush', color: '#ffa726' },
-    CLOSE_FRIEND: { emoji: '💛', label: 'Close Friend', color: '#ffd54f' },
-    FRIEND: { emoji: '💚', label: 'Friend', color: '#81c784' },
-    ACQUAINTANCE: { emoji: '💙', label: 'Acquaintance', color: '#64b5f6' },
-    DISLIKE: { emoji: '💜', label: 'Dislike', color: '#ba68c8' },
-    HATE: { emoji: '🖤', label: 'Hate', color: '#424242' },
-    NEUTRAL: { emoji: '🤍', label: 'Neutral', color: '#bdbdbd' },
-    OTHER: { emoji: '🤎', label: 'Other', color: '#8d6e63' }
-  };
-  
-  return this.relationshipTypes.map(type => typeMap[type] || typeMap.OTHER);
-});
-
-// Method to get relationship display info
-relationshipSchema.methods.getDisplayInfo = function() {
-  return {
-    id: this._id,
-    characterId: this.characterId,
-    targetCharacterId: this.targetCharacterId,
-    types: this.relationshipTypes,
-    typesInfo: this.typesInfo,
-    notes: this.notes,
-    isMutual: this.isMutual,
-    createdAt: this.createdAt,
-    updatedAt: this.updatedAt
-  };
-};
+// Note: Color and display logic is now handled by the frontend's centralized RELATIONSHIP_CONFIG
 
 // Static method to get relationships for a character
 relationshipSchema.statics.getCharacterRelationships = function(characterId) {
@@ -109,7 +86,7 @@ relationshipSchema.pre('save', function(next) {
 
 // Pre-save middleware to validate relationship types
 relationshipSchema.pre('save', function(next) {
-  const validTypes = ['LOVERS', 'CRUSH', 'CLOSE_FRIEND', 'FRIEND', 'ACQUAINTANCE', 'DISLIKE', 'HATE', 'NEUTRAL', 'OTHER'];
+  const validTypes = ['LOVERS', 'CRUSH', 'CLOSE_FRIEND', 'FRIEND', 'ACQUAINTANCE', 'DISLIKE', 'HATE', 'NEUTRAL', 'FAMILY', 'RIVAL', 'ADMIRE', 'OTHER'];
   for (const type of this.relationshipTypes) {
     if (!validTypes.includes(type)) {
       return next(new Error(`Invalid relationship type: ${type}`));
