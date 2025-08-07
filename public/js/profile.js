@@ -719,7 +719,7 @@ function showProfileMessage(message, type = 'info') {
   messageElement.textContent = message;
   messageElement.style.cssText = `
     position: fixed;
-    top: 20px;
+    bottom: 20px;
     right: 20px;
     padding: 1rem 1.5rem;
     border-radius: 0.5rem;

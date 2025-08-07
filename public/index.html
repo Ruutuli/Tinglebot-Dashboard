@@ -988,9 +988,9 @@
                 <i class="fas fa-project-diagram"></i>
                 View Relationship Web
               </button>
-              <button class="back-to-character-selection" onclick="relationshipsModule.backToCharacterSelection()">
-                <i class="fas fa-arrow-left"></i>
-                Back to Character Selection
+              <button class="back-to-list-btn" onclick="relationshipsModule.backToRelationshipList()">
+                <i class="fas fa-list"></i>
+                Back to List
               </button>
             </div>
           </div>
@@ -999,71 +999,90 @@
           </div>
           <div class="relationship-web-view" style="display: none;">
             <div class="relationship-web-header">
-              <h3><i class="fas fa-project-diagram"></i> Relationship Web</h3>
-              <div class="relationship-web-header-actions">
-                <label class="toggle-isolated-btn">
-                  <input type="checkbox" id="show-isolated-characters" checked>
-                  <span class="toggle-slider"></span>
-                  <span class="toggle-label">Show Isolated Characters</span>
-                </label>
-                <button class="web-control-btn" onclick="relationshipsModule.resetZoom()" title="Reset Zoom">
-                  <i class="fas fa-search"></i>
-                  Reset Zoom
-                </button>
-                <button class="web-control-btn" onclick="relationshipsModule.centerView()" title="Center View">
-                  <i class="fas fa-crosshairs"></i>
-                  Center View
-                </button>
-                <button class="web-control-btn" onclick="relationshipsModule.toggleUserCharacters()" title="Show Only User Characters">
-                  <i class="fas fa-user"></i>
-                  My Characters
-                </button>
-                <button class="web-control-btn" onclick="relationshipsModule.toggleRelationshipLines()" title="Toggle Relationship Lines">
-                  <i class="fas fa-project-diagram"></i>
-                  Hide Lines
-                </button>
-                <button class="web-control-btn" onclick="relationshipsModule.toggleNodeLabels()" title="Toggle Character Names">
-                  <i class="fas fa-tag"></i>
-                  Hide Names
-                </button>
-                <button class="web-control-btn" onclick="relationshipsModule.toggleLayoutFreeze()" title="Freeze/Unfreeze Layout">
-                  <i class="fas fa-lock"></i>
-                  Freeze Layout
-                </button>
-                <button class="fullscreen-btn" onclick="relationshipsModule.toggleFullscreen()" title="Toggle Fullscreen" style="background: #4CAF50; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; font-weight: bold; cursor: pointer;">
-                  <i class="fas fa-expand"></i>
-                  FULLSCREEN
-                </button>
-                <button class="back-to-list-btn" onclick="relationshipsModule.backToRelationshipList()">
-                  <i class="fas fa-list"></i>
-                  Back to List
-                </button>
+              <div class="header-left">
+                <h3><i class="fas fa-project-diagram"></i> Relationship Web</h3>
+              </div>
+              <div class="header-right">
+              </div>
+              <div class="relationship-web-header-actions" id="web-controls">
+                <div class="control-group">
+                  <label class="toggle-isolated-btn">
+                    <input type="checkbox" id="show-isolated-characters" checked>
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Show Isolated Characters</span>
+                  </label>
+                  <button class="web-control-btn" onclick="relationshipsModule.spreadOutCharacters()" title="Spread Out">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                    Spread Out
+                  </button>
+                  <button class="web-control-btn" onclick="relationshipsModule.toggleRelationshipAttraction()" title="Toggle Attraction">
+                    <i class="fas fa-magnet"></i>
+                    Attraction
+                  </button>
+                  <button class="web-control-btn" onclick="relationshipsModule.toggleLayoutFreeze()" title="Freeze Layout">
+                    <i class="fas fa-lock"></i>
+                    Freeze
+                  </button>
+                  <button class="web-control-btn" onclick="relationshipsModule.toggleUserCharacters()" title="My Characters">
+                    <i class="fas fa-user"></i>
+                    My Characters
+                  </button>
+                  <button class="web-control-btn" onclick="relationshipsModule.toggleRelationshipLines()" title="Toggle Relationship Lines">
+                    <i class="fas fa-project-diagram"></i>
+                    Hide Lines
+                  </button>
+                  <button class="web-control-btn" onclick="relationshipsModule.toggleNodeLabels()" title="Toggle Character Names">
+                    <i class="fas fa-tag"></i>
+                    Hide Names
+                  </button>
+                  <button class="web-control-btn" onclick="relationshipsModule.resetZoom()" title="Reset Zoom">
+                    <i class="fas fa-search"></i>
+                    Reset Zoom
+                  </button>
+                  <button class="web-control-btn" onclick="relationshipsModule.centerView()" title="Center View">
+                    <i class="fas fa-crosshairs"></i>
+                    Center View
+                  </button>
+                </div>
               </div>
             </div>
             <div class="relationship-web-legend">
-              <h4>Relationship Types:</h4>
-              <div class="legend-items">
-                <div class="legend-item"><span class="legend-color lovers"></span>Lovers</div>
-                <div class="legend-item"><span class="legend-color crush"></span>Crush</div>
-                <div class="legend-item"><span class="legend-color close-friend"></span>Close Friend</div>
-                <div class="legend-item"><span class="legend-color friend"></span>Friend</div>
-                <div class="legend-item"><span class="legend-color acquaintance"></span>Acquaintance</div>
-                <div class="legend-item"><span class="legend-color dislike"></span>Dislike</div>
-                <div class="legend-item"><span class="legend-color hate"></span>Hate</div>
-                <div class="legend-item"><span class="legend-color neutral"></span>Neutral</div>
-                <div class="legend-item"><span class="legend-color family"></span>Family</div>
-                <div class="legend-item"><span class="legend-color rival"></span>Rival</div>
-                <div class="legend-item"><span class="legend-color admire"></span>Admire</div>
-                <div class="legend-item"><span class="legend-color other"></span>Other</div>
+              <div class="legend-header">
+                <span class="legend-title">Legend</span>
               </div>
-              <h4 style="margin-top: 1rem;">Character Nodes:</h4>
-              <div class="legend-items">
-                <div class="legend-item"><span class="legend-color user-character"></span>My Characters</div>
-                <div class="legend-item"><span class="legend-color connected"></span>Has Relationships</div>
-                <div class="legend-item"><span class="legend-color isolated"></span>No Relationships</div>
+              <div class="legend-content" id="legend-content">
+                <div class="legend-row">
+                  <span class="legend-label">Relationships:</span>
+                  <div class="legend-items">
+                    <span class="legend-item"><span class="legend-color lovers"></span>Lovers</span>
+                    <span class="legend-item"><span class="legend-color crush"></span>Crush</span>
+                    <span class="legend-item"><span class="legend-color close-friend"></span>Close Friend</span>
+                    <span class="legend-item"><span class="legend-color friend"></span>Friend</span>
+                    <span class="legend-item"><span class="legend-color acquaintance"></span>Acquaintance</span>
+                    <span class="legend-item"><span class="legend-color dislike"></span>Dislike</span>
+                    <span class="legend-item"><span class="legend-color hate"></span>Hate</span>
+                    <span class="legend-item"><span class="legend-color neutral"></span>Neutral</span>
+                    <span class="legend-item"><span class="legend-color family"></span>Family</span>
+                    <span class="legend-item"><span class="legend-color rival"></span>Rival</span>
+                    <span class="legend-item"><span class="legend-color admire"></span>Admire</span>
+                    <span class="legend-item"><span class="legend-color other"></span>Other</span>
+                  </div>
+                </div>
+                <div class="legend-row">
+                  <span class="legend-label">Nodes:</span>
+                  <div class="legend-items">
+                    <span class="legend-item"><span class="legend-color user-character"></span>My Characters</span>
+                    <span class="legend-item"><span class="legend-color connected"></span>Has Relationships</span>
+                    <span class="legend-item"><span class="legend-color isolated"></span>No Relationships</span>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="relationship-web-container">
+              <button class="fullscreen-btn-overlay" onclick="relationshipsModule.toggleFullscreen()" title="Toggle Fullscreen">
+                <i class="fas fa-expand"></i>
+                FULLSCREEN
+              </button>
               <canvas id="relationship-web-canvas"></canvas>
             </div>
           </div>

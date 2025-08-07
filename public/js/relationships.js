@@ -111,6 +111,10 @@ export const relationshipsModule = {
   toggleRelationshipLines,
   toggleNodeLabels,
   toggleLayoutFreeze,
+  spreadOutCharacters,
+  toggleRelationshipAttraction,
+  toggleMenu,
+  toggleLegend,
   RELATIONSHIP_CONFIG // Export the config for use in other modules
 };
 
@@ -512,7 +516,7 @@ function renderRelationships() {
   // Group relationships by target character
   const groupedRelationships = {};
   relationships.forEach(relationship => {
-    const targetId = typeof relationship.targetCharacterId === 'object' 
+    const targetId = typeof relationship.targetCharacterId === 'object' && relationship.targetCharacterId
       ? relationship.targetCharacterId._id 
       : relationship.targetCharacterId;
     
@@ -838,11 +842,13 @@ function renderAllRelationships() {
   
   relationships.forEach(relationship => {
     // Handle both populated character objects and character IDs
-    const characterId = relationship.characterId._id || relationship.characterId;
-    if (!relationshipsByCharacter[characterId]) {
+    const characterId = relationship.characterId?._id || relationship.characterId;
+    if (characterId && !relationshipsByCharacter[characterId]) {
       relationshipsByCharacter[characterId] = [];
     }
-    relationshipsByCharacter[characterId].push(relationship);
+    if (characterId) {
+      relationshipsByCharacter[characterId].push(relationship);
+    }
   });
 
   console.log('🌍 Relationships by character:', relationshipsByCharacter);
@@ -903,8 +909,10 @@ function showCharacterRelationshipsModal(characterId) {
   
   // Find all relationships for this character
   const characterRelationships = relationships.filter(rel => {
-    const relCharacterId = rel.characterId._id || rel.characterId;
-    return relCharacterId === characterId;
+    const relCharacterId = rel.characterId?._id || rel.characterId;
+    const targetId = rel.targetCharacterId?._id || rel.targetCharacterId;
+    // Only include relationships with valid IDs
+    return relCharacterId && targetId && relCharacterId === characterId;
   });
   
   // Create modal if it doesn't exist
@@ -945,7 +953,7 @@ function showCharacterRelationshipsModal(characterId) {
         </div>
         <div class="character-relationships-list">
           ${characterRelationships.map(rel => {
-            const targetCharacter = rel.targetCharacterId._id ? rel.targetCharacterId : findCharacterById(rel.targetCharacterId);
+            const targetCharacter = rel.targetCharacterId?._id ? rel.targetCharacterId : findCharacterById(rel.targetCharacterId);
             if (!targetCharacter) return '';
             
             const typeInfo = getRelationshipTypeInfo(rel.relationshipTypes || rel.types || []);
@@ -1344,7 +1352,7 @@ async function editRelationship(relationshipId) {
     const notesTextarea = form.querySelector('#relationship-notes');
     
     if (targetSelect) {
-      targetSelect.value = typeof relationship.targetCharacterId === 'object' 
+      targetSelect.value = typeof relationship.targetCharacterId === 'object' && relationship.targetCharacterId
         ? relationship.targetCharacterId._id 
         : relationship.targetCharacterId;
     }
@@ -1499,7 +1507,7 @@ function initNotificationSystem() {
   const notificationStyles = `
     .notification {
       position: fixed;
-      top: 20px;
+      bottom: 20px;
       right: 20px;
       padding: 1rem 1.5rem;
       border-radius: 0.5rem;
@@ -1601,6 +1609,8 @@ let relationshipWebShowUserOnly = false; // Track if showing only user character
 let relationshipWebShowLines = true; // Track if showing relationship lines
 let relationshipWebShowLabels = true; // Track if showing character names
 let relationshipWebLayoutFrozen = false; // Track if layout is frozen
+let relationshipWebAttractionEnabled = true; // Track if relationship attraction is enabled
+let relationshipWebMenuCollapsed = false; // Track if menu is collapsed in fullscreen
 let characterImages = new Map(); // Cache for character images
 
 // Relationship colors extracted from centralized config
@@ -1648,16 +1658,18 @@ function toggleFullscreen() {
   console.log('🖥️ Toggling fullscreen');
   
   const webView = document.querySelector('.relationship-web-view');
-  const fullscreenBtn = document.querySelector('.fullscreen-btn');
+  const overlayBtn = document.querySelector('.fullscreen-btn-overlay');
+  const headerBtn = document.querySelector('.fullscreen-btn');
   const canvas = document.getElementById('relationship-web-canvas');
   
   console.log('🔍 Elements found:', {
     webView: !!webView,
-    fullscreenBtn: !!fullscreenBtn,
+    overlayBtn: !!overlayBtn,
+    headerBtn: !!headerBtn,
     canvas: !!canvas
   });
   
-  if (!webView || !fullscreenBtn || !canvas) {
+  if (!webView || !canvas) {
     console.error('❌ Required elements not found for fullscreen toggle');
     return;
   }
@@ -1665,8 +1677,13 @@ function toggleFullscreen() {
   if (webView.classList.contains('fullscreen')) {
     // Exit fullscreen
     webView.classList.remove('fullscreen');
-    fullscreenBtn.classList.remove('fullscreen');
-    fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i> Fullscreen';
+    if (overlayBtn) {
+      overlayBtn.classList.remove('fullscreen');
+      overlayBtn.innerHTML = '<i class="fas fa-expand"></i> FULLSCREEN';
+    }
+    if (headerBtn) {
+      headerBtn.innerHTML = '<i class="fas fa-expand"></i> FULLSCREEN';
+    }
     
     // Reset canvas size
     const container = canvas.parentElement;
@@ -1677,8 +1694,13 @@ function toggleFullscreen() {
   } else {
     // Enter fullscreen
     webView.classList.add('fullscreen');
-    fullscreenBtn.classList.add('fullscreen');
-    fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i> Exit Fullscreen';
+    if (overlayBtn) {
+      overlayBtn.classList.add('fullscreen');
+      overlayBtn.innerHTML = '<i class="fas fa-compress"></i> EXIT FULLSCREEN';
+    }
+    if (headerBtn) {
+      headerBtn.innerHTML = '<i class="fas fa-compress"></i> EXIT FULLSCREEN';
+    }
     
     // Set canvas to full viewport size (accounting for legend space)
     const container = canvas.parentElement;
@@ -1866,6 +1888,110 @@ function toggleLayoutFreeze() {
   }
 }
 
+function spreadOutCharacters() {
+  console.log('📐 Spreading out characters');
+  
+  // Calculate the center and available space
+  const centerX = relationshipWebCanvas.width / 2;
+  const centerY = relationshipWebCanvas.height / 2;
+  
+  // Calculate spread radius based on zoom level and screen size
+  // When zoomed out, use more of the available space
+  const baseRadius = Math.min(relationshipWebCanvas.width, relationshipWebCanvas.height) * 0.6; // Increased from 0.4
+  const zoomFactor = Math.max(0.3, relationshipWebZoom); // Lowered minimum zoom factor from 0.5 to 0.3
+  const spreadRadius = baseRadius * (1.5 / zoomFactor); // Increased multiplier from 1 to 1.5
+  
+  // Ensure we don't spread beyond the visible area
+  const maxSpreadRadius = Math.min(relationshipWebCanvas.width, relationshipWebCanvas.height) * 0.65; // Increased from 0.45
+  const finalRadius = Math.min(spreadRadius, maxSpreadRadius);
+  
+  console.log('📏 Spread calculation:', {
+    baseRadius,
+    zoomFactor,
+    spreadRadius,
+    maxSpreadRadius,
+    finalRadius,
+    canvasWidth: relationshipWebCanvas.width,
+    canvasHeight: relationshipWebCanvas.height
+  });
+  
+  // Spread characters in a larger circle pattern
+  relationshipWebNodes.forEach((node, index) => {
+    if (node.visible !== false) {
+      const angle = (index / relationshipWebNodes.length) * 2 * Math.PI;
+      const distance = finalRadius * (0.7 + Math.random() * 0.6); // More variation in distance
+      
+      // Set new position
+      node.x = centerX + Math.cos(angle) * distance;
+      node.y = centerY + Math.sin(angle) * distance;
+      
+      // Reset velocity
+      node.vx = 0;
+      node.vy = 0;
+      node.recentlyDragged = false;
+    }
+  });
+  
+  showNotification('Characters spread out', 'info');
+}
+
+function toggleRelationshipAttraction() {
+  console.log('🧲 Toggling relationship attraction');
+  relationshipWebAttractionEnabled = !relationshipWebAttractionEnabled;
+  
+  // Update button text
+  const attractionBtn = document.querySelector('.web-control-btn[onclick*="toggleRelationshipAttraction"]');
+  if (attractionBtn) {
+    if (relationshipWebAttractionEnabled) {
+      attractionBtn.innerHTML = '<i class="fas fa-magnet"></i> Disable Attraction';
+      showNotification('Relationship attraction enabled', 'info');
+    } else {
+      attractionBtn.innerHTML = '<i class="fas fa-unlink"></i> Enable Attraction';
+      showNotification('Relationship attraction disabled', 'info');
+    }
+  }
+}
+
+function toggleMenu() {
+  console.log('🍔 Toggling menu visibility');
+  relationshipWebMenuCollapsed = !relationshipWebMenuCollapsed;
+  
+  const controls = document.getElementById('web-controls');
+  const menuBtn = document.querySelector('.menu-toggle-btn');
+  
+  if (controls && menuBtn) {
+    if (relationshipWebMenuCollapsed) {
+      controls.classList.add('collapsed');
+      menuBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+      showNotification('Menu collapsed - click to expand', 'info');
+    } else {
+      controls.classList.remove('collapsed');
+      menuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+      showNotification('Menu expanded', 'info');
+    }
+  }
+}
+
+function toggleLegend() {
+  console.log('📋 Toggling legend visibility');
+  const legendContent = document.getElementById('legend-content');
+  const toggleBtn = document.querySelector('.legend-toggle-btn');
+  
+  if (legendContent && toggleBtn) {
+    const isCollapsed = legendContent.classList.contains('collapsed');
+    
+    if (isCollapsed) {
+      legendContent.classList.remove('collapsed');
+      toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+      showNotification('Legend expanded', 'info');
+    } else {
+      legendContent.classList.add('collapsed');
+      toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+      showNotification('Legend collapsed', 'info');
+    }
+  }
+}
+
 function handleRelationshipWebResize() {
   const webView = document.querySelector('.relationship-web-view');
   const canvas = document.getElementById('relationship-web-canvas');
@@ -1920,18 +2046,21 @@ function generateRelationshipWebData() {
     // Add user's characters
     userCharacterIds.forEach(id => relatedCharacterIds.add(id));
     
-    // Add characters that have relationships with user's characters
-    relationships.forEach(relationship => {
-      const sourceId = relationship.characterId._id || relationship.characterId;
-      const targetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
-      
+      // Add characters that have relationships with user's characters
+  relationships.forEach(relationship => {
+    const sourceId = relationship.characterId?._id || relationship.characterId;
+    const targetId = relationship.targetCharacterId?._id || relationship.targetCharacterId;
+    
+    // Only process relationships with valid IDs
+    if (sourceId && targetId) {
       if (userCharacterIds.has(sourceId)) {
         relatedCharacterIds.add(targetId);
       }
       if (userCharacterIds.has(targetId)) {
         relatedCharacterIds.add(sourceId);
       }
-    });
+    }
+  });
     
     // Filter characters and relationships
     charactersToShow = allCharacters.filter(char => 
@@ -1939,9 +2068,10 @@ function generateRelationshipWebData() {
     );
     
     relationshipsToShow = relationships.filter(relationship => {
-      const sourceId = relationship.characterId._id || relationship.characterId;
-      const targetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
-      return userCharacterIds.has(sourceId) || userCharacterIds.has(targetId);
+      const sourceId = relationship.characterId?._id || relationship.characterId;
+      const targetId = relationship.targetCharacterId?._id || relationship.targetCharacterId;
+      // Only include relationships that have valid IDs and involve user characters
+      return sourceId && targetId && ((userCharacterIds.has(sourceId)) || (userCharacterIds.has(targetId)));
     });
   }
   
@@ -1949,11 +2079,11 @@ function generateRelationshipWebData() {
   const charactersWithRelationships = new Set();
   
   relationshipsToShow.forEach(relationship => {
-    const sourceId = relationship.characterId._id || relationship.characterId;
-    const targetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
+    const sourceId = relationship.characterId?._id || relationship.characterId;
+    const targetId = relationship.targetCharacterId?._id || relationship.targetCharacterId;
     
-    charactersWithRelationships.add(sourceId);
-    charactersWithRelationships.add(targetId);
+    if (sourceId) charactersWithRelationships.add(sourceId);
+    if (targetId) charactersWithRelationships.add(targetId);
   });
   
   // Create nodes for the filtered characters
@@ -1964,11 +2094,22 @@ function generateRelationshipWebData() {
       (userChar._id || userChar.id) === characterId
     );
     
+    // Calculate better initial positions - spread characters in a circle pattern
+    const centerX = relationshipWebCanvas.width / 2;
+    const centerY = relationshipWebCanvas.height / 2;
+    const radius = Math.min(relationshipWebCanvas.width, relationshipWebCanvas.height) * 0.3;
+    const angle = (index / charactersToShow.length) * 2 * Math.PI;
+    const distanceVariation = 0.3; // Add some randomness to the distance
+    
+    const baseDistance = radius * (0.7 + Math.random() * distanceVariation);
+    const x = centerX + Math.cos(angle) * baseDistance;
+    const y = centerY + Math.sin(angle) * baseDistance;
+    
     relationshipWebNodes.push({
       id: characterId,
       name: character.name,
-      x: Math.random() * (relationshipWebCanvas.width - 200) + 100,
-      y: Math.random() * (relationshipWebCanvas.height - 200) + 100,
+      x: x,
+      y: y,
       vx: 0,
       vy: 0,
       radius: 25,
@@ -1990,8 +2131,20 @@ function generateRelationshipWebData() {
   
   console.log('🔍 Processing relationships:', relationshipsToShow.length);
   relationshipsToShow.forEach(relationship => {
-    const sourceId = relationship.characterId._id || relationship.characterId;
-    const targetId = relationship.targetCharacterId._id || relationship.targetCharacterId;
+    const sourceId = relationship.characterId?._id || relationship.characterId;
+    const targetId = relationship.targetCharacterId?._id || relationship.targetCharacterId;
+    
+    // Skip relationships with null IDs
+    if (!sourceId || !targetId) {
+      console.log('⚠️ Skipping relationship with null IDs:', relationship);
+      return;
+    }
+    
+    console.log('📋 Processing relationship:', {
+      sourceId,
+      targetId,
+      relationship: relationship
+    });
     
     console.log('📋 Relationship:', {
       source: sourceId,
@@ -2135,27 +2288,29 @@ function applyRelationshipWebForces() {
       const dy = otherNode.y - node.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      if (distance > 0 && distance < 100) {
-        const force = (100 - distance) / distance * 0.02;
+      if (distance > 0 && distance < 120) { // Increased repulsion distance
+        const force = (120 - distance) / distance * 0.03; // Increased repulsion force
         node.vx -= (dx / distance) * force;
         node.vy -= (dy / distance) * force;
       }
     });
     
-    // Attraction between connected nodes (reduced force)
-    relationshipWebEdges.forEach(edge => {
-      if (edge.source === node) {
-        const dx = edge.target.x - node.x;
-        const dy = edge.target.y - node.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance > 0 && distance < 150) { // Reduced attraction distance
-          const force = (distance - 100) / distance * 0.005; // Reduced force
-          node.vx += (dx / distance) * force;
-          node.vy += (dy / distance) * force;
+    // Attraction between connected nodes (only if enabled)
+    if (relationshipWebAttractionEnabled) {
+      relationshipWebEdges.forEach(edge => {
+        if (edge.source === node) {
+          const dx = edge.target.x - node.x;
+          const dy = edge.target.y - node.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance > 0 && distance < 80) { // Very small attraction distance
+            const force = (distance - 60) / distance * 0.0005; // Very weak force
+            node.vx += (dx / distance) * force;
+            node.vy += (dy / distance) * force;
+          }
         }
-      }
-    });
+      });
+    }
     
     // Center attraction for better organization (only if not recently dragged)
     if (!node.recentlyDragged) {
@@ -2166,7 +2321,7 @@ function applyRelationshipWebForces() {
       const distance = Math.sqrt(dx * dx + dy * dy);
       
       if (distance > 0) {
-        const force = distance * 0.00005; // Reduced center attraction
+        const force = distance * 0.00002; // Further reduced center attraction
         node.vx += (dx / distance) * force;
         node.vy += (dy / distance) * force;
       }

@@ -1665,7 +1665,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .relationship-web-header-actions {
@@ -1675,24 +1675,52 @@
   flex-wrap: wrap;
 }
 
+.control-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .web-control-btn {
   background: var(--card-background);
   color: var(--text-color);
   border: 1px solid var(--border-color);
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-height: 44px;
+  font-weight: 500;
+}
+
+.web-control-btn i {
+  font-size: 1.1rem;
 }
 
 .web-control-btn:hover {
   background: var(--primary-color);
   color: white;
   border-color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+.web-control-btn.primary {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  font-weight: 600;
+}
+
+.web-control-btn.primary:hover {
+  background: var(--primary-hover);
   transform: translateY(-1px);
 }
 
@@ -1794,31 +1822,74 @@
   right: 0;
   z-index: 10001;
   margin: 0;
-  padding: 0.5rem 1rem;
+  padding: 1rem;
   border-radius: 0;
   border-bottom: 1px solid var(--border-color);
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
 }
 
-.relationship-web-view.fullscreen .relationship-web-legend {
-  position: absolute;
-  top: 60px;
-  right: 1rem;
-  z-index: 10001;
-  max-width: 300px;
-  background: rgba(0, 0, 0, 0.8);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  color: white;
-  max-height: calc(100vh - 80px);
-  overflow-y: auto;
+.relationship-web-view.fullscreen .relationship-web-header-actions {
+  gap: 1.5rem;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
+
+.relationship-web-view.fullscreen .control-group {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  flex: 1;
+  margin-right: 1rem;
+}
+
+.relationship-web-view.fullscreen .menu-toggle-btn {
+  display: block;
+}
+
+/* Fullscreen button styles */
+.relationship-web-view.fullscreen .fullscreen-btn {
+  background: var(--error-color, #f44336);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+}
+
+.relationship-web-view.fullscreen .fullscreen-btn:hover {
+  background: var(--error-hover, #d32f2f);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.relationship-web-view.fullscreen .relationship-web-header-actions {
+  transition: all 0.3s ease;
+}
+
+.relationship-web-view.fullscreen .relationship-web-header-actions.collapsed {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-10px);
+}
+
+
 
 .relationship-web-view.fullscreen .relationship-web-container {
   position: absolute;
   top: 60px;
   left: 0;
-  right: 320px; /* Leave space for legend */
+  right: 420px; /* Leave space for wider legend */
   bottom: 0;
   padding: 0 !important;
   height: calc(100vh - 60px) !important; /* Explicitly set full height */
@@ -1840,6 +1911,23 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.menu-toggle-btn {
+  display: none;
+  background: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: auto;
+}
+
+.menu-toggle-btn:hover {
+  background: var(--card-background);
+  border-color: var(--primary-color);
 }
 
 .relationship-web-header h3 i {
@@ -1870,29 +1958,174 @@
   background: var(--card-background);
   border: 1px solid var(--border-color);
   border-radius: var(--card-radius);
-  padding: 1rem;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  max-width: 100%;
+  position: static;
+  margin-top: 2rem;
+  overflow: visible;
+  height: auto;
+  min-height: auto;
+}
+
+.relationship-web-view.fullscreen .relationship-web-legend {
+  position: absolute;
+  top: 80px;
+  right: 1rem;
+  z-index: 10001;
+  max-width: 400px;
+  min-width: 300px;
+  background: rgba(0, 0, 0, 0.9);
+  border-radius: 0.5rem;
+  padding: 2rem;
+  color: white;
+  overflow: visible;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+/* Full view legend specific styles */
+.relationship-web-view.fullscreen .legend-section {
   margin-bottom: 1.5rem;
 }
 
-.relationship-web-legend h4 {
-  color: var(--text-color);
-  font-size: 1rem;
-  margin: 0 0 0.75rem 0;
-  font-weight: 600;
+.relationship-web-view.fullscreen .legend-section:last-child {
+  margin-bottom: 0;
 }
 
-.legend-items {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+.relationship-web-view.fullscreen .legend-section-title {
+  color: var(--text-color);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 0.5rem;
+}
+
+.relationship-web-view.fullscreen .legend-items-vertical {
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
 }
 
-.legend-item {
+.relationship-web-view.fullscreen .legend-item-vertical {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
   color: var(--text-secondary);
+  padding: 0.4rem 0.6rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 0.3rem;
+  transition: all 0.2s ease;
+}
+
+/* Override the horizontal grid layout for fullscreen legend */
+.relationship-web-view.fullscreen .legend-items {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+  grid-template-columns: unset !important;
+}
+
+.relationship-web-view.fullscreen .legend-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  font-size: 0.7rem !important;
+  color: var(--text-secondary) !important;
+  padding: 0.4rem 0.6rem !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 0.3rem !important;
+  transition: all 0.2s ease !important;
+  width: 100% !important;
+  justify-content: flex-start !important;
+}
+
+.relationship-web-view.fullscreen .legend-item-vertical:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(2px);
+}
+
+.relationship-web-view.fullscreen .legend-item-vertical .legend-color {
+  width: 16px;
+  height: 16px;
+}
+
+.legend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.legend-title {
+  color: var(--text-color);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.legend-toggle-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.8rem;
+}
+
+.legend-toggle-btn:hover {
+  color: var(--text-color);
+}
+
+.legend-content {
+  transition: all 0.3s ease;
+  overflow: visible;
+  max-height: none;
+}
+
+.legend-content.collapsed {
+  display: none;
+}
+
+.legend-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.legend-row:last-child {
+  margin-bottom: 0;
+}
+
+.legend-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.25rem;
 }
 
 .legend-color {
@@ -1957,6 +2190,46 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
+.fullscreen-btn-overlay {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10002;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.fullscreen-btn-overlay:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.fullscreen-btn-overlay.fullscreen {
+  background: var(--error-color, #f44336);
+  display: none; /* Hide overlay button in fullscreen mode */
+}
+
+/* Hide overlay button when in fullscreen mode */
+.relationship-web-view.fullscreen .fullscreen-btn-overlay {
+  display: none;
+}
+
+.fullscreen-btn-overlay.fullscreen:hover {
+  background: var(--error-hover, #d32f2f);
+}
+
 #relationship-web-canvas {
   width: 100%;
   height: 100%;
@@ -1979,8 +2252,66 @@
     text-align: center;
   }
   
+  .relationship-web-header-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .control-group {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .relationship-web-view.fullscreen .relationship-web-header-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .relationship-web-view.fullscreen .control-group {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .relationship-web-view.fullscreen .fullscreen-btn {
+    flex-shrink: 0;
+  }
+  
+  .relationship-web-view.fullscreen .relationship-web-legend {
+    max-width: 320px;
+    min-width: 280px;
+    padding: 1.5rem;
+  }
+  
+  .relationship-web-view.fullscreen .legend-section-title {
+    font-size: 0.9rem;
+  }
+  
+  .relationship-web-view.fullscreen .legend-item-vertical {
+    font-size: 0.85rem;
+    padding: 0.3rem 0.5rem;
+  }
+  
   .legend-items {
     grid-template-columns: repeat(2, 1fr);
+  }
+  
+  /* Keep vertical layout in fullscreen mode even on mobile */
+  .relationship-web-view.fullscreen .legend-items {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    grid-template-columns: unset !important;
+  }
+  
+  .relationship-web-view.fullscreen .legend-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    font-size: 0.85rem !important;
+    padding: 0.3rem 0.5rem !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
   }
   
   .relationship-web-container {
