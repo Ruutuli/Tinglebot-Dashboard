@@ -489,14 +489,17 @@ app.get('/api/users/search', async (req, res) => {
       ]
     })
     .select('discordId username discriminator avatar tokens characterSlot status createdAt')
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: -1, discordId: 1 })
     .limit(50)
     .lean();
 
     // Get character counts for each user
     const usersWithCharacters = await Promise.all(
       users.map(async (user) => {
-        const characterCount = await Character.countDocuments({ userId: user.discordId });
+        const characterCount = await Character.countDocuments({ 
+          userId: user.discordId,
+          name: { $nin: ['Tingle', 'Tingle test', 'John'] }
+        });
         return {
           ...user,
           characterCount
@@ -525,15 +528,28 @@ app.get('/api/users', async (req, res) => {
     // Get users for current page
     const users = await User.find({})
       .select('discordId username discriminator avatar tokens characterSlot status createdAt')
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1, discordId: 1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
+    // Debug logging
+    console.log(`[Server] Users API - Page ${page}:`, {
+      skip,
+      limit,
+      totalUsers,
+      usersFound: users.length,
+      userIds: users.map(u => u.discordId),
+      usernames: users.map(u => u.username)
+    });
+
     // Get character counts for each user
     const usersWithCharacters = await Promise.all(
       users.map(async (user) => {
-        const characterCount = await Character.countDocuments({ userId: user.discordId });
+        const characterCount = await Character.countDocuments({ 
+          userId: user.discordId,
+          name: { $nin: ['Tingle', 'Tingle test', 'John'] }
+        });
         return {
           ...user,
           characterCount
@@ -574,7 +590,10 @@ app.get('/api/users/:discordId', async (req, res) => {
     }
 
     // Get user's characters
-    const characters = await Character.find({ userId: discordId })
+    const characters = await Character.find({ 
+      userId: discordId,
+      name: { $nin: ['Tingle', 'Tingle test', 'John'] }
+    })
       .select('name icon job homeVillage currentHearts maxHearts currentStamina maxStamina appLink _id')
       .lean();
 
@@ -618,7 +637,7 @@ app.get('/api/commands', async (req, res) => {
 app.get('/api/rootsofthewild/stats', async (req, res) => {
   try {
     const [totalCharacters, activeQuests, totalItems, activeMonsters] = await Promise.all([
-      Character.countDocuments(),
+      Character.countDocuments({ name: { $nin: ['Tingle', 'Tingle test', 'John'] } }),
       Quest.countDocuments({ status: 'active' }),
       Item.countDocuments(),
       Monster.countDocuments({ isActive: true })
@@ -744,7 +763,12 @@ app.get('/api/stats/characters', async (req, res) => {
     // Get visiting counts and details
     const villages = ['rudania', 'inariko', 'vhintl'];
     const visitingAgg = await Character.aggregate([
-      { $match: { currentVillage: { $in: villages }, homeVillage: { $in: villages, $ne: null }, $expr: { $ne: ['$currentVillage', '$homeVillage'] } } },
+      { $match: { 
+        currentVillage: { $in: villages }, 
+        homeVillage: { $in: villages, $ne: null }, 
+        $expr: { $ne: ['$currentVillage', '$homeVillage'] },
+        name: { $nin: ['Tingle', 'Tingle test', 'John'] }
+      } },
       { $group: { _id: '$currentVillage', count: { $sum: 1 } } }
     ]);
     const visitingCounts = { rudania: 0, inariko: 0, vhintl: 0 };
@@ -755,7 +779,8 @@ app.get('/api/stats/characters', async (req, res) => {
       { 
         currentVillage: { $in: villages }, 
         homeVillage: { $in: villages, $ne: null }, 
-        $expr: { $ne: ['$currentVillage', '$homeVillage'] } 
+        $expr: { $ne: ['$currentVillage', '$homeVillage'] },
+        name: { $nin: ['Tingle', 'Tingle test', 'John'] }
       },
       { name: 1, currentVillage: 1, homeVillage: 1 }
     ).lean();
@@ -774,7 +799,10 @@ app.get('/api/stats/characters', async (req, res) => {
 
     // Get top characters by various stats
     const getTop = async (field) => {
-      const top = await Character.find({ [field]: { $gt: 0 } })
+      const top = await Character.find({ 
+        [field]: { $gt: 0 },
+        name: { $nin: ['Tingle', 'Tingle test', 'John'] }
+      })
         .sort({ [field]: -1 })
         .limit(5)
         .select({ name: 1, [field]: 1 })
@@ -796,7 +824,9 @@ app.get('/api/stats/characters', async (req, res) => {
     ]);
 
     // Get top characters by spirit orbs (from inventory)
-    const allCharacters = await Character.find({}, { name: 1 }).lean();
+    const allCharacters = await Character.find({ 
+      name: { $nin: ['Tingle', 'Tingle test', 'John'] }
+    }, { name: 1 }).lean();
     const characterNames = allCharacters.map(c => c.name);
     const spiritOrbCounts = await countSpiritOrbsBatch(characterNames);
     
@@ -814,24 +844,24 @@ app.get('/api/stats/characters', async (req, res) => {
 
     // Get special character counts
     const [kodCount, blightedCount, debuffedCount] = await Promise.all([
-      Character.countDocuments({ ko: true }),
-      Character.countDocuments({ blighted: true }),
-      Character.countDocuments({ 'debuff.active': true })
+      Character.countDocuments({ ko: true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } }),
+      Character.countDocuments({ blighted: true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } }),
+      Character.countDocuments({ 'debuff.active': true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } })
     ]);
 
     // Get debuffed characters details
     const debuffedCharacters = await Character.find(
-      { 'debuff.active': true },
+      { 'debuff.active': true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } },
       { name: 1, 'debuff.endDate': 1 }
     ).lean();
 
     // Get KO'd and blighted characters details
     const kodCharacters = await Character.find(
-      { ko: true },
+      { ko: true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } },
       { name: 1, lastRollDate: 1, ko: 1 }
     ).lean();
     const blightedCharacters = await Character.find(
-      { blighted: true },
+      { blighted: true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } },
       { name: 1, blightedAt: 1, blighted: 1 }
     ).lean();
 
@@ -873,7 +903,10 @@ app.get('/api/calendar', async (req, res) => {
     const bloodmoonDates = calendarModule.bloodmoonDates;
     
     // Get all birthdays for calendar display
-    const allBirthdays = await Character.find({ birthday: { $exists: true, $ne: '' } }, { name: 1, birthday: 1, icon: 1 }).lean();
+    const allBirthdays = await Character.find({ 
+      birthday: { $exists: true, $ne: '' },
+      name: { $nin: ['Tingle', 'Tingle test', 'John'] }
+    }, { name: 1, birthday: 1, icon: 1 }).lean();
     const calendarBirthdays = allBirthdays.map(c => {
       const mmdd = c.birthday.slice(-5);
       return { name: c.name, birthday: mmdd, icon: c.icon };
@@ -1420,7 +1453,7 @@ app.get('/api/models/:modelType', async (req, res) => {
 // Returns total number of characters
 app.get('/api/character-count', async (_, res) => {
   try {
-    const count = await Character.countDocuments();
+    const count = await Character.countDocuments({ name: { $nin: ['Tingle', 'Tingle test', 'John'] } });
     res.json({ count });
   } catch (error) {
     console.error('[server.js]: ❌ Failed to fetch character count:', error);
@@ -1442,7 +1475,7 @@ app.get('/api/debug/character-model', async (req, res) => {
     
     if (debug.modelLoaded && debug.databaseConnected) {
       try {
-        debug.characterCount = await Character.countDocuments();
+        debug.characterCount = await Character.countDocuments({ name: { $nin: ['Tingle', 'Tingle test', 'John'] } });
         debug.sampleCharacter = await Character.findOne().lean();
       } catch (dbError) {
         debug.databaseError = dbError.message;

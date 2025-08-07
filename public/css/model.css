@@ -123,7 +123,7 @@
   .model-details-content {
     overflow-y: auto;
     padding-bottom: 4rem;
-    /* height: calc(100vh - 80px);  Uncomment or adjust as needed for fixed height */
+    height: 100vh;
   }
   
   .model-details-content::-webkit-scrollbar {

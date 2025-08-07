@@ -13,7 +13,7 @@
   gap: 0.5rem;
   padding: 1.5rem;
   width: 100%;
-  margin: 2rem 0;
+  margin: 1rem 0 3rem 0;
 }
 
 .character-pagination,
@@ -26,11 +26,11 @@
 }
 
 .character-pagination {
-  margin: 2.5rem 0;
+  margin: 1.5rem 0 3.5rem 0;
 }
 
 .item-pagination {
-  margin: 2.5rem 0 2rem;
+  margin: 1.5rem 0 3rem;
 }
 
 /* ============================================================================
@@ -48,7 +48,7 @@
   border: 1px solid var(--glass-border);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow);
-  margin: 2rem 0;
+  margin: 1rem 0 3rem 0;
   padding: 1rem;
   width: 100%;
 }
@@ -150,7 +150,7 @@
   .inventory-pagination,
   #village-shop-pagination {
     padding: 1.25rem;
-    margin: 1.5rem 0;
+    margin: 1rem 0 2.5rem 0;
   }
   
   .character-pagination,
@@ -159,16 +159,16 @@
   }
   
   .character-pagination {
-    margin: 2rem 0;
+    margin: 1.5rem 0 3rem 0;
   }
   
   .item-pagination {
-    margin: 2rem 0 1.5rem;
+    margin: 1.5rem 0 2.5rem;
   }
   
   .pagination {
     padding: 0.75rem;
-    margin: 1.5rem 0;
+    margin: 1rem 0 2.5rem 0;
     gap: 0.4rem;
   }
   
@@ -194,7 +194,7 @@
   .inventory-pagination,
   #village-shop-pagination {
     padding: 1rem;
-    margin: 1rem 0;
+    margin: 0.75rem 0 2rem 0;
     gap: 0.4rem;
   }
   
@@ -204,17 +204,17 @@
   }
   
   .character-pagination {
-    margin: 1.5rem 0;
+    margin: 1.25rem 0 2.5rem 0;
   }
   
   .item-pagination {
-    margin: 1.5rem 0 1rem;
+    margin: 1.25rem 0 2rem;
   }
   
   /* Pagination Container Mobile */
   .pagination {
     padding: 0.6rem;
-    margin: 1rem 0;
+    margin: 0.75rem 0 2rem 0;
     gap: 0.3rem;
     flex-wrap: wrap;
   }

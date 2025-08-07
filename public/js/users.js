@@ -157,6 +157,15 @@ class UserLookup {
 
       const data = await response.json();
       
+      // Debug logging
+      console.log(`[Users] Loading page ${page}:`, {
+        totalUsers: data.pagination.totalUsers,
+        totalPages: data.pagination.totalPages,
+        currentPage: data.pagination.currentPage,
+        usersReceived: data.users.length,
+        userIds: data.users.map(u => u.discordId)
+      });
+      
       this.totalPages = data.pagination.totalPages;
       this.totalUsers = data.pagination.totalUsers;
       this.currentPage = data.pagination.currentPage;
@@ -173,7 +182,15 @@ class UserLookup {
   }
 
   async goToPage(page) {
+    console.log(`[Users] Attempting to go to page ${page} (current: ${this.currentPage}, total: ${this.totalPages})`);
+    
     if (page < 1 || page > this.totalPages || this.isLoading) {
+      console.log(`[Users] Page navigation blocked:`, {
+        page,
+        minPage: 1,
+        maxPage: this.totalPages,
+        isLoading: this.isLoading
+      });
       return;
     }
 
@@ -212,6 +229,13 @@ class UserLookup {
     if (!container) {
       return;
     }
+    
+    // Debug logging
+    console.log(`[Users] Displaying ${users.length} users (search: ${isSearch}):`, {
+      userIds: users.map(u => u.discordId),
+      usernames: users.map(u => u.username)
+    });
+    
     container.innerHTML = '';
 
     users.forEach(user => {
@@ -306,6 +330,10 @@ class UserLookup {
     // Format user avatar
     const avatarUrl = this.getUserAvatar(data.user);
     
+    // Characters per page for pagination
+    const charactersPerPage = 6;
+    const totalPages = Math.ceil(data.characters.length / charactersPerPage);
+    
     // Create modal HTML
     modalContent.innerHTML = `
       <div class="user-details-modal-header">
@@ -349,8 +377,15 @@ class UserLookup {
         <div class="user-details-section">
           <h3>Characters (${data.characters.length})</h3>
           ${data.characters.length > 0 ? `
-            <div class="user-characters-grid">
-              ${data.characters.map(character => this.createCharacterCard(character)).join('')}
+            <div class="user-characters-container">
+              <div class="user-characters-grid" id="user-characters-grid">
+                ${this.renderCharactersPage(data.characters, 1, charactersPerPage)}
+              </div>
+              ${totalPages > 1 ? `
+                <div class="user-characters-pagination" id="user-characters-pagination">
+                  ${this.createCharacterPagination(1, totalPages, data.characters, charactersPerPage)}
+                </div>
+              ` : ''}
             </div>
           ` : `
             <div class="user-no-characters">
@@ -377,6 +412,22 @@ class UserLookup {
       }
     });
     
+    // Add pagination event listeners
+    if (totalPages > 1) {
+      const paginationContainer = modal.querySelector('#user-characters-pagination');
+      if (paginationContainer) {
+        paginationContainer.addEventListener('click', (e) => {
+          if (e.target.classList.contains('character-page-btn')) {
+            e.preventDefault();
+            const page = parseInt(e.target.dataset.page);
+            if (page >= 1 && page <= totalPages) {
+              this.updateCharactersPage(modal, data.characters, page, charactersPerPage, totalPages);
+            }
+          }
+        });
+      }
+    }
+    
     // Close on Escape key
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
@@ -385,6 +436,83 @@ class UserLookup {
       }
     };
     document.addEventListener('keydown', handleEscape);
+  }
+
+  renderCharactersPage(characters, page, charactersPerPage) {
+    const startIndex = (page - 1) * charactersPerPage;
+    const endIndex = startIndex + charactersPerPage;
+    const pageCharacters = characters.slice(startIndex, endIndex);
+    
+    return pageCharacters.map(character => this.createCharacterCard(character)).join('');
+  }
+
+  createCharacterPagination(currentPage, totalPages, characters, charactersPerPage) {
+    let paginationHTML = '<div class="character-pagination-controls">';
+    
+    // Previous button
+    if (currentPage > 1) {
+      paginationHTML += `<button class="character-page-btn" data-page="${currentPage - 1}">
+        <i class="fas fa-chevron-left"></i> Previous
+      </button>`;
+    }
+    
+    // Page numbers
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    if (startPage > 1) {
+      paginationHTML += `<button class="character-page-btn" data-page="1">1</button>`;
+      if (startPage > 2) {
+        paginationHTML += '<span class="pagination-ellipsis">...</span>';
+      }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      paginationHTML += `<button class="character-page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+    }
+    
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        paginationHTML += '<span class="pagination-ellipsis">...</span>';
+      }
+      paginationHTML += `<button class="character-page-btn" data-page="${totalPages}">${totalPages}</button>`;
+    }
+    
+    // Next button
+    if (currentPage < totalPages) {
+      paginationHTML += `<button class="character-page-btn" data-page="${currentPage + 1}">
+        Next <i class="fas fa-chevron-right"></i>
+      </button>`;
+    }
+    
+    paginationHTML += '</div>';
+    
+    // Page info
+    const startIndex = (currentPage - 1) * charactersPerPage + 1;
+    const endIndex = Math.min(startIndex + charactersPerPage - 1, characters.length);
+    paginationHTML += `<div class="character-page-info">
+      Showing ${startIndex}-${endIndex} of ${characters.length} characters
+    </div>`;
+    
+    return paginationHTML;
+  }
+
+  updateCharactersPage(modal, characters, page, charactersPerPage, totalPages) {
+    const gridContainer = modal.querySelector('#user-characters-grid');
+    const paginationContainer = modal.querySelector('#user-characters-pagination');
+    
+    if (gridContainer) {
+      gridContainer.innerHTML = this.renderCharactersPage(characters, page, charactersPerPage);
+    }
+    
+    if (paginationContainer) {
+      paginationContainer.innerHTML = this.createCharacterPagination(page, totalPages, characters, charactersPerPage);
+    }
   }
 
   createCharacterCard(character) {
