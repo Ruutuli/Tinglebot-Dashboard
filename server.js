@@ -50,6 +50,7 @@ const { Village } = require('./models/VillageModel');
 const Party = require('./models/PartyModel');
 const Relic = require('./models/RelicModel');
 const CharacterOfWeek = require('./models/CharacterOfWeekModel');
+const Relationship = require('./models/RelationshipModel');
 
 // Import calendar module
 const calendarModule = require('./calendarModule');
@@ -1807,6 +1808,198 @@ app.post('/api/character-of-week/trigger-first', requireAuth, async (req, res) =
     });
   } catch (error) {
     console.error('[server.js]: ❌ Error triggering first character of the week:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ============================================================================
+// ------------------- Relationships API Routes -------------------
+// ============================================================================
+
+// ------------------- Function: getCharacterRelationships -------------------
+// Returns all relationships for a specific character
+app.get('/api/relationships/character/:characterId', requireAuth, async (req, res) => {
+  try {
+    const { characterId } = req.params;
+    const userId = req.user.discordId;
+    
+    // Verify the character belongs to the authenticated user
+    const character = await Character.findOne({ _id: characterId, userId });
+    if (!character) {
+      return res.status(404).json({ error: 'Character not found or access denied' });
+    }
+    
+    // Get relationships for this character
+    const relationships = await Relationship.find({ characterId })
+      .populate('targetCharacterId', 'name race job currentVillage homeVillage icon')
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    res.json({ relationships });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching character relationships:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: createRelationship -------------------
+// Creates a new relationship between characters
+app.post('/api/relationships', requireAuth, async (req, res) => {
+  try {
+    const { characterId, targetCharacterId, relationshipType, notes, isMutual } = req.body;
+    const userId = req.user.discordId;
+    
+    // Validate required fields
+    if (!characterId || !targetCharacterId || !relationshipType) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Verify the character belongs to the authenticated user
+    const character = await Character.findOne({ _id: characterId, userId });
+    if (!character) {
+      return res.status(404).json({ error: 'Character not found or access denied' });
+    }
+    
+    // Verify target character exists
+    const targetCharacter = await Character.findById(targetCharacterId);
+    if (!targetCharacter) {
+      return res.status(404).json({ error: 'Target character not found' });
+    }
+    
+    // Check if relationship already exists between these characters
+    const existingRelationship = await Relationship.findOne({ 
+      characterId, 
+      targetCharacterId
+    });
+    
+    if (existingRelationship) {
+      return res.status(409).json({ error: 'Relationship already exists between these characters' });
+    }
+    
+    // Create new relationship
+    const relationship = new Relationship({
+      userId,
+      characterId,
+      targetCharacterId,
+      relationshipTypes: Array.isArray(relationshipType) ? relationshipType : [relationshipType],
+      notes: notes || '',
+      isMutual: isMutual || false
+    });
+    
+    await relationship.save();
+    
+    // Populate target character info for response
+    await relationship.populate('targetCharacterId', 'name race job currentVillage homeVillage icon');
+    
+    res.status(201).json({ 
+      message: 'Relationship created successfully',
+      relationship: relationship.toObject()
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error creating relationship:', error);
+    
+    if (error.code === 11000) {
+      return res.status(409).json({ error: 'Relationship already exists between these characters' });
+    }
+    
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: updateRelationship -------------------
+// Updates an existing relationship
+app.put('/api/relationships/:relationshipId', requireAuth, async (req, res) => {
+  try {
+    const { relationshipId } = req.params;
+    const { characterId, targetCharacterId, relationshipType, notes, isMutual } = req.body;
+    const userId = req.user.discordId;
+    
+    // Validate required fields
+    if (!characterId || !targetCharacterId || !relationshipType) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Find the relationship and verify ownership
+    const relationship = await Relationship.findOne({ _id: relationshipId, userId });
+    if (!relationship) {
+      return res.status(404).json({ error: 'Relationship not found or access denied' });
+    }
+    
+    // Verify the character belongs to the authenticated user
+    const character = await Character.findOne({ _id: characterId, userId });
+    if (!character) {
+      return res.status(404).json({ error: 'Character not found or access denied' });
+    }
+    
+    // Verify target character exists
+    const targetCharacter = await Character.findById(targetCharacterId);
+    if (!targetCharacter) {
+      return res.status(404).json({ error: 'Target character not found' });
+    }
+    
+    // Update the relationship
+    relationship.targetCharacterId = targetCharacterId;
+    relationship.relationshipTypes = Array.isArray(relationshipType) ? relationshipType : [relationshipType];
+    relationship.notes = notes || '';
+    relationship.isMutual = isMutual || false;
+    
+    await relationship.save();
+    
+    // Populate target character info for response
+    await relationship.populate('targetCharacterId', 'name race job currentVillage homeVillage icon');
+    
+    res.json({ 
+      message: 'Relationship updated successfully',
+      relationship: relationship.toObject()
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error updating relationship:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: deleteRelationship -------------------
+// Deletes a relationship
+app.delete('/api/relationships/:relationshipId', requireAuth, async (req, res) => {
+  try {
+    const { relationshipId } = req.params;
+    const userId = req.user.discordId;
+    
+    // Find and verify the relationship belongs to the authenticated user
+    const relationship = await Relationship.findOne({ _id: relationshipId, userId });
+    if (!relationship) {
+      return res.status(404).json({ error: 'Relationship not found or access denied' });
+    }
+    
+    await Relationship.findByIdAndDelete(relationshipId);
+    
+    res.json({ message: 'Relationship deleted successfully' });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error deleting relationship:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: getCharactersForRelationships -------------------
+// Returns all characters for relationship selection (excluding user's own characters)
+app.get('/api/characters', async (req, res) => {
+  try {
+    const characters = await Character.find({})
+      .select('name race job currentVillage homeVillage icon userId')
+      .sort({ name: 1 })
+      .lean();
+    
+    // Transform icon URLs
+    characters.forEach(character => {
+      if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
+        const filename = character.icon.split('/').pop();
+        character.icon = filename;
+      }
+    });
+    
+    res.json({ characters });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching characters for relationships:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

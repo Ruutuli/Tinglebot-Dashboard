@@ -576,6 +576,8 @@ function setupSidebarNavigation() {
         showCalendarSection();
       } else if (sectionId === 'users-section') {
         showUsersSection();
+      } else if (sectionId === 'relationships-section') {
+        relationshipsModule.showRelationshipsSection();
       } else {
         // For other sections, use the existing showSection function
         showSection(sectionId);
@@ -601,6 +603,8 @@ function setupSidebarNavigation() {
       showCalendarSection();
     } else if (section === 'users-section') {
       showUsersSection();
+    } else if (section === 'relationships-section') {
+      relationshipsModule.showRelationshipsSection();
     } else {
       showSection(section);
     }
@@ -625,6 +629,8 @@ function setupSidebarNavigation() {
       showCalendarSection();
     } else if (sectionId === 'users-section') {
       showUsersSection();
+    } else if (sectionId === 'relationships-section') {
+      relationshipsModule.showRelationshipsSection();
     } else {
       showSection(sectionId);
     }

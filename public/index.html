@@ -51,6 +51,7 @@
   <link rel="stylesheet" href="css/weather.css" />
   <link rel="stylesheet" href="css/calender.css" />
   <link rel="stylesheet" href="css/bloodmoon.css" />
+  <link rel="stylesheet" href="css/relationships.css" />
   
   <!-- External Scripts with Integrity -->
   <script src="https://kit.fontawesome.com/262000d25d.js" crossorigin="anonymous"></script>
@@ -165,6 +166,9 @@
           </li>
           <li>
             <a href="#settings" data-section="settings-section"><i class="fas fa-cog"></i><span>Settings</span></a>
+          </li>
+          <li>
+            <a href="#relationships-section" data-section="relationships-section"><i class="fas fa-heart"></i><span>Relationships</span></a>
           </li>
           <li>
             <a href="#stats" data-section="stats-section"><i class="fas fa-chart-bar"></i><span>Stats</span></a>
@@ -894,6 +898,75 @@
         </div>
       </section>
 
+      <!-- Relationships Section -->
+      <section id="relationships-section" style="display:none;">
+        <div class="dashboard-header">
+          <h1><i class="fas fa-heart"></i> Relationships</h1>
+          <div class="dashboard-divider"></div>
+          <p class="dashboard-welcome">
+            Manage relationships between your characters and other characters in the world.
+          </p>
+        </div>
+
+        <!-- Guest Message -->
+        <div id="relationships-guest-message" class="guest-message" style="display: none;">
+          <div class="guest-message-content">
+            <i class="fas fa-heart"></i>
+            <h2>Login Required</h2>
+            <p>Please log in with Discord to manage character relationships.</p>
+            <button class="login-button" onclick="auth.login()">
+              <i class="fab fa-discord"></i>
+              Login with Discord
+            </button>
+          </div>
+        </div>
+
+        <!-- Character Selection -->
+        <div id="relationships-character-selection" class="relationships-character-selection" style="display: none;">
+          <div class="character-selection-header">
+            <h2>Select a Character</h2>
+            <p>Choose which character to manage relationships for</p>
+          </div>
+          <div id="relationships-character-grid" class="relationship-character-grid">
+            <!-- Character cards will be loaded here -->
+          </div>
+        </div>
+
+        <!-- Relationships Management -->
+        <div id="relationships-management" class="relationships-management" style="display: none;">
+          <div class="relationships-header">
+            <div class="relationships-header-info">
+              <h2 id="relationships-character-name">Character Name</h2>
+              <button class="back-to-characters" onclick="relationshipsModule.backToCharacterSelection()">
+                <i class="fas fa-arrow-left"></i>
+                Back to Characters
+              </button>
+            </div>
+            <button class="add-relationship-btn" onclick="relationshipsModule.showAddRelationshipModal()">
+              <i class="fas fa-plus"></i>
+              Add Relationship
+            </button>
+          </div>
+
+          <div id="relationships-list" class="relationships-list">
+            <!-- Relationships will be loaded here -->
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="relationships-loading" class="loading-state" style="display: none;">
+          <div class="loading-spinner"></div>
+          <p>Loading relationships...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="relationships-error" class="error-state" style="display: none;">
+          <i class="fas fa-exclamation-circle"></i>
+          <p>Failed to load relationships</p>
+          <button class="retry-button" onclick="relationshipsModule.loadRelationships()">Retry</button>
+        </div>
+      </section>
+
       <!-- Inventory Section -->
 
 
@@ -920,6 +993,7 @@
   <script type="module" src="js/characterOfWeek.js"></script>
   <script type="module" src="js/monsters.js"></script>
   <script type="module" src="js/users.js"></script>
+  <script type="module" src="js/relationships.js"></script>
   
   <!-- Performance and Error Handling Script -->
   <script src="js/performance.js"></script>

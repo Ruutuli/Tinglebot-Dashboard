@@ -1,0 +1,856 @@
+/* ============================================================================
+   relationships.css — Styling for the Relationships Feature
+   Purpose: Provides modern, responsive styling for character relationship management
+   Theme: Consistent with Tinglebot Dashboard design system
+============================================================================ */
+
+/* ============================================================================
+   Character Selection Styling
+============================================================================ */
+
+.relationships-character-selection {
+  padding: 1rem 0;
+}
+
+.character-selection-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.character-selection-header h2 {
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+  font-size: 1.75rem;
+}
+
+.character-selection-header p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.relationship-character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.relationship-character-card {
+  background: var(--card-background);
+  border-radius: var(--card-radius);
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.relationship-character-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border-color: var(--primary-color);
+}
+
+.relationship-character-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.relationship-character-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+}
+
+.relationship-character-info h3 {
+  color: var(--text-color);
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.relationship-character-info p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.relationship-character-card-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.relationship-character-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.manage-relationships-btn {
+  background: var(--primary-color);
+  color: var(--text-color);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.manage-relationships-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+/* ============================================================================
+   Relationships Management Styling
+============================================================================ */
+
+.relationships-management {
+  padding: 1rem 0;
+}
+
+.relationships-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.relationships-header-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.relationships-header-info h2 {
+  color: var(--text-color);
+  font-size: 1.75rem;
+  margin: 0;
+}
+
+.back-to-characters {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back-to-characters:hover {
+  background: var(--card-background);
+  color: var(--text-color);
+  border-color: var(--primary-color);
+}
+
+.add-relationship-btn {
+  background: var(--success-color);
+  color: var(--text-color);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.add-relationship-btn:hover {
+  background: #3bb87a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(73, 213, 156, 0.3);
+}
+
+.relationships-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.relationship-card {
+  background: var(--card-background);
+  border-radius: var(--card-radius);
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.relationship-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary-color);
+}
+
+.relationship-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.relationship-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.relationship-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
+}
+
+.relationship-item-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.relationship-item-type {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.relationship-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.relationship-action-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.relationship-action-btn:hover {
+  color: var(--text-color);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.relationship-action-btn.edit:hover {
+  color: var(--primary-color);
+}
+
+.relationship-action-btn.delete:hover {
+  color: var(--error-color);
+}
+
+.relationship-target-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.relationship-target-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+}
+
+.relationship-target-details {
+  flex: 1;
+}
+
+.relationship-target-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 0.25rem;
+}
+
+.relationship-target-info-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.relationship-notes {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.relationship-mutual {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.relationship-mutual i {
+  font-size: 0.8rem;
+}
+
+/* Relationship Group Cards */
+.relationship-group-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.relationship-group-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.relationship-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: var(--section-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.add-relationship-to-character-btn {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.add-relationship-to-character-btn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.relationship-group-content {
+  padding: 1rem;
+}
+
+.relationship-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  background: var(--bg-color);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.relationship-item:last-child {
+  margin-bottom: 0;
+}
+
+.relationship-item:hover {
+  background: var(--hover-bg);
+}
+
+.relationship-item-type {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.relationship-item-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.edit-relationship-btn,
+.delete-relationship-btn {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: var(--text-secondary);
+}
+
+.edit-relationship-btn:hover {
+  background: var(--accent-color);
+  color: white;
+}
+
+.delete-relationship-btn:hover {
+  background: #e74c3c;
+  color: white;
+}
+
+/* ============================================================================
+   Modal Styling
+============================================================================ */
+
+.relationship-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.relationship-modal.active {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+.relationship-modal-content {
+  background: var(--card-background);
+  border-radius: var(--card-radius);
+  padding: 2rem;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.relationship-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.relationship-modal-header h3 {
+  color: var(--text-color);
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.relationship-close-modal {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.relationship-close-modal:hover {
+  color: var(--text-color);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.relationship-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.relationship-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.relationship-form-group label {
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.relationship-form-group select,
+.relationship-form-group input,
+.relationship-form-group textarea {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.relationship-form-group select:focus,
+.relationship-form-group input:focus,
+.relationship-form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 163, 218, 0.1);
+}
+
+.relationship-form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.relationship-type-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.relationship-type-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  background: var(--bg-primary);
+  position: relative;
+  min-height: 60px;
+  font-weight: 500;
+  color: var(--text-color);
+  transform: scale(1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.relationship-type-option:hover {
+  border-color: var(--primary-color);
+  background: rgba(0, 163, 218, 0.08);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.relationship-type-option.selected {
+  border-color: var(--primary-color);
+  background: rgba(0, 163, 218, 0.15);
+  color: var(--primary-color);
+  box-shadow: 0 4px 16px rgba(0, 163, 218, 0.2);
+  transform: scale(1.02);
+}
+
+.relationship-type-option input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.relationship-type-option .relationship-type-emoji {
+  font-size: 1.25rem;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.relationship-type-option span:last-child {
+  flex: 1;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Custom checkbox styling */
+.relationship-type-option::before {
+  content: '';
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 2px solid var(--border-color);
+  border-radius: 0.25rem;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+.relationship-type-option.selected::before {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.relationship-type-option.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 0.5rem;
+  right: 0.85rem;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* Focus states for accessibility */
+.relationship-type-option:focus-within {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+
+
+/* Improved visual hierarchy */
+.relationship-form-group label {
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: var(--primary-color);
+}
+
+.checkbox-group label {
+  margin: 0;
+  cursor: pointer;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.form-actions button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.btn-cancel {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-cancel:hover {
+  background: var(--card-background);
+  color: var(--text-color);
+}
+
+.btn-save {
+  background: var(--primary-color);
+  color: var(--text-color);
+}
+
+.btn-save:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+/* ============================================================================
+   Responsive Design
+============================================================================ */
+
+@media (max-width: 768px) {
+  .relationship-character-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .relationships-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .relationships-header-info {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .relationships-list {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .relationship-modal-content {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .relationship-type-options {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  
+  .relationship-type-option {
+    padding: 0.75rem;
+    min-height: 50px;
+  }
+  
+  .relationship-type-option .relationship-type-emoji {
+    font-size: 1.1rem;
+    min-width: 1.25rem;
+  }
+  
+  .relationship-type-option span:last-child {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .relationship-character-card {
+    padding: 1rem;
+  }
+
+  .relationship-character-card-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .relationship-character-avatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .relationship-modal-content {
+    padding: 1rem;
+  }
+
+  .relationship-type-options {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .relationship-type-option {
+    padding: 0.75rem;
+    min-height: 45px;
+  }
+  
+  .relationship-type-option .relationship-type-emoji {
+    font-size: 1rem;
+    min-width: 1.1rem;
+  }
+  
+  .relationship-type-option span:last-child {
+    font-size: 0.8rem;
+  }
+}
+
+
+
+/* ============================================================================
+   Empty State
+============================================================================ */
+
+.empty-relationships {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+}
+
+.empty-relationships i {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-relationships h3 {
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+}
+
+.empty-relationships p {
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+/* ============================================================================
+   Relationship Type Colors
+============================================================================ */
+
+.relationship-type.lovers {
+  color: #ff6b6b;
+}
+
+.relationship-type.crush {
+  color: #ffa726;
+}
+
+.relationship-type.close-friend {
+  color: #ffd54f;
+}
+
+.relationship-type.friend {
+  color: #81c784;
+}
+
+.relationship-type.acquaintance {
+  color: #64b5f6;
+}
+
+.relationship-type.dislike {
+  color: #ba68c8;
+}
+
+.relationship-type.hate {
+  color: #424242;
+}
+
+.relationship-type.neutral {
+  color: #bdbdbd;
+}
+
+.relationship-type.other {
+  color: #8d6e63;
+}
