@@ -2,6 +2,17 @@
    relationships.js — Relationships Feature Module
    Purpose: Handles character relationship management functionality
    Features: Character selection, relationship CRUD operations, modal management
+   
+   REFACTORING IMPROVEMENTS:
+   - Eliminated duplicate relationship type definitions (RELATIONSHIP_CONFIG only)
+   - Centralized character finding logic with robust ID handling
+   - Created utility functions for consistent character display formatting
+   - Centralized relationship type handling with validation
+   - Unified modal management with consistent styling and behavior
+   - Consolidated notification system with enhanced styling
+   - Added comprehensive error handling wrapper for async operations
+   - Improved code organization with clear section separation
+   - Enhanced robustness with null checks and fallbacks
 ============================================================================ */
 
 // ============================================================================
@@ -129,7 +140,7 @@ let userCharacters = [];
 let allCharacters = [];
 let relationships = [];
 
-// Relationship types with emojis - now using centralized config
+// Relationship types - using centralized config
 const RELATIONSHIP_TYPES = RELATIONSHIP_CONFIG;
 
 // ============================================================================
@@ -370,14 +381,15 @@ function createCharacterCard(character) {
   card.onclick = () => selectCharacter(character);
   
   const avatarUrl = formatCharacterIconUrl(character.icon);
+  const displayInfo = getCharacterDisplayInfo(character);
   
   card.innerHTML = `
     <div class="relationship-character-card-header">
       <img src="${avatarUrl}" alt="${character.name}" class="relationship-character-avatar" />
       <div class="relationship-character-info">
-        <h3>${character.name}</h3>
-        <p>${(character.race || 'Unknown').charAt(0).toUpperCase() + (character.race || 'Unknown').slice(1)} • ${(character.job || 'Unknown').charAt(0).toUpperCase() + (character.job || 'Unknown').slice(1)}</p>
-        <p>${(character.currentVillage || character.homeVillage || 'Unknown Village').charAt(0).toUpperCase() + (character.currentVillage || character.homeVillage || 'Unknown Village').slice(1)}</p>
+        <h3>${displayInfo.name}</h3>
+        <p>${displayInfo.info}</p>
+        <p>${displayInfo.village}</p>
       </div>
     </div>
     <div class="relationship-character-card-footer">
@@ -403,16 +415,13 @@ async function selectCharacter(character) {
   avatarElement.src = formatCharacterIconUrl(character.icon);
   avatarElement.alt = `${character.name}'s Avatar`;
   
-  // Update character details
+  // Update character details using utility function
+  const displayInfo = getCharacterDisplayInfo(character);
   const raceJobElement = document.getElementById('relationships-character-race-job');
   const villageElement = document.getElementById('relationships-character-village');
   
-  const race = character.race || 'Unknown Race';
-  const job = character.job || 'Unknown Job';
-  const village = character.currentVillage || character.homeVillage || 'Unknown Village';
-  
-  raceJobElement.textContent = `${race} • ${job}`;
-  villageElement.textContent = village;
+  raceJobElement.textContent = displayInfo.info;
+  villageElement.textContent = displayInfo.village;
   
   hideAllStates();
   document.getElementById('relationships-management').style.display = 'block';
@@ -512,11 +521,7 @@ function renderRelationships() {
       </div>
       <div class="relationship-group-content">
         ${characterRelationships.map(relationship => {
-          const relationshipTypes = relationship.relationshipTypes || [relationship.relationshipType] || ['OTHER'];
-          const typesDisplay = relationshipTypes.map(type => {
-            const typeInfo = RELATIONSHIP_TYPES[type] || RELATIONSHIP_TYPES.OTHER;
-            return `<span class="relationship-type-badge ${type.toLowerCase()}">${typeInfo.emoji} ${typeInfo.label}</span>`;
-          }).join('');
+          const typesDisplay = createRelationshipTypeBadges(relationship.relationshipTypes || [relationship.relationshipType] || ['OTHER']);
           
           return `
             <div class="relationship-item">
@@ -578,15 +583,10 @@ function createRelationshipCard(relationship) {
   console.log('🎭 Target character found:', targetCharacter);
   
   const avatarUrl = targetCharacter ? formatCharacterIconUrl(targetCharacter.icon) : '/images/ankleicon.png';
-  const characterName = targetCharacter ? targetCharacter.name : 'Unknown Character';
-  const characterInfo = targetCharacter ? `${targetCharacter.race || 'Unknown'} • ${targetCharacter.job || 'Unknown'}` : '';
+  const displayInfo = getCharacterDisplayInfo(targetCharacter);
   
-  // Create relationship types display
-  const relationshipTypes = relationship.relationshipTypes || [relationship.relationshipType] || ['OTHER'];
-  const typesDisplay = relationshipTypes.map(type => {
-    const typeInfo = RELATIONSHIP_TYPES[type] || RELATIONSHIP_TYPES.OTHER;
-    return `<span class="relationship-type-badge ${type.toLowerCase()}">${typeInfo.emoji} ${typeInfo.label}</span>`;
-  }).join('');
+  // Create relationship types display using utility function
+  const typesDisplay = createRelationshipTypeBadges(relationship.relationshipTypes || [relationship.relationshipType] || ['OTHER']);
   
   card.innerHTML = `
     <div class="relationship-header">
@@ -603,10 +603,10 @@ function createRelationshipCard(relationship) {
       </div>
     </div>
     <div class="relationship-target-info">
-      <img src="${avatarUrl}" alt="${characterName}" class="relationship-target-avatar" />
+      <img src="${avatarUrl}" alt="${displayInfo.name}" class="relationship-target-avatar" />
       <div class="relationship-target-details">
-        <div class="relationship-target-name">${characterName}</div>
-        ${characterInfo ? `<div class="relationship-target-info-text">${characterInfo}</div>` : ''}
+        <div class="relationship-target-name">${displayInfo.name}</div>
+        ${displayInfo.info ? `<div class="relationship-target-info-text">${displayInfo.info}</div>` : ''}
       </div>
     </div>
     ${relationship.notes ? `<div class="relationship-notes">${relationship.notes}</div>` : ''}
@@ -616,58 +616,117 @@ function createRelationshipCard(relationship) {
   return card;
 }
 
-function findCharacterById(characterId) {
-  console.log('🔍 Looking for character with ID:', characterId);
+// ============================================================================
+// ------------------- Utility Functions -------------------
+// ============================================================================
+
+/**
+ * Enhanced character finding utility with robust ID handling
+ * @param {string|object} characterId - Character ID or character object
+ * @param {Array} characterArrays - Arrays to search in (defaults to [userCharacters, allCharacters])
+ * @returns {object|null} Found character or null
+ */
+function findCharacterById(characterId, characterArrays = [userCharacters, allCharacters]) {
+  if (!characterId) return null;
   
   // Handle case where characterId is actually a full character object
   if (typeof characterId === 'object' && characterId._id) {
-    console.log('✅ Character object provided directly:', characterId.name);
     return characterId;
   }
   
-  // Handle string ID
-  if (typeof characterId === 'string') {
-    // First check user characters
-    let character = userCharacters.find(c => c._id === characterId);
-    if (character) {
-      console.log('✅ Found character in user characters:', character.name);
-      return character;
-    }
+  // Normalize ID to string
+  const normalizedId = typeof characterId === 'string' ? characterId : characterId.toString();
+  
+  // Search in all provided arrays
+  for (const characterArray of characterArrays) {
+    if (!Array.isArray(characterArray)) continue;
     
-    // Then check all characters (if loaded)
-    character = allCharacters.find(c => c._id === characterId);
+    const character = characterArray.find(c => c._id === normalizedId);
     if (character) {
-      console.log('✅ Found character in all characters:', character.name);
       return character;
     }
   }
-  
-  // Handle ObjectId from MongoDB (if it's an object with toString method)
-  if (characterId && typeof characterId.toString === 'function') {
-    const idString = characterId.toString();
-    console.log('🔍 Converting ObjectId to string:', idString);
-    
-    // First check user characters
-    let character = userCharacters.find(c => c._id === idString);
-    if (character) {
-      console.log('✅ Found character in user characters:', character.name);
-      return character;
-    }
-    
-    // Then check all characters (if loaded)
-    character = allCharacters.find(c => c._id === idString);
-    if (character) {
-      console.log('✅ Found character in all characters:', character.name);
-      return character;
-    }
-  }
-  
-  console.log('❌ Character not found. User characters count:', userCharacters.length);
-  console.log('❌ All characters count:', allCharacters.length);
-  console.log('❌ Sample user character IDs:', userCharacters.slice(0, 3).map(c => c._id));
-  console.log('❌ Sample all character IDs:', allCharacters.slice(0, 3).map(c => c._id));
   
   return null;
+}
+
+/**
+ * Get character display information consistently
+ * @param {object} character - Character object
+ * @returns {object} Formatted character info
+ */
+function getCharacterDisplayInfo(character) {
+  if (!character) return { name: 'Unknown Character', info: '', village: 'Unknown Village' };
+  
+  const race = character.race || 'Unknown';
+  const job = character.job || 'Unknown';
+  const village = character.currentVillage || character.homeVillage || 'Unknown Village';
+  
+  return {
+    name: character.name,
+    info: `${race.charAt(0).toUpperCase() + race.slice(1)} • ${job.charAt(0).toUpperCase() + job.slice(1)}`,
+    village: village.charAt(0).toUpperCase() + village.slice(1)
+  };
+}
+
+/**
+ * Format character icon URL consistently
+ * @param {string} icon - Icon path or URL
+ * @returns {string} Formatted icon URL
+ */
+function formatCharacterIconUrl(icon) {
+  if (!icon) return '/images/ankleicon.png';
+  
+  // If it's already a relative path or local URL, return as is
+  if (!icon.startsWith('http')) {
+    return `/api/images/${icon}`;
+  }
+  
+  // If it's a Google Cloud Storage URL, extract the filename and use proxy
+  if (icon.includes('storage.googleapis.com/tinglebot/')) {
+    const filename = icon.split('/').pop();
+    return `/api/images/${filename}`;
+  }
+  
+  // For other HTTP URLs, return as is
+  return icon;
+}
+
+/**
+ * Get relationship type information consistently
+ * @param {string|Array} types - Relationship type(s)
+ * @returns {object} Formatted relationship type info
+ */
+function getRelationshipTypeInfo(types) {
+  const typeArray = Array.isArray(types) ? types : [types];
+  const validTypes = typeArray.filter(type => RELATIONSHIP_CONFIG[type]);
+  
+  if (validTypes.length === 0) {
+    return {
+      display: `${RELATIONSHIP_CONFIG.OTHER.emoji} ${RELATIONSHIP_CONFIG.OTHER.label}`,
+      colors: [RELATIONSHIP_CONFIG.OTHER.color],
+      types: ['OTHER']
+    };
+  }
+  
+  return {
+    display: validTypes.map(type => `${RELATIONSHIP_CONFIG[type].emoji} ${RELATIONSHIP_CONFIG[type].label}`).join(', '),
+    colors: validTypes.map(type => RELATIONSHIP_CONFIG[type].color),
+    types: validTypes
+  };
+}
+
+/**
+ * Create relationship type badges HTML
+ * @param {string|Array} types - Relationship type(s)
+ * @returns {string} HTML for relationship type badges
+ */
+function createRelationshipTypeBadges(types) {
+  const typeInfo = getRelationshipTypeInfo(types);
+  return typeInfo.types.map(type => {
+    const config = RELATIONSHIP_CONFIG[type];
+    return `<span class="relationship-type-badge ${type.toLowerCase()}">${config.emoji} ${config.label}</span>`;
+  }).join('');
 }
 
 function backToCharacterSelection() {
@@ -758,6 +817,8 @@ function renderAllRelationships() {
 
     console.log(`🌍 Creating card for ${character.name} (${characterId}) - has relationships: ${hasRelationships}`);
 
+    const displayInfo = getCharacterDisplayInfo(character);
+    
     return `
       <div class="all-relationships-character-card ${hasRelationships ? 'has-relationships' : 'no-relationships'}" onclick="relationshipsModule.showCharacterRelationshipsModal('${characterId}')">
         <div class="all-relationships-character-info">
@@ -765,7 +826,7 @@ function renderAllRelationships() {
           <div class="all-relationships-character-details">
             <div class="all-relationships-character-name">${character.name}</div>
             <div class="all-relationships-character-info-text">
-              ${(character.race || 'Unknown').charAt(0).toUpperCase() + (character.race || 'Unknown').slice(1)} • ${(character.job || 'Unknown').charAt(0).toUpperCase() + (character.job || 'Unknown').slice(1)} • ${(character.currentVillage || character.homeVillage || 'Unknown').charAt(0).toUpperCase() + (character.currentVillage || character.homeVillage || 'Unknown').slice(1)}
+              ${displayInfo.info} • ${displayInfo.village}
             </div>
           </div>
         </div>
@@ -813,13 +874,14 @@ function showCharacterRelationshipsModal(characterId) {
   const modalContent = modal.querySelector('.character-relationships-modal-content');
   
   // Populate modal content
+  const displayInfo = getCharacterDisplayInfo(character);
   modalContent.innerHTML = `
     <div class="character-relationships-modal-header">
       <div class="character-relationships-modal-character-info">
         <img src="${formatCharacterIconUrl(character.icon)}" alt="${character.name}" class="character-relationships-modal-avatar">
         <div class="character-relationships-modal-character-details">
           <h3><i class="fas fa-heart"></i> ${character.name}</h3>
-          <p>${(character.race || 'Unknown').charAt(0).toUpperCase() + (character.race || 'Unknown').slice(1)} • ${(character.job || 'Unknown').charAt(0).toUpperCase() + (character.job || 'Unknown').slice(1)} • ${(character.currentVillage || character.homeVillage || 'Unknown').charAt(0).toUpperCase() + (character.currentVillage || character.homeVillage || 'Unknown').slice(1)}</p>
+          <p>${displayInfo.info} • ${displayInfo.village}</p>
         </div>
       </div>
       <button class="character-relationships-close-modal">&times;</button>
@@ -841,12 +903,10 @@ function showCharacterRelationshipsModal(characterId) {
             const targetCharacter = rel.targetCharacterId._id ? rel.targetCharacterId : findCharacterById(rel.targetCharacterId);
             if (!targetCharacter) return '';
             
-            const relationshipTypes = rel.relationshipTypes || rel.types || [];
-            const typeLabels = relationshipTypes.map(type => {
-              const typeInfo = RELATIONSHIP_TYPES[type] || RELATIONSHIP_TYPES.OTHER;
-              return typeInfo.emoji + ' ' + typeInfo.label;
-            }).join(', ');
+            const typeInfo = getRelationshipTypeInfo(rel.relationshipTypes || rel.types || []);
+            const typeLabels = typeInfo.display;
             
+            const targetDisplayInfo = getCharacterDisplayInfo(targetCharacter);
             return `
               <div class="character-relationship-item">
                 <div class="character-relationship-target">
@@ -856,7 +916,7 @@ function showCharacterRelationshipsModal(characterId) {
                       <i class="fas fa-user"></i> ${targetCharacter.name}
                     </div>
                     <div class="character-relationship-target-details">
-                      ${(targetCharacter.race || 'Unknown').charAt(0).toUpperCase() + (targetCharacter.race || 'Unknown').slice(1)} • ${(targetCharacter.job || 'Unknown').charAt(0).toUpperCase() + (targetCharacter.job || 'Unknown').slice(1)} • ${(targetCharacter.currentVillage || targetCharacter.homeVillage || 'Unknown').charAt(0).toUpperCase() + (targetCharacter.currentVillage || targetCharacter.homeVillage || 'Unknown').slice(1)}
+                      ${targetDisplayInfo.info} • ${targetDisplayInfo.village}
                     </div>
                   </div>
                 </div>
@@ -912,6 +972,72 @@ function createCharacterRelationshipsModal() {
 // ============================================================================
 // ------------------- Modal Management -------------------
 // ============================================================================
+
+/**
+ * Create a modal with consistent styling and behavior
+ * @param {string} id - Modal ID
+ * @param {string} title - Modal title
+ * @param {string} content - Modal content HTML
+ * @returns {HTMLElement} Created modal element
+ */
+function createModal(id, title, content) {
+  // Remove existing modal if it exists
+  const existingModal = document.getElementById(id);
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
+  const modal = document.createElement('div');
+  modal.id = id;
+  modal.className = 'relationship-modal';
+  
+  modal.innerHTML = `
+    <div class="relationship-modal-content">
+      <div class="relationship-modal-header">
+        <h3>${title}</h3>
+        <button class="relationship-close-modal">&times;</button>
+      </div>
+      ${content}
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Setup close functionality
+  const closeBtn = modal.querySelector('.relationship-close-modal');
+  closeBtn.onclick = () => closeModal();
+  
+  // Close on backdrop click
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  };
+  
+  return modal;
+}
+
+/**
+ * Show modal with fade-in animation
+ * @param {string} id - Modal ID
+ */
+function showModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.add('active');
+  }
+}
+
+/**
+ * Close modal with fade-out animation
+ * @param {string} id - Modal ID (optional, defaults to relationship-modal)
+ */
+function closeModal(id = 'relationship-modal') {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
 function showAddRelationshipModal(preSelectedTargetId = null) {
   console.log('➕ Showing add relationship modal');
   
@@ -920,15 +1046,14 @@ function showAddRelationshipModal(preSelectedTargetId = null) {
     createRelationshipModal();
   }
   
-  const modal = document.getElementById('relationship-modal');
-  modal.classList.add('active');
+  showModal('relationship-modal');
   
   // Reset form
-  const form = modal.querySelector('.relationship-form');
-  form.reset();
-  
-  // Reset relationship type options visual state
-  resetRelationshipTypeOptions();
+  const form = document.querySelector('#relationship-modal .relationship-form');
+  if (form) {
+    form.reset();
+    resetRelationshipTypeOptions();
+  }
   
   // Load available characters for dropdown
   loadAvailableCharacters(preSelectedTargetId);
@@ -1248,36 +1373,13 @@ async function deleteRelationship(relationshipId) {
   }
 }
 
-function closeModal() {
-  const modal = document.getElementById('relationship-modal');
-  if (modal) {
-    modal.classList.remove('active');
-  }
-}
+
 
 // ============================================================================
 // ------------------- Utility Functions -------------------
 // ============================================================================
 
-// ------------------- Function: formatCharacterIconUrl -------------------
-// Formats and returns character icon URL
-function formatCharacterIconUrl(icon) {
-  if (!icon) return '/images/ankleicon.png';
-  
-  // If it's already a relative path or local URL, return as is
-  if (!icon.startsWith('http')) {
-    return `/api/images/${icon}`;
-  }
-  
-  // If it's a Google Cloud Storage URL, extract the filename and use proxy
-  if (icon.includes('storage.googleapis.com/tinglebot/')) {
-    const filename = icon.split('/').pop();
-    return `/api/images/${filename}`;
-  }
-  
-  // For other HTTP URLs, return as is
-  return icon;
-}
+
 
 function loadCharacterImage(character) {
   const characterId = character._id || character.id;
@@ -1294,7 +1396,107 @@ function loadCharacterImage(character) {
   img.src = iconUrl;
 }
 
-function showNotification(message, type = 'info') {
+
+
+// ============================================================================
+// ------------------- Module Initialization -------------------
+// ============================================================================
+
+/**
+ * Enhanced error handling wrapper for async operations
+ * @param {Function} asyncFn - Async function to wrap
+ * @param {string} operationName - Name of the operation for error logging
+ * @returns {Function} Wrapped function with error handling
+ */
+function withErrorHandling(asyncFn, operationName) {
+  return async (...args) => {
+    try {
+      return await asyncFn(...args);
+    } catch (error) {
+      console.error(`❌ Error in ${operationName}:`, error);
+      showNotification(`Failed to ${operationName.toLowerCase()}`, 'error');
+      throw error;
+    }
+  };
+}
+
+// Wrap critical async functions with error handling
+const loadUserCharactersWithErrorHandling = withErrorHandling(loadUserCharacters, 'load user characters');
+const loadCharacterRelationshipsWithErrorHandling = withErrorHandling(loadCharacterRelationships, 'load character relationships');
+const saveRelationshipWithErrorHandling = withErrorHandling(saveRelationship, 'save relationship');
+const deleteRelationshipWithErrorHandling = withErrorHandling(deleteRelationship, 'delete relationship');
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  initNotificationSystem();
+  init();
+});
+
+// ============================================================================
+// ------------------- Notification System -------------------
+// ============================================================================
+
+/**
+ * Initialize notification system with styles
+ */
+function initNotificationSystem() {
+  const notificationStyles = `
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      border-radius: 0.5rem;
+      color: white;
+      font-weight: 600;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      max-width: 300px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .notification.show {
+      transform: translateX(0);
+    }
+    
+    .notification-success {
+      background: var(--success-color, #4CAF50);
+    }
+    
+    .notification-error {
+      background: var(--error-color, #f44336);
+    }
+    
+    .notification-info {
+      background: var(--primary-color, #2196F3);
+    }
+  `;
+
+  // Inject notification styles if not already present
+  if (!document.getElementById('notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = notificationStyles;
+    document.head.appendChild(style);
+  }
+}
+
+/**
+ * Show notification with consistent styling
+ * @param {string} message - Notification message
+ * @param {string} type - Notification type (success, error, info)
+ * @param {number} duration - Duration in milliseconds (default: 3000)
+ */
+function showNotification(message, type = 'info', duration = 3000) {
+  // Initialize notification system if needed
+  if (!document.getElementById('notification-styles')) {
+    initNotificationSystem();
+  }
+  
   // Create notification element
   const notification = document.createElement('div');
   notification.className = `notification notification-${type}`;
@@ -1311,7 +1513,7 @@ function showNotification(message, type = 'info') {
     notification.classList.add('show');
   }, 100);
   
-  // Remove after 3 seconds
+  // Remove after specified duration
   setTimeout(() => {
     notification.classList.remove('show');
     setTimeout(() => {
@@ -1319,59 +1521,7 @@ function showNotification(message, type = 'info') {
         notification.parentNode.removeChild(notification);
       }
     }, 300);
-  }, 3000);
-}
-
-// ============================================================================
-// ------------------- Module Initialization -------------------
-// ============================================================================
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  init();
-});
-
-// Add notification styles
-const notificationStyles = `
-  .notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 1rem 1.5rem;
-    border-radius: 0.5rem;
-    color: white;
-    font-weight: 600;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
-    max-width: 300px;
-  }
-  
-  .notification.show {
-    transform: translateX(0);
-  }
-  
-  .notification-success {
-    background: var(--success-color);
-  }
-  
-  .notification-error {
-    background: var(--error-color);
-  }
-  
-  .notification-info {
-    background: var(--primary-color);
-  }
-`;
-
-// Inject notification styles
-if (!document.getElementById('notification-styles')) {
-  const style = document.createElement('style');
-  style.id = 'notification-styles';
-  style.textContent = notificationStyles;
-  document.head.appendChild(style);
+  }, duration);
 }
 
 // ============================================================================
