@@ -1820,7 +1820,7 @@ app.post('/api/character-of-week/trigger-first', requireAuth, async (req, res) =
 // ============================================================================
 
 // ------------------- Function: getCharacterRelationships -------------------
-// Returns all relationships for a specific character
+// Returns all relationships for a specific character (both directions)
 app.get('/api/relationships/character/:characterId', requireAuth, async (req, res) => {
   try {
     const { characterId } = req.params;
@@ -1835,13 +1835,63 @@ app.get('/api/relationships/character/:characterId', requireAuth, async (req, re
       return res.status(404).json({ error: 'Character not found or access denied' });
     }
     
-    // Get relationships for this character
-    const relationships = await Relationship.find({ characterId })
-      .populate('targetCharacterId', 'name race job currentVillage homeVillage icon')
+    // Get relationships where this character is the initiator (characterId)
+    const outgoingRelationships = await Relationship.find({ characterId })
       .sort({ createdAt: -1 })
       .lean();
     
-    res.json({ relationships });
+    // Get relationships where this character is the target (targetCharacterId)
+    const incomingRelationships = await Relationship.find({ targetCharacterId: characterId })
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    // Manually populate character data for both regular and mod characters
+    const populateCharacterData = async (relationships, targetField) => {
+      for (const relationship of relationships) {
+        const targetId = relationship[targetField];
+        
+        // Try to find in regular characters first
+        let foundCharacter = await Character.findById(targetId)
+          .select('name race job currentVillage homeVillage icon isModCharacter modTitle modType')
+          .lean();
+        
+        // If not found, try mod characters
+        if (!foundCharacter) {
+          foundCharacter = await ModCharacter.findById(targetId)
+            .select('name race job currentVillage homeVillage icon isModCharacter modTitle modType')
+            .lean();
+        }
+        
+        // Set the populated data
+        if (foundCharacter) {
+          relationship[targetField] = foundCharacter;
+        }
+      }
+    };
+    
+    // Populate character data for both outgoing and incoming relationships
+    await populateCharacterData(outgoingRelationships, 'targetCharacterId');
+    await populateCharacterData(incomingRelationships, 'characterId');
+    
+    // Transform incoming relationships to match the expected format
+    const transformedIncomingRelationships = incomingRelationships.map(rel => ({
+      ...rel,
+      // Swap the fields to maintain consistency with outgoing relationships
+      originalCharacterId: rel.characterId,
+      originalTargetCharacterId: rel.targetCharacterId,
+      characterId: rel.targetCharacterId, // This character is now the "characterId"
+      targetCharacterId: rel.characterId, // The other character is now the "targetCharacterId"
+      isIncoming: true, // Flag to identify incoming relationships
+      originalCharacterName: rel.characterName,
+      originalTargetCharacterName: rel.targetCharacterName,
+      characterName: rel.targetCharacterName, // This character's name
+      targetCharacterName: rel.characterName // The other character's name
+    }));
+    
+    // Combine both types of relationships
+    const allRelationships = [...outgoingRelationships, ...transformedIncomingRelationships];
+    
+    res.json({ relationships: allRelationships });
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching character relationships:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -1870,11 +1920,11 @@ app.post('/api/relationships', requireAuth, async (req, res) => {
     }
     
     // Verify target character exists (check both regular and mod characters)
-    let targetCharacter = await Character.findById(targetCharacterId);
-    if (!targetCharacter) {
-      targetCharacter = await ModCharacter.findById(targetCharacterId);
+    let targetCharacterExists = await Character.findById(targetCharacterId);
+    if (!targetCharacterExists) {
+      targetCharacterExists = await ModCharacter.findById(targetCharacterId);
     }
-    if (!targetCharacter) {
+    if (!targetCharacterExists) {
       return res.status(404).json({ error: 'Target character not found' });
     }
     
@@ -1901,12 +1951,25 @@ app.post('/api/relationships', requireAuth, async (req, res) => {
     
     await relationship.save();
     
-    // Populate target character info for response
-    await relationship.populate('targetCharacterId', 'name race job currentVillage homeVillage icon');
+    // Manually populate target character info for response
+    let populatedTargetCharacter = await Character.findById(targetCharacterId)
+      .select('name race job currentVillage homeVillage icon isModCharacter modTitle modType')
+      .lean();
+    
+    if (!populatedTargetCharacter) {
+      populatedTargetCharacter = await ModCharacter.findById(targetCharacterId)
+        .select('name race job currentVillage homeVillage icon isModCharacter modTitle modType')
+        .lean();
+    }
+    
+    const relationshipObj = relationship.toObject();
+    if (populatedTargetCharacter) {
+      relationshipObj.targetCharacterId = populatedTargetCharacter;
+    }
     
     res.status(201).json({ 
       message: 'Relationship created successfully',
-      relationship: relationship.toObject()
+      relationship: relationshipObj
     });
   } catch (error) {
     console.error('[server.js]: ❌ Error creating relationship:', error);
@@ -1948,11 +2011,11 @@ app.put('/api/relationships/:relationshipId', requireAuth, async (req, res) => {
     }
     
     // Verify target character exists (check both regular and mod characters)
-    let targetCharacter = await Character.findById(targetCharacterId);
-    if (!targetCharacter) {
-      targetCharacter = await ModCharacter.findById(targetCharacterId);
+    let targetCharacterExists = await Character.findById(targetCharacterId);
+    if (!targetCharacterExists) {
+      targetCharacterExists = await ModCharacter.findById(targetCharacterId);
     }
-    if (!targetCharacter) {
+    if (!targetCharacterExists) {
       return res.status(404).json({ error: 'Target character not found' });
     }
     
@@ -1965,12 +2028,25 @@ app.put('/api/relationships/:relationshipId', requireAuth, async (req, res) => {
     
     await relationship.save();
     
-    // Populate target character info for response
-    await relationship.populate('targetCharacterId', 'name race job currentVillage homeVillage icon');
+    // Manually populate target character info for response
+    let populatedTargetCharacter = await Character.findById(relationship.targetCharacterId)
+      .select('name race job currentVillage homeVillage icon isModCharacter modTitle modType')
+      .lean();
+    
+    if (!populatedTargetCharacter) {
+      populatedTargetCharacter = await ModCharacter.findById(relationship.targetCharacterId)
+        .select('name race job currentVillage homeVillage icon isModCharacter modTitle modType')
+        .lean();
+    }
+    
+    const relationshipObj = relationship.toObject();
+    if (populatedTargetCharacter) {
+      relationshipObj.targetCharacterId = populatedTargetCharacter;
+    }
     
     res.json({ 
       message: 'Relationship updated successfully',
-      relationship: relationship.toObject()
+      relationship: relationshipObj
     });
   } catch (error) {
     console.error('[server.js]: ❌ Error updating relationship:', error);
@@ -2006,10 +2082,36 @@ app.get('/api/relationships/all', requireAuth, async (req, res) => {
   try {
     // Get ALL relationships (not just the user's)
     const relationships = await Relationship.find({})
-      .populate('characterId', 'name race job currentVillage homeVillage icon userId')
-      .populate('targetCharacterId', 'name race job currentVillage homeVillage icon userId')
       .sort({ createdAt: -1 })
       .lean();
+    
+    // Manually populate character data for both regular and mod characters
+    const populateCharacterData = async (relationships, targetField) => {
+      for (const relationship of relationships) {
+        const targetId = relationship[targetField];
+        
+        // Try to find in regular characters first
+        let foundCharacter = await Character.findById(targetId)
+          .select('name race job currentVillage homeVillage icon userId isModCharacter modTitle modType')
+          .lean();
+        
+        // If not found, try mod characters
+        if (!foundCharacter) {
+          foundCharacter = await ModCharacter.findById(targetId)
+            .select('name race job currentVillage homeVillage icon userId isModCharacter modTitle modType')
+            .lean();
+        }
+        
+        // Set the populated data
+        if (foundCharacter) {
+          relationship[targetField] = foundCharacter;
+        }
+      }
+    };
+    
+    // Populate character data for both characterId and targetCharacterId
+    await populateCharacterData(relationships, 'characterId');
+    await populateCharacterData(relationships, 'targetCharacterId');
     
     // Get all regular characters for reference
     const regularCharacters = await Character.find({})
