@@ -8,6 +8,37 @@
 // ------------------- Utility Functions -------------------
 
 /**
+ * Escapes HTML attributes to prevent XSS and string literal issues
+ * @param {string} str - String to escape
+ * @returns {string} Escaped string
+ */
+function escapeHtmlAttribute(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Escapes JavaScript string literals for use in HTML attributes
+ * @param {string} str - String to escape
+ * @returns {string} Escaped string safe for JavaScript string literals
+ */
+function escapeJavaScriptString(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/\\/g, '\\\\')  // Escape backslashes first
+    .replace(/'/g, "\\'")    // Escape single quotes
+    .replace(/"/g, '\\"')    // Escape double quotes
+    .replace(/\n/g, '\\n')   // Escape newlines
+    .replace(/\r/g, '\\r')   // Escape carriage returns
+    .replace(/\t/g, '\\t');  // Escape tabs
+}
+
+/**
  * Gets the content div element consistently
  * @returns {HTMLElement|null} The content div element
  */
@@ -570,7 +601,7 @@ function renderCharacterCards(summaries) {
       <div class="character-inventory-card" data-character="${summary.characterName}">
         <div class="character-inventory-scroll">
           <div class="character-inventory-header ${isExpanded ? 'expanded' : ''}" 
-               onclick="toggleCharacterInventory('${summary.characterName}')">
+               onclick="toggleCharacterInventory('${escapeJavaScriptString(summary.characterName)}')">
             <div class="character-inventory-info">
               <div class="character-avatar">
                 ${summary.icon && summary.icon.startsWith('http')

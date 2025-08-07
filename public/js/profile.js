@@ -8,6 +8,25 @@ import { renderCharacterCards } from './characters.js';
 import { capitalize } from './utils.js';
 
 // ============================================================================
+// ------------------- Utility Functions -------------------
+// ============================================================================
+
+/**
+ * Escapes HTML attributes to prevent XSS and string literal issues
+ * @param {string} str - String to escape
+ * @returns {string} Escaped string
+ */
+function escapeHtmlAttribute(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ============================================================================
 // ------------------- Section: Profile Page Initialization -------------------
 // Sets up profile page and loads user data
 // ============================================================================

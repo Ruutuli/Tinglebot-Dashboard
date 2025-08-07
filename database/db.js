@@ -294,7 +294,15 @@ const fetchBlightedCharactersByUserId = async (userId) => {
 const fetchAllCharacters = async () => {
  try {
   await connectToTinglebot();
-  return await Character.find().lean().exec();
+  const allCharacters = await Character.find().lean().exec();
+  
+  // Filter out excluded characters
+  const excludedCharacters = ['Tingle', 'Tingle test', 'John'];
+  const filteredCharacters = allCharacters.filter(character => 
+    !excludedCharacters.includes(character.name)
+  );
+  
+  return filteredCharacters;
  } catch (error) {
   handleError(error, "db.js");
   console.error(

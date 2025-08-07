@@ -7,6 +7,25 @@ import { getVillageCrestUrl, capitalize } from './utils.js';
 import { scrollToTop } from './ui.js';
 
 // ============================================================================
+// ------------------- Utility Functions -------------------
+// ============================================================================
+
+/**
+ * Escapes HTML attributes to prevent XSS and string literal issues
+ * @param {string} str - String to escape
+ * @returns {string} Escaped string
+ */
+function escapeHtmlAttribute(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ============================================================================
 // ------------------- Mobile-Friendly Utilities -------------------
 // Touch optimizations and responsive behavior helpers
 // ============================================================================

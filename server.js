@@ -649,11 +649,14 @@ app.get('/api/tinglebot/stats', async (req, res) => {
 // Returns comprehensive character statistics and analytics
 app.get('/api/stats/characters', async (req, res) => {
   try {
-    const totalCharacters = await Character.countDocuments();
+    const totalCharacters = await Character.countDocuments({ name: { $nin: ['Tingle', 'Tingle test', 'John'] } });
 
     // Get characters per village
     const perVillageAgg = await Character.aggregate([
-      { $match: { homeVillage: { $exists: true, $ne: null } } },
+      { $match: { 
+        homeVillage: { $exists: true, $ne: null },
+        name: { $nin: ['Tingle', 'Tingle test', 'John'] }
+      } },
       { $group: { _id: { $toLower: { $ifNull: ["$homeVillage", "unknown"] } }, count: { $sum: 1 } } }
     ]);
     const charactersPerVillage = { rudania: 0, inariko: 0, vhintl: 0 };
@@ -673,7 +676,8 @@ app.get('/api/stats/characters', async (req, res) => {
             $ne: 'null',
             $ne: 'Unknown',
             $ne: 'unknown'
-          } 
+          },
+          name: { $nin: ['Tingle', 'Tingle test', 'John'] }
         } 
       },
       { $group: { _id: "$race", count: { $sum: 1 } } }
@@ -697,7 +701,10 @@ app.get('/api/stats/characters', async (req, res) => {
 
     // Get characters per job
     const perJobAgg = await Character.aggregate([
-      { $match: { job: { $exists: true, $ne: null, $ne: '' } } },
+      { $match: { 
+        job: { $exists: true, $ne: null, $ne: '' },
+        name: { $nin: ['Tingle', 'Tingle test', 'John'] }
+      } },
       { $project: { job: { $toLower: { $ifNull: ["$job", "unknown"] } } } },
       { $group: { _id: { $concat: [{ $toUpper: { $substr: ["$job", 0, 1] } }, { $substr: ["$job", 1, { $strLenCP: "$job" }] }] }, count: { $sum: 1 } } },
       { $sort: { count: -1 } }
@@ -719,7 +726,10 @@ app.get('/api/stats/characters', async (req, res) => {
     // Get upcoming birthdays
     const today = new Date();
     const thisYr = today.getFullYear();
-    const allBday = await Character.find({ birthday: { $exists: true, $ne: '' } }, { name: 1, birthday: 1 }).lean();
+    const allBday = await Character.find({ 
+      birthday: { $exists: true, $ne: '' },
+      name: { $nin: ['Tingle', 'Tingle test', 'John'] }
+    }, { name: 1, birthday: 1 }).lean();
     const upcoming = allBday.map(c => {
       const mmdd = c.birthday.slice(-5);
       let next = isNaN(Date.parse(`${thisYr}-${mmdd}`))
@@ -1169,10 +1179,21 @@ app.get('/api/models/:modelType', async (req, res) => {
         .sort(modelType === 'item' ? { itemName: 1 } : {})
         .lean();
       
-
+      // Filter out excluded characters if this is a character request
+      let filteredData = allItemsData;
+      if (modelType === 'character') {
+        // List of characters to exclude from dashboard
+        const excludedCharacters = ['Tingle', 'Tingle test', 'John'];
+        
+        filteredData = allItemsData.filter(character => 
+          !excludedCharacters.includes(character.name)
+        );
+      } else {
+        filteredData = allItemsData;
+      }
       
       // For characters, we need to populate user information even for all=true requests
-      let finalData = allItemsData;
+      let finalData = filteredData;
       if (modelType === 'character') {
         // Check cache first
         const now = Date.now();
@@ -1180,7 +1201,7 @@ app.get('/api/models/:modelType', async (req, res) => {
           finalData = characterDataCache.data;
         } else {
           // Get unique user IDs from characters
-          const userIds = [...new Set(allItemsData.map(char => char.userId))];
+          const userIds = [...new Set(filteredData.map(char => char.userId))];
           
           // Fetch user information for all unique user IDs in one query
           const users = await User.find({ discordId: { $in: userIds } }, { 
@@ -1196,7 +1217,7 @@ app.get('/api/models/:modelType', async (req, res) => {
           });
             
           // Transform character data
-          finalData = allItemsData.map(character => {
+          finalData = filteredData.map(character => {
             // Transform icon URL
             if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
               const filename = character.icon.split('/').pop();
@@ -2232,7 +2253,13 @@ app.get('/api/characters/list', async (req, res) => {
       currentVillage: 1
     }).lean();
     
-    const characterList = characters.map(char => ({
+    // Filter out excluded characters
+    const excludedCharacters = ['Tingle', 'Tingle test', 'John'];
+    const filteredCharacters = characters.filter(char => 
+      !excludedCharacters.includes(char.name)
+    );
+    
+    const characterList = filteredCharacters.map(char => ({
       characterName: char.name,
       icon: char.icon,
       race: char.race,
