@@ -157,14 +157,7 @@ class UserLookup {
 
       const data = await response.json();
       
-      // Debug logging
-      console.log(`[Users] Loading page ${page}:`, {
-        totalUsers: data.pagination.totalUsers,
-        totalPages: data.pagination.totalPages,
-        currentPage: data.pagination.currentPage,
-        usersReceived: data.users.length,
-        userIds: data.users.map(u => u.discordId)
-      });
+
       
       this.totalPages = data.pagination.totalPages;
       this.totalUsers = data.pagination.totalUsers;
@@ -182,15 +175,7 @@ class UserLookup {
   }
 
   async goToPage(page) {
-    console.log(`[Users] Attempting to go to page ${page} (current: ${this.currentPage}, total: ${this.totalPages})`);
-    
     if (page < 1 || page > this.totalPages || this.isLoading) {
-      console.log(`[Users] Page navigation blocked:`, {
-        page,
-        minPage: 1,
-        maxPage: this.totalPages,
-        isLoading: this.isLoading
-      });
       return;
     }
 
@@ -230,11 +215,7 @@ class UserLookup {
       return;
     }
     
-    // Debug logging
-    console.log(`[Users] Displaying ${users.length} users (search: ${isSearch}):`, {
-      userIds: users.map(u => u.discordId),
-      usernames: users.map(u => u.username)
-    });
+
     
     container.innerHTML = '';
 
@@ -525,6 +506,9 @@ class UserLookup {
     // Determine the profile link
     const profileLink = character.appLink || `/character/${character._id}`;
     
+    // Get current village (prefer currentVillage over homeVillage for display)
+    const displayVillage = character.currentVillage || character.homeVillage || 'Unknown';
+    
     return `
       <div class="user-character-card ${villageClass}">
         <div class="user-character-avatar-container">
@@ -540,8 +524,9 @@ class UserLookup {
             <div class="user-character-main-info">
               <h4 class="user-character-name">${character.name}</h4>
               <div class="user-character-details">
+                <span class="user-character-race">${this.capitalizeFirst(character.race) || 'Unknown'}</span>
                 <span class="user-character-job">${this.capitalizeFirst(character.job) || 'Unknown'}</span>
-                <span class="user-character-village">${this.capitalizeFirst(character.homeVillage) || 'Unknown'}</span>
+                <span class="user-character-village">${this.capitalizeFirst(displayVillage)}</span>
               </div>
             </div>
             <div class="user-character-stats">
@@ -560,6 +545,12 @@ class UserLookup {
               <i class="fas fa-external-link-alt"></i>
               <span>Profile</span>
             </a>
+            ${character.inventory ? `
+              <a href="${character.inventory}" class="user-character-inventory-btn" target="_blank">
+                <i class="fas fa-backpack"></i>
+                <span>Inventory</span>
+              </a>
+            ` : ''}
           </div>
         </div>
       </div>

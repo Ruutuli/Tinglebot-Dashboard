@@ -522,36 +522,62 @@ app.get('/api/users', async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    // Get total count
-    const totalUsers = await User.countDocuments();
+    // Get total count of unique users
+    const totalUsersResult = await User.aggregate([
+      {
+        $group: {
+          _id: '$discordId'
+        }
+      },
+      {
+        $count: 'total'
+      }
+    ]);
+    const totalUsers = totalUsersResult.length > 0 ? totalUsersResult[0].total : 0;
     
-    // Get users for current page
-    const users = await User.find({})
-      .select('discordId username discriminator avatar tokens characterSlot status createdAt')
-      .sort({ createdAt: -1, discordId: 1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    // Get users for current page (with deduplication by discordId)
+    const users = await User.aggregate([
+      {
+        $group: {
+          _id: '$discordId',
+          username: { $first: '$username' },
+          discriminator: { $first: '$discriminator' },
+          avatar: { $first: '$avatar' },
+          tokens: { $first: '$tokens' },
+          characterSlot: { $first: '$characterSlot' },
+          status: { $first: '$status' },
+          createdAt: { $first: '$createdAt' }
+        }
+      },
+      {
+        $sort: { createdAt: -1, _id: 1 }
+      },
+      {
+        $skip: skip
+      },
+      {
+        $limit: limit
+      }
+    ]);
 
-    // Debug logging
-    console.log(`[Server] Users API - Page ${page}:`, {
-      skip,
-      limit,
-      totalUsers,
-      usersFound: users.length,
-      userIds: users.map(u => u.discordId),
-      usernames: users.map(u => u.username)
-    });
+
 
     // Get character counts for each user
     const usersWithCharacters = await Promise.all(
       users.map(async (user) => {
         const characterCount = await Character.countDocuments({ 
-          userId: user.discordId,
+          userId: user._id, // Use _id from aggregated result
           name: { $nin: ['Tingle', 'Tingle test', 'John'] }
         });
         return {
-          ...user,
+          discordId: user._id, // Map _id back to discordId for frontend compatibility
+          username: user.username,
+          discriminator: user.discriminator,
+          avatar: user.avatar,
+          tokens: user.tokens,
+          characterSlot: user.characterSlot,
+          status: user.status,
+          createdAt: user.createdAt,
           characterCount
         };
       })
@@ -594,7 +620,7 @@ app.get('/api/users/:discordId', async (req, res) => {
       userId: discordId,
       name: { $nin: ['Tingle', 'Tingle test', 'John'] }
     })
-      .select('name icon job homeVillage currentHearts maxHearts currentStamina maxStamina appLink _id')
+      .select('name icon job homeVillage currentVillage race inventory appLink _id currentHearts maxHearts currentStamina maxStamina')
       .lean();
 
     res.json({
@@ -2705,5 +2731,39 @@ app.get('/api/test-sunday-midnight', async (req, res) => {
   } catch (error) {
     console.error('[server.js]: ❌ Error in test endpoint:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Debug endpoint to check for duplicate users
+app.get('/api/debug/users/duplicates', async (req, res) => {
+  try {
+    const duplicateUsers = await User.aggregate([
+      {
+        $group: {
+          _id: '$discordId',
+          count: { $sum: 1 },
+          users: { $push: { _id: '$_id', username: '$username', createdAt: '$createdAt' } }
+        }
+      },
+      {
+        $match: {
+          count: { $gt: 1 }
+        }
+      },
+      {
+        $sort: { count: -1 }
+      }
+    ]);
+
+    console.log('[Server] Duplicate users found:', duplicateUsers);
+    
+    res.json({
+      duplicateUsers,
+      totalDuplicates: duplicateUsers.length,
+      totalDuplicateRecords: duplicateUsers.reduce((sum, group) => sum + group.count, 0)
+    });
+  } catch (error) {
+    console.error('[server.js]: Error checking for duplicate users:', error);
+    res.status(500).json({ error: 'Failed to check for duplicate users' });
   }
 });
