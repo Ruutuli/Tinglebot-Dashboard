@@ -927,7 +927,7 @@
             <h2>Select a Character</h2>
             <p>Choose which character to manage relationships for</p>
             <div class="character-selection-actions">
-              <button class="view-all-relationships-btn" onclick="relationshipsModule.showAllRelationships()">
+              <button class="view-all-relationships-btn" onclick="console.log('Button clicked'); console.log('relationshipsModule:', typeof relationshipsModule); console.log('relationshipsModule keys:', Object.keys(relationshipsModule || {})); console.log('showAllRelationships:', typeof relationshipsModule?.showAllRelationships); console.log('showAllRelationships function:', relationshipsModule?.showAllRelationships); try { if (relationshipsModule && typeof relationshipsModule.showAllRelationships === 'function') { console.log('Calling showAllRelationships...'); relationshipsModule.showAllRelationships(); console.log('showAllRelationships called successfully'); } else { console.error('relationshipsModule or showAllRelationships not available'); } } catch (error) { console.error('Error calling showAllRelationships:', error); }">
                 <i class="fas fa-globe"></i>
                 View All Characters' Relationships
               </button>
@@ -1047,6 +1047,10 @@
                     <i class="fas fa-crosshairs"></i>
                     Center View
                   </button>
+                  <button class="relationship-web-back-btn" onclick="relationshipsModule.toggleFullscreen()" title="Exit Fullscreen">
+                    <i class="fas fa-compress"></i>
+                    Exit Fullscreen
+                  </button>
                 </div>
               </div>
             </div>
@@ -1126,7 +1130,7 @@
   <script type="module" src="js/characterOfWeek.js"></script>
   <script type="module" src="js/monsters.js"></script>
   <script type="module" src="js/users.js"></script>
-  <script type="module" src="js/relationships.js"></script>
+      <script src="js/relationships.js?v=1.0.1"></script>
   
   <!-- Performance and Error Handling Script -->
   <script src="js/performance.js"></script>

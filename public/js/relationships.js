@@ -87,7 +87,7 @@ const RELATIONSHIP_CONFIG = {
 // ============================================================================
 // ------------------- Module Exports -------------------
 // ============================================================================
-export const relationshipsModule = {
+const relationshipsModule = {
   init,
   showRelationshipsSection,
   loadUserCharacters,
@@ -115,16 +115,15 @@ export const relationshipsModule = {
   toggleRelationshipAttraction,
   toggleMenu,
   toggleLegend,
-  // Pagination functions
-  previousPage,
-  nextPage,
-  goToPage,
   RELATIONSHIP_CONFIG // Export the config for use in other modules
 };
 
-// Make module available globally
+// Make module available globally immediately
 window.relationshipsModule = relationshipsModule;
-window.RELATIONSHIP_CONFIG = RELATIONSHIP_CONFIG; // Make config globally available
+window.RELATIONSHIP_CONFIG = RELATIONSHIP_CONFIG;
+
+// Debug: Check if module is loaded
+console.log('🔗 Relationships module loaded successfully');
 
 // Generate CSS variables for relationship colors
 function generateRelationshipCSSVariables() {
@@ -155,6 +154,13 @@ let userCharacters = [];
 let allCharacters = [];
 let relationships = [];
 
+// Cache for performance optimization
+let allRelationshipsCache = {
+  data: null,
+  timestamp: 0,
+  cacheDuration: 5 * 60 * 1000 // 5 minutes
+};
+
 // Relationship types - using centralized config
 const RELATIONSHIP_TYPES = RELATIONSHIP_CONFIG;
 
@@ -162,7 +168,6 @@ const RELATIONSHIP_TYPES = RELATIONSHIP_CONFIG;
 // ------------------- Initialization -------------------
 // ============================================================================
 function init() {
-  console.log('🔗 Initializing Relationships Module');
   setupEventListeners();
 }
 
@@ -304,6 +309,13 @@ function showLoadingState() {
   console.log('🔄 Loading element:', loadingElement);
   if (loadingElement) {
     loadingElement.style.display = 'flex';
+    
+    // Add a progress indicator for better UX
+    const progressText = loadingElement.querySelector('.loading-text');
+    if (progressText) {
+      progressText.textContent = 'Loading relationships...';
+    }
+    
     console.log('🔄 Loading state displayed');
   } else {
     console.error('❌ Loading element not found!');
@@ -910,19 +922,40 @@ function backToCharacterSelection() {
 // ------------------- All Relationships View -------------------
 // ============================================================================
 async function showAllRelationships() {
-  console.log('🌍 Showing all relationships view');
   hideAllStates();
   document.getElementById('relationships-all-view').style.display = 'block';
   await loadAllRelationships();
 }
 
 async function loadAllRelationships() {
-  console.log('🌍 Loading all relationships');
-  
-  const startTime = performance.now();
-  
   try {
     showLoadingState();
+    
+    console.log('🔄 Loading all relationships...');
+    const startTime = performance.now();
+    
+    // Check if we have valid cached data
+    const now = Date.now();
+    if (allRelationshipsCache.data && (now - allRelationshipsCache.timestamp) < allRelationshipsCache.cacheDuration) {
+      console.log('📦 Using cached data');
+      const data = allRelationshipsCache.data;
+      
+      relationships = data.relationships || [];
+      allCharacters = data.characters || [];
+      
+      // Hide loading and show the all relationships view
+      hideAllStates();
+      document.getElementById('relationships-all-view').style.display = 'block';
+      
+      // Use requestAnimationFrame to ensure smooth rendering
+      requestAnimationFrame(() => {
+        const renderStartTime = performance.now();
+        renderAllRelationships();
+        const renderTime = performance.now() - renderStartTime;
+        console.log(`✅ Rendering completed in ${renderTime.toFixed(2)}ms (from cache)`);
+      });
+      return;
+    }
     
     // Fetch all relationships from the server
     const response = await fetch('/api/relationships/all', {
@@ -937,29 +970,31 @@ async function loadAllRelationships() {
     }
 
     const data = await response.json();
-    console.log('🌍 All relationships data:', data);
+    
+    // Cache the data
+    allRelationshipsCache.data = data;
+    allRelationshipsCache.timestamp = now;
+    
+    const loadTime = performance.now() - startTime;
+    console.log(`✅ Data loaded in ${loadTime.toFixed(2)}ms:`, {
+      characters: data.characters?.length || 0,
+      relationships: data.relationships?.length || 0
+    });
     
     relationships = data.relationships || [];
     allCharacters = data.characters || [];
     
-    // Pre-process relationships for faster lookup
-    const processStartTime = performance.now();
-    processRelationshipsForLookup();
-    const processEndTime = performance.now();
-    console.log(`🔧 Relationship processing took ${(processEndTime - processStartTime).toFixed(2)}ms`);
-    
     // Hide loading and show the all relationships view
-    hideAllStatesExceptAllView();
+    hideAllStates();
     document.getElementById('relationships-all-view').style.display = 'block';
     
-    // Use optimized rendering with pagination
-    const renderStartTime = performance.now();
-    renderAllRelationshipsOptimized();
-    const renderEndTime = performance.now();
-    console.log(`🎨 Initial rendering took ${(renderEndTime - renderStartTime).toFixed(2)}ms`);
-    
-    const totalTime = performance.now() - startTime;
-    console.log(`✅ Total load time: ${totalTime.toFixed(2)}ms for ${allCharacters.length} characters and ${relationships.length} relationships`);
+    // Use requestAnimationFrame to ensure smooth rendering
+    requestAnimationFrame(() => {
+      const renderStartTime = performance.now();
+      renderAllRelationships();
+      const renderTime = performance.now() - renderStartTime;
+      console.log(`✅ Rendering completed in ${renderTime.toFixed(2)}ms`);
+    });
     
   } catch (error) {
     console.error('❌ Error loading all relationships:', error);
@@ -967,423 +1002,87 @@ async function loadAllRelationships() {
   }
 }
 
-// Cache for processed relationships
-let relationshipsByCharacterCache = new Map();
-let characterRelationshipCounts = new Map();
-
-function processRelationshipsForLookup() {
-  console.log('🔧 Processing relationships for optimized lookup');
-  
-  // Clear previous cache
-  relationshipsByCharacterCache.clear();
-  characterRelationshipCounts.clear();
-  
-  // Single pass to process all relationships
-  relationships.forEach(relationship => {
-    const characterId = relationship.characterId?._id || relationship.characterId;
-    const targetCharacterId = relationship.targetCharacterId?._id || relationship.targetCharacterId;
-    
-    // Process source character
-    if (characterId) {
-      if (!relationshipsByCharacterCache.has(characterId)) {
-        relationshipsByCharacterCache.set(characterId, []);
-      }
-      relationshipsByCharacterCache.get(characterId).push(relationship);
-    }
-    
-    // Process target character
-    if (targetCharacterId) {
-      if (!relationshipsByCharacterCache.has(targetCharacterId)) {
-        relationshipsByCharacterCache.set(targetCharacterId, []);
-      }
-      relationshipsByCharacterCache.get(targetCharacterId).push(relationship);
-    }
-  });
-  
-  // Pre-calculate relationship counts
-  allCharacters.forEach(character => {
-    const characterId = character._id;
-    const count = relationshipsByCharacterCache.get(characterId)?.length || 0;
-    characterRelationshipCounts.set(characterId, count);
-  });
-  
-  console.log('🔧 Processed relationships for', relationshipsByCharacterCache.size, 'characters');
-}
-
-// Pagination variables
-let currentPage = 0;
-const charactersPerPage = 20; // Reduced from rendering all at once
-let totalPages = 0;
-let filteredCharacters = [];
-
-function renderAllRelationshipsOptimized() {
-  console.log('🌍 Rendering all relationships (optimized)');
-  
+function renderAllRelationships() {
   const container = document.getElementById('relationships-all-list');
   if (!container) {
     console.error('❌ Container not found for all relationships');
     return;
   }
-  
-  console.log('🔍 Container found:', container);
-  console.log('🔍 Container display style:', container.style.display);
-  console.log('🔍 Container computed style:', window.getComputedStyle(container).display);
-  
-  // Debug: Check parent container visibility and dimensions
-  console.log('🔍 Container visibility:', window.getComputedStyle(container).visibility);
-  console.log('🔍 Container opacity:', window.getComputedStyle(container).opacity);
-  console.log('🔍 Container height:', window.getComputedStyle(container).height);
-  console.log('🔍 Container width:', window.getComputedStyle(container).width);
-  console.log('🔍 Container position:', window.getComputedStyle(container).position);
-  console.log('🔍 Container overflow:', window.getComputedStyle(container).overflow);
-  
-  // Ensure the container has proper height
-  container.style.display = 'block';
-  container.style.visibility = 'visible';
-  container.style.opacity = '1';
-  container.style.height = 'auto';
-  container.style.minHeight = '400px';
-  console.log('🔍 Applied height fix to container');
-  
-  // Debug: Check CSS variables
-  console.log('🔍 --card-background:', getComputedStyle(document.documentElement).getPropertyValue('--card-background'));
-  console.log('🔍 --border-color:', getComputedStyle(document.documentElement).getPropertyValue('--border-color'));
-  console.log('🔍 --text-color:', getComputedStyle(document.documentElement).getPropertyValue('--text-color'));
-  console.log('🔍 --text-secondary:', getComputedStyle(document.documentElement).getPropertyValue('--text-secondary'));
 
-  // Reset pagination
-  currentPage = 0;
-  filteredCharacters = [...allCharacters];
-  totalPages = Math.ceil(filteredCharacters.length / charactersPerPage);
-  
-  // Create container structure for pagination
-  container.innerHTML = `
-    <div class="relationships-search-section">
-      <div class="relationships-search-container">
-        <i class="fas fa-search"></i>
-        <input type="text" id="relationships-search-input" placeholder="Search characters..." class="relationships-search-input">
-        <button id="relationships-clear-search" class="relationships-clear-search" style="display: none;">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-    </div>
-    <div class="relationships-pagination-info">
-      <span>Showing ${filteredCharacters.length} characters</span>
-      <span>Page ${currentPage + 1} of ${totalPages}</span>
-    </div>
-    <div class="relationships-character-grid" id="relationships-character-grid">
-    </div>
-    <div class="relationships-pagination-controls" id="relationships-pagination-controls"></div>
-  `;
-  
-  // Setup search functionality
-  setupSearchFunctionality();
-  
-  // Render first page
-  renderCharacterPage();
-  renderPaginationControls();
-}
+  console.log('🎭 Rendering all relationships for', allCharacters.length, 'characters and', relationships.length, 'relationships');
 
-function setupSearchFunctionality() {
-  const searchInput = document.getElementById('relationships-search-input');
-  const clearButton = document.getElementById('relationships-clear-search');
+  // Pre-process relationships for better performance
+  const relationshipsByCharacter = new Map();
   
-  if (!searchInput) return;
-  
-  // Debounced search function
-  let searchTimeout;
-  searchInput.addEventListener('input', (e) => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      const searchTerm = e.target.value.toLowerCase().trim();
-      filterCharacters(searchTerm);
-    }, 300); // 300ms debounce
-  });
-  
-  // Clear search functionality
-  if (clearButton) {
-    clearButton.addEventListener('click', () => {
-      searchInput.value = '';
-      filterCharacters('');
-    });
-  }
-  
-  // Show/hide clear button based on input
-  searchInput.addEventListener('input', (e) => {
-    if (clearButton) {
-      clearButton.style.display = e.target.value ? 'flex' : 'none';
+  // Use a more efficient approach to group relationships
+  relationships.forEach(relationship => {
+    // Handle both populated character objects and character IDs
+    const characterId = relationship.characterId?._id || relationship.characterId;
+    const targetCharacterId = relationship.targetCharacterId?._id || relationship.targetCharacterId;
+    
+    // Count relationships where this character is either the initiator or the target
+    if (characterId) {
+      if (!relationshipsByCharacter.has(characterId)) {
+        relationshipsByCharacter.set(characterId, []);
+      }
+      relationshipsByCharacter.get(characterId).push(relationship);
+    }
+    
+    if (targetCharacterId) {
+      if (!relationshipsByCharacter.has(targetCharacterId)) {
+        relationshipsByCharacter.set(targetCharacterId, []);
+      }
+      relationshipsByCharacter.get(targetCharacterId).push(relationship);
     }
   });
-}
 
-function filterCharacters(searchTerm) {
-  if (!searchTerm) {
-    // Reset to all characters
-    filteredCharacters = [...allCharacters];
-  } else {
-    // Filter characters based on search term
-    filteredCharacters = allCharacters.filter(character => {
-      const name = character.name.toLowerCase();
-      const race = (character.race || '').toLowerCase();
-      const job = (character.job || '').toLowerCase();
-      const village = ((character.currentVillage || character.homeVillage) || '').toLowerCase();
-      
-      return name.includes(searchTerm) || 
-             race.includes(searchTerm) || 
-             job.includes(searchTerm) || 
-             village.includes(searchTerm);
-    });
-  }
-  
-  // Reset pagination
-  currentPage = 0;
-  totalPages = Math.ceil(filteredCharacters.length / charactersPerPage);
-  
-  // Re-render
-  renderCharacterPage();
-  renderPaginationControls();
-  
-  // Update pagination info
-  const paginationInfo = document.querySelector('.relationships-pagination-info');
-  if (paginationInfo) {
-    paginationInfo.innerHTML = `
-      <span>Showing ${filteredCharacters.length} characters</span>
-      <span>Page ${currentPage + 1} of ${totalPages}</span>
-    `;
-  }
-}
-
-function renderCharacterPage() {
-  const startTime = performance.now();
-  
-  const startIndex = currentPage * charactersPerPage;
-  const endIndex = startIndex + charactersPerPage;
-  const pageCharacters = filteredCharacters.slice(startIndex, endIndex);
-  
-  console.log(`🔍 Rendering page ${currentPage + 1} with ${pageCharacters.length} characters`);
-  
-  const gridContainer = document.getElementById('relationships-character-grid');
-  if (!gridContainer) {
-    console.error('❌ Grid container not found');
-    return;
-  }
-  
-  console.log('🔍 Grid container found:', gridContainer);
-  console.log('🔍 Grid container display style:', gridContainer.style.display);
-  console.log('🔍 Grid container computed style:', window.getComputedStyle(gridContainer).display);
-  console.log('🔍 Grid container children count:', gridContainer.children.length);
-  
-  // Debug: Check grid container visibility and dimensions
-  console.log('🔍 Grid container visibility:', window.getComputedStyle(gridContainer).visibility);
-  console.log('🔍 Grid container opacity:', window.getComputedStyle(gridContainer).opacity);
-  console.log('🔍 Grid container height:', window.getComputedStyle(gridContainer).height);
-  console.log('🔍 Grid container width:', window.getComputedStyle(gridContainer).width);
-  console.log('🔍 Grid container position:', window.getComputedStyle(gridContainer).position);
-  console.log('🔍 Grid container overflow:', window.getComputedStyle(gridContainer).overflow);
-  
-  // Ensure the grid container has proper height
-  gridContainer.style.display = 'grid';
-  gridContainer.style.visibility = 'visible';
-  gridContainer.style.opacity = '1';
-  gridContainer.style.height = 'auto';
-  gridContainer.style.minHeight = '300px';
-  gridContainer.style.backgroundColor = 'blue'; // Debug color
-  gridContainer.style.border = '2px solid cyan'; // Debug border
-  gridContainer.style.padding = '10px';
-  console.log('🔍 Applied height fix to grid container');
-  
-  // Debug: Check grid layout
-  console.log('🔍 Grid template columns:', window.getComputedStyle(gridContainer).gridTemplateColumns);
-  console.log('🔍 Grid template rows:', window.getComputedStyle(gridContainer).gridTemplateRows);
-  console.log('🔍 Grid gap:', window.getComputedStyle(gridContainer).gap);
-  console.log('🔍 Grid auto flow:', window.getComputedStyle(gridContainer).gridAutoFlow);
-  
-  // Use DocumentFragment for better performance
+  // Use DocumentFragment for better performance when adding many elements
   const fragment = document.createDocumentFragment();
   
-  pageCharacters.forEach((character, index) => {
-    const characterCard = createOptimizedCharacterCard(character);
+  // Create character cards for ALL characters
+  allCharacters.forEach(character => {
+    const characterId = character._id;
+    const characterRelationships = relationshipsByCharacter.get(characterId) || [];
+    const hasRelationships = characterRelationships.length > 0;
+
+    const displayInfo = getCharacterDisplayInfo(character);
+    
+    // Add mod character indicator
+    const modIndicator = character.isModCharacter ? '<div class="mod-character-badge">👑 Mod</div>' : '';
+    
+    const characterCard = document.createElement('div');
+    characterCard.className = `all-relationships-character-card ${hasRelationships ? 'has-relationships' : 'no-relationships'}`;
+    characterCard.onclick = () => relationshipsModule.showCharacterRelationshipsModal(characterId);
+    
+    characterCard.innerHTML = `
+      <div class="all-relationships-character-info">
+        <img src="${formatCharacterIconUrl(character.icon)}" alt="${character.name}" class="all-relationships-character-avatar">
+        <div class="all-relationships-character-details">
+          <div class="all-relationships-character-name">${character.name}</div>
+          <div class="all-relationships-character-info-text">
+            ${displayInfo.info} • ${displayInfo.village}
+          </div>
+          ${modIndicator}
+        </div>
+      </div>
+      <div class="all-relationships-character-stats">  
+      </div>
+    `;
+    
     fragment.appendChild(characterCard);
   });
-  
-  // Clear and append in one operation
-  gridContainer.innerHTML = '';
-  gridContainer.appendChild(fragment);
-  
-  console.log('🔍 After appending fragment - Grid container children count:', gridContainer.children.length);
-  console.log('🔍 Grid container HTML:', gridContainer.innerHTML.substring(0, 500) + '...');
-  
-  // Debug: Check if cards are visible
-  const firstCard = gridContainer.querySelector('.all-relationships-character-card');
-  if (firstCard) {
-    console.log('🔍 First card found:', firstCard);
-    console.log('🔍 First card display style:', firstCard.style.display);
-    console.log('🔍 First card computed style:', window.getComputedStyle(firstCard).display);
-    console.log('🔍 First card visibility:', window.getComputedStyle(firstCard).visibility);
-    console.log('🔍 First card opacity:', window.getComputedStyle(firstCard).opacity);
-    console.log('🔍 First card height:', window.getComputedStyle(firstCard).height);
-    console.log('🔍 First card width:', window.getComputedStyle(firstCard).width);
-    
-    // Ensure the card has proper styling
-    firstCard.style.display = 'flex';
-    firstCard.style.visibility = 'visible';
-    firstCard.style.opacity = '1';
-    firstCard.style.height = 'auto';
-    firstCard.style.minHeight = '80px';
-    firstCard.style.backgroundColor = 'red'; // Debug color
-    firstCard.style.border = '2px solid yellow'; // Debug border
-    firstCard.style.padding = '10px';
-    firstCard.style.margin = '5px';
-    console.log('🔍 Applied styling fix to first card');
-    
-    // Debug: Check the card's content
-    console.log('🔍 First card innerHTML:', firstCard.innerHTML.substring(0, 200));
-    console.log('🔍 First card children count:', firstCard.children.length);
-    
-    // Debug: Check if the card's children are visible
-    const cardChildren = firstCard.children;
-    for (let i = 0; i < cardChildren.length; i++) {
-      const child = cardChildren[i];
-      console.log(`🔍 Card child ${i}:`, child.tagName, child.className);
-      console.log(`🔍 Child ${i} display:`, window.getComputedStyle(child).display);
-      console.log(`🔍 Child ${i} visibility:`, window.getComputedStyle(child).visibility);
-      console.log(`🔍 Child ${i} height:`, window.getComputedStyle(child).height);
-    }
-  } else {
-    console.log('🔍 No cards found in grid container');
-  }
-  
-  // Update pagination info
-  const paginationInfo = document.querySelector('.relationships-pagination-info');
-  if (paginationInfo) {
-    paginationInfo.innerHTML = `
-      <span>Showing ${filteredCharacters.length} characters</span>
-      <span>Page ${currentPage + 1} of ${totalPages}</span>
-    `;
-  }
-  
-  const endTime = performance.now();
-  console.log(`📄 Page ${currentPage + 1} rendered in ${(endTime - startTime).toFixed(2)}ms (${pageCharacters.length} characters)`);
-}
 
-function createOptimizedCharacterCard(character) {
-  const characterId = character._id;
-  const relationshipCount = characterRelationshipCounts.get(characterId) || 0;
-  const hasRelationships = relationshipCount > 0;
+  // Clear container and append all cards at once
+  container.innerHTML = '';
+  container.appendChild(fragment);
   
-  console.log(`🎴 Creating card for ${character.name} (${relationshipCount} relationships)`);
-  
-  // Use cached display info
-  const displayInfo = getCharacterDisplayInfo(character);
-  const avatarUrl = formatCharacterIconUrl(character.icon);
-  const modIndicator = character.isModCharacter ? '<div class="mod-character-badge">👑 Mod</div>' : '';
-  
-  const card = document.createElement('div');
-  card.className = `all-relationships-character-card ${hasRelationships ? 'has-relationships' : 'no-relationships'}`;
-  card.onclick = () => showCharacterRelationshipsModal(characterId);
-  
-  card.innerHTML = `
-    <div class="all-relationships-character-info">
-      <img src="${avatarUrl}" alt="${character.name}" class="all-relationships-character-avatar" loading="lazy">
-      <div class="all-relationships-character-details">
-        <div class="all-relationships-character-name">${character.name}</div>
-        <div class="all-relationships-character-info-text">
-          ${displayInfo.info} • ${displayInfo.village}
-        </div>
-        ${modIndicator}
-      </div>
-    </div>
-    <div class="all-relationships-character-stats">
-      ${hasRelationships ? `<span class="relationship-count">${relationshipCount}</span>` : ''}
-      <i class="fas fa-chevron-right"></i>
-    </div>
-  `;
-  
-  return card;
-}
-
-function renderPaginationControls() {
-  const controlsContainer = document.getElementById('relationships-pagination-controls');
-  if (!controlsContainer || totalPages <= 1) {
-    if (controlsContainer) controlsContainer.style.display = 'none';
-    return;
-  }
-  
-  controlsContainer.style.display = 'flex';
-  
-  let controlsHTML = '';
-  
-  // Previous button
-  controlsHTML += `
-    <button class="pagination-btn" onclick="relationshipsModule.previousPage()" ${currentPage === 0 ? 'disabled' : ''}>
-      <i class="fas fa-chevron-left"></i> Previous
-    </button>
-  `;
-  
-  // Page numbers (show current page and neighbors)
-  const startPage = Math.max(0, currentPage - 2);
-  const endPage = Math.min(totalPages - 1, currentPage + 2);
-  
-  for (let i = startPage; i <= endPage; i++) {
-    controlsHTML += `
-      <button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="relationshipsModule.goToPage(${i})">
-        ${i + 1}
-      </button>
-    `;
-  }
-  
-  // Next button
-  controlsHTML += `
-    <button class="pagination-btn" onclick="relationshipsModule.nextPage()" ${currentPage === totalPages - 1 ? 'disabled' : ''}>
-      Next <i class="fas fa-chevron-right"></i>
-    </button>
-  `;
-  
-  controlsContainer.innerHTML = controlsHTML;
-}
-
-// Pagination functions
-function previousPage() {
-  if (currentPage > 0) {
-    currentPage--;
-    renderCharacterPage();
-    renderPaginationControls();
-  }
-}
-
-function nextPage() {
-  if (currentPage < totalPages - 1) {
-    currentPage++;
-    renderCharacterPage();
-    renderPaginationControls();
-  }
-}
-
-function goToPage(page) {
-  if (page >= 0 && page < totalPages) {
-    currentPage = page;
-    renderCharacterPage();
-    renderPaginationControls();
-  }
-}
-
-// Add these functions to the module exports
-window.relationshipsModule.previousPage = previousPage;
-window.relationshipsModule.nextPage = nextPage;
-window.relationshipsModule.goToPage = goToPage;
-
-// Legacy function for backward compatibility (deprecated)
-function renderAllRelationships() {
-  console.warn('⚠️ renderAllRelationships is deprecated, use renderAllRelationshipsOptimized');
-  renderAllRelationshipsOptimized();
+  console.log('✅ All relationships rendered successfully');
 }
 
 // ============================================================================
 // ------------------- Character Relationships Modal -------------------
 // ============================================================================
 function showCharacterRelationshipsModal(characterId) {
-  console.log('👤 Showing character relationships modal for:', characterId);
-  
   // Find the character
   const character = findCharacterById(characterId);
   if (!character) {
@@ -1391,8 +1090,13 @@ function showCharacterRelationshipsModal(characterId) {
     return;
   }
   
-  // Use cached relationships for better performance
-  const characterRelationships = relationshipsByCharacterCache.get(characterId) || [];
+  // Find all relationships for this character
+  const characterRelationships = relationships.filter(rel => {
+    const relCharacterId = rel.characterId?._id || rel.characterId;
+    const targetId = rel.targetCharacterId?._id || rel.targetCharacterId;
+    // Only include relationships with valid IDs
+    return relCharacterId && targetId && (relCharacterId === characterId || targetId === characterId);
+  });
   
   // Separate outgoing and incoming relationships
   const outgoingRelationships = characterRelationships.filter(rel => {
@@ -1450,9 +1154,8 @@ function showCharacterRelationshipsModal(characterId) {
   const displayInfo = getCharacterDisplayInfo(character);
   const modIndicator = character.isModCharacter ? '<div class="mod-character-badge">👑 Mod</div>' : '';
   
-  const totalRelationships = Object.values(groupedRelationships).reduce((total, group) => 
-    total + group.outgoing.length + group.incoming.length, 0
-  );
+  // Count unique character relationships (not individual relationship entries)
+  const totalRelationships = Object.keys(groupedRelationships).length;
   
   modalContent.innerHTML = `
     <div class="character-relationships-modal-header">
@@ -1730,6 +1433,18 @@ function showAddRelationshipModal(preSelectedTargetId = null) {
   if (form) {
     form.reset();
     resetRelationshipTypeOptions();
+    
+    // Clear edit mode data attributes to ensure fresh state
+    delete form.dataset.editMode;
+    delete form.dataset.relationshipId;
+    delete form.dataset.characterName;
+    delete form.dataset.targetCharacterName;
+    
+    // Reset modal title to "Add Relationship"
+    const modalTitle = document.querySelector('#relationship-modal .relationship-modal-header h3');
+    if (modalTitle) {
+      modalTitle.textContent = 'Add Relationship';
+    }
   }
   
   // Load available characters for dropdown
@@ -1935,6 +1650,10 @@ async function saveRelationship(event) {
     const data = await response.json();
     console.log('✅ Relationship saved:', data);
     
+    // Clear cache since relationships have changed
+    allRelationshipsCache.data = null;
+    allRelationshipsCache.timestamp = 0;
+    
     closeModal();
     await loadCharacterRelationships(currentCharacter._id);
     
@@ -2049,6 +1768,10 @@ async function deleteRelationship(relationshipId) {
     }
     
     console.log('✅ Relationship deleted');
+    
+    // Clear cache since relationships have changed
+    allRelationshipsCache.data = null;
+    allRelationshipsCache.timestamp = 0;
     
     await loadCharacterRelationships(currentCharacter._id);
     
@@ -2656,6 +2379,9 @@ function generateRelationshipWebData() {
   relationshipWebNodes = [];
   relationshipWebEdges = [];
   
+  console.log('🕸️ Generating relationship web data...');
+  const startTime = performance.now();
+  
   // Determine which characters to show based on filter
   let charactersToShow = allCharacters;
   let relationshipsToShow = relationships;
@@ -2670,21 +2396,21 @@ function generateRelationshipWebData() {
     // Add user's characters
     userCharacterIds.forEach(id => relatedCharacterIds.add(id));
     
-      // Add characters that have relationships with user's characters
-  relationships.forEach(relationship => {
-    const sourceId = relationship.characterId?._id || relationship.characterId;
-    const targetId = relationship.targetCharacterId?._id || relationship.targetCharacterId;
-    
-    // Only process relationships with valid IDs
-    if (sourceId && targetId) {
-      if (userCharacterIds.has(sourceId)) {
-        relatedCharacterIds.add(targetId);
+    // Add characters that have relationships with user's characters
+    relationships.forEach(relationship => {
+      const sourceId = relationship.characterId?._id || relationship.characterId;
+      const targetId = relationship.targetCharacterId?._id || relationship.targetCharacterId;
+      
+      // Only process relationships with valid IDs
+      if (sourceId && targetId) {
+        if (userCharacterIds.has(sourceId)) {
+          relatedCharacterIds.add(targetId);
+        }
+        if (userCharacterIds.has(targetId)) {
+          relatedCharacterIds.add(sourceId);
+        }
       }
-      if (userCharacterIds.has(targetId)) {
-        relatedCharacterIds.add(sourceId);
-      }
-    }
-  });
+    });
     
     // Filter characters and relationships
     charactersToShow = allCharacters.filter(char => 
@@ -2699,7 +2425,7 @@ function generateRelationshipWebData() {
     });
   }
   
-  // First pass: identify which characters have relationships
+  // First pass: identify which characters have relationships (optimized with Set)
   const charactersWithRelationships = new Set();
   
   relationshipsToShow.forEach(relationship => {
@@ -2710,13 +2436,13 @@ function generateRelationshipWebData() {
     if (targetId) charactersWithRelationships.add(targetId);
   });
   
-  // Create nodes for the filtered characters
+  // Create nodes for the filtered characters (batch operation)
+  const userCharacterIds = new Set(userCharacters.map(char => char._id || char.id));
+  
   charactersToShow.forEach((character, index) => {
     const characterId = character._id || character.id;
     const hasRelationships = charactersWithRelationships.has(characterId);
-    const isUserCharacter = userCharacters.some(userChar => 
-      (userChar._id || userChar.id) === characterId
-    );
+    const isUserCharacter = userCharacterIds.has(characterId);
     
     // Calculate better initial positions - spread characters in a circle pattern
     const centerX = relationshipWebCanvas.width / 2;
@@ -2750,34 +2476,32 @@ function generateRelationshipWebData() {
     }
   });
   
-  // Create edges for relationships
+  const nodeGenerationTime = performance.now() - startTime;
+  console.log(`✅ Nodes generated in ${nodeGenerationTime.toFixed(2)}ms:`, relationshipWebNodes.length, 'nodes');
+  
+  // Create edges for relationships (optimized)
   const relationshipMap = new Map(); // Track relationships between character pairs
+  const nodeMap = new Map(); // Create a lookup map for nodes
+  
+  // Create node lookup map for faster access
+  relationshipWebNodes.forEach(node => {
+    nodeMap.set(node.id, node);
+  });
   
   console.log('🔍 Processing relationships:', relationshipsToShow.length);
+  const edgeStartTime = performance.now();
+  
   relationshipsToShow.forEach(relationship => {
     const sourceId = relationship.characterId?._id || relationship.characterId;
     const targetId = relationship.targetCharacterId?._id || relationship.targetCharacterId;
     
     // Skip relationships with null IDs
     if (!sourceId || !targetId) {
-      console.log('⚠️ Skipping relationship with null IDs:', relationship);
       return;
     }
     
-    console.log('📋 Processing relationship:', {
-      sourceId,
-      targetId,
-      relationship: relationship
-    });
-    
-    console.log('📋 Relationship:', {
-      source: sourceId,
-      target: targetId,
-      types: relationship.relationshipTypes
-    });
-    
-    const sourceNode = relationshipWebNodes.find(node => node.id === sourceId);
-    const targetNode = relationshipWebNodes.find(node => node.id === targetId);
+    const sourceNode = nodeMap.get(sourceId);
+    const targetNode = nodeMap.get(targetId);
     
     if (sourceNode && targetNode) {
       // Create a unique key for this character pair (sorted to ensure consistency)
@@ -2818,18 +2542,10 @@ function generateRelationshipWebData() {
     }
   });
   
-  // Convert the relationship map to edges
+  // Convert the relationship map to edges (batch operation)
   relationshipMap.forEach((pair, key) => {
-    console.log('🔗 Processing relationship pair:', key, {
-      sourceToTarget: pair.sourceToTarget,
-      targetToSource: pair.targetToSource,
-      sourceName: pair.source.name,
-      targetName: pair.target.name
-    });
-    
     if (pair.sourceToTarget && pair.targetToSource) {
       // Bidirectional relationship - create two parallel lines
-      console.log('🔄 Creating bidirectional relationship between', pair.source.name, 'and', pair.target.name);
       relationshipWebEdges.push({
         source: pair.source,
         target: pair.target,
@@ -2839,7 +2555,6 @@ function generateRelationshipWebData() {
       });
     } else if (pair.sourceToTarget) {
       // Unidirectional relationship - create single line from source to target
-      console.log('➡️ Creating unidirectional relationship (source to target):', pair.source.name, '->', pair.target.name);
       relationshipWebEdges.push({
         source: pair.source,
         target: pair.target,
@@ -2850,7 +2565,6 @@ function generateRelationshipWebData() {
       });
     } else if (pair.targetToSource) {
       // Unidirectional relationship - create single line from target to source
-      console.log('⬅️ Creating unidirectional relationship (target to source):', pair.target.name, '->', pair.source.name);
       relationshipWebEdges.push({
         source: pair.target,
         target: pair.source,
@@ -2861,6 +2575,12 @@ function generateRelationshipWebData() {
       });
     }
   });
+  
+  const edgeGenerationTime = performance.now() - edgeStartTime;
+  console.log(`✅ Edges generated in ${edgeGenerationTime.toFixed(2)}ms:`, relationshipWebEdges.length, 'edges');
+  
+  const totalGenerationTime = performance.now() - startTime;
+  console.log(`✅ Total web data generation completed in ${totalGenerationTime.toFixed(2)}ms`);
 }
 
 function animateRelationshipWeb() {
@@ -2982,26 +2702,26 @@ function drawRelationshipWebEdges() {
       // Bidirectional relationship - draw two separate lines with arrows
       const lineOffset = 3; // Increased distance between lines for better visibility
       
-      // Draw source to target line (left)
+      // Draw source to target line (left) - arrow points TO the source (who is feeling it)
       const leftSourceX = edge.source.x - Math.cos(perpendicularAngle) * lineOffset;
       const leftSourceY = edge.source.y - Math.sin(perpendicularAngle) * lineOffset;
       const leftTargetX = edge.target.x - Math.cos(perpendicularAngle) * lineOffset;
       const leftTargetY = edge.target.y - Math.sin(perpendicularAngle) * lineOffset;
       
       drawRelationshipLine(leftSourceX, leftSourceY, leftTargetX, leftTargetY, edge.sourceToTarget.colors);
-      drawDirectionalArrow(leftTargetX, leftTargetY, lineAngle, edge.sourceToTarget.colors);
+      drawDirectionalArrow(leftSourceX, leftSourceY, lineAngle + Math.PI, edge.sourceToTarget.colors);
       
-      // Draw target to source line (right)
+      // Draw target to source line (right) - arrow points TO the target (who is feeling it)
       const rightSourceX = edge.source.x + Math.cos(perpendicularAngle) * lineOffset;
       const rightSourceY = edge.source.y + Math.sin(perpendicularAngle) * lineOffset;
       const rightTargetX = edge.target.x + Math.cos(perpendicularAngle) * lineOffset;
       const rightTargetY = edge.target.y + Math.sin(perpendicularAngle) * lineOffset;
       
       drawRelationshipLine(rightSourceX, rightSourceY, rightTargetX, rightTargetY, edge.targetToSource.colors);
-      drawDirectionalArrow(rightSourceX, rightSourceY, lineAngle + Math.PI, edge.targetToSource.colors);
+      drawDirectionalArrow(rightTargetX, rightTargetY, lineAngle, edge.targetToSource.colors);
       
     } else {
-      // Unidirectional relationship - draw single line with arrow
+      // Unidirectional relationship - draw single line with arrow pointing TO the target (who is feeling it)
       drawRelationshipLine(edge.source.x, edge.source.y, edge.target.x, edge.target.y, edge.colors);
       drawDirectionalArrow(edge.target.x, edge.target.y, lineAngle, edge.colors);
     }
@@ -3260,3 +2980,60 @@ function handleRelationshipWebWheel(event) {
   
   relationshipWebZoom = newZoom;
 }
+
+// Test function to check server and database
+async function testServerAndDatabase() {
+  console.log('🧪 Testing server and database...');
+  
+  try {
+    // Test 1: Check if server is working
+    console.log('🧪 Test 1: Checking if server is working...');
+    const testResponse = await fetch('/api/test');
+    if (testResponse.ok) {
+      const testData = await testResponse.json();
+      console.log('✅ Server is working:', testData);
+    } else {
+      console.error('❌ Server is not working');
+      return;
+    }
+    
+    // Test 2: Check character count
+    console.log('🧪 Test 2: Checking character count...');
+    const charResponse = await fetch('/api/test/characters');
+    if (charResponse.ok) {
+      const charData = await charResponse.json();
+      console.log('✅ Character count:', charData);
+      
+      if (charData.totalCharacters === 0) {
+        console.error('❌ No characters found in database');
+        showErrorState('No characters found in database. Please create some characters first.');
+        return;
+      }
+    } else {
+      console.error('❌ Failed to get character count');
+      return;
+    }
+    
+    // Test 3: Try to load relationships
+    console.log('🧪 Test 3: Testing relationships endpoint...');
+    const relResponse = await fetch('/api/relationships/all');
+    console.log('🧪 Relationships response status:', relResponse.status);
+    
+    if (relResponse.ok) {
+      const relData = await relResponse.json();
+      console.log('✅ Relationships endpoint working:', {
+        characters: relData.characters?.length || 0,
+        relationships: relData.relationships?.length || 0
+      });
+    } else {
+      const errorText = await relResponse.text();
+      console.error('❌ Relationships endpoint failed:', errorText);
+    }
+    
+  } catch (error) {
+    console.error('❌ Test failed:', error);
+  }
+}
+
+// Add test function to global scope
+window.testServerAndDatabase = testServerAndDatabase;

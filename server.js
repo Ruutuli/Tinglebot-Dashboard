@@ -2078,57 +2078,72 @@ app.delete('/api/relationships/:relationshipId', requireAuth, async (req, res) =
 
 // ------------------- Function: getAllRelationships -------------------
 // Returns all relationships and characters for the "View All Relationships" feature
-app.get('/api/relationships/all', requireAuth, async (req, res) => {
+app.get('/api/relationships/all', async (req, res) => {
   try {
-    // Get ALL relationships (not just the user's)
+    console.log('[server.js]: 🌍 /api/relationships/all endpoint called');
+    
+    // Get ALL relationships (not just the user's) - optimized to avoid N+1 queries
     const relationships = await Relationship.find({})
       .sort({ createdAt: -1 })
       .lean();
     
-    // Manually populate character data for both regular and mod characters
-    const populateCharacterData = async (relationships, targetField) => {
-      for (const relationship of relationships) {
-        const targetId = relationship[targetField];
-        
-        // Try to find in regular characters first
-        let foundCharacter = await Character.findById(targetId)
-          .select('name race job currentVillage homeVillage icon userId isModCharacter modTitle modType')
-          .lean();
-        
-        // If not found, try mod characters
-        if (!foundCharacter) {
-          foundCharacter = await ModCharacter.findById(targetId)
-            .select('name race job currentVillage homeVillage icon userId isModCharacter modTitle modType')
-            .lean();
-        }
-        
-        // Set the populated data
+    console.log('[server.js]: 🌍 Found relationships:', relationships.length);
+    
+    // Get all characters in parallel (both regular and mod characters)
+    const [regularCharacters, modCharacters] = await Promise.all([
+      Character.find({})
+        .select('name race job currentVillage homeVillage icon userId isModCharacter')
+        .sort({ name: 1 })
+        .lean(),
+      ModCharacter.find({})
+        .select('name race job currentVillage homeVillage icon userId isModCharacter modTitle modType')
+        .sort({ name: 1 })
+        .lean()
+    ]);
+    
+    console.log('[server.js]: 🌍 Found regular characters:', regularCharacters.length);
+    console.log('[server.js]: 🌍 Found mod characters:', modCharacters.length);
+    
+    // Create a lookup map for efficient character finding
+    const characterMap = new Map();
+    
+    // Add regular characters to map
+    regularCharacters.forEach(char => {
+      characterMap.set(char._id.toString(), char);
+    });
+    
+    // Add mod characters to map (will override regular characters if same ID)
+    modCharacters.forEach(char => {
+      characterMap.set(char._id.toString(), char);
+    });
+    
+    // Efficiently populate character data using the lookup map
+    relationships.forEach(relationship => {
+      // Populate characterId
+      if (relationship.characterId) {
+        const charId = relationship.characterId.toString();
+        const foundCharacter = characterMap.get(charId);
         if (foundCharacter) {
-          relationship[targetField] = foundCharacter;
+          relationship.characterId = foundCharacter;
         }
       }
-    };
-    
-    // Populate character data for both characterId and targetCharacterId
-    await populateCharacterData(relationships, 'characterId');
-    await populateCharacterData(relationships, 'targetCharacterId');
-    
-    // Get all regular characters for reference
-    const regularCharacters = await Character.find({})
-      .select('name race job currentVillage homeVillage icon userId isModCharacter')
-      .sort({ name: 1 })
-      .lean();
-    
-    // Get all mod characters for reference
-    const modCharacters = await ModCharacter.find({})
-      .select('name race job currentVillage homeVillage icon userId isModCharacter modTitle modType')
-      .sort({ name: 1 })
-      .lean();
+      
+      // Populate targetCharacterId
+      if (relationship.targetCharacterId) {
+        const targetId = relationship.targetCharacterId.toString();
+        const foundCharacter = characterMap.get(targetId);
+        if (foundCharacter) {
+          relationship.targetCharacterId = foundCharacter;
+        }
+      }
+    });
     
     // Combine both character types
     const characters = [...regularCharacters, ...modCharacters];
     
-    // Transform icon URLs for characters
+    console.log('[server.js]: 🌍 Total characters:', characters.length);
+    
+    // Transform icon URLs for characters (batch operation)
     characters.forEach(character => {
       if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
         const filename = character.icon.split('/').pop();
@@ -2136,7 +2151,7 @@ app.get('/api/relationships/all', requireAuth, async (req, res) => {
       }
     });
     
-    // Transform icon URLs for relationships
+    // Transform icon URLs for relationships (batch operation)
     relationships.forEach(relationship => {
       if (relationship.characterId && relationship.characterId.icon && relationship.characterId.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
         const filename = relationship.characterId.icon.split('/').pop();
@@ -2147,6 +2162,8 @@ app.get('/api/relationships/all', requireAuth, async (req, res) => {
         relationship.targetCharacterId.icon = filename;
       }
     });
+    
+    console.log('[server.js]: 🌍 Sending response with', characters.length, 'characters and', relationships.length, 'relationships');
     
     res.json({ 
       relationships,
@@ -3160,6 +3177,33 @@ app.get('/api/debug/users/duplicates', async (req, res) => {
   } catch (error) {
     console.error('[server.js]: Error checking for duplicate users:', error);
     res.status(500).json({ error: 'Failed to check for duplicate users' });
+  }
+});
+
+// Test endpoint to check if server is working
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    message: 'Server is working',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test endpoint to check characters in database
+app.get('/api/test/characters', async (req, res) => {
+  try {
+    const regularCount = await Character.countDocuments();
+    const modCount = await ModCharacter.countDocuments();
+    const totalCount = regularCount + modCount;
+    
+    res.json({
+      regularCharacters: regularCount,
+      modCharacters: modCount,
+      totalCharacters: totalCount,
+      message: 'Character count retrieved successfully'
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error counting characters:', error);
+    res.status(500).json({ error: 'Failed to count characters' });
   }
 });
 
