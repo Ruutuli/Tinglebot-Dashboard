@@ -1316,6 +1316,7 @@
 .relationship-note-item {
   background: var(--card-background);
   border: 1px solid var(--border-color);
+  border-left: 3px solid var(--primary-color);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 0.75rem;

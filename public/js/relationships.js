@@ -646,22 +646,8 @@ function renderCharacterRelationships(characterRelationships) {
           if (relationshipsWithNotes.length === 0) return '';
           
           return `
-            <div class="relationship-notes-section">
-              <div class="relationship-notes-header">
-                <i class="fas fa-sticky-note"></i>
-                <h4>Notes</h4>
-              </div>
-              <div class="relationship-notes-content">
-                ${relationshipsWithNotes.map(relationship => {
-                  return `
-                    <div class="relationship-note-item">
-                      <div class="relationship-note-text">
-                        ${relationship.notes}
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
+            <div class="relationship-notes">
+              ${relationshipsWithNotes.map(relationship => `<div class="relationship-note-item"><p class="relationship-note">${relationship.notes}</p></div>`).join('')}
             </div>
           `;
         })()}
@@ -715,22 +701,8 @@ function renderCharacterRelationships(characterRelationships) {
           if (relationshipsWithNotes.length === 0) return '';
           
           return `
-            <div class="relationship-notes-section">
-              <div class="relationship-notes-header">
-                <i class="fas fa-sticky-note"></i>
-                <h4>Notes</h4>
-              </div>
-              <div class="relationship-notes-content">
-                ${relationshipsWithNotes.map(relationship => {
-                  return `
-                    <div class="relationship-note-item">
-                      <div class="relationship-note-text">
-                        ${relationship.notes}
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
+            <div class="relationship-notes">
+              ${relationshipsWithNotes.map(relationship => `<div class="relationship-note-item"><p class="relationship-note">${relationship.notes}</p></div>`).join('')}
             </div>
           `;
         })()}
@@ -1259,22 +1231,8 @@ function renderModalCharacterRelationships(characterRelationships, characterName
           if (relationshipsWithNotes.length === 0) return '';
           
           return `
-            <div class="modal-relationship-notes-section">
-              <div class="modal-relationship-notes-header">
-                <i class="fas fa-sticky-note"></i>
-                <h4>Notes</h4>
-              </div>
-              <div class="modal-relationship-notes-content">
-                ${relationshipsWithNotes.map(relationship => {
-                  return `
-                    <div class="modal-relationship-note-item">
-                      <div class="modal-relationship-note-text">
-                        ${relationship.notes}
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
+            <div class="modal-relationship-notes">
+              ${relationshipsWithNotes.map(relationship => `<p class="modal-relationship-note">${relationship.notes}</p>`).join('')}
             </div>
           `;
         })()}
@@ -1309,22 +1267,8 @@ function renderModalCharacterRelationships(characterRelationships, characterName
           if (relationshipsWithNotes.length === 0) return '';
           
           return `
-            <div class="modal-relationship-notes-section">
-              <div class="modal-relationship-notes-header">
-                <i class="fas fa-sticky-note"></i>
-                <h4>Notes</h4>
-              </div>
-              <div class="modal-relationship-notes-content">
-                ${relationshipsWithNotes.map(relationship => {
-                  return `
-                    <div class="modal-relationship-note-item">
-                      <div class="modal-relationship-note-text">
-                        ${relationship.notes}
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
+            <div class="modal-relationship-notes">
+              ${relationshipsWithNotes.map(relationship => `<p class="modal-relationship-note">${relationship.notes}</p>`).join('')}
             </div>
           `;
         })()}
