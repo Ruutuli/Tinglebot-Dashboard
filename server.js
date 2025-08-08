@@ -1928,17 +1928,32 @@ app.post('/api/relationships', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Target character not found' });
     }
     
-    // Check if relationship already exists between these characters
+    // Check if relationship already exists between these characters for this user
+    console.log(`🔍 Checking for existing relationship: userId=${userId}, characterId=${characterId}, targetCharacterId=${targetCharacterId}`);
     const existingRelationship = await Relationship.findOne({ 
+      userId,
       characterId, 
       targetCharacterId
     });
     
     if (existingRelationship) {
+      console.log(`❌ Relationship already exists: ${existingRelationship._id}`);
       return res.status(409).json({ error: 'Relationship already exists between these characters' });
     }
     
+    console.log(`✅ No existing relationship found, proceeding with creation`);
+    
     // Create new relationship
+    console.log(`💾 Creating new relationship with data:`, {
+      userId,
+      characterId,
+      targetCharacterId,
+      characterName,
+      targetCharacterName,
+      relationshipTypes: Array.isArray(relationshipType) ? relationshipType : [relationshipType],
+      notes: notes || ''
+    });
+    
     const relationship = new Relationship({
       userId,
       characterId,
@@ -1950,6 +1965,7 @@ app.post('/api/relationships', requireAuth, async (req, res) => {
     });
     
     await relationship.save();
+    console.log(`✅ Relationship saved successfully with ID: ${relationship._id}`);
     
     // Manually populate target character info for response
     let populatedTargetCharacter = await Character.findById(targetCharacterId)
@@ -2019,6 +2035,19 @@ app.put('/api/relationships/:relationshipId', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Target character not found' });
     }
     
+    // Check if changing the target character would create a conflict with another relationship
+    if (relationship.targetCharacterId.toString() !== targetCharacterId) {
+      const existingRelationship = await Relationship.findOne({ 
+        userId,
+        characterId, 
+        targetCharacterId
+      });
+      
+      if (existingRelationship && existingRelationship._id.toString() !== relationshipId) {
+        return res.status(409).json({ error: 'Relationship already exists between these characters' });
+      }
+    }
+    
     // Update the relationship
     relationship.targetCharacterId = targetCharacterId;
     relationship.characterName = characterName;
@@ -2050,6 +2079,11 @@ app.put('/api/relationships/:relationshipId', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('[server.js]: ❌ Error updating relationship:', error);
+    
+    if (error.code === 11000) {
+      return res.status(409).json({ error: 'Relationship already exists between these characters' });
+    }
+    
     res.status(500).json({ error: 'Internal server error' });
   }
 });

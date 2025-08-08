@@ -1383,6 +1383,7 @@ function showAddRelationshipModal(preSelectedTargetId = null) {
     delete form.dataset.relationshipId;
     delete form.dataset.characterName;
     delete form.dataset.targetCharacterName;
+    delete form.dataset.submitting;
     
     // Reset modal title to "Add Relationship"
     const modalTitle = document.querySelector('#relationship-modal .relationship-modal-header h3');
@@ -1540,6 +1541,20 @@ async function saveRelationship(event) {
   event.preventDefault();
   
   const form = event.target;
+  
+  // Prevent double submissions
+  if (form.dataset.submitting === 'true') {
+    console.log('🔄 Form already submitting, ignoring duplicate submission');
+    return;
+  }
+  
+  form.dataset.submitting = 'true';
+  const submitButton = form.querySelector('button[type="submit"]');
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = 'Saving...';
+  }
+  
   const formData = new FormData(form);
   const isEditMode = form.dataset.editMode === 'true';
   const relationshipId = form.dataset.relationshipId;
@@ -1590,7 +1605,9 @@ async function saveRelationship(event) {
     });
     
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+      throw new Error(errorMessage);
     }
     
     const data = await response.json();
@@ -1609,7 +1626,21 @@ async function saveRelationship(event) {
     
   } catch (error) {
     console.error('❌ Error saving relationship:', error);
-    showNotification('Failed to save relationship', 'error');
+    
+    // Show specific error messages for common issues
+    if (error.message.includes('Relationship already exists')) {
+      showNotification('A relationship already exists between these characters. Please edit the existing relationship instead.', 'error');
+    } else {
+      showNotification(`Failed to save relationship: ${error.message}`, 'error');
+    }
+  } finally {
+    // Reset form submission state
+    form.dataset.submitting = 'false';
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = 'Save Relationship';
+    }
   }
 }
 

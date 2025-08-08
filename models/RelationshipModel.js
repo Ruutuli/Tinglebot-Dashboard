@@ -15,8 +15,7 @@ const relationshipSchema = new mongoose.Schema({
   targetCharacterId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Character',
-    required: true,
-    index: true
+    required: true
   },
   characterName: {
     type: String,
@@ -45,14 +44,11 @@ const relationshipSchema = new mongoose.Schema({
   collection: 'relationships'
 });
 
-// Compound index to prevent duplicate relationships between the same characters
-relationshipSchema.index({ characterId: 1, targetCharacterId: 1 }, { unique: true });
+// Compound index to prevent duplicate relationships between the same characters for the same user
+relationshipSchema.index({ userId: 1, characterId: 1, targetCharacterId: 1 }, { unique: true });
 
 // Index for efficient querying by user and character
 relationshipSchema.index({ userId: 1, characterId: 1 });
-
-// Index for efficient querying by target character
-relationshipSchema.index({ targetCharacterId: 1 });
 
 // Note: Color and display logic is now handled by the frontend's centralized RELATIONSHIP_CONFIG
 
@@ -71,9 +67,9 @@ relationshipSchema.statics.getUserRelationships = function(userId) {
     .sort({ createdAt: -1 });
 };
 
-// Static method to check if relationship exists
-relationshipSchema.statics.relationshipExists = function(characterId, targetCharacterId) {
-  return this.findOne({ characterId, targetCharacterId });
+// Static method to check if relationship exists for a specific user
+relationshipSchema.statics.relationshipExists = function(userId, characterId, targetCharacterId) {
+  return this.findOne({ userId, characterId, targetCharacterId });
 };
 
 // Pre-save middleware to ensure characterId and targetCharacterId are different
