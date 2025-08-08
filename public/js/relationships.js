@@ -2655,21 +2655,20 @@ function drawRelationshipWebEdges() {
       const leftTargetY = edge.target.y - Math.sin(perpendicularAngle) * lineOffset;
       
       drawRelationshipLine(leftSourceX, leftSourceY, leftTargetX, leftTargetY, edge.sourceToTarget.colors);
-      drawDirectionalArrow(leftSourceX, leftSourceY, lineAngle + Math.PI, edge.sourceToTarget.colors);
+
       
-      // Draw target to source line (right) - arrow points TO the target (who is feeling it)
+      // Draw target to source line (right) - arrow points toward the source
       const rightSourceX = edge.source.x + Math.cos(perpendicularAngle) * lineOffset;
       const rightSourceY = edge.source.y + Math.sin(perpendicularAngle) * lineOffset;
       const rightTargetX = edge.target.x + Math.cos(perpendicularAngle) * lineOffset;
       const rightTargetY = edge.target.y + Math.sin(perpendicularAngle) * lineOffset;
       
       drawRelationshipLine(rightSourceX, rightSourceY, rightTargetX, rightTargetY, edge.targetToSource.colors);
-      drawDirectionalArrow(rightTargetX, rightTargetY, lineAngle, edge.targetToSource.colors);
+
       
     } else {
-      // Unidirectional relationship - draw single line with arrow pointing TO the target (who is feeling it)
+      // Unidirectional relationship - draw single line
       drawRelationshipLine(edge.source.x, edge.source.y, edge.target.x, edge.target.y, edge.colors);
-      drawDirectionalArrow(edge.target.x, edge.target.y, lineAngle, edge.colors);
     }
   });
 }
