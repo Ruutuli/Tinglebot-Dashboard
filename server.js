@@ -1700,60 +1700,18 @@ app.post('/api/character-of-week/random', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Admin privileges required' });
     }
     
-    // Get all active characters
-    const characters = await Character.find({}).lean();
+    // Use the same rotation logic to ensure fair character selection
+    await rotateCharacterOfWeek();
     
-    if (characters.length === 0) {
-      return res.status(404).json({ error: 'No characters found' });
-    }
-    
-    // Get recently featured characters (last 4 weeks) to avoid repetition
-    const fourWeeksAgo = new Date(Date.now() - (28 * 24 * 60 * 60 * 1000));
-    const recentCharacters = await CharacterOfWeek.find({
-      startDate: { $gte: fourWeeksAgo }
-    }).distinct('characterId');
-    
-    // Filter out recently featured characters
-    const availableCharacters = characters.filter(char => 
-      !recentCharacters.includes(char._id.toString())
-    );
-    
-    // If all characters have been featured recently, use all characters
-    const characterPool = availableCharacters.length > 0 ? availableCharacters : characters;
-    
-    // Select random character
-    const randomCharacter = characterPool[Math.floor(Math.random() * characterPool.length)];
-    
-    // Deactivate current character of the week
-    await CharacterOfWeek.updateMany(
-      { isActive: true },
-      { isActive: false }
-    );
-    
-    // Calculate end date (next Sunday midnight)
-    const startDate = new Date();
-    const endDate = getNextSundayMidnight(startDate);
-    
-    // Create new character of the week
-    const newCharacterOfWeek = new CharacterOfWeek({
-      characterId: randomCharacter._id,
-      characterName: randomCharacter.name,
-      userId: randomCharacter.userId,
-      startDate,
-      endDate,
-      isActive: true,
-      featuredReason: 'Random selection'
-    });
-    
-    await newCharacterOfWeek.save();
-    
+    const newCharacter = await CharacterOfWeek.findOne({ isActive: true }).populate('characterId');
     
     res.json({ 
-      data: newCharacterOfWeek,
-      message: `Randomly selected ${randomCharacter.name} as character of the week` 
+      data: newCharacter,
+      message: `Randomly selected character of the week: ${newCharacter.characterName}` 
     });
+    
   } catch (error) {
-    console.error('[server.js]: ❌ Error selecting random character of the week:', error);
+    console.error('[server.js]: ❌ Error in getRandomCharacterOfWeek:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -1777,38 +1735,16 @@ app.post('/api/character-of-week/trigger-first', requireAuth, async (req, res) =
       });
     }
     
-    // Get all active characters
-    const characters = await Character.find({}).lean();
+    // Use the same rotation logic to ensure fair character selection
+    await rotateCharacterOfWeek();
     
-    if (characters.length === 0) {
-      return res.status(404).json({ error: 'No characters found' });
-    }
-    
-    // Select random character
-    const randomCharacter = characters[Math.floor(Math.random() * characters.length)];
-    
-    // Calculate end date (next Sunday midnight)
-    const startDate = new Date();
-    const endDate = getNextSundayMidnight(startDate);
-    
-    // Create new character of the week
-    const newCharacterOfWeek = new CharacterOfWeek({
-      characterId: randomCharacter._id,
-      characterName: randomCharacter.name,
-      userId: randomCharacter.userId,
-      startDate,
-      endDate,
-      isActive: true,
-      featuredReason: 'Manual trigger for testing'
-    });
-    
-    await newCharacterOfWeek.save();
-    
+    const newCharacter = await CharacterOfWeek.findOne({ isActive: true }).populate('characterId');
     
     res.json({ 
-      data: newCharacterOfWeek,
-      message: `Manually triggered first character of the week: ${randomCharacter.name}` 
+      data: newCharacter,
+      message: `Manually triggered first character of the week: ${newCharacter.characterName}` 
     });
+    
   } catch (error) {
     console.error('[server.js]: ❌ Error triggering first character of the week:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -2347,25 +2283,88 @@ const rotateCharacterOfWeek = async () => {
       return;
     }
     
-    // Get recently featured characters (last 4 weeks) to avoid repetition
-    const fourWeeksAgo = new Date(Date.now() - (28 * 24 * 60 * 60 * 1000));
-    const recentCharacters = await CharacterOfWeek.find({
-      startDate: { $gte: fourWeeksAgo }
-    }).distinct('characterId');
+    console.log(`[server.js]: 📊 Total characters available: ${characters.length}`);
     
-    // Filter out recently featured characters
-    const availableCharacters = characters.filter(char => 
-      !recentCharacters.includes(char._id.toString())
+    // Get all characters that have ever been featured
+    const allFeaturedCharacters = await CharacterOfWeek.find({}).distinct('characterId');
+    console.log(`[server.js]: 📊 Characters that have been featured before: ${allFeaturedCharacters.length}`);
+    
+    // Find characters that have never been featured
+    const neverFeaturedCharacters = characters.filter(char => 
+      !allFeaturedCharacters.includes(char._id.toString())
     );
     
-    // If all characters have been featured recently, use all characters
-    const characterPool = availableCharacters.length > 0 ? availableCharacters : characters;
+    console.log(`[server.js]: 📊 Characters never featured: ${neverFeaturedCharacters.length}`);
+    if (neverFeaturedCharacters.length > 0) {
+      console.log(`[server.js]: 📝 Never featured characters: ${neverFeaturedCharacters.map(c => c.name).join(', ')}`);
+    }
     
-    // Select random character
-    const randomCharacter = characterPool[Math.floor(Math.random() * characterPool.length)];
+    // If there are characters that have never been featured, prioritize them
+    if (neverFeaturedCharacters.length > 0) {
+      const randomCharacter = neverFeaturedCharacters[Math.floor(Math.random() * neverFeaturedCharacters.length)];
+      console.log(`[server.js]: 🎲 Selected never-before-featured character: ${randomCharacter.name}`);
+      
+      await createNewCharacterOfWeek(randomCharacter);
+      return;
+    }
     
-    console.log(`[server.js]: 🎲 Selected character: ${randomCharacter.name}`);
+    // If all characters have been featured at least once, find the one featured longest ago
+    const characterLastFeaturedDates = {};
     
+    // Initialize all characters with a very old date (in case they've never been featured)
+    characters.forEach(char => {
+      characterLastFeaturedDates[char._id.toString()] = new Date(0);
+    });
+    
+    // Get the most recent featured date for each character
+    const featuredHistory = await CharacterOfWeek.find({}).sort({ startDate: -1 });
+    featuredHistory.forEach(entry => {
+      const charId = entry.characterId.toString();
+      if (characterLastFeaturedDates[charId] && entry.startDate > characterLastFeaturedDates[charId]) {
+        characterLastFeaturedDates[charId] = entry.startDate;
+      }
+    });
+    
+    // Log the last featured dates for debugging
+    console.log('[server.js]: 📊 Last featured dates for each character:');
+    for (const [charId, lastFeaturedDate] of Object.entries(characterLastFeaturedDates)) {
+      const char = characters.find(c => c._id.toString() === charId);
+      if (char) {
+        const daysAgo = Math.floor((Date.now() - lastFeaturedDate.getTime()) / (1000 * 60 * 60 * 24));
+        console.log(`[server.js]:   - ${char.name}: ${lastFeaturedDate.toLocaleDateString()} (${daysAgo} days ago)`);
+      }
+    }
+    
+    // Find the character featured longest ago
+    let oldestFeaturedCharacter = null;
+    let oldestDate = new Date();
+    
+    for (const [charId, lastFeaturedDate] of Object.entries(characterLastFeaturedDates)) {
+      if (lastFeaturedDate < oldestDate) {
+        oldestDate = lastFeaturedDate;
+        oldestFeaturedCharacter = characters.find(char => char._id.toString() === charId);
+      }
+    }
+    
+    if (oldestFeaturedCharacter) {
+      const daysSinceLastFeatured = Math.floor((Date.now() - oldestDate.getTime()) / (1000 * 60 * 60 * 24));
+      console.log(`[server.js]: 🎲 Selected character featured longest ago: ${oldestFeaturedCharacter.name} (last featured: ${oldestDate.toLocaleDateString()}, ${daysSinceLastFeatured} days ago)`);
+      
+      await createNewCharacterOfWeek(oldestFeaturedCharacter);
+    } else {
+      console.log('[server.js]: ⚠️ Could not determine character to feature');
+    }
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Error in rotateCharacterOfWeek:', error);
+    throw error;
+  }
+};
+
+// ------------------- Function: createNewCharacterOfWeek -------------------
+// Helper function to create a new character of the week entry
+const createNewCharacterOfWeek = async (character) => {
+  try {
     // Deactivate current character of the week
     await CharacterOfWeek.updateMany(
       { isActive: true },
@@ -2380,9 +2379,9 @@ const rotateCharacterOfWeek = async () => {
     
     // Create new character of the week
     const newCharacterOfWeek = new CharacterOfWeek({
-      characterId: randomCharacter._id,
-      characterName: randomCharacter.name,
-      userId: randomCharacter.userId,
+      characterId: character._id,
+      characterName: character.name,
+      userId: character.userId,
       startDate,
       endDate,
       isActive: true,
@@ -2391,10 +2390,10 @@ const rotateCharacterOfWeek = async () => {
     
     await newCharacterOfWeek.save();
     
-    console.log(`[server.js]: ✅ Successfully rotated to new character of the week: ${randomCharacter.name}`);
+    console.log(`[server.js]: ✅ Successfully rotated to new character of the week: ${character.name}`);
     
   } catch (error) {
-    console.error('[server.js]: ❌ Error in rotateCharacterOfWeek:', error);
+    console.error('[server.js]: ❌ Error in createNewCharacterOfWeek:', error);
     throw error;
   }
 };
@@ -2450,6 +2449,73 @@ app.post('/api/character-of-week/trigger-simple', async (req, res) => {
     });
   } catch (error) { 
     console.error('[server.js]: ❌ Error in triggerFirstCharacterOfWeekSimple:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: getCharacterRotationStatus -------------------
+// Returns the current status of character rotation for debugging
+app.get('/api/character-of-week/rotation-status', async (req, res) => {
+  try {
+    // Get all characters
+    const characters = await Character.find({}).lean();
+    
+    // Get all featured characters with their last featured date
+    const featuredHistory = await CharacterOfWeek.find({}).sort({ startDate: -1 });
+    
+    // Build rotation status
+    const rotationStatus = {
+      totalCharacters: characters.length,
+      characters: characters.map(char => {
+        const charHistory = featuredHistory.filter(entry => 
+          entry.characterId.toString() === char._id.toString()
+        );
+        
+        const lastFeatured = charHistory.length > 0 ? charHistory[0].startDate : null;
+        const featuredCount = charHistory.length;
+        
+        return {
+          id: char._id,
+          name: char.name,
+          lastFeatured: lastFeatured,
+          featuredCount: featuredCount,
+          daysSinceLastFeatured: lastFeatured ? 
+            Math.floor((Date.now() - new Date(lastFeatured).getTime()) / (1000 * 60 * 60 * 24)) : 
+            null
+        };
+      }),
+      currentCharacter: null,
+      nextRotation: null
+    };
+    
+    // Get current active character
+    const currentCharacter = await CharacterOfWeek.findOne({ isActive: true });
+    if (currentCharacter) {
+      rotationStatus.currentCharacter = {
+        id: currentCharacter.characterId,
+        name: currentCharacter.characterName,
+        startDate: currentCharacter.startDate,
+        endDate: currentCharacter.endDate
+      };
+      
+      rotationStatus.nextRotation = getNextSundayMidnight(currentCharacter.startDate);
+    }
+    
+    // Sort characters by last featured date (oldest first)
+    rotationStatus.characters.sort((a, b) => {
+      if (!a.lastFeatured && !b.lastFeatured) return 0;
+      if (!a.lastFeatured) return -1;
+      if (!b.lastFeatured) return 1;
+      return new Date(a.lastFeatured) - new Date(b.lastFeatured);
+    });
+    
+    res.json({ 
+      data: rotationStatus,
+      message: 'Character rotation status retrieved successfully'
+    });
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Error getting character rotation status:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
