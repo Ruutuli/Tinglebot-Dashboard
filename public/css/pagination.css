@@ -5,8 +5,7 @@
 .pagination-wrapper,
 .character-pagination,
 .item-pagination,
-.inventory-pagination,
-#village-shop-pagination {
+.inventory-pagination {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -147,8 +146,7 @@
   .pagination-wrapper,
   .character-pagination,
   .item-pagination,
-  .inventory-pagination,
-  #village-shop-pagination {
+  .inventory-pagination {
     padding: 1.25rem;
     margin: 1rem 0 2.5rem 0;
   }
@@ -191,8 +189,7 @@
   .pagination-wrapper,
   .character-pagination,
   .item-pagination,
-  .inventory-pagination,
-  #village-shop-pagination {
+  .inventory-pagination {
     padding: 1rem;
     margin: 0.75rem 0 2rem 0;
     gap: 0.4rem;
@@ -250,8 +247,7 @@
   .pagination-wrapper,
   .character-pagination,
   .item-pagination,
-  .inventory-pagination,
-  #village-shop-pagination {
+  .inventory-pagination {
     padding: 0.75rem;
     margin: 0.75rem 0;
     gap: 0.3rem;
@@ -308,8 +304,7 @@
   .pagination-wrapper,
   .character-pagination,
   .item-pagination,
-  .inventory-pagination,
-  #village-shop-pagination {
+  .inventory-pagination {
     padding: 0.5rem;
     margin: 0.5rem 0;
     gap: 0.25rem;
@@ -388,8 +383,7 @@
   .pagination-wrapper,
   .character-pagination,
   .item-pagination,
-  .inventory-pagination,
-  #village-shop-pagination {
+  .inventory-pagination {
     padding: 0.75rem;
     margin: 0.75rem 0;
   }

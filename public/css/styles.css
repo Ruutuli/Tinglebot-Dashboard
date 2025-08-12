@@ -1163,8 +1163,7 @@ h4 { font-size: 1.25rem; }
   }
   
   /* Optimize scrolling */
-  .main-content,
-  .model-details-content {
+  .main-content {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
   }
@@ -1416,7 +1415,6 @@ h4 { font-size: 1.25rem; }
 .modal-content::-webkit-scrollbar,
 .user-details-modal-content::-webkit-scrollbar,
 .character-modal-content::-webkit-scrollbar,
-.model-details-content::-webkit-scrollbar,
 .monster-card-back::-webkit-scrollbar,
 .character-inventory-content::-webkit-scrollbar,
 .character-inventory-scroll::-webkit-scrollbar,
@@ -1427,7 +1425,6 @@ h4 { font-size: 1.25rem; }
 .modal-content::-webkit-scrollbar-track,
 .user-details-modal-content::-webkit-scrollbar-track,
 .character-modal-content::-webkit-scrollbar-track,
-.model-details-content::-webkit-scrollbar-track,
 .monster-card-back::-webkit-scrollbar-track,
 .character-inventory-content::-webkit-scrollbar-track,
 .character-inventory-scroll::-webkit-scrollbar-track,
@@ -1439,7 +1436,6 @@ h4 { font-size: 1.25rem; }
 .modal-content::-webkit-scrollbar-thumb,
 .user-details-modal-content::-webkit-scrollbar-thumb,
 .character-modal-content::-webkit-scrollbar-thumb,
-.model-details-content::-webkit-scrollbar-thumb,
 .monster-card-back::-webkit-scrollbar-thumb,
 .character-inventory-content::-webkit-scrollbar-thumb,
 .character-inventory-scroll::-webkit-scrollbar-thumb,
@@ -1452,7 +1448,6 @@ h4 { font-size: 1.25rem; }
 .modal-content::-webkit-scrollbar-thumb:hover,
 .user-details-modal-content::-webkit-scrollbar-thumb:hover,
 .character-modal-content::-webkit-scrollbar-thumb:hover,
-.model-details-content::-webkit-scrollbar-thumb:hover,
 .monster-card-back::-webkit-scrollbar-thumb:hover,
 .character-inventory-content::-webkit-scrollbar-thumb:hover,
 .character-inventory-scroll::-webkit-scrollbar-thumb:hover,
@@ -1465,7 +1460,6 @@ h4 { font-size: 1.25rem; }
 .modal-content,
 .user-details-modal-content,
 .character-modal-content,
-.model-details-content,
 .monster-card-back,
 .character-inventory-content,
 .character-inventory-scroll,
@@ -1537,7 +1531,6 @@ html {
   .modal-content::-webkit-scrollbar,
   .user-details-modal-content::-webkit-scrollbar,
   .character-modal-content::-webkit-scrollbar,
-  .model-details-content::-webkit-scrollbar,
   .monster-card-back::-webkit-scrollbar,
   .character-inventory-content::-webkit-scrollbar,
   .character-inventory-scroll::-webkit-scrollbar,
@@ -1554,7 +1547,6 @@ html {
   .modal-content::-webkit-scrollbar,
   .user-details-modal-content::-webkit-scrollbar,
   .character-modal-content::-webkit-scrollbar,
-  .model-details-content::-webkit-scrollbar,
   .monster-card-back::-webkit-scrollbar,
   .character-inventory-content::-webkit-scrollbar,
   .character-inventory-scroll::-webkit-scrollbar,

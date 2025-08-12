@@ -291,6 +291,21 @@ async function populateFilterOptions(items) {
   
   // If we have items, we could also populate from live data, but for now we'll just use the JSON
   if (items?.length) {
+    // Fallback: populate from live data if JSON failed
+    const categorySelect = document.getElementById('village-shop-filter-category');
+    const typeSelect = document.getElementById('village-shop-filter-type');
+    
+    if (categorySelect && categorySelect.options.length <= 1) {
+      console.log('🔄 Populating categories from live data...');
+      const categories = [...new Set(items.map(item => item.category).flat().filter(Boolean))];
+      populateSelect('village-shop-filter-category', categories);
+    }
+    
+    if (typeSelect && typeSelect.options.length <= 1) {
+      console.log('🔄 Populating types from live data...');
+      const types = [...new Set(items.map(item => item.type).flat().filter(Boolean))];
+      populateSelect('village-shop-filter-type', types);
+    }
   }
   
 }
@@ -299,17 +314,31 @@ async function populateFilterOptions(items) {
 // Loads filter options from the JSON file as a fallback
 async function loadFilterOptionsFromJSON() {
   try {
+    console.log('📂 Loading filter options from JSON file...');
     const response = await fetch('/js/itemFilterOptions.json');
     if (!response.ok) {
+      console.warn('⚠️ Failed to load filter options JSON:', response.status, response.statusText);
       return;
     }
     
     const filterOptions = await response.json();
+    console.log('📋 Loaded filter options:', filterOptions);
     
-    populateSelect('village-shop-filter-category', filterOptions.categories || []);
-    populateSelect('village-shop-filter-type', filterOptions.types || []);
+    // Ensure we have valid arrays before populating
+    if (filterOptions.categories && Array.isArray(filterOptions.categories)) {
+      populateSelect('village-shop-filter-category', filterOptions.categories);
+    } else {
+      console.warn('⚠️ No valid categories found in filter options');
+    }
+    
+    if (filterOptions.types && Array.isArray(filterOptions.types)) {
+      populateSelect('village-shop-filter-type', filterOptions.types);
+    } else {
+      console.warn('⚠️ No valid types found in filter options');
+    }
     
   } catch (error) {
+    console.error('❌ Error loading filter options from JSON:', error);
   }
 }
 
@@ -317,13 +346,34 @@ async function loadFilterOptionsFromJSON() {
 // Helper to populate a <select> element with new options
 function populateSelect(id, values) {
   const select = document.getElementById(id);
-  if (!select) return;
+  if (!select) {
+    console.warn(`⚠️ Select element with id '${id}' not found`);
+    return;
+  }
 
+  console.log(`🔧 Populating select '${id}' with values:`, values);
+
+  // Ensure values is an array and has content
+  if (!Array.isArray(values) || values.length === 0) {
+    console.warn(`⚠️ No valid values provided for select '${id}'`);
+    return;
+  }
+
+  // Remove all options except "all"
   select.querySelectorAll('option:not([value="all"])').forEach(opt => opt.remove());
 
+  // Format and add new options
   const formatted = values
+    .filter(v => v && v.toString().trim() !== '') // Filter out empty/null values
     .map(v => capitalize(v.toString().toLowerCase()))
     .sort();
+
+  console.log(`📝 Formatted values for '${id}':`, formatted);
+
+  if (formatted.length === 0) {
+    console.warn(`⚠️ No valid formatted values for select '${id}'`);
+    return;
+  }
 
   formatted.forEach(val => {
     const option = document.createElement('option');
@@ -331,6 +381,8 @@ function populateSelect(id, values) {
     option.textContent = val;
     select.appendChild(option);
   });
+
+  console.log(`✅ Populated select '${id}' with ${formatted.length} options`);
 }
 
 // ------------------- Function: updateVillageShopPagination -------------------
@@ -424,12 +476,15 @@ function updateVillageShopPagination(currentPage, totalPages, totalItems) {
 // ------------------- Function: setupVillageShopFilters -------------------
 // Sets up simple filters for village shop items
 async function setupVillageShopFilters(items) {
+  console.log('🚀 Setting up village shop filters...');
 
   // Fetch all village shop items for proper pagination
   try {  
     const response = await fetch('/api/models/villageShops?all=true');
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const { data: allVillageShopItems } = await response.json();
+    
+    console.log('📊 Fetched village shop items:', allVillageShopItems.length);
     
     // Sort items alphabetically by name
     const sortedItems = [...allVillageShopItems].sort((a, b) => {
@@ -441,6 +496,7 @@ async function setupVillageShopFilters(items) {
     // Update the global village shop list with all items
     window.allVillageShopItems = sortedItems;
   } catch (error) {
+    console.warn('⚠️ Failed to fetch all village shop items, using provided items:', error);
     // Fallback to using the provided items
     window.allVillageShopItems = items;
   }
@@ -497,6 +553,29 @@ async function setupVillageShopFilters(items) {
 
   // Populate filter options with available values
   await populateFilterOptions(items);
+  
+  // Wait a moment for the DOM to update
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  console.log('🔧 Filter options populated. Current values:');
+  console.log('Category select:', categorySelect?.value, categorySelect?.options?.length);
+  console.log('Type select:', typeSelect?.value, typeSelect?.options?.length);
+  
+  // Verify the dropdowns were populated
+  if (categorySelect && categorySelect.options.length <= 1) {
+    console.warn('⚠️ Category dropdown not properly populated, retrying...');
+    await loadFilterOptionsFromJSON();
+  }
+  
+  if (typeSelect && typeSelect.options.length <= 1) {
+    console.warn('⚠️ Type dropdown not properly populated, retrying...');
+    await loadFilterOptionsFromJSON();
+  }
+  
+  // Final verification and debug info
+  console.log('🔍 Final dropdown verification:');
+  console.log('Category options:', categorySelect?.options?.length, Array.from(categorySelect?.options || []).map(opt => opt.value));
+  console.log('Type options:', typeSelect?.options?.length, Array.from(typeSelect?.options || []).map(opt => opt.value));
 
   // Restore filter state if it exists
   const savedFilterState = window.savedFilterState || {};
@@ -665,21 +744,50 @@ async function setupVillageShopFilters(items) {
     const typeFilter = typeSelect.value.toLowerCase();
     const sortBy = sortSelect.value;
 
+    // Debug logging
+    console.log('🔍 Filtering with:', { searchTerm, categoryFilter, typeFilter, sortBy });
+    console.log('📊 Total items to filter:', items.length);
+    
+    // Debug the structure of items
+    debugVillageShopItems(items);
+
     // Apply filters
     const filtered = items.filter(item => {
+      // Search term matching
       const matchesSearch = !searchTerm ||
         item.itemName?.toLowerCase().includes(searchTerm) ||
         (item.category && Array.isArray(item.category) && item.category.some(cat => cat.toLowerCase().includes(searchTerm))) ||
         (item.type && item.type.some(type => type.toLowerCase().includes(searchTerm)));
 
+      // Category matching - handle both array and string formats
       const matchesCategory = categoryFilter === 'all' || 
-        (item.category && Array.isArray(item.category) && item.category.some(cat => cat.toLowerCase() === categoryFilter));
+        (item.category && (
+          (Array.isArray(item.category) && item.category.some(cat => cat.toLowerCase() === categoryFilter)) ||
+          (typeof item.category === 'string' && item.category.toLowerCase() === categoryFilter)
+        ));
       
+      // Type matching - handle both array and string formats
       const matchesType = typeFilter === 'all' || 
-        (item.type && item.type.some(type => type.toLowerCase() === typeFilter));
+        (item.type && (
+          (Array.isArray(item.type) && item.type.some(type => type.toLowerCase() === typeFilter)) ||
+          (typeof item.type === 'string' && item.type.toLowerCase() === typeFilter)
+        ));
+
+      // Debug logging for first few items
+      if (items.indexOf(item) < 3) {
+        console.log('🔍 Item:', item.itemName, {
+          category: item.category,
+          type: item.type,
+          matchesSearch,
+          matchesCategory,
+          matchesType
+        });
+      }
 
       return matchesSearch && matchesCategory && matchesType;
     });
+
+    console.log('✅ Filtered items count:', filtered.length);
 
     // Apply sorting
     return sortItems(filtered, sortBy);
@@ -712,9 +820,15 @@ async function setupVillageShopFilters(items) {
 
   filterElements.forEach(element => {
     if (element) {
-      element.addEventListener('change', () => window.filterVillageShopItems(1));
+      element.addEventListener('change', (e) => {
+        console.log(`🔄 Filter changed: ${element.id} = ${element.value}`);
+        window.filterVillageShopItems(1);
+      });
       if (element === searchInput) {
-        element.addEventListener('input', () => window.filterVillageShopItems(1));
+        element.addEventListener('input', (e) => {
+          console.log(`🔍 Search input: ${element.value}`);
+          window.filterVillageShopItems(1);
+        });
       }
     }
   });
@@ -727,7 +841,7 @@ async function setupVillageShopFilters(items) {
       categorySelect.value = 'all';
       typeSelect.value = 'all';
       sortSelect.value = 'name-asc';
-      itemsPerPageSelect.value = '32';
+      itemsPerPageSelect.value = '35';
       
       // Clear saved state
       window.savedFilterState = {};
@@ -802,6 +916,24 @@ const LOCATION_COLORS = {
   'vhintl': 'location-vhintl',
 };
 
+// ------------------- Function: debugVillageShopItems -------------------
+// Debug function to log sample village shop items
+function debugVillageShopItems(items, sampleSize = 5) {
+  console.log('🔍 Sample village shop items structure:');
+  const sample = items.slice(0, sampleSize);
+  sample.forEach((item, index) => {
+    console.log(`Item ${index + 1}:`, {
+      itemName: item.itemName,
+      category: item.category,
+      type: item.type,
+      categoryType: typeof item.category,
+      typeType: typeof item.type,
+      categoryIsArray: Array.isArray(item.category),
+      typeIsArray: Array.isArray(item.type)
+    });
+  });
+}
+
 // ============================================================================
 // ------------------- Export Functions -------------------
 // Exports functions for use in other modules
@@ -848,10 +980,11 @@ async function initializeVillageShopsPage(data, page, contentDiv) {
         </div>
         <div class="search-filter-control">
           <select id="village-shop-items-per-page">
-            <option value="32">32 per page</option>
-            <option value="12">12 per page</option>
-            <option value="24">24 per page</option>
-            <option value="48">48 per page</option>
+            <option value="35">35 per page</option>
+            <option value="15">15 per page</option>
+            <option value="25">25 per page</option>
+            <option value="45">45 per page</option>
+            <option value="55">55 per page</option>
             <option value="all">All items</option>
           </select>
         </div>
@@ -913,5 +1046,6 @@ export {
   setupVillageShopFilters,
   populateFilterOptions,
   fetchAllVillageShopItemsForFilters,
-  initializeVillageShopsPage
+  initializeVillageShopsPage,
+  debugVillageShopItems
 };

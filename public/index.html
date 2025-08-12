@@ -420,34 +420,46 @@
             <button id="clear-filters">Clear</button>
           </div>
           
-          <!-- Village Shop Filters Bar (only shown for villageShops model) -->
-          <div class="village-shop-filters" style="display:none;">
-            <div class="village-shop-results-info">
-              <p>Loading village shop items...</p>
-            </div>
-            <div class="village-shop-controls">
-              <input type="text" id="village-shop-search-input" placeholder="Search village shop items..." />
-              <select id="village-shop-filter-category">
-                <option value="all">All Categories</option>
-              </select>
-              <select id="village-shop-filter-type">
-                <option value="all">All Types</option>
-              </select>
-              <select id="village-shop-sort-by">
-                <option value="name-asc">Name (A-Z)</option>
-                <option value="name-desc">Name (Z-A)</option>
-                <option value="price-asc">Price (Low-High)</option>
-                <option value="price-desc">Price (High-Low)</option>
-                <option value="stock-asc">Stock (Low-High)</option>
-                <option value="stock-desc">Stock (High-Low)</option>
-              </select>
-              <select id="village-shop-items-per-page">
-                <option value="12">12 per page</option>
-                <option value="24">24 per page</option>
-                <option value="48">48 per page</option>
-                <option value="all">All items</option>
-              </select>
-              <button id="village-shop-clear-filters">Clear</button>
+          <!-- Village Shop Results Info -->
+          <div class="village-shop-results-info" style="display:none;">
+            <p>Loading village shop items...</p>
+          </div>
+          
+          <!-- Village Shop Search Filter Bar -->
+          <div class="village-shop-search-filters" style="display:none;">
+            <div class="search-filter-bar">
+              <div class="search-filter-control search-input">
+                <input type="text" id="village-shop-search-input" placeholder="Search village shop items...">
+              </div>
+              <div class="search-filter-control">
+                <select id="village-shop-filter-category">
+                  <option value="all">All Categories</option>
+                </select>
+              </div>
+              <div class="search-filter-control">
+                <select id="village-shop-filter-type">
+                  <option value="all">All Types</option>
+                </select>
+              </div>
+              <div class="search-filter-control">
+                <select id="village-shop-sort-by">
+                  <option value="name-asc">Name (A-Z)</option>
+                  <option value="name-desc">Name (Z-A)</option>
+                  <option value="price-asc">Price (Low-High)</option>
+                  <option value="price-desc">Price (High-Low)</option>
+                  <option value="stock-asc">Stock (Low-High)</option>
+                  <option value="stock-desc">Stock (High-Low)</option>
+                </select>
+              </div>
+              <div class="search-filter-control">
+                <select id="village-shop-items-per-page">
+                  <option value="12">12 per page</option>
+                  <option value="24">24 per page</option>
+                  <option value="48">48 per page</option>
+                  <option value="all">All items</option>
+                </select>
+              </div>
+              <button id="village-shop-clear-filters" class="clear-filters-btn">Clear Filters</button>
             </div>
           </div>
           

@@ -175,16 +175,33 @@ function setupModelCards() {
           characterFiltersBar.style.display = 'none';
         }
 
-        const villageShopFiltersBar = document.querySelector('.village-shop-filters');
-        if (modelName === 'villageShops' && villageShopFiltersBar) {
-          if (contentDiv.firstChild !== villageShopFiltersBar) {
-            contentDiv.insertBefore(villageShopFiltersBar, contentDiv.firstChild);
+        const villageShopResultsInfo = document.querySelector('.village-shop-results-info');
+        const villageShopSearchFilters = document.querySelector('.village-shop-search-filters');
+        
+        if (modelName === 'villageShops') {
+          if (villageShopResultsInfo) {
+            if (contentDiv.firstChild !== villageShopResultsInfo) {
+              contentDiv.insertBefore(villageShopResultsInfo, contentDiv.firstChild);
+            }
+            villageShopResultsInfo.style.display = 'block';
           }
-          villageShopFiltersBar.style.display = 'flex';
-        } else if (villageShopFiltersBar) {
-          villageShopFiltersBar.style.display = 'none';
-        } else if (modelName === 'villageShops') {
-          console.error('❌ Village shop filters container not found in index.js');
+          if (villageShopSearchFilters) {
+            if (contentDiv.firstChild !== villageShopSearchFilters) {
+              contentDiv.insertBefore(villageShopSearchFilters, contentDiv.firstChild);
+            }
+            villageShopSearchFilters.style.display = 'block';
+          }
+        } else {
+          if (villageShopResultsInfo) {
+            villageShopResultsInfo.style.display = 'none';
+          }
+          if (villageShopSearchFilters) {
+            villageShopSearchFilters.style.display = 'none';
+          }
+        }
+        
+        if (modelName === 'villageShops' && !villageShopResultsInfo) {
+          console.error('❌ Village shop results info container not found in index.js');
         }
 
         switch (modelName) {
