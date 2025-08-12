@@ -551,9 +551,20 @@ async function loadStatsData() {
 // Switches between sections using nav links
 // ============================================================================
 function showSection(sectionId) {
-  const sections = document.querySelectorAll('.section');
-  sections.forEach(section => {
-    section.style.display = section.id === sectionId ? 'block' : 'none';
+  console.log('🔍 showSection called with:', sectionId);
+  
+  // Hide all main content sections including dashboard
+  const mainContent = document.querySelector('.main-content');
+  const allSections = mainContent.querySelectorAll('section, #model-details-page');
+  
+  allSections.forEach(section => {
+    if (section.id === sectionId) {
+      section.style.display = 'block';
+      console.log('🔍 Showing section:', section.id);
+    } else {
+      section.style.display = 'none';
+      console.log('🔍 Hiding section:', section.id);
+    }
   });
 }
 
@@ -597,6 +608,7 @@ function setupSidebarNavigation() {
         relationshipsModule.showRelationshipsSection();
       } else {
         // For other sections, use the existing showSection function
+        console.log('🔍 Using generic showSection for:', sectionId);
         showSection(sectionId);
       }
     });
