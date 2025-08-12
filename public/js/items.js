@@ -159,6 +159,9 @@ function renderItemCards(items, page = 1, totalItems = null) {
               <div class="item-detail-row modern-item-detail-row">
                 <strong>Stackable:</strong> <span>${item.stackable ? `Yes (Max: ${item.maxStackSize || 10})` : 'No'}</span>
               </div>
+                              <div class="item-detail-row modern-item-detail-row">
+                  <strong>Rarity:</strong> <span>${item.itemRarity || 1}</span>
+                </div>
             </div>
           </div>
           
@@ -777,6 +780,10 @@ async function loadFilterOptionsFromJSON() {
     populateSelect('filter-jobs', filterOptions.jobs || []);
     populateSelect('filter-locations', filterOptions.locations || []);
     populateSelect('filter-sources', filterOptions.sources || []);
+    populateSelect('filter-modifier-hearts', filterOptions.modifier_hearts || []);
+    populateSelect('filter-stamina-recovered', filterOptions.stamina_recovered || []);
+    populateSelect('filter-stamina-to-craft', filterOptions.stamina_to_craft || []);
+    populateSelect('filter-rarity', filterOptions.rarity || []);
     
   } catch (error) {
     console.error('❌ Error loading filter options from JSON:', error);
@@ -784,6 +791,23 @@ async function loadFilterOptionsFromJSON() {
 }
 
 // ------------------- Function: populateSelect -------------------
+// Helper function to convert numerical rarity to display name
+function getRarityDisplayName(rarity) {
+  const rarityNames = {
+    1: 'Common',
+    2: 'Uncommon', 
+    3: 'Rare',
+    4: 'Epic',
+    5: 'Legendary',
+    6: 'Mythic',
+    7: 'Divine',
+    8: 'Celestial',
+    9: 'Transcendent',
+    10: 'Ultimate'
+  };
+  return rarityNames[rarity] || `Rarity ${rarity}`;
+}
+
 // Helper to populate a <select> element with new options
 function populateSelect(id, values) {
   const select = document.getElementById(id);
@@ -791,9 +815,24 @@ function populateSelect(id, values) {
 
   select.querySelectorAll('option:not([value="all"])').forEach(opt => opt.remove());
 
-  const formatted = values
-    .map(v => capitalize(v.toString().toLowerCase()))
-    .sort();
+  // Custom sorting for numerical values
+  let formatted;
+  if (id === 'filter-modifier-hearts' || id === 'filter-stamina-recovered' || id === 'filter-stamina-to-craft' || id === 'filter-rarity') {
+    // Sort numerically, with "10+" at the end
+    formatted = values
+      .map(v => v.toString())
+      .sort((a, b) => {
+        if (a === '10+') return 1; // "10+" always goes last
+        if (b === '10+') return -1;
+        return parseInt(a) - parseInt(b); // Numerical sort
+      })
+      .map(v => capitalize(v.toLowerCase()));
+  } else {
+    // Regular alphabetical sort for other filters
+    formatted = values
+      .map(v => capitalize(v.toString().toLowerCase()))
+      .sort();
+  }
 
   formatted.forEach(val => {
     const option = document.createElement('option');
@@ -827,11 +866,15 @@ async function setupItemFilters(items) {
   const jobsSelect = document.getElementById('filter-jobs');
   const locationsSelect = document.getElementById('filter-locations');
   const sourcesSelect = document.getElementById('filter-sources');
+  const modifierHeartsSelect = document.getElementById('filter-modifier-hearts');
+  const staminaRecoveredSelect = document.getElementById('filter-stamina-recovered');
+  const staminaToCraftSelect = document.getElementById('filter-stamina-to-craft');
+  const raritySelect = document.getElementById('filter-rarity');
   const sortSelect = document.getElementById('sort-by');
   const itemsPerPageSelect = document.getElementById('items-per-page');
   const clearFiltersBtn = document.getElementById('clear-filters');
 
-  const missing = [searchInput, categorySelect, typeSelect, subtypeSelect, jobsSelect, locationsSelect, sourcesSelect, sortSelect, itemsPerPageSelect, clearFiltersBtn].some(el => !el);
+  const missing = [searchInput, categorySelect, typeSelect, subtypeSelect, jobsSelect, locationsSelect, sourcesSelect, modifierHeartsSelect, staminaRecoveredSelect, staminaToCraftSelect, raritySelect, sortSelect, itemsPerPageSelect, clearFiltersBtn].some(el => !el);
   if (missing) {
     if (!window.filterSetupRetried) {
       window.filterSetupRetried = true;
@@ -868,6 +911,10 @@ async function setupItemFilters(items) {
     const jobsFilter = jobsSelect.value.toLowerCase();
     const locationsFilter = locationsSelect.value.toLowerCase();
     const sourcesFilter = sourcesSelect.value.toLowerCase();
+    const modifierHeartsFilter = modifierHeartsSelect.value.toLowerCase();
+    const staminaRecoveredFilter = staminaRecoveredSelect.value.toLowerCase();
+    const staminaToCraftFilter = staminaToCraftSelect.value.toLowerCase();
+    const rarityFilter = raritySelect.value.toLowerCase();
     const sortBy = sortSelect.value;
     const itemsPerPage = itemsPerPageSelect.value;
 
@@ -882,6 +929,10 @@ async function setupItemFilters(items) {
       jobsFilter,
       locationsFilter,
       sourcesFilter,
+      modifierHeartsFilter,
+      staminaRecoveredFilter,
+      staminaToCraftFilter,
+      rarityFilter,
       sortBy,
       itemsPerPage
     };
@@ -893,7 +944,11 @@ async function setupItemFilters(items) {
       subtypeFilter !== 'all' || 
       jobsFilter !== 'all' || 
       locationsFilter !== 'all' || 
-      sourcesFilter !== 'all';
+      sourcesFilter !== 'all' ||
+      modifierHeartsFilter !== 'all' ||
+      staminaRecoveredFilter !== 'all' ||
+      staminaToCraftFilter !== 'all' ||
+      rarityFilter !== 'all';
 
     
 
@@ -917,6 +972,10 @@ async function setupItemFilters(items) {
     const jobsFilter = jobsSelect.value.toLowerCase();
     const locationsFilter = locationsSelect.value.toLowerCase();
     const sourcesFilter = sourcesSelect.value.toLowerCase();
+    const modifierHeartsFilter = modifierHeartsSelect.value.toLowerCase();
+    const staminaRecoveredFilter = staminaRecoveredSelect.value.toLowerCase();
+    const staminaToCraftFilter = staminaToCraftSelect.value.toLowerCase();
+    const rarityFilter = raritySelect.value.toLowerCase();
     const sortBy = sortSelect.value;
     const itemsPerPage = itemsPerPageSelect.value === 'all' ? 999999 : parseInt(itemsPerPageSelect.value);
 
@@ -1119,6 +1178,10 @@ async function setupItemFilters(items) {
     const jobsFilter = jobsSelect.value.toLowerCase();
     const locationsFilter = locationsSelect.value.toLowerCase();
     const sourcesFilter = sourcesSelect.value.toLowerCase();
+    const modifierHeartsFilter = modifierHeartsSelect.value.toLowerCase();
+    const staminaRecoveredFilter = staminaRecoveredSelect.value.toLowerCase();
+    const staminaToCraftFilter = staminaToCraftSelect.value.toLowerCase();
+    const rarityFilter = raritySelect.value.toLowerCase();
     const sortBy = sortSelect.value;
 
     // Apply filters
@@ -1159,7 +1222,44 @@ async function setupItemFilters(items) {
       const matchesSources = sourcesFilter === 'all' || 
         itemSources.some(source => source.toLowerCase() === sourcesFilter);
 
-      return matchesSearch && matchesCategory && matchesType && matchesSubtype && matchesJobs && matchesLocations && matchesSources;
+      // Filter by modifier hearts
+      const matchesModifierHearts = modifierHeartsFilter === 'all' || 
+        (() => {
+          const hearts = item.modifierHearts || 0;
+          if (modifierHeartsFilter === '10+') {
+            return hearts >= 10;
+          }
+          return hearts.toString() === modifierHeartsFilter;
+        })();
+
+      // Filter by stamina recovered
+      const matchesStaminaRecovered = staminaRecoveredFilter === 'all' || 
+        (() => {
+          const stamina = item.staminaRecovered || 0;
+          if (staminaRecoveredFilter === '10+') {
+            return stamina >= 10;
+          }
+          return stamina.toString() === staminaRecoveredFilter;
+        })();
+
+      // Filter by stamina to craft
+      const matchesStaminaToCraft = staminaToCraftFilter === 'all' || 
+        (() => {
+          const stamina = item.staminaToCraft;
+          if (stamina === null || stamina === undefined) {
+            return false;
+          }
+          if (staminaToCraftFilter === '10+') {
+            return stamina >= 10;
+          }
+          return stamina.toString() === staminaToCraftFilter;
+        })();
+
+      // Filter by rarity
+      const matchesRarity = rarityFilter === 'all' || 
+        (item.itemRarity || 1).toString() === rarityFilter;
+
+      return matchesSearch && matchesCategory && matchesType && matchesSubtype && matchesJobs && matchesLocations && matchesSources && matchesModifierHearts && matchesStaminaRecovered && matchesStaminaToCraft && matchesRarity;
     });
 
     // Apply sorting
@@ -1290,6 +1390,10 @@ async function setupItemFilters(items) {
   jobsSelect.addEventListener('change', () => window.filterItems(1));
   locationsSelect.addEventListener('change', () => window.filterItems(1));
   sourcesSelect.addEventListener('change', () => window.filterItems(1));
+  modifierHeartsSelect.addEventListener('change', () => window.filterItems(1));
+  staminaRecoveredSelect.addEventListener('change', () => window.filterItems(1));
+  staminaToCraftSelect.addEventListener('change', () => window.filterItems(1));
+  raritySelect.addEventListener('change', () => window.filterItems(1));
   sortSelect.addEventListener('change', () => window.filterItems(1));
   itemsPerPageSelect.addEventListener('change', () => window.filterItems(1));
 
@@ -1503,6 +1607,26 @@ function initializeItemPage(data, page = 1, contentDiv) {
         <div class="search-filter-control">
           <select id="filter-sources">
             <option value="all">All Sources</option>
+          </select>
+        </div>
+        <div class="search-filter-control">
+          <select id="filter-modifier-hearts">
+            <option value="all">All Heart Modifiers</option>
+          </select>
+        </div>
+        <div class="search-filter-control">
+          <select id="filter-stamina-recovered">
+            <option value="all">All Stamina Recovery</option>
+          </select>
+        </div>
+        <div class="search-filter-control">
+          <select id="filter-stamina-to-craft">
+            <option value="all">All Craft Stamina</option>
+          </select>
+        </div>
+        <div class="search-filter-control">
+          <select id="filter-rarity">
+            <option value="all">All Rarities</option>
           </select>
         </div>
         <div class="search-filter-control">
