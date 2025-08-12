@@ -303,7 +303,7 @@ function renderCharacterCards(characters, page = 1, enableModals = true, isFromF
       const defensePercent = Math.min((character.defense / 15) * 100, 100);
   
       return `
-        <div class="character-card ${cardStatusClass} ${isMobile ? 'mobile-card' : ''} ${isTouch ? 'touch-card' : ''}" data-character="${character.name}">
+        <div class="character-card ${cardStatusClass} ${isMobile ? 'mobile-card' : ''} ${isTouch ? 'touch-card' : ''} ${character.isModCharacter ? 'mod-character' : ''}" data-character="${character.name}">
           <div class="character-header">
             ${character.homeVillage ? `
               <div class="village-crest">
@@ -326,10 +326,16 @@ function renderCharacterCards(characters, page = 1, enableModals = true, isFromF
               >
             </div>
   
-            <div class="character-title">
-              <div class="character-name-row">
-                <h3 class="character-name">${character.name}</h3>
-                              ${statusText ? `
+                          <div class="character-title">
+                <div class="character-name-row">
+                  <h3 class="character-name">${character.name}</h3>
+                  ${character.isModCharacter ? `
+                    <div class="mod-character-badge">
+                      <i class="fas fa-crown"></i>
+                      <span class="mod-character-title">${character.modTitle || 'Mod'}</span>
+                    </div>
+                  ` : ''}
+                  ${statusText ? `
               <div class="character-status">
                 <i class="character-status-icon ${statusClass}"></i>
                 <span class="character-status-text">${statusText}</span>
@@ -376,25 +382,26 @@ function renderCharacterCards(characters, page = 1, enableModals = true, isFromF
             ${renderStatRow('ATTACK', character.attack || 0, 'attack-bar', attackPercent)}
             ${renderStatRow('DEFENSE', character.defense || 0, 'defense-bar', defensePercent)}
   
-            <div class="character-section">
-              <h4 class="character-section-title">Basic Info</h4>
-              <div class="character-detail-list">
-                ${renderDetail('Home Village', character.homeVillage ? capitalize(character.homeVillage) : 'Unknown')}
-                ${renderDetail('Current Village', character.currentVillage ? capitalize(character.currentVillage) : (character.homeVillage ? capitalize(character.homeVillage) : 'Unknown'))}
-                ${renderDetail('Pronouns', character.pronouns ? capitalize(character.pronouns) : 'Not specified')}
-                ${renderDetail('Birthday', character.birthday || 'Not specified')}
-                ${character.age ? renderDetail('Age', character.age) : ''}
-                ${character.height ? renderDetail('Height', `${character.height} cm | ${convertCmToFeetInches(character.height)}`) : ''}
-                ${renderDetail('Spirit Orbs', character.spiritOrbs || 0)}
-                ${renderDetail('Job Changed', formatPrettyDate(character.jobDateChanged))}
-                ${renderDetail('Last Stamina Usage', formatPrettyDate(character.lastStaminaUsage))}
-                ${renderDetail('Blighted', character.blighted ? 'Yes' : 'No')}
-                ${renderDetail('Blight Stage', character.blightStage ?? 0)}
-                ${renderDetail('Debuff', (character.debuff?.active)
-                  ? `Debuffed${character.debuff.endDate ? ' | Ends ' + new Date(character.debuff.endDate).toLocaleDateString() : ''}`
-                  : 'Not Debuffed')}
-              </div>
-            </div>
+                         <div class="character-section">
+               <h4 class="character-section-title">Basic Info</h4>
+               <div class="character-detail-list">
+                 ${character.isModCharacter ? renderDetail('Mod Type', character.modType ? capitalize(character.modType) : 'Unknown') : ''}
+                 ${renderDetail('Home Village', character.homeVillage ? capitalize(character.homeVillage) : 'Unknown')}
+                 ${renderDetail('Current Village', character.currentVillage ? capitalize(character.currentVillage) : (character.homeVillage ? capitalize(character.homeVillage) : 'Unknown'))}
+                 ${renderDetail('Pronouns', character.pronouns ? capitalize(character.pronouns) : 'Not specified')}
+                 ${renderDetail('Birthday', character.birthday || 'Not specified')}
+                 ${character.age ? renderDetail('Age', character.age) : ''}
+                 ${character.height ? renderDetail('Height', `${character.height} cm | ${convertCmToFeetInches(character.height)}`) : ''}
+                 ${!character.isModCharacter ? renderDetail('Spirit Orbs', character.spiritOrbs || 0) : ''}
+                 ${!character.isModCharacter ? renderDetail('Job Changed', formatPrettyDate(character.jobDateChanged)) : ''}
+                 ${!character.isModCharacter ? renderDetail('Last Stamina Usage', formatPrettyDate(character.lastStaminaUsage)) : ''}
+                 ${!character.isModCharacter ? renderDetail('Blighted', character.blighted ? 'Yes' : 'No') : ''}
+                 ${!character.isModCharacter ? renderDetail('Blight Stage', character.blightStage ?? 0) : ''}
+                 ${!character.isModCharacter ? renderDetail('Debuff', (character.debuff?.active)
+                   ? `Debuffed${character.debuff.endDate ? ' | Ends ' + new Date(character.debuff.endDate).toLocaleDateString() : ''}`
+                   : 'Not Debuffed') : ''}
+               </div>
+             </div>
   
             <div class="character-section">
               <h4 class="character-section-title">Gear</h4>
@@ -538,6 +545,8 @@ function renderStatRow(label, value, barClass, percent) {
           <div class="character-modal-section">
             <h3>Basic Info</h3>
             <div class="character-modal-grid">
+              ${character.isModCharacter ? `<div class="character-modal-item"><span class="label">Mod Type:</span><span class="value">${character.modType ? capitalize(character.modType) : 'Unknown'}</span></div>` : ''}
+              ${character.isModCharacter ? `<div class="character-modal-item"><span class="label">Mod Title:</span><span class="value">${character.modTitle || 'Unknown'}</span></div>` : ''}
               <div class="character-modal-item"><span class="label">Race:</span><span class="value">${character.race ? capitalize(character.race) : 'Unknown'}</span></div>
               <div class="character-modal-item"><span class="label">Job:</span><span class="value">${character.job ? capitalize(character.job) : 'Unknown'}</span></div>
               <div class="character-modal-item"><span class="label">Home Village:</span><span class="value">${character.homeVillage ? capitalize(character.homeVillage) : 'Unknown'}</span></div>
@@ -556,7 +565,7 @@ function renderStatRow(label, value, barClass, percent) {
               <div class="character-modal-item"><span class="label">Stamina:</span><span class="value">${character.currentStamina}/${character.maxStamina}</span></div>
               <div class="character-modal-item"><span class="label">Attack:</span><span class="value">${character.attack || 0}</span></div>
               <div class="character-modal-item"><span class="label">Defense:</span><span class="value">${character.defense || 0}</span></div>
-              <div class="character-modal-item"><span class="label">Spirit Orbs:</span><span class="value">${character.spiritOrbs || 0}</span></div>
+              ${!character.isModCharacter ? `<div class="character-modal-item"><span class="label">Spirit Orbs:</span><span class="value">${character.spiritOrbs || 0}</span></div>` : ''}
             </div>
           </div>
   
@@ -574,13 +583,13 @@ function renderStatRow(label, value, barClass, percent) {
           <div class="character-modal-section">
             <h3>Status</h3>
             <div class="character-modal-grid">
-              <div class="character-modal-item"><span class="label">Blighted:</span><span class="value">${character.blighted ? 'Yes' : 'No'}</span></div>
-              <div class="character-modal-item"><span class="label">Blight Stage:</span><span class="value">${character.blightStage ?? 0}</span></div>
-              <div class="character-modal-item"><span class="label">Debuff:</span><span class="value">${character.debuff?.active
+              ${!character.isModCharacter ? `<div class="character-modal-item"><span class="label">Blighted:</span><span class="value">${character.blighted ? 'Yes' : 'No'}</span></div>` : ''}
+              ${!character.isModCharacter ? `<div class="character-modal-item"><span class="label">Blight Stage:</span><span class="value">${character.blightStage ?? 0}</span></div>` : ''}
+              ${!character.isModCharacter ? `<div class="character-modal-item"><span class="label">Debuff:</span><span class="value">${character.debuff?.active
                 ? `Debuffed${character.debuff.endDate ? ' | Ends ' + new Date(character.debuff.endDate).toLocaleDateString() : ''}`
-                : 'Not Debuffed'}</span></div>
-              <div class="character-modal-item"><span class="label">Last Stamina Usage:</span><span class="value">${formatPrettyDate(character.lastStaminaUsage)}</span></div>
-              <div class="character-modal-item"><span class="label">Job Changed:</span><span class="value">${formatPrettyDate(character.jobDateChanged)}</span></div>
+                : 'Not Debuffed'}</span></div>` : ''}
+              ${!character.isModCharacter ? `<div class="character-modal-item"><span class="label">Last Stamina Usage:</span><span class="value">${formatPrettyDate(character.lastStaminaUsage)}</span></div>` : ''}
+              ${!character.isModCharacter ? `<div class="character-modal-item"><span class="label">Job Changed:</span><span class="value">${formatPrettyDate(character.jobDateChanged)}</span></div>` : ''}
             </div>
           </div>
   
@@ -680,6 +689,7 @@ async function populateFilterOptions(characters) {
     const villageSelect = document.getElementById('filter-village');
     const sortSelect = document.getElementById('sort-by');
     const charactersPerPageSelect = document.getElementById('characters-per-page');
+
     const clearFiltersBtn = document.getElementById('clear-filters');
   
     const missing = [searchInput, jobSelect, raceSelect, villageSelect, sortSelect, charactersPerPageSelect, clearFiltersBtn].some(el => !el);
@@ -754,7 +764,8 @@ async function populateFilterOptions(characters) {
         raceFilter,
         villageFilter,
         sortBy,
-        charactersPerPage
+        charactersPerPage,
+
       };
 
       // Check if any filters are active
@@ -957,6 +968,7 @@ async function populateFilterOptions(characters) {
       const villageFilter = villageSelect.value.toLowerCase();
       const sortBy = sortSelect.value;
 
+
       // Apply filters
       const filtered = characters.filter(c => {
         const matchesSearch = !searchTerm ||
@@ -967,7 +979,6 @@ async function populateFilterOptions(characters) {
         const matchesJob = jobFilter === 'all' || c.job?.toLowerCase() === jobFilter;
         const matchesRace = raceFilter === 'all' || c.race?.toLowerCase() === raceFilter;
         const matchesVillage = villageFilter === 'all' || c.homeVillage?.toLowerCase() === villageFilter;
-
         return matchesSearch && matchesJob && matchesRace && matchesVillage;
       });
 
@@ -1131,6 +1142,7 @@ async function populateFilterOptions(characters) {
     villageSelect.addEventListener('change', () => window.filterCharacters(1));
     sortSelect.addEventListener('change', () => window.filterCharacters(1));
     charactersPerPageSelect.addEventListener('change', () => window.filterCharacters(1));
+
   
     clearFiltersBtn.addEventListener('click', async () => {
 
@@ -1141,6 +1153,7 @@ async function populateFilterOptions(characters) {
       villageSelect.value = 'all';
       sortSelect.value = 'name-asc';
       charactersPerPageSelect.value = '12';
+
       
 
       
@@ -1305,6 +1318,7 @@ async function initializeCharacterPage(data, page = 1, contentDiv) {
                         </select>
                     </div>
                 </div>
+
                 <div class="mobile-filter-row">
                     <div class="search-filter-control">
                         <select id="characters-per-page">
@@ -1354,6 +1368,7 @@ async function initializeCharacterPage(data, page = 1, contentDiv) {
                         <option value="all">All characters</option>
                     </select>
                 </div>
+
                 <button id="clear-filters" class="clear-filters-btn">Clear Filters</button>
             </div>
         `;

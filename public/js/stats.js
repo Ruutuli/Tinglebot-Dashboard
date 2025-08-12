@@ -388,6 +388,10 @@ function generateCharacterStatsSection(data) {
                             <td><strong>Total Characters</strong></td>
                             <td>${data.totalCharacters || 0}</td>
                         </tr>
+                        ${data.modCharacterStats ? `<tr>
+                            <td><strong>Mod Characters</strong></td>
+                            <td>${data.modCharacterStats.totalModCharacters || 0}</td>
+                        </tr>` : ''}
                     </tbody>
                 </table>
                 <table class="stats-table">
@@ -548,6 +552,67 @@ function generateTopStatsSection(data) {
     `;
 }
 
+// Helper: Generate mod character statistics section
+function generateModCharacterStatsSection(data) {
+    if (!data.modCharacterStats) return '';
+    
+    const modStats = data.modCharacterStats;
+    const modTypes = modStats.modCharactersPerType || {};
+    const modVillages = modStats.modCharactersPerVillage || {};
+    
+    return `
+        <div class="stats-card-wide mod-characters-section">
+            <h3><i class="fas fa-crown"></i> Mod Character Statistics</h3>
+            <div class="mod-stats-grid">
+                <div class="mod-stats-item">
+                    <h4>Mod Types</h4>
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.keys(modTypes).length > 0 
+                                ? Object.entries(modTypes).map(([type, count]) => `
+                                    <tr>
+                                        <td>${type.charAt(0).toUpperCase() + type.slice(1)}</td>
+                                        <td>${count}</td>
+                                    </tr>
+                                `).join('')
+                                : '<tr><td colspan="2">No mod types available</td></tr>'
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mod-stats-item">
+                    <h4>Mod Characters by Village</h4>
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Village</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.keys(modVillages).length > 0 
+                                ? Object.entries(modVillages).map(([village, count]) => `
+                                    <tr>
+                                        <td>${village.charAt(0).toUpperCase() + village.slice(1)}</td>
+                                        <td>${count}</td>
+                                    </tr>
+                                `).join('')
+                                : '<tr><td colspan="2">No village data</td></tr>'
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 // Helper: Generate visiting characters section
 function generateVisitingCharactersSection(data) {
     const visitingDetails = data.visitingDetails || {};
@@ -561,22 +626,21 @@ function generateVisitingCharactersSection(data) {
                         <h4>${village.charAt(0).toUpperCase() + village.slice(1)} (${characters.length})</h4>
                         ${characters.length > 0 ? `
                             <table class="stats-table">
-                                <thead>
+                                <tr>
+                                    <th>Character</th>
+                                    <th>Home Village</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${characters.map(char => `
                                     <tr>
-                                        <th>Character</th>
-                                        <th>Home Village</th>
+                                        <td>${char.name}</td>
+                                        <td>${char.homeVillage.charAt(0).toUpperCase() + char.homeVillage.slice(1)}</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    ${characters.map(char => `
-                                        <tr>
-                                            <td>${char.name}</td>
-                                            <td>${char.homeVillage.charAt(0).toUpperCase() + char.homeVillage.slice(1)}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        ` : '<p style="color: #aaa; text-align: center; margin: 1rem 0;">No visitors</p>'}
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    ` : '<p style="color: #aaa; text-align: center; margin: 1rem 0;">No visitors</p>'}
                     </div>
                 `).join('')}
             </div>
@@ -781,6 +845,15 @@ async function initStatsPage() {
         const firstStatsCard = document.querySelector('#stats-section .stats-card-wide');
         if (firstStatsCard) {
             firstStatsCard.parentNode.insertBefore(visitingSection.firstElementChild, firstStatsCard.nextSibling);
+        }
+        
+        // Add mod character statistics section
+        const modStatsSection = document.createElement('div');
+        modStatsSection.innerHTML = generateModCharacterStatsSection(data);
+        
+        // Insert after the visiting characters section
+        if (visitingSection.firstElementChild) {
+            visitingSection.firstElementChild.parentNode.insertBefore(modStatsSection.firstElementChild, visitingSection.firstElementChild.nextSibling);
         }
 
         // Clean up existing charts

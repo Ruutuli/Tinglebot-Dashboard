@@ -81,6 +81,80 @@
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+/* --------------------------------------------------------------------------
+   Mod Character Styling
+--------------------------------------------------------------------------- */
+.mod-character {
+  border: 2px solid #ffd700;
+  box-shadow: 
+    0 8px 32px rgba(255, 215, 0, 0.3),
+    0 4px 16px rgba(255, 215, 0, 0.2);
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.05) 0%, 
+    rgba(255, 215, 0, 0.02) 100%);
+  min-height: 450px; /* Ensure consistent height with regular cards */
+}
+
+.mod-character .character-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mod-character .character-header {
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.1) 0%, 
+    rgba(255, 215, 0, 0.05) 100%);
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+.mod-character .character-name {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mod-character .character-detail-list {
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 1.2rem;
+  margin-bottom: 1.2rem;
+}
+
+.mod-character .character-section {
+  margin: 1.2rem 0 0.8rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.mod-character-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #000;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+.mod-character-badge i {
+  color: #000;
+  font-size: 0.8rem;
+}
+
+.mod-character-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+
+
 .character-section {
   margin: 1.2rem 0 0.8rem;
   flex: 1;
@@ -1773,6 +1847,32 @@
   .character-modal-content {
     max-height: 80vh;
   }
+}
+
+/* Mobile mod character styling */
+@media (max-width: 768px) {
+  .mod-character {
+    min-height: 400px; /* Mobile-specific height adjustment */
+  }
+  
+  .mod-character-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+  }
+  
+  .mod-character-title {
+    font-size: 0.65rem;
+  }
+  
+  .mod-character .character-header {
+    padding: 0.75rem;
+  }
+  
+  .mod-character .character-name {
+    font-size: 1.1rem;
+  }
+  
+
 }
 
 

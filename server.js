@@ -696,9 +696,16 @@ app.get('/api/tinglebot/stats', async (req, res) => {
 // Returns comprehensive character statistics and analytics
 app.get('/api/stats/characters', async (req, res) => {
   try {
-    const totalCharacters = await Character.countDocuments({ name: { $nin: ['Tingle', 'Tingle test', 'John'] } });
+    // Get both regular and mod characters for total count
+    const [regularCharacters, modCharacters] = await Promise.all([
+      Character.find({ name: { $nin: ['Tingle', 'Tingle test', 'John'] } }).lean(),
+      ModCharacter.find({}).lean()
+    ]);
+    
+    const totalCharacters = regularCharacters.length + modCharacters.length;
+    const allCharacters = [...regularCharacters, ...modCharacters];
 
-    // Get characters per village
+    // Get characters per village (including mod characters)
     const perVillageAgg = await Character.aggregate([
       { $match: { 
         homeVillage: { $exists: true, $ne: null },
@@ -706,12 +713,27 @@ app.get('/api/stats/characters', async (req, res) => {
       } },
       { $group: { _id: { $toLower: { $ifNull: ["$homeVillage", "unknown"] } }, count: { $sum: 1 } } }
     ]);
+    
+    // Also count mod characters per village
+    const modCharactersPerVillage = {};
+    modCharacters.forEach(char => {
+      if (char.homeVillage) {
+        const village = char.homeVillage.toLowerCase();
+        modCharactersPerVillage[village] = (modCharactersPerVillage[village] || 0) + 1;
+      }
+    });
+    
     const charactersPerVillage = { rudania: 0, inariko: 0, vhintl: 0 };
     perVillageAgg.forEach(r => {
       if (charactersPerVillage[r._id] !== undefined) charactersPerVillage[r._id] = r.count;
     });
+    
+    // Add mod characters to village counts
+    Object.keys(charactersPerVillage).forEach(village => {
+      charactersPerVillage[village] += (modCharactersPerVillage[village] || 0);
+    });
 
-    // Get characters per race
+    // Get characters per race (including mod characters)
     const perRaceAgg = await Character.aggregate([
       { 
         $match: { 
@@ -729,6 +751,20 @@ app.get('/api/stats/characters', async (req, res) => {
       },
       { $group: { _id: "$race", count: { $sum: 1 } } }
     ]);
+    
+    // Also count mod characters per race
+    const modCharactersPerRace = {};
+    modCharacters.forEach(char => {
+      if (char.race && 
+          char.race !== 'undefined' && 
+          char.race !== 'null' && 
+          char.race !== 'Unknown' && 
+          char.race !== 'unknown' &&
+          char.race.trim && char.race.trim() !== '') {
+        modCharactersPerRace[char.race] = (modCharactersPerRace[char.race] || 0) + 1;
+      }
+    });
+    
     const charactersPerRace = {};
     perRaceAgg.forEach(r => {
       if (r._id && 
@@ -743,10 +779,15 @@ app.get('/api/stats/characters', async (req, res) => {
         charactersPerRace[r._id] = r.count;
       }
     });
+    
+    // Add mod characters to race counts
+    Object.keys(modCharactersPerRace).forEach(race => {
+      charactersPerRace[race] = (charactersPerRace[race] || 0) + modCharactersPerRace[race];
+    });
 
 
 
-    // Get characters per job
+    // Get characters per job (including mod characters)
     const perJobAgg = await Character.aggregate([
       { $match: { 
         job: { $exists: true, $ne: null, $ne: '' },
@@ -756,6 +797,21 @@ app.get('/api/stats/characters', async (req, res) => {
       { $group: { _id: { $concat: [{ $toUpper: { $substr: ["$job", 0, 1] } }, { $substr: ["$job", 1, { $strLenCP: "$job" }] }] }, count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]);
+    
+    // Also count mod characters per job
+    const modCharactersPerJob = {};
+    modCharacters.forEach(char => {
+      if (char.job && 
+          char.job !== 'undefined' && 
+          char.job !== 'null' && 
+          char.job !== 'Unknown' && 
+          char.job !== 'unknown' &&
+          char.job.trim && char.job.trim() !== '') {
+        const jobKey = char.job.charAt(0).toUpperCase() + char.job.slice(1).toLowerCase();
+        modCharactersPerJob[jobKey] = (modCharactersPerJob[jobKey] || 0) + 1;
+      }
+    });
+    
     const charactersPerJob = {};
     perJobAgg.forEach(r => {
       if (r._id && 
@@ -767,17 +823,30 @@ app.get('/api/stats/characters', async (req, res) => {
         charactersPerJob[r._id] = r.count;
       }
     });
+    
+    // Add mod characters to job counts
+    Object.keys(modCharactersPerJob).forEach(job => {
+      charactersPerJob[job] = (charactersPerJob[job] || 0) + modCharactersPerJob[job];
+    });
 
 
 
-    // Get upcoming birthdays
+    // Get upcoming birthdays (including mod characters)
     const today = new Date();
     const thisYr = today.getFullYear();
     const allBday = await Character.find({ 
       birthday: { $exists: true, $ne: '' },
       name: { $nin: ['Tingle', 'Tingle test', 'John'] }
     }, { name: 1, birthday: 1 }).lean();
-    const upcoming = allBday.map(c => {
+    
+    // Add mod character birthdays
+    const modBday = modCharacters.filter(c => c.birthday && c.birthday !== '').map(c => ({
+      name: c.name,
+      birthday: c.birthday
+    }));
+    
+    const allBirthdays = [...allBday, ...modBday];
+    const upcoming = allBirthdays.map(c => {
       const mmdd = c.birthday.slice(-5);
       let next = isNaN(Date.parse(`${thisYr}-${mmdd}`))
         ? null
@@ -788,7 +857,7 @@ app.get('/api/stats/characters', async (req, res) => {
       .filter(c => c.nextBirthday && (c.nextBirthday - today) <= (30 * 24 * 60 * 60 * 1000))
       .sort((a, b) => a.nextBirthday - b.nextBirthday);
 
-    // Get visiting counts and details
+    // Get visiting counts and details (including mod characters)
     const villages = ['rudania', 'inariko', 'vhintl'];
     const visitingAgg = await Character.aggregate([
       { $match: { 
@@ -799,8 +868,26 @@ app.get('/api/stats/characters', async (req, res) => {
       } },
       { $group: { _id: '$currentVillage', count: { $sum: 1 } } }
     ]);
+    
+    // Also count mod characters visiting other villages
+    const modVisitingCounts = { rudania: 0, inariko: 0, vhintl: 0 };
+    modCharacters.forEach(char => {
+      if (char.currentVillage && char.homeVillage && 
+          villages.includes(char.currentVillage.toLowerCase()) && 
+          villages.includes(char.homeVillage.toLowerCase()) &&
+          char.currentVillage.toLowerCase() !== char.homeVillage.toLowerCase()) {
+        const currentVillage = char.currentVillage.toLowerCase();
+        modVisitingCounts[currentVillage]++;
+      }
+    });
+    
     const visitingCounts = { rudania: 0, inariko: 0, vhintl: 0 };
     visitingAgg.forEach(r => visitingCounts[r._id] = r.count);
+    
+    // Add mod character visiting counts
+    Object.keys(visitingCounts).forEach(village => {
+      visitingCounts[village] += modVisitingCounts[village];
+    });
 
     // Get detailed visiting characters
     const visitingCharacters = await Character.find(
@@ -813,9 +900,21 @@ app.get('/api/stats/characters', async (req, res) => {
       { name: 1, currentVillage: 1, homeVillage: 1 }
     ).lean();
 
+    // Add mod characters visiting other villages
+    const modVisitingCharacters = modCharacters.filter(char => 
+      char.currentVillage && char.homeVillage && 
+      villages.includes(char.currentVillage.toLowerCase()) && 
+      villages.includes(char.homeVillage.toLowerCase()) &&
+      char.currentVillage.toLowerCase() !== char.homeVillage.toLowerCase()
+    ).map(char => ({
+      name: char.name,
+      currentVillage: char.currentVillage,
+      homeVillage: char.homeVillage
+    }));
+
     // Group visiting characters by current village
     const visitingDetails = { rudania: [], inariko: [], vhintl: [] };
-    visitingCharacters.forEach(char => {
+    [...visitingCharacters, ...modVisitingCharacters].forEach(char => {
       const currentVillage = char.currentVillage.toLowerCase();
       if (visitingDetails[currentVillage]) {
         visitingDetails[currentVillage].push({
@@ -851,12 +950,11 @@ app.get('/api/stats/characters', async (req, res) => {
       getTop('maxHearts')
     ]);
 
-    // Get top characters by spirit orbs (from inventory)
-    const allCharacters = await Character.find({ 
-      name: { $nin: ['Tingle', 'Tingle test', 'John'] }
-    }, { name: 1 }).lean();
-    const characterNames = allCharacters.map(c => c.name);
-    const spiritOrbCounts = await countSpiritOrbsBatch(characterNames);
+    // Get top characters by spirit orbs (from inventory, including mod characters)
+    const regularCharacterNames = regularCharacters.map(c => c.name);
+    const modCharacterNames = modCharacters.map(c => c.name);
+    const allCharacterNames = [...regularCharacterNames, ...modCharacterNames];
+    const spiritOrbCounts = await countSpiritOrbsBatch(allCharacterNames);
     
     // Sort characters by spirit orb count and get top 5
     const charactersWithOrbs = Object.entries(spiritOrbCounts)
@@ -870,7 +968,7 @@ app.get('/api/stats/characters', async (req, res) => {
       value: charactersWithOrbs[0][1]
     } : { names: [], values: [], value: 0 };
 
-    // Get special character counts
+    // Get special character counts (mod characters are immune to negative effects)
     const [kodCount, blightedCount, debuffedCount] = await Promise.all([
       Character.countDocuments({ ko: true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } }),
       Character.countDocuments({ blighted: true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } }),
@@ -893,6 +991,24 @@ app.get('/api/stats/characters', async (req, res) => {
       { name: 1, blightedAt: 1, blighted: 1 }
     ).lean();
 
+    // Get mod character statistics
+    const modCharacterStats = {
+      totalModCharacters: modCharacters.length,
+      modCharactersPerType: {},
+      modCharactersPerVillage: {}
+    };
+    
+    // Count mod characters by type
+    modCharacters.forEach(char => {
+      if (char.modType) {
+        modCharacterStats.modCharactersPerType[char.modType] = (modCharacterStats.modCharactersPerType[char.modType] || 0) + 1;
+      }
+      if (char.homeVillage) {
+        const village = char.homeVillage.toLowerCase();
+        modCharacterStats.modCharactersPerVillage[village] = (modCharacterStats.modCharactersPerVillage[village] || 0) + 1;
+      }
+    });
+
     res.json({
       totalCharacters,
       charactersPerVillage,
@@ -910,6 +1026,7 @@ app.get('/api/stats/characters', async (req, res) => {
       debuffedCharacters,
       kodCharacters,
       blightedCharacters,
+      modCharacterStats,
       timestamp: Date.now() // Add timestamp for cache busting
     });
   } catch (error) {
@@ -1140,6 +1257,7 @@ app.get('/api/models/:modelType', async (req, res) => {
           console.error(`[server.js]: ❌ Character model not initialized`);
           return res.status(500).json({ error: 'Character model not available' });
         }
+        // For character requests, we'll handle both regular and mod characters specially
         break;
       case 'item':
         Model = Item;
@@ -1236,13 +1354,19 @@ app.get('/api/models/:modelType', async (req, res) => {
         });
       }
       
-      const allItemsData = await Model.find(query)
-        .sort(modelType === 'item' ? { itemName: 1 } : {})
-        .lean();
+      let allItemsData;
+      let filteredData;
       
-      // Filter out excluded characters if this is a character request
-      let filteredData = allItemsData;
       if (modelType === 'character') {
+        // For characters, fetch both regular and mod characters
+        const [regularCharacters, modCharacters] = await Promise.all([
+          Character.find({}).lean(),
+          ModCharacter.find({}).lean()
+        ]);
+        
+        // Combine both character types
+        allItemsData = [...regularCharacters, ...modCharacters];
+        
         // List of characters to exclude from dashboard
         const excludedCharacters = ['Tingle', 'Tingle test', 'John'];
         
@@ -1250,6 +1374,10 @@ app.get('/api/models/:modelType', async (req, res) => {
           !excludedCharacters.includes(character.name)
         );
       } else {
+        // For non-character models, use the standard approach
+        allItemsData = await Model.find(query)
+          .sort(modelType === 'item' ? { itemName: 1 } : {})
+          .lean();
         filteredData = allItemsData;
       }
       
@@ -1261,8 +1389,11 @@ app.get('/api/models/:modelType', async (req, res) => {
         if (characterDataCache.data && (now - characterDataCache.timestamp) < characterDataCache.CACHE_DURATION) {
           finalData = characterDataCache.data;
         } else {
-          // Get unique user IDs from characters
-          const userIds = [...new Set(filteredData.map(char => char.userId))];
+          // Get unique user IDs from regular characters (mod characters don't need user lookup)
+          const regularCharacterUserIds = filteredData
+            .filter(char => !char.isModCharacter)
+            .map(char => char.userId);
+          const userIds = [...new Set(regularCharacterUserIds)];
           
           // Fetch user information for all unique user IDs in one query
           const users = await User.find({ discordId: { $in: userIds } }, { 
@@ -1285,20 +1416,30 @@ app.get('/api/models/:modelType', async (req, res) => {
               character.icon = filename;
             }
             
-            // Add user information
-            const user = userMap[character.userId];
-            if (user) {
+            // Handle mod characters differently for user information
+            if (character.isModCharacter) {
+              // For mod characters, use modOwner field and set special owner info
               character.owner = {
-                username: user.username,
-                discriminator: user.discriminator,
-                displayName: user.username || 'Unknown User'
+                username: character.modOwner || 'Mod',
+                discriminator: null,
+                displayName: character.modOwner || 'Mod Character'
               };
             } else {
-              character.owner = {
-                username: 'Unknown',
-                discriminator: null,
-                displayName: 'Unknown User'
-              };
+              // For regular characters, use standard user lookup
+              const user = userMap[character.userId];
+              if (user) {
+                character.owner = {
+                  username: user.username,
+                  discriminator: user.discriminator,
+                  displayName: user.username || 'Unknown User'
+                };
+              } else {
+                character.owner = {
+                  username: 'Unknown',
+                  discriminator: null,
+                  displayName: 'Unknown User'
+                };
+              }
             }
             
             // Initialize spirit orbs (will be updated below)
