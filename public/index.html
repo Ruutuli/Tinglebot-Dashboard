@@ -1123,7 +1123,7 @@
           <h1><i class="fas fa-lightbulb"></i> Suggestion Box</h1>
           <div class="dashboard-divider"></div>
           <p class="dashboard-welcome">
-            Have an idea to improve Tinglebot? Share your suggestions anonymously with us!
+            Have an idea to improve the server? Want to see more XYZ? Think there's a problem you're too shy to send in FAQs or to admin? Use this anonymous suggestion box!
           </p>
         </div>
 
@@ -1135,21 +1135,29 @@
                 <select id="suggestion-category" name="category" required>
                   <option value="">Select a category</option>
                   <option value="features">New Features</option>
-                  <option value="improvements">Improvements</option>
-                  <option value="bugs">Bug Reports</option>
+                  <option value="improvements">Server Improvements</option>
+                  <option value="mechanics">Game Mechanics</option>
+                  <option value="jobs">Job System</option>
+                  <option value="mounts">Mounts & Pets</option>
+                  <option value="exploration">Exploration & Expeditions</option>
+                  <option value="events">Event Suggestions</option>
                   <option value="content">Content Ideas</option>
+                  <option value="chat">Chat & Channels</option>
+                  <option value="moderation">Moderation & Rules</option>
+                  <option value="bugs">Bug Reports</option>
+                  <option value="accessibility">Accessibility</option>
                   <option value="other">Other</option>
                 </select>
               </div>
 
               <div class="form-group">
                 <label for="suggestion-title">Title</label>
-                <input type="text" id="suggestion-title" name="title" placeholder="Brief description of your suggestion" required maxlength="100">
+                <input type="text" id="suggestion-title" name="title" placeholder="Brief description of your idea or issue" required maxlength="100">
               </div>
 
               <div class="form-group">
                 <label for="suggestion-description">Description</label>
-                <textarea id="suggestion-description" name="description" placeholder="Detailed explanation of your suggestion..." required rows="6" maxlength="1000"></textarea>
+                <textarea id="suggestion-description" name="description" placeholder="Detailed explanation of your idea, suggestion, or issue..." required rows="6" maxlength="1000"></textarea>
                 <div class="char-count">
                   <span id="char-count">0</span>/1000 characters
                 </div>
@@ -1176,7 +1184,7 @@
               <div class="form-actions">
                 <button type="submit" class="submit-suggestion-btn">
                   <i class="fas fa-paper-plane"></i>
-                  Submit Suggestion
+                  Submit Anonymously
                 </button>
                 <button type="reset" class="reset-form-btn">
                   <i class="fas fa-undo"></i>
@@ -1194,16 +1202,17 @@
                 <li>We review every suggestion carefully</li>
                 <li>Popular ideas may be implemented in future updates</li>
                 <li>You can submit multiple suggestions</li>
+                <li>Perfect for server improvements, new features, or reporting issues</li>
               </ul>
             </div>
 
             <div class="info-card">
               <h3><i class="fas fa-lightbulb"></i> Tips for Great Suggestions</h3>
               <ul>
-                <li>Be specific and detailed</li>
-                <li>Explain the problem you're solving</li>
-                <li>Consider how it benefits other users</li>
-                <li>Check if similar features already exist</li>
+                <li>Be specific and detailed about your idea</li>
+                <li>Explain the problem you're solving or improvement you want</li>
+                <li>Consider how it benefits the server community</li>
+                <li>Don't worry about being shy - this is completely anonymous</li>
               </ul>
             </div>
           </div>
@@ -1213,7 +1222,7 @@
         <div id="suggestion-success" class="suggestion-success" style="display: none;">
           <i class="fas fa-check-circle"></i>
           <h3>Thank You!</h3>
-          <p>Your suggestion has been submitted successfully. We'll review it and consider it for future updates.</p>
+          <p>Your suggestion has been submitted successfully and anonymously. We'll review it and consider it for future server improvements.</p>
         </div>
 
         <!-- Error Message -->

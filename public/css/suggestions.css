@@ -1,7 +1,5 @@
 /* Suggestion Box Styles */
 
-
-
 .suggestion-box-container {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -10,11 +8,12 @@
 }
 
 .suggestion-form-wrapper {
-  background: var(--card-bg, #ffffff);
-  border-radius: 12px;
+  background: var(--card-background);
+  border-radius: var(--card-radius);
   padding: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--border-color, #e1e5e9);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--frost-blur));
 }
 
 .suggestion-form {
@@ -31,7 +30,7 @@
 
 .form-group label {
   font-weight: 600;
-  color: var(--text-primary, #2c3e50);
+  color: var(--text-primary);
   font-size: 0.95rem;
 }
 
@@ -39,32 +38,32 @@
 .form-group select,
 .form-group textarea {
   padding: 0.75rem;
-  border: 2px solid var(--border-color, #e1e5e9);
+  border: 2px solid var(--glass-border);
   border-radius: 8px;
   font-size: 1rem;
+  background: var(--glass-bg);
+  color: var(--text-primary);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  background: var(--input-bg, #ffffff);
-  color: var(--text-primary, #2c3e50);
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: var(--accent-color, #3498db);
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 163, 218, 0.2);
 }
 
 .form-group textarea {
-  resize: vertical;
   min-height: 120px;
+  resize: vertical;
   font-family: inherit;
 }
 
 .char-count {
   text-align: right;
   font-size: 0.85rem;
-  color: var(--text-secondary, #7f8c8d);
+  color: var(--text-secondary);
   margin-top: 0.25rem;
 }
 
@@ -86,7 +85,7 @@
 }
 
 .priority-option:hover {
-  background: var(--hover-bg, #f8f9fa);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .priority-option input[type="radio"] {
@@ -102,23 +101,23 @@
 }
 
 .priority-label.low {
-  background: #e8f5e8;
-  color: #27ae60;
+  background: var(--success-color);
+  color: white;
 }
 
 .priority-label.medium {
-  background: #fff3cd;
-  color: #856404;
+  background: #f39c12;
+  color: white;
 }
 
 .priority-label.high {
-  background: #f8d7da;
-  color: #721c24;
+  background: #e74c3c;
+  color: white;
 }
 
 .priority-option input[type="radio"]:checked + .priority-label {
   transform: scale(1.05);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .form-actions {
@@ -142,23 +141,24 @@
 }
 
 .submit-suggestion-btn {
-  background: var(--accent-color, #3498db);
+  background: var(--accent);
   color: white;
 }
 
 .submit-suggestion-btn:hover {
-  background: var(--accent-hover, #2980b9);
+  background: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 163, 218, 0.3);
 }
 
 .reset-form-btn {
-  background: var(--secondary-bg, #6c757d);
-  color: white;
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
 }
 
 .reset-form-btn:hover {
-  background: var(--secondary-hover, #5a6268);
+  background: rgba(255, 255, 255, 0.1);
   transform: translateY(-1px);
 }
 
@@ -169,15 +169,16 @@
 }
 
 .info-card {
-  background: var(--card-bg, #ffffff);
-  border-radius: 12px;
+  background: var(--card-background);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
   padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--border-color, #e1e5e9);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(var(--frost-blur));
 }
 
 .info-card h3 {
-  color: var(--text-primary, #2c3e50);
+  color: var(--accent);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -193,14 +194,14 @@
 
 .info-card li {
   padding: 0.5rem 0;
-  color: var(--text-secondary, #7f8c8d);
+  color: var(--text-secondary);
   position: relative;
   padding-left: 1.5rem;
 }
 
 .info-card li::before {
   content: "•";
-  color: var(--accent-color, #3498db);
+  color: var(--accent);
   font-weight: bold;
   position: absolute;
   left: 0;
@@ -213,19 +214,19 @@
   border-radius: 12px;
   margin: 2rem auto;
   max-width: 500px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--card-shadow);
 }
 
 .suggestion-success {
-  background: #d4edda;
-  border: 1px solid #c3e6cb;
-  color: #155724;
+  background: rgba(73, 213, 156, 0.1);
+  border: 1px solid var(--success-color);
+  color: var(--success-color);
 }
 
 .suggestion-error {
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid var(--error-color);
+  color: var(--error-color);
 }
 
 .suggestion-success i,
@@ -259,34 +260,5 @@
   
   .priority-option {
     justify-content: flex-start;
-  }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .suggestion-form-wrapper,
-  .info-card {
-    background: var(--card-bg-dark, #2c3e50);
-    border-color: var(--border-color-dark, #34495e);
-  }
-  
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    background: var(--input-bg-dark, #34495e);
-    border-color: var(--border-color-dark, #34495e);
-    color: var(--text-primary-dark, #ecf0f1);
-  }
-  
-  .form-group label {
-    color: var(--text-primary-dark, #ecf0f1);
-  }
-  
-  .info-card h3 {
-    color: var(--text-primary-dark, #ecf0f1);
-  }
-  
-  .info-card li {
-    color: var(--text-secondary-dark, #bdc3c7);
   }
 }
