@@ -85,6 +85,10 @@ const tempDataSchema = new mongoose.Schema({
     questEvent: String,
     questBonus: String,
     baseSelections: [String],
+    baseCounts: {
+      type: Map,
+      of: Number
+    },
     typeMultiplierSelections: [String],
     productMultiplierValue: String,
     addOnsApplied: [{
@@ -95,11 +99,15 @@ const tempDataSchema = new mongoose.Schema({
       work: String,
       count: Number
     }],
-    characterCount: Number,
-    typeMultiplierCount: Number,
+    typeMultiplierCounts: {
+      type: Map,
+      of: Number
+    },
     finalTokenAmount: Number,
     tokenCalculation: String,
     collab: mongoose.Schema.Types.Mixed,
+    blightId: String,
+    tokenTracker: String,
     createdAt: Date,
     updatedAt: Date
   },
@@ -137,7 +145,8 @@ const tempDataSchema = new mongoose.Schema({
       // System & Maintenance
       'cache',         // General caching
       'session',       // User sessions
-      'temp'          // Temporary data
+      'temp',         // Temporary data
+      'pendingSheetOperation' // Pending Google Sheets operations
     ],
     index: true
   },
@@ -157,10 +166,12 @@ tempDataSchema.index({ type: 1, key: 1 });
 
 // Pre-save middleware to set expiration based on type
 tempDataSchema.pre('save', function(next) {
+  // Debug info removed to reduce log bloat
+  
   const now = new Date();
   
-  // Prevent weather data storage for test/_dev bot
-  if (this.type === 'weather' && this.data?.botId && this.data.botId !== '603960955839447050') {
+  // Prevent weather data storage for non-production bots
+  if (this.type === 'weather' && this.data?.botId && this.data.botId !== process.env.GUILD_ID) {
     return next(new Error('Weather data storage not allowed for this bot'));
   }
   
@@ -168,6 +179,9 @@ tempDataSchema.pre('save', function(next) {
   switch (this.type) {
     case 'blight':
       this.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+      break;
+    case 'boosting':
+      this.expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
       break;
     case 'monthly':
       // Set to end of current month
@@ -191,23 +205,59 @@ tempDataSchema.pre('save', function(next) {
       this.expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
   }
   
+  // Debug info removed to reduce log bloat
   next();
 });
 
 // Static method to cleanup old entries
 tempDataSchema.statics.cleanup = async function(maxAgeInMs = 86400000) { // Default 24 hours
   const cutoff = new Date(Date.now() - maxAgeInMs);
-  return this.deleteMany({ expiresAt: { $lt: new Date() } });
+  const result = await this.deleteMany({ expiresAt: { $lt: new Date() } });
+  if (result.deletedCount > 0) {
+    console.log(`[TempDataModel]: 🧹 Cleaned up ${result.deletedCount} expired entries`);
+  }
+  return result;
+};
+
+// Static method to cleanup specific type entries
+tempDataSchema.statics.cleanupByType = async function(type) {
+  let result;
+  
+  if (type === 'boosting') {
+    // Special cleanup for boosting data - remove expired entries and fulfilled boosts that have expired
+    result = await this.deleteMany({
+      type: 'boosting',
+      $or: [
+        { expiresAt: { $lt: new Date() } },
+        { 'data.status': 'expired' },
+        { 'data.status': 'fulfilled', 'data.boostExpiresAt': { $lt: Date.now() } }
+      ]
+    });
+  } else {
+    // Standard cleanup for other types
+    result = await this.deleteMany({ type, expiresAt: { $lt: new Date() } });
+  }
+  
+  if (result.deletedCount > 0) {
+    console.log(`[TempDataModel]: 🧹 Cleaned up ${result.deletedCount} expired ${type} entries`);
+  }
+  return result;
 };
 
 // Static method to find by type and key
 tempDataSchema.statics.findByTypeAndKey = async function(type, key) {
-  return this.findOne({ type, key, expiresAt: { $gt: new Date() } });
+  const now = new Date();
+  return this.findOne({ 
+    type, 
+    key, 
+    expiresAt: { $gt: now }
+  });
 };
 
 // Static method to find all by type
 tempDataSchema.statics.findAllByType = async function(type) {
-  return this.find({ type, expiresAt: { $gt: new Date() } });
+  const now = new Date();
+  return this.find({ type, expiresAt: { $gt: now } });
 };
 
 // Static method to find all expired entries

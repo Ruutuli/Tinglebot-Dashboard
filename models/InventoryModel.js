@@ -1,7 +1,7 @@
 // ------------------- Import necessary modules -------------------
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
-const { connectToInventories } = require('./database/db');
+const { connectToInventories } = require('../database/db');
 
 // ------------------- Define the inventory schema -------------------
 const inventorySchema = new Schema({
@@ -16,6 +16,8 @@ const inventorySchema = new Schema({
   perk: { type: String }, // Associated perk
   location: { type: String }, // Item location
   date: { type: Date }, // Date associated with the item
+  craftedAt: { type: Date }, // Date the item was crafted (if applicable)
+  gatheredAt: { type: Date }, // Date the item was gathered (if applicable)
   obtain: { type: String, default: '' },
   synced: { type: String, unique: true } // Unique identifier for synced items
 });
