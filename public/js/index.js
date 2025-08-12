@@ -1084,6 +1084,8 @@ function showDashboardSection() {
   }
 }
 
+
+
 // ============================================================================
 // ------------------- Profile Navigation -------------------
 // Handles profile page navigation specifically

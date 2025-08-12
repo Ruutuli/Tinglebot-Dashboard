@@ -27,6 +27,7 @@
   
   <!-- Critical CSS - Load immediately -->
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/suggestions.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/buttons.css" />
   <link rel="stylesheet" href="css/animations.css" />
@@ -162,7 +163,7 @@
             <a href="#calendar" data-section="calendar-section"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a>
           </li>
           <li>
-            <a href="#logs" data-section="logs-section"><i class="fas fa-history"></i><span>Logs</span></a>
+            <a href="#suggestion-box" data-section="suggestion-box-section"><i class="fas fa-lightbulb"></i><span>Suggestion Box</span></a>
           </li>
           <li>
             <a href="#settings" data-section="settings-section"><i class="fas fa-cog"></i><span>Settings</span></a>
@@ -1116,6 +1117,113 @@
         </div>
       </section>
 
+      <!-- Suggestion Box Section -->
+      <section id="suggestion-box-section" class="section" style="display:none;">
+        <div class="dashboard-header">
+          <h1><i class="fas fa-lightbulb"></i> Suggestion Box</h1>
+          <div class="dashboard-divider"></div>
+          <p class="dashboard-welcome">
+            Have an idea to improve Tinglebot? Share your suggestions anonymously with us!
+          </p>
+        </div>
+
+        <div class="suggestion-box-container">
+          <div class="suggestion-form-wrapper">
+            <form id="suggestion-form" class="suggestion-form">
+              <div class="form-group">
+                <label for="suggestion-category">Category</label>
+                <select id="suggestion-category" name="category" required>
+                  <option value="">Select a category</option>
+                  <option value="features">New Features</option>
+                  <option value="improvements">Improvements</option>
+                  <option value="bugs">Bug Reports</option>
+                  <option value="content">Content Ideas</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="suggestion-title">Title</label>
+                <input type="text" id="suggestion-title" name="title" placeholder="Brief description of your suggestion" required maxlength="100">
+              </div>
+
+              <div class="form-group">
+                <label for="suggestion-description">Description</label>
+                <textarea id="suggestion-description" name="description" placeholder="Detailed explanation of your suggestion..." required rows="6" maxlength="1000"></textarea>
+                <div class="char-count">
+                  <span id="char-count">0</span>/1000 characters
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="suggestion-priority">Priority Level</label>
+                <div class="priority-options">
+                  <label class="priority-option">
+                    <input type="radio" name="priority" value="low">
+                    <span class="priority-label low">Low</span>
+                  </label>
+                  <label class="priority-option">
+                    <input type="radio" name="priority" value="medium" checked>
+                    <span class="priority-label medium">Medium</span>
+                  </label>
+                  <label class="priority-option">
+                    <input type="radio" name="priority" value="high">
+                    <span class="priority-label high">High</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="submit-suggestion-btn">
+                  <i class="fas fa-paper-plane"></i>
+                  Submit Suggestion
+                </button>
+                <button type="reset" class="reset-form-btn">
+                  <i class="fas fa-undo"></i>
+                  Reset Form
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="suggestion-info">
+            <div class="info-card">
+              <h3><i class="fas fa-info-circle"></i> How It Works</h3>
+              <ul>
+                <li>All suggestions are submitted anonymously</li>
+                <li>We review every suggestion carefully</li>
+                <li>Popular ideas may be implemented in future updates</li>
+                <li>You can submit multiple suggestions</li>
+              </ul>
+            </div>
+
+            <div class="info-card">
+              <h3><i class="fas fa-lightbulb"></i> Tips for Great Suggestions</h3>
+              <ul>
+                <li>Be specific and detailed</li>
+                <li>Explain the problem you're solving</li>
+                <li>Consider how it benefits other users</li>
+                <li>Check if similar features already exist</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Success Message -->
+        <div id="suggestion-success" class="suggestion-success" style="display: none;">
+          <i class="fas fa-check-circle"></i>
+          <h3>Thank You!</h3>
+          <p>Your suggestion has been submitted successfully. We'll review it and consider it for future updates.</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="suggestion-error" class="suggestion-error" style="display: none;">
+          <i class="fas fa-exclamation-circle"></i>
+          <h3>Oops!</h3>
+          <p>There was an error submitting your suggestion. Please try again.</p>
+        </div>
+      </section>
+
       <!-- Inventory Section -->
 
 
@@ -1143,6 +1251,7 @@
   <script type="module" src="js/monsters.js"></script>
   <script type="module" src="js/users.js"></script>
       <script src="js/relationships.js?v=1.0.1"></script>
+      <script type="module" src="js/suggestions.js"></script>
   
   <!-- Performance and Error Handling Script -->
   <script src="js/performance.js"></script>
