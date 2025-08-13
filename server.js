@@ -460,28 +460,59 @@ app.get('/api/health', (req, res) => {
 });
 
 // ------------------- User Authentication Status -------------------
-app.get('/api/user', (req, res) => {
-  
-  const authInfo = {
-    isAuthenticated: req.isAuthenticated(),
-    user: req.user ? {
-      username: req.user.username,
-      discordId: req.user.discordId,
-      id: req.user._id,
-      email: req.user.email,
-      avatar: req.user.avatar,
-      discriminator: req.user.discriminator,
-      tokens: req.user.tokens,
-      characterSlot: req.user.characterSlot
-    } : null,
-    session: req.session ? {
-      id: req.session.id,
-      passport: req.session.passport
-    } : null
-  };
-  
-
-  res.json(authInfo);
+app.get('/api/user', async (req, res) => {
+  try {
+    let isAdmin = false;
+    
+    if (req.isAuthenticated() && req.user) {
+      // Check if user has admin role in Discord
+      const guildId = process.env.PROD_GUILD_ID;
+      if (guildId) {
+        try {
+          const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+            headers: {
+              'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const memberData = await response.json();
+            const roles = memberData.roles || [];
+            // Check for admin role (you can customize this role ID)
+            const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID || '788137728943325185'; // Default to resident role for now
+            isAdmin = roles.includes(ADMIN_ROLE_ID);
+          }
+        } catch (error) {
+          console.error('[server.js]: Error checking admin status:', error);
+        }
+      }
+    }
+    
+    const authInfo = {
+      isAuthenticated: req.isAuthenticated(),
+      isAdmin: isAdmin,
+      user: req.user ? {
+        username: req.user.username,
+        discordId: req.user.discordId,
+        id: req.user._id,
+        email: req.user.email,
+        avatar: req.user.avatar,
+        discriminator: req.user.discriminator,
+        tokens: req.user.tokens,
+        characterSlot: req.user.characterSlot
+      } : null,
+      session: req.session ? {
+        id: req.session.id,
+        passport: req.session.passport
+      } : null
+    };
+    
+    res.json(authInfo);
+  } catch (error) {
+    console.error('[server.js]: Error in user auth endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // ------------------- Section: User Lookup API Routes -------------------
@@ -3545,6 +3576,159 @@ app.get('/api/test-sunday-midnight', async (req, res) => {
   } catch (error) {
     console.error('[server.js]: ❌ Error in test endpoint:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Section: Admin User Management -------------------
+
+// Get user activity data for admin management
+app.get('/api/admin/users/activity', async (req, res) => {
+  try {
+    // Check if user is authenticated and has admin role
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Get all users with their message activity data
+    const users = await User.aggregate([
+      {
+        $group: {
+          _id: '$discordId',
+          username: { $first: '$username' },
+          discriminator: { $first: '$discriminator' },
+          avatar: { $first: '$avatar' },
+          tokens: { $first: '$tokens' },
+          characterSlot: { $first: '$characterSlot' },
+          status: { $first: '$status' },
+          createdAt: { $first: '$createdAt' },
+          lastMessageContent: { $first: '$lastMessageContent' },
+          lastMessageTimestamp: { $first: '$lastMessageTimestamp' }
+        }
+      },
+      {
+        $sort: { lastMessageTimestamp: -1, username: 1 }
+      }
+    ]);
+
+    // Get character counts for each user
+    const usersWithCharacters = await Promise.all(
+      users.map(async (user) => {
+        let characterCount = 0;
+        try {
+          characterCount = await Character.countDocuments({ 
+            userId: user._id, // Use _id from aggregated result
+            name: { $nin: ['Tingle', 'Tingle test', 'John'] }
+          });
+        } catch (error) {
+          console.warn(`[server.js]: ⚠️ Error counting characters for user ${user._id}:`, error.message);
+          characterCount = 0;
+        }
+        
+        return {
+          discordId: user._id, // Map _id back to discordId for frontend compatibility
+          username: user.username,
+          discriminator: user.discriminator,
+          avatar: user.avatar,
+          tokens: user.tokens,
+          characterSlot: user.characterSlot,
+          status: user.status,
+          createdAt: user.createdAt,
+          lastMessageContent: user.lastMessageContent,
+          lastMessageTimestamp: user.lastMessageTimestamp,
+          characterCount
+        };
+      })
+    );
+
+    // Calculate activity status based on 3-month threshold
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    const usersWithActivity = usersWithCharacters.map(user => {
+      const isActive = user.lastMessageTimestamp && user.lastMessageTimestamp > threeMonthsAgo;
+      const daysSinceLastMessage = user.lastMessageTimestamp 
+        ? Math.floor((Date.now() - user.lastMessageTimestamp.getTime()) / (1000 * 60 * 60 * 24))
+        : null;
+
+      return {
+        discordId: user.discordId,
+        username: user.username,
+        discriminator: user.discriminator,
+        avatar: user.avatar,
+        tokens: user.tokens,
+        characterSlot: user.characterSlot,
+        status: user.status,
+        createdAt: user.createdAt,
+        lastMessageContent: user.lastMessageContent,
+        lastMessageTimestamp: user.lastMessageTimestamp,
+        characterCount: user.characterCount,
+        isActive,
+        daysSinceLastMessage,
+        activityStatus: isActive ? 'active' : 'inactive'
+      };
+    });
+
+    // Get counts
+    const activeCount = usersWithActivity.filter(u => u.isActive).length;
+    const inactiveCount = usersWithActivity.filter(u => !u.isActive).length;
+    const totalCount = usersWithActivity.length;
+
+    res.json({
+      users: usersWithActivity,
+      summary: {
+        total: totalCount,
+        active: activeCount,
+        inactive: inactiveCount,
+        activePercentage: totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 0
+      },
+      threshold: {
+        threeMonthsAgo: threeMonthsAgo.toISOString(),
+        currentTime: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching user activity data:', error);
+    res.status(500).json({ error: 'Failed to fetch user activity data' });
+  }
+});
+
+// Update user activity status manually
+app.post('/api/admin/users/update-status', async (req, res) => {
+  try {
+    // Check if user is authenticated and has admin role
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { discordId, status } = req.body;
+    
+    if (!discordId || !status || !['active', 'inactive'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid request data' });
+    }
+
+    // Update user status
+    const result = await User.updateMany(
+      { discordId },
+      { 
+        status,
+        statusChangedAt: new Date()
+      }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ error: 'User not found or no changes made' });
+    }
+
+    res.json({ 
+      success: true,
+      message: `User status updated to ${status}`,
+      updatedCount: result.modifiedCount
+    });
+
+  } catch (error) {
+    console.error('[server.js]: ❌ Error updating user status:', error);
+    res.status(500).json({ error: 'Failed to update user status' });
   }
 });
 

@@ -177,6 +177,9 @@
           <li>
             <a href="#profile" data-section="profile-section"><i class="fas fa-user"></i><span>Profile</span></a>
           </li>
+          <li id="admin-area-nav-item" style="display: none;">
+            <a href="#admin-area" data-section="admin-area-section"><i class="fas fa-shield-alt"></i><span>Admin Area</span></a>
+          </li>
         </ul>
       </nav>
     </aside>
@@ -556,6 +559,206 @@
                 <div class="loading-spinner"></div>
                 <p>Loading your characters...</p>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Admin Area Section -->
+      <section id="admin-area-section" style="display:none;">
+        <div class="dashboard-header">
+          <h1><i class="fas fa-shield-alt"></i> Admin Area</h1>
+          <div class="dashboard-divider"></div>
+          <section class="dashboard-welcome-box">
+            <p class="dashboard-welcome">
+              Welcome to the Admin Area! This section is only accessible to users with admin privileges on the Discord server.
+            </p>
+          </section>
+        </div>
+
+        <div class="dashboard-divider"></div>
+
+        <!-- Admin Tools Grid -->
+        <div class="admin-tools-grid">
+          <!-- Character of the Week Management -->
+          <div class="admin-tool-card">
+            <div class="admin-tool-header">
+              <i class="fas fa-star"></i>
+              <h3>Character of the Week</h3>
+            </div>
+            <div class="admin-tool-content">
+              <p>Manage the featured character of the week</p>
+              <div class="admin-tool-actions">
+                <button class="admin-action-btn primary" id="set-character-week-btn">
+                  <i class="fas fa-edit"></i>
+                  Set Character
+                </button>
+                <button class="admin-action-btn secondary" id="random-character-week-btn">
+                  <i class="fas fa-random"></i>
+                  Random Selection
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- System Management -->
+          <div class="admin-tool-card">
+            <div class="admin-tool-header">
+              <i class="fas fa-cogs"></i>
+              <h3>System Management</h3>
+            </div>
+            <div class="admin-tool-content">
+              <p>Manage system settings and configurations</p>
+              <div class="admin-tool-actions">
+                <button class="admin-action-btn primary" id="system-settings-btn">
+                  <i class="fas fa-wrench"></i>
+                  Settings
+                </button>
+                <button class="admin-action-btn secondary" id="system-status-btn">
+                  <i class="fas fa-chart-line"></i>
+                  Status
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Management -->
+          <div class="admin-tool-card">
+            <div class="admin-tool-header">
+              <i class="fas fa-users-cog"></i>
+              <h3>User Management</h3>
+            </div>
+            <div class="admin-tool-content">
+              <p>Monitor user activity and manage account status</p>
+              <div class="admin-tool-actions">
+                <button class="admin-action-btn primary" id="user-management-btn">
+                  <i class="fas fa-user-edit"></i>
+                  View Users
+                </button>
+                <button class="admin-action-btn secondary" id="refresh-users-btn">
+                  <i class="fas fa-sync-alt"></i>
+                  Refresh Data
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data Management -->
+          <div class="admin-tool-card">
+            <div class="admin-tool-header">
+              <i class="fas fa-database"></i>
+              <h3>Data Management</h3>
+            </div>
+            <div class="admin-tool-content">
+              <p>Manage bot data and configurations</p>
+              <div class="admin-tool-actions">
+                <button class="admin-action-btn primary" id="data-backup-btn">
+                  <i class="fas fa-download"></i>
+                  Backup Data
+                </button>
+                <button class="admin-action-btn secondary" id="data-restore-btn">
+                  <i class="fas fa-upload"></i>
+                  Restore Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Management Section -->
+        <div id="user-management-section" style="display: none;">
+          <div class="dashboard-header">
+            <div class="header-top">
+              <button class="back-btn" id="back-to-admin-btn">
+                <i class="fas fa-arrow-left"></i>
+                Back to Admin Tools
+              </button>
+              <h2><i class="fas fa-users"></i> User Activity Management</h2>
+            </div>
+            <div class="dashboard-divider"></div>
+            <p class="dashboard-description">
+              Monitor user activity based on message activity in Discord channels. Users are considered inactive if they haven't sent any messages in the last 3 months.
+            </p>
+          </div>
+
+          <!-- Activity Summary Cards -->
+          <div class="activity-summary-grid">
+            <div class="summary-card total">
+              <div class="summary-icon">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="summary-content">
+                <h3>Total Users</h3>
+                <p class="summary-number" id="total-users-count">-</p>
+              </div>
+            </div>
+            <div class="summary-card active">
+              <div class="summary-icon">
+                <i class="fas fa-user-check"></i>
+              </div>
+              <div class="summary-content">
+                <h3>Active Users</h3>
+                <p class="summary-number" id="active-users-count">-</p>
+                <p class="summary-percentage" id="active-users-percentage">-</p>
+              </div>
+            </div>
+            <div class="summary-card inactive">
+              <div class="summary-icon">
+                <i class="fas fa-user-clock"></i>
+              </div>
+              <div class="summary-content">
+                <h3>Inactive Users</h3>
+                <p class="summary-number" id="inactive-users-count">-</p>
+                <p class="summary-percentage" id="inactive-users-percentage">-</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Activity Table -->
+          <div class="user-activity-container">
+            <div class="table-header">
+              <h3>User Activity Details</h3>
+              <div class="table-controls">
+                <div class="search-box">
+                  <input type="text" id="user-search" placeholder="Search users..." />
+                  <i class="fas fa-search"></i>
+                </div>
+                <select id="status-filter">
+                  <option value="all">All Status</option>
+                  <option value="active">Active Only</option>
+                  <option value="inactive">Inactive Only</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="table-container">
+              <table class="user-activity-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Status</th>
+                    <th>Last Message</th>
+                    <th>Days Since</th>
+                    <th>Characters</th>
+                    <th>Tokens</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="user-activity-tbody">
+                  <!-- User rows will be populated here -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Loading and Error States -->
+            <div id="user-loading" class="loading-state" style="display: none;">
+              <div class="spinner"></div>
+              <p>Loading user data...</p>
+            </div>
+            
+            <div id="user-error" class="error-state" style="display: none;">
+              <i class="fas fa-exclamation-triangle"></i>
+              <p>Failed to load user data. Please try again.</p>
             </div>
           </div>
         </div>

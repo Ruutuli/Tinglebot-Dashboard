@@ -606,6 +606,8 @@ function setupSidebarNavigation() {
         showUsersSection();
       } else if (sectionId === 'relationships-section') {
         relationshipsModule.showRelationshipsSection();
+      } else if (sectionId === 'admin-area-section') {
+        showAdminAreaSection();
       } else {
         // For other sections, use the existing showSection function
         console.log('🔍 Using generic showSection for:', sectionId);
@@ -634,6 +636,8 @@ function setupSidebarNavigation() {
       showUsersSection();
     } else if (section === 'relationships-section') {
       relationshipsModule.showRelationshipsSection();
+    } else if (section === 'admin-area-section') {
+      showAdminAreaSection();
     } else {
       showSection(section);
     }
@@ -660,6 +664,8 @@ function setupSidebarNavigation() {
       showUsersSection();
     } else if (sectionId === 'relationships-section') {
       relationshipsModule.showRelationshipsSection();
+    } else if (sectionId === 'admin-area-section') {
+      showAdminAreaSection();
     } else {
       showSection(sectionId);
     }
@@ -1298,6 +1304,403 @@ function showUsersSection() {
 }
 
 // ============================================================================
+// ------------------- Admin Area Navigation -------------------
+// Handles admin area page navigation specifically
+// ============================================================================
+function showAdminAreaSection() {
+  
+  // Hide all main content sections
+  const mainContent = document.querySelector('.main-content');
+  const sections = mainContent.querySelectorAll('section, #model-details-page');
+  
+  sections.forEach(section => {
+    section.style.display = 'none';
+  });
+  
+  // Show the admin area section
+  const adminAreaSection = document.getElementById('admin-area-section');
+  if (adminAreaSection) {
+    adminAreaSection.style.display = 'block';
+    
+    // Initialize admin area functionality
+    initializeAdminArea();
+  } else {
+    console.error('❌ Admin area section not found');
+  }
+  
+  // Update active state in sidebar
+  const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+  sidebarLinks.forEach(link => {
+    const linkSection = link.getAttribute('data-section');
+    const listItem = link.closest('li');
+    if (listItem) {
+      if (linkSection === 'admin-area-section') {
+        listItem.classList.add('active');
+      } else {
+        listItem.classList.remove('active');
+      }
+    }
+  });
+  
+  // Update breadcrumb
+  const breadcrumb = document.querySelector('.breadcrumb');
+  if (breadcrumb) {
+    breadcrumb.textContent = 'Admin Area';
+  }
+}
+
+// ============================================================================
+// ------------------- Admin Area Initialization -------------------
+// Sets up admin area functionality and event handlers
+// ============================================================================
+function initializeAdminArea() {
+  console.log('[index.js]: 🔧 Initializing admin area...');
+  
+  // Set up character of the week management
+  const setCharacterWeekBtn = document.getElementById('set-character-week-btn');
+  const randomCharacterWeekBtn = document.getElementById('random-character-week-btn');
+  
+  if (setCharacterWeekBtn) {
+    setCharacterWeekBtn.addEventListener('click', () => {
+      // TODO: Implement character selection modal
+      console.log('[index.js]: 🎭 Set character of the week clicked');
+    });
+  }
+  
+  if (randomCharacterWeekBtn) {
+    randomCharacterWeekBtn.addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/character-of-week/random', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          alert(`✅ ${result.message}`);
+          // Refresh the character of the week display
+          location.reload();
+        } else {
+          const error = await response.json();
+          alert(`❌ Error: ${error.error}`);
+        }
+      } catch (error) {
+        console.error('[index.js]: ❌ Error setting random character:', error);
+        alert('❌ An error occurred while setting random character');
+      }
+    });
+  }
+  
+  // Set up user management
+  const userManagementBtn = document.getElementById('user-management-btn');
+  const refreshUsersBtn = document.getElementById('refresh-users-btn');
+  const backToAdminBtn = document.getElementById('back-to-admin-btn');
+  
+  if (userManagementBtn) {
+    userManagementBtn.addEventListener('click', () => {
+      showUserManagementSection();
+    });
+  }
+  
+  if (refreshUsersBtn) {
+    refreshUsersBtn.addEventListener('click', () => {
+      loadUserActivityData();
+    });
+  }
+  
+  if (backToAdminBtn) {
+    backToAdminBtn.addEventListener('click', () => {
+      hideUserManagementSection();
+    });
+  }
+  
+  // Set up other admin buttons
+  const systemSettingsBtn = document.getElementById('system-settings-btn');
+  const systemStatusBtn = document.getElementById('system-status-btn');
+  const dataBackupBtn = document.getElementById('data-backup-btn');
+  const dataRestoreBtn = document.getElementById('data-restore-btn');
+  
+  // Add placeholder functionality for other buttons
+  [systemSettingsBtn, systemStatusBtn, dataBackupBtn, dataRestoreBtn].forEach(btn => {
+    if (btn) {
+      btn.addEventListener('click', () => {
+        alert('🚧 This feature is coming soon!');
+      });
+    }
+  });
+}
+
+// ============================================================================
+// ------------------- User Management Functions -------------------
+// Handles user activity monitoring and management
+// ============================================================================
+
+// Show user management section
+function showUserManagementSection() {
+  console.log('[index.js]: 👥 Showing user management section...');
+  
+  // Hide admin tools grid
+  const adminToolsGrid = document.querySelector('.admin-tools-grid');
+  if (adminToolsGrid) {
+    adminToolsGrid.style.display = 'none';
+  }
+  
+  // Show user management section
+  const userManagementSection = document.getElementById('user-management-section');
+  if (userManagementSection) {
+    userManagementSection.style.display = 'block';
+  }
+  
+  // Load user data
+  loadUserActivityData();
+}
+
+// Hide user management section and show admin tools
+function hideUserManagementSection() {
+  console.log('[index.js]: 🔙 Hiding user management section...');
+  
+  // Show admin tools grid
+  const adminToolsGrid = document.querySelector('.admin-tools-grid');
+  if (adminToolsGrid) {
+    adminToolsGrid.style.display = 'grid';
+  }
+  
+  // Hide user management section
+  const userManagementSection = document.getElementById('user-management-section');
+  if (userManagementSection) {
+    userManagementSection.style.display = 'none';
+  }
+}
+
+// Load user activity data from the server
+async function loadUserActivityData() {
+  console.log('[index.js]: 📊 Loading user activity data...');
+  
+  const loadingEl = document.getElementById('user-loading');
+  const errorEl = document.getElementById('user-error');
+  const tbody = document.getElementById('user-activity-tbody');
+  
+  try {
+    // Show loading state
+    if (loadingEl) loadingEl.style.display = 'flex';
+    if (errorEl) errorEl.style.display = 'none';
+    if (tbody) tbody.innerHTML = '';
+    
+    const response = await fetch('/api/admin/users/activity', {
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('[index.js]: ✅ User activity data loaded:', data);
+    
+    // Update summary cards
+    updateActivitySummary(data.summary);
+    
+    // Render user table
+    renderUserActivityTable(data.users);
+    
+    // Set up search and filter functionality
+    setupUserSearchAndFilter(data.users);
+    
+  } catch (error) {
+    console.error('[index.js]: ❌ Error loading user activity data:', error);
+    
+    if (errorEl) {
+      errorEl.style.display = 'flex';
+      errorEl.querySelector('p').textContent = `Failed to load user data: ${error.message}`;
+    }
+  } finally {
+    if (loadingEl) loadingEl.style.display = 'none';
+  }
+}
+
+// Update activity summary cards
+function updateActivitySummary(summary) {
+  const totalCount = document.getElementById('total-users-count');
+  const activeCount = document.getElementById('active-users-count');
+  const inactiveCount = document.getElementById('inactive-users-count');
+  const activePercentage = document.getElementById('active-users-percentage');
+  const inactivePercentage = document.getElementById('inactive-users-percentage');
+  
+  if (totalCount) totalCount.textContent = summary.total;
+  if (activeCount) activeCount.textContent = summary.active;
+  if (inactiveCount) inactiveCount.textContent = summary.inactive;
+  if (activePercentage) activePercentage.textContent = `${summary.activePercentage}%`;
+  if (inactivePercentage) inactivePercentage.textContent = `${100 - summary.activePercentage}%`;
+}
+
+// Render user activity table
+function renderUserActivityTable(users) {
+  const tbody = document.getElementById('user-activity-tbody');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  
+  users.forEach(user => {
+    const row = createUserTableRow(user);
+    tbody.appendChild(row);
+  });
+}
+
+// Create a user table row
+function createUserTableRow(user) {
+  const row = document.createElement('tr');
+  
+  // Format last message timestamp
+  const lastMessageTime = user.lastMessageTimestamp 
+    ? new Date(user.lastMessageTimestamp).toLocaleString()
+    : 'Never';
+  
+  // Format days since last message
+  const daysSince = user.daysSinceLastMessage !== null 
+    ? `${user.daysSinceLastMessage} days`
+    : 'Unknown';
+  
+  // Create avatar URL
+  const avatarUrl = user.avatar 
+    ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png`
+    : '/images/ankleicon.png';
+  
+  row.innerHTML = `
+    <td>
+      <div class="user-info">
+        <img src="${avatarUrl}" alt="${user.username}" class="user-avatar" />
+        <div class="user-details">
+          <span class="user-name">${user.username}</span>
+          <span class="user-discriminator">#${user.discriminator}</span>
+        </div>
+      </div>
+    </td>
+    <td>
+      <span class="status-badge ${user.activityStatus}">
+        <i class="fas fa-${user.activityStatus === 'active' ? 'check' : 'clock'}"></i>
+        ${user.activityStatus}
+      </span>
+    </td>
+    <td>
+      <div class="last-message">
+        <div class="last-message-content">${user.lastMessageContent || 'No messages'}</div>
+        <div class="last-message-time">${lastMessageTime}</div>
+      </div>
+    </td>
+    <td class="days-since ${user.activityStatus}">${daysSince}</td>
+    <td>${user.characterCount || 0}</td>
+    <td>${user.tokens || 0}</td>
+    <td>
+      <div class="user-actions">
+        <button class="action-btn primary" onclick="updateUserStatus('${user.discordId}', '${user.activityStatus === 'active' ? 'inactive' : 'active'}')">
+          <i class="fas fa-${user.activityStatus === 'active' ? 'pause' : 'play'}"></i>
+          ${user.activityStatus === 'active' ? 'Deactivate' : 'Activate'}
+        </button>
+        <button class="action-btn secondary" onclick="viewUserDetails('${user.discordId}')">
+          <i class="fas fa-eye"></i>
+          View
+        </button>
+      </div>
+    </td>
+  `;
+  
+  return row;
+}
+
+// Set up search and filter functionality
+function setupUserSearchAndFilter(users) {
+  const searchInput = document.getElementById('user-search');
+  const statusFilter = document.getElementById('status-filter');
+  
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      filterUsers(users, e.target.value, statusFilter?.value || 'all');
+    });
+  }
+  
+  if (statusFilter) {
+    statusFilter.addEventListener('change', (e) => {
+      filterUsers(users, searchInput?.value || '', e.target.value);
+    });
+  }
+}
+
+// Filter users based on search and status
+function filterUsers(allUsers, searchTerm, statusFilter) {
+  const tbody = document.getElementById('user-activity-tbody');
+  if (!tbody) return;
+  
+  let filteredUsers = allUsers;
+  
+  // Apply status filter
+  if (statusFilter !== 'all') {
+    filteredUsers = filteredUsers.filter(user => user.activityStatus === statusFilter);
+  }
+  
+  // Apply search filter
+  if (searchTerm.trim()) {
+    const searchLower = searchTerm.toLowerCase();
+    filteredUsers = filteredUsers.filter(user => 
+      user.username.toLowerCase().includes(searchLower) ||
+      user.discriminator.includes(searchTerm) ||
+      user.lastMessageContent.toLowerCase().includes(searchLower)
+    );
+  }
+  
+  // Re-render table with filtered results
+  renderUserActivityTable(filteredUsers);
+}
+
+// Update user status
+async function updateUserStatus(discordId, newStatus) {
+  try {
+    console.log(`[index.js]: 🔄 Updating user ${discordId} status to ${newStatus}...`);
+    
+    const response = await fetch('/api/admin/users/update-status', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        discordId,
+        status: newStatus
+      })
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      console.log('[index.js]: ✅ User status updated:', result);
+      
+      // Reload user data to reflect changes
+      await loadUserActivityData();
+      
+      // Show success message
+      alert(`✅ User status updated to ${newStatus}`);
+    } else {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update user status');
+    }
+  } catch (error) {
+    console.error('[index.js]: ❌ Error updating user status:', error);
+    alert(`❌ Error updating user status: ${error.message}`);
+  }
+}
+
+// View user details (placeholder for future implementation)
+function viewUserDetails(discordId) {
+  console.log(`[index.js]: 👁️ Viewing details for user ${discordId}`);
+  alert('👁️ User details view coming soon!');
+}
+
+// Make functions globally available for onclick handlers
+window.updateUserStatus = updateUserStatus;
+window.viewUserDetails = viewUserDetails;
+
+// ============================================================================
 // ------------------- Exports -------------------
 // Shared helpers and UI controls
 // ============================================================================
@@ -1317,5 +1720,6 @@ export {
   showProfileSection,
   showGuildSection,
   showCalendarSection,
-  showUsersSection
+  showUsersSection,
+  showAdminAreaSection
 };

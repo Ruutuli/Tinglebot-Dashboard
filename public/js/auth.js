@@ -87,10 +87,18 @@ async function checkUserAuthStatus() {
       currentUser = userData.user;
       isAuthenticated = true;
       updateUserMenu(userData.user);
+      
+      // Handle admin area visibility
+      if (userData.isAdmin) {
+        showAdminArea();
+      } else {
+        hideAdminArea();
+      }
     } else {
       currentUser = null;
       isAuthenticated = false;
       showGuestUser();
+      hideAdminArea();
     }
   } catch (error) {
     console.error('[auth.js]: ❌ Error checking auth status:', error);
@@ -339,6 +347,31 @@ async function logout() {
 }
 
 // ============================================================================
+// ------------------- Section: Admin Area Management -------------------
+// Handles showing/hiding admin area based on user permissions
+// ============================================================================
+
+// ------------------- Function: showAdminArea -------------------
+// Shows the admin area for users with admin privileges
+function showAdminArea() {
+  const adminNavItem = document.getElementById('admin-area-nav-item');
+  if (adminNavItem) {
+    adminNavItem.style.display = 'block';
+    console.log('[auth.js]: ✅ Admin area shown for admin user');
+  }
+}
+
+// ------------------- Function: hideAdminArea -------------------
+// Hides the admin area for non-admin users
+function hideAdminArea() {
+  const adminNavItem = document.getElementById('admin-area-nav-item');
+  if (adminNavItem) {
+    adminNavItem.style.display = 'none';
+    console.log('[auth.js]: 🔒 Admin area hidden for non-admin user');
+  }
+}
+
+// ============================================================================
 // ------------------- Section: Public API -------------------
 // Exports functions for use in other modules
 // ============================================================================
@@ -352,5 +385,7 @@ export {
   refreshUserData,
   logout,
   openUserDropdown,
-  closeUserDropdown
+  closeUserDropdown,
+  showAdminArea,
+  hideAdminArea
 }; 
