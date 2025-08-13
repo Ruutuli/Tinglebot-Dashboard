@@ -246,23 +246,23 @@ async function initializeDatabases() {
     
     // Connect to Tinglebot database using db.js method
     await connectToTinglebot();
-    console.log('[server.js]: ✅ Connected to Tinglebot database');
+    console.log('[server.js]: Connected to Tinglebot database');
     
     // Connect to Inventories database using db.js method
     try {
       inventoriesConnection = await connectToInventories();
-      console.log('[server.js]: ✅ Connected to Inventories database');
+      console.log('[server.js]: Connected to Inventories database');
     } catch (inventoryError) {
-      console.error('[server.js]: ❌ Failed to connect to Inventories database:', inventoryError.message);
+              console.error('[server.js]: Failed to connect to Inventories database:', inventoryError.message);
       // Continue without inventories connection - spirit orb counting will fail gracefully
     }
     
     // Connect to Vending database using db.js method
     try {
       vendingConnection = await connectToVending();
-      console.log('[server.js]: ✅ Connected to Vending database');
+      console.log('[server.js]: Connected to Vending database');
     } catch (vendingError) {
-      console.error('[server.js]: ❌ Failed to connect to Vending database:', vendingError.message);
+              console.error('[server.js]: Failed to connect to Vending database:', vendingError.message);
       // Continue without vending connection
     }
     
@@ -338,12 +338,6 @@ app.get('/dashboard', (req, res) => {
 // ------------------- Function: initiateDiscordAuth -------------------
 // Initiates Discord OAuth flow
 app.get('/auth/discord', (req, res, next) => {
-  console.log('[server.js]: 🔐 Discord authentication initiated');
-  console.log('[server.js]: 📊 Request details:', {
-    userAgent: req.headers['user-agent'],
-    referer: req.headers.referer,
-    origin: req.headers.origin
-  });
   passport.authenticate('discord')(req, res, next);
 });
 
@@ -355,7 +349,7 @@ app.get('/auth/discord/callback',
     failureFlash: true 
   }), 
   (req, res) => {
-    console.log('[server.js]: ✅ Discord authentication successful');
+
     console.log('[server.js]: �� Authenticated user:', {
       username: req.user?.username,
       discordId: req.user?.discordId,
@@ -370,19 +364,11 @@ app.get('/auth/discord/callback',
 // ------------------- Function: logout -------------------
 // Handles user logout
 app.get('/auth/logout', (req, res) => {
-  console.log('[server.js]: 🚪 Logout requested');
-  console.log('[server.js]: 👤 User before logout:', {
-    username: req.user?.username,
-    discordId: req.user?.discordId,
-    sessionId: req.session?.id
-  });
-  
   req.logout((err) => {
     if (err) {
-      console.log('[server.js]: ❌ Logout error:', err);
+      console.error('[server.js]: Logout error:', err);
       return res.redirect('/login');
     }
-    console.log('[server.js]: ✅ Logout successful');
     res.redirect('/login');
   });
 });
@@ -2051,7 +2037,6 @@ app.post('/api/relationships', requireAuth, async (req, res) => {
     }
     
     // Check if relationship already exists between these characters for this user
-    console.log(`🔍 Checking for existing relationship: userId=${userId}, characterId=${characterId}, targetCharacterId=${targetCharacterId}`);
     const existingRelationship = await Relationship.findOne({ 
       userId,
       characterId, 
@@ -2059,22 +2044,10 @@ app.post('/api/relationships', requireAuth, async (req, res) => {
     });
     
     if (existingRelationship) {
-      console.log(`❌ Relationship already exists: ${existingRelationship._id}`);
       return res.status(409).json({ error: 'Relationship already exists between these characters' });
     }
     
-    console.log(`✅ No existing relationship found, proceeding with creation`);
-    
     // Create new relationship
-    console.log(`💾 Creating new relationship with data:`, {
-      userId,
-      characterId,
-      targetCharacterId,
-      characterName,
-      targetCharacterName,
-      relationshipTypes: Array.isArray(relationshipType) ? relationshipType : [relationshipType],
-      notes: notes || ''
-    });
     
     const relationship = new Relationship({
       userId,
@@ -2087,7 +2060,6 @@ app.post('/api/relationships', requireAuth, async (req, res) => {
     });
     
     await relationship.save();
-    console.log(`✅ Relationship saved successfully with ID: ${relationship._id}`);
     
     // Manually populate target character info for response
     let populatedTargetCharacter = await Character.findById(targetCharacterId)
@@ -2110,7 +2082,7 @@ app.post('/api/relationships', requireAuth, async (req, res) => {
       relationship: relationshipObj
     });
   } catch (error) {
-    console.error('[server.js]: ❌ Error creating relationship:', error);
+    console.error('[server.js]: Error creating relationship:', error);
     
     if (error.code === 11000) {
       return res.status(409).json({ error: 'Relationship already exists between these characters' });
@@ -2378,13 +2350,11 @@ const setupWeeklyCharacterRotation = async () => {
     const shouldRotate = checkIfShouldRotate(existingCharacter.startDate);
     
     if (shouldRotate) {
-      console.log('[server.js]: 🔄 Rotating character of the week due to Sunday midnight schedule');
+      console.log('[server.js]: Rotating character of the week');
       await rotateCharacterOfWeek();
-    } else {
-      console.log('[server.js]: ✅ Current character of the week is still valid');
     }
   } else {
-    console.log('[server.js]: 🔄 No active character of the week found, creating first one');
+    console.log('[server.js]: No active character of the week found, creating first one');
     await rotateCharacterOfWeek();
   }
   
@@ -2436,19 +2406,16 @@ const scheduleNextSundayMidnightRotation = () => {
   
   const timeUntilNextRotation = nextSundayMidnight.getTime() - now.getTime();
   
-  console.log(`[server.js]: 📅 Next character rotation scheduled for: ${nextSundayMidnight.toLocaleString('en-US', { timeZone: 'America/New_York' })}`);
-  console.log(`[server.js]: ⏰ Time until next rotation: ${Math.floor(timeUntilNextRotation / (1000 * 60 * 60))} hours, ${Math.floor((timeUntilNextRotation % (1000 * 60 * 60)) / (1000 * 60))} minutes`);
-  
   setTimeout(async () => {
     try {
-      console.log('[server.js]: 🔄 Executing scheduled character rotation');
+      console.log('[server.js]: Executing scheduled character rotation');
       await rotateCharacterOfWeek();
       
       // Schedule the next rotation
       scheduleNextSundayMidnightRotation();
       
     } catch (error) {
-      console.error('[server.js]: ❌ Error in scheduled weekly character rotation:', error);
+      console.error('[server.js]: Error in scheduled weekly character rotation:', error);
       // Schedule next rotation even if this one failed
       scheduleNextSundayMidnightRotation();
     }
@@ -2459,37 +2426,25 @@ const scheduleNextSundayMidnightRotation = () => {
 // Helper function to rotate the character of the week
 const rotateCharacterOfWeek = async () => {
   try {
-    console.log('[server.js]: 🔄 Starting character of the week rotation');
-    
     // Get all active characters
     const characters = await Character.find({}).lean();
     
     if (characters.length === 0) {
-      console.log('[server.js]: ⚠️ No characters found for rotation');
+      console.log('[server.js]: No characters found for rotation');
       return;
     }
     
-    console.log(`[server.js]: 📊 Total characters available: ${characters.length}`);
-    
     // Get all characters that have ever been featured
     const allFeaturedCharacters = await CharacterOfWeek.find({}).distinct('characterId');
-    console.log(`[server.js]: 📊 Characters that have been featured before: ${allFeaturedCharacters.length}`);
     
     // Find characters that have never been featured
     const neverFeaturedCharacters = characters.filter(char => 
       !allFeaturedCharacters.includes(char._id.toString())
     );
     
-    console.log(`[server.js]: 📊 Characters never featured: ${neverFeaturedCharacters.length}`);
-    if (neverFeaturedCharacters.length > 0) {
-      console.log(`[server.js]: 📝 Never featured characters: ${neverFeaturedCharacters.map(c => c.name).join(', ')}`);
-    }
-    
     // If there are characters that have never been featured, prioritize them
     if (neverFeaturedCharacters.length > 0) {
       const randomCharacter = neverFeaturedCharacters[Math.floor(Math.random() * neverFeaturedCharacters.length)];
-      console.log(`[server.js]: 🎲 Selected never-before-featured character: ${randomCharacter.name}`);
-      
       await createNewCharacterOfWeek(randomCharacter);
       return;
     }
@@ -2511,16 +2466,6 @@ const rotateCharacterOfWeek = async () => {
       }
     });
     
-    // Log the last featured dates for debugging
-    console.log('[server.js]: 📊 Last featured dates for each character:');
-    for (const [charId, lastFeaturedDate] of Object.entries(characterLastFeaturedDates)) {
-      const char = characters.find(c => c._id.toString() === charId);
-      if (char) {
-        const daysAgo = Math.floor((Date.now() - lastFeaturedDate.getTime()) / (1000 * 60 * 60 * 24));
-        console.log(`[server.js]:   - ${char.name}: ${lastFeaturedDate.toLocaleDateString()} (${daysAgo} days ago)`);
-      }
-    }
-    
     // Find the character featured longest ago
     let oldestFeaturedCharacter = null;
     let oldestDate = new Date();
@@ -2533,16 +2478,13 @@ const rotateCharacterOfWeek = async () => {
     }
     
     if (oldestFeaturedCharacter) {
-      const daysSinceLastFeatured = Math.floor((Date.now() - oldestDate.getTime()) / (1000 * 60 * 60 * 24));
-      console.log(`[server.js]: 🎲 Selected character featured longest ago: ${oldestFeaturedCharacter.name} (last featured: ${oldestDate.toLocaleDateString()}, ${daysSinceLastFeatured} days ago)`);
-      
       await createNewCharacterOfWeek(oldestFeaturedCharacter);
     } else {
-      console.log('[server.js]: ⚠️ Could not determine character to feature');
+      console.log('[server.js]: Could not determine character to feature');
     }
     
   } catch (error) {
-    console.error('[server.js]: ❌ Error in rotateCharacterOfWeek:', error);
+    console.error('[server.js]: Error in rotateCharacterOfWeek:', error);
     throw error;
   }
 };
@@ -2561,8 +2503,6 @@ const createNewCharacterOfWeek = async (character) => {
     const startDate = new Date();
     const endDate = getNextSundayMidnight(startDate);
     
-    console.log(`[server.js]: 📅 Character will be active until: ${endDate.toLocaleString('en-US', { timeZone: 'America/New_York' })}`);
-    
     // Create new character of the week
     const newCharacterOfWeek = new CharacterOfWeek({
       characterId: character._id,
@@ -2576,7 +2516,7 @@ const createNewCharacterOfWeek = async (character) => {
     
     await newCharacterOfWeek.save();
     
-    console.log(`[server.js]: ✅ Successfully rotated to new character of the week: ${character.name}`);
+    console.log(`[server.js]: Successfully rotated to new character of the week: ${character.name}`);
     
   } catch (error) {
     console.error('[server.js]: ❌ Error in createNewCharacterOfWeek:', error);
@@ -2912,25 +2852,17 @@ app.get('/api/images/*', async (req, res) => {
 
 // Get user activity data for admin management
 app.get('/api/admin/users/activity', async (req, res) => {
-  console.log('[server.js]: 🚀 Admin activity endpoint hit!');
-  console.log('[server.js]: 👤 User authenticated:', req.isAuthenticated());
-  console.log('[server.js]: 👤 User object:', req.user ? { discordId: req.user.discordId, username: req.user.username } : 'No user');
-  
   try {
     // Check if user is authenticated and has admin role
     if (!req.isAuthenticated()) {
-      console.log('[server.js]: ❌ User not authenticated');
       return res.status(401).json({ error: 'Authentication required' });
     }
 
     // Check if user has admin role in Discord
     let isAdmin = false;
     const guildId = process.env.PROD_GUILD_ID;
-    console.log('[server.js]: 🏰 Guild ID:', guildId);
-    console.log('[server.js]: 🔑 Discord Token exists:', !!process.env.DISCORD_TOKEN);
     
     if (guildId && req.user) {
-      console.log('[server.js]: 🔍 Checking admin role for user:', req.user.discordId);
       try {
         const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
           headers: {
@@ -2939,42 +2871,27 @@ app.get('/api/admin/users/activity', async (req, res) => {
           }
         });
         
-        console.log('[server.js]: 📡 Discord API response status:', response.status);
-        
         if (response.ok) {
           const memberData = await response.json();
           const roles = memberData.roles || [];
           const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID || '788137728943325185';
-          console.log('[server.js]: 🎭 User roles:', roles);
-          console.log('[server.js]: 👑 Admin role ID:', ADMIN_ROLE_ID);
           isAdmin = roles.includes(ADMIN_ROLE_ID);
-          console.log('[server.js]: ✅ Is admin:', isAdmin);
         } else {
-          console.log('[server.js]: ❌ Discord API error:', response.status, response.statusText);
+          console.warn(`[server.js]: Discord API error: ${response.status} ${response.statusText}`);
         }
       } catch (error) {
-        console.error('[server.js]: ❌ Error checking admin status:', error);
+        console.error('[server.js]: Error checking admin status:', error);
       }
-    } else {
-      console.log('[server.js]: ⚠️ Missing guild ID or user object');
     }
 
     if (!isAdmin) {
-      console.log('[server.js]: ❌ Access denied - not admin');
       return res.status(403).json({ error: 'Admin access required' });
     }
-    
-    console.log('[server.js]: ✅ Admin access granted, proceeding with data fetch...');
 
     // Get all users with their message activity data
-    console.log('[server.js]: 🔍 Fetching users for admin activity endpoint...');
-    
-    // First, let's check if we can find any users at all
     const totalUsers = await User.countDocuments();
-    console.log(`[server.js]: 📊 Total users in database: ${totalUsers}`);
     
     if (totalUsers === 0) {
-      console.log('[server.js]: ⚠️ No users found in database');
       return res.json({
         users: [],
         summary: {
@@ -3013,26 +2930,8 @@ app.get('/api/admin/users/activity', async (req, res) => {
           $sort: { lastMessageTimestamp: -1, username: 1 }
         }
       ]);
-      
-      console.log(`[server.js]: 📊 Aggregated users: ${users.length}`);
-      console.log('[server.js]: 📋 Sample user data:', users.slice(0, 2));
-      
-      // Debug specific user (ruutuli)
-      const ruutuliUser = users.find(u => u._id === '211219306137124865');
-      if (ruutuliUser) {
-        console.log('[server.js]: 🔍 Debug - Ruutuli user data:', {
-          discordId: ruutuliUser._id,
-          username: ruutuliUser.username,
-          lastMessageTimestamp: ruutuliUser.lastMessageTimestamp,
-          lastMessageTimestampType: typeof ruutuliUser.lastMessageTimestamp,
-          lastMessageTimestampValid: ruutuliUser.lastMessageTimestamp ? !isNaN(new Date(ruutuliUser.lastMessageTimestamp).getTime()) : false,
-          currentTime: new Date().toISOString(),
-          timeDifference: ruutuliUser.lastMessageTimestamp ? 
-            Math.floor((Date.now() - new Date(ruutuliUser.lastMessageTimestamp).getTime()) / (1000 * 60 * 60 * 24)) : 'N/A'
-        });
-      }
     } catch (aggregationError) {
-      console.error('[server.js]: ❌ Error in user aggregation:', aggregationError);
+      console.error('[server.js]: Error in user aggregation:', aggregationError);
       return res.status(500).json({ error: 'Failed to aggregate user data' });
     }
 
@@ -3068,12 +2967,13 @@ app.get('/api/admin/users/activity', async (req, res) => {
             if (response.ok) {
               const memberData = await response.json();
               discordRoles = memberData.roles || [];
+            } else if (response.status === 429) {
+              // Rate limited - skip this user's roles for now
+              discordRoles = [];
             } else {
-              console.warn(`[server.js]: ⚠️ Discord API returned ${response.status} for user ${user._id}`);
               discordRoles = [];
             }
           } else {
-            console.warn(`[server.js]: ⚠️ Missing guild ID or bot token`);
             discordRoles = [];
           }
           
@@ -3081,7 +2981,6 @@ app.get('/api/admin/users/activity', async (req, res) => {
           await new Promise(resolve => setTimeout(resolve, 100));
           
         } catch (error) {
-          console.warn(`[server.js]: ⚠️ Could not fetch Discord roles for user ${user._id}:`, error.message);
           discordRoles = [];
         }
         
@@ -3134,15 +3033,12 @@ app.get('/api/admin/users/activity', async (req, res) => {
               timestampStatus = 'valid';
             } else {
               timestampStatus = 'invalid_date';
-              console.warn(`[server.js]: ⚠️ Invalid timestamp for user ${user.discordId}:`, user.lastMessageTimestamp);
             }
           } catch (error) {
             timestampStatus = 'error_parsing';
-            console.warn(`[server.js]: ⚠️ Error parsing timestamp for user ${user.discordId}:`, error.message);
           }
         } else {
           timestampStatus = 'no_timestamp';
-          console.warn(`[server.js]: ⚠️ No timestamp for user ${user.discordId}`);
         }
 
         // Fallback: if no valid timestamp, use status field or default to inactive
@@ -3180,23 +3076,10 @@ app.get('/api/admin/users/activity', async (req, res) => {
     const inactiveCount = usersWithActivity.filter(u => !u.isActive).length;
     const totalCount = usersWithActivity.length;
 
-    console.log(`[server.js]: 📊 User activity results - Total: ${totalCount}, Active: ${activeCount}, Inactive: ${inactiveCount}`);
-    
-    // Log role-based activity summary
-    const roleBasedInactive = usersWithActivity.filter(u => u.discordRoleStatus === 'inactive_role');
-    const roleBasedActive = usersWithActivity.filter(u => u.discordRoleStatus === 'active_role');
-    
-    if (roleBasedInactive.length > 0) {
-      console.log(`[server.js]: 🏷️ Found ${roleBasedInactive.length} users with inactive role`);
-    }
-    
-    // Log timestamp issues for debugging (only for users without role data)
+    // Log summary only if there are issues
     const timestampIssues = usersWithActivity.filter(u => u.discordRoleStatus === 'no_roles_data' && u.timestampStatus !== 'valid');
     if (timestampIssues.length > 0) {
-      console.warn(`[server.js]: ⚠️ ${timestampIssues.length} users without role data have timestamp issues:`, 
-        timestampIssues.map(u => ({ discordId: u.discordId, username: u.username, status: u.timestampStatus }))
-      );
-      console.warn('[server.js]: 💡 Suggestion: The Discord bot needs to update lastMessageTimestamp when users send messages');
+      console.warn(`[server.js]: ${timestampIssues.length} users have timestamp issues - consider updating Discord bot`);
     }
 
     res.json({
@@ -3214,7 +3097,7 @@ app.get('/api/admin/users/activity', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[server.js]: ❌ Error fetching user activity data:', error);
+    console.error('[server.js]: Error fetching user activity data:', error);
     res.status(500).json({ error: 'Failed to fetch user activity data' });
   }
 });
@@ -3280,7 +3163,7 @@ app.post('/api/admin/users/update-status', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[server.js]: ❌ Error updating user status:', error);
+    console.error('[server.js]: Error updating user status:', error);
     res.status(500).json({ error: 'Failed to update user status' });
   }
 });
@@ -3968,7 +3851,7 @@ app.post('/api/suggestions', async (req, res) => {
       throw new Error(`Discord API error: ${discordResponse.status}`);
     }
 
-    console.log('[server.js]: ✅ Suggestion posted to Discord successfully');
+            console.log('[server.js]: Suggestion posted to Discord successfully');
 
     // Return success response
     res.json({ 
@@ -4021,11 +3904,10 @@ const startServer = async () => {
     
     // Start server
     app.listen(PORT, () => {
-      console.log(`[server.js]: 🚀 Server running on port ${PORT}`);
-      console.log(`[server.js]: 🌐 Dashboard available at http://localhost:${PORT}`);
+      console.log(`[server.js]: Server running on port ${PORT}`);
     });
   } catch (error) {
-    console.error('[server.js]: ❌ Failed to start server:', error);
+    console.error('[server.js]: Failed to start server:', error);
     process.exit(1);
   }
 };
@@ -4068,7 +3950,7 @@ async function countSpiritOrbs(characterName) {
     });
     return spiritOrbItem ? spiritOrbItem.quantity || 0 : 0;
   } catch (error) {
-    console.warn(`[server.js]: ⚠️ Error counting spirit orbs for ${characterName}:`, error.message);
+    console.warn(`[server.js]: Error counting spirit orbs for ${characterName}:`, error.message);
     return 0;
   }
 }
@@ -4096,7 +3978,7 @@ async function countSpiritOrbsBatch(characterNames) {
       try {
         // Ensure characterName is valid
         if (!characterName || typeof characterName !== 'string') {
-          console.warn(`[server.js]: ⚠️ Invalid character name for spirit orb count: ${characterName}`);
+          console.warn(`[server.js]: Invalid character name for spirit orb count: ${characterName}`);
           spiritOrbCounts[characterName] = 0;
           continue;
         }
