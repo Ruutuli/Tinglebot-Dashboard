@@ -3295,27 +3295,48 @@ app.post('/api/suggestions', async (req, res) => {
           inline: true
         },
         {
-          name: '__⏰ Submitted__',
-          value: `> <t:${Math.floor(Date.now() / 1000)}:R>`,
-          inline: true
-        },
-        {
           name: '__📝 Title__',
           value: `> **${title}**`,
           inline: false
         },
         {
           name: '__📄 Description__',
-          value: `> ${description.length > 1024 ? description.substring(0, 1021) + '...' : description}`,
+          value: (() => {
+            // Split by newlines, trim each line, filter out empty lines
+            const lines = description.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            // Add > to the beginning of each line
+            const formattedLines = lines.map(line => `> ${line}`);
+            // Join with actual newlines (not \n string)
+            const formattedDescription = formattedLines.join('\n');
+            
+            const maxLength = 1024;
+            if (formattedDescription.length > maxLength) {
+              // Find the last complete line that fits within the limit
+              let truncated = '';
+              for (let i = 0; i < formattedLines.length; i++) {
+                const testLine = truncated + (truncated ? '\n' : '') + formattedLines[i];
+                if (testLine.length <= maxLength - 3) {
+                  truncated = testLine;
+                } else {
+                  break;
+                }
+              }
+              return truncated + '...';
+            }
+            return formattedDescription;
+          })(),
           inline: false
         },
         {
           name: '__💭 Want to Suggest Something?__',
-          value: `> [Click here to submit your own suggestion!](https://tinglebot.xyz/#suggestion-box-section)\n\n> 💡 **Note:** All suggestions are posted publicly and will be answered in the server.`,
+          value: `> [Click here to submit your own suggestion!](https://tinglebot.xyz/#suggestion-box-section)`,
           inline: false
         }
       ],
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      footer: {
+        text: '💡 Note: All suggestions are posted publicly and will be answered in the server.'
+      }
     };
 
     // Send to Discord

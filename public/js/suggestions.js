@@ -21,6 +21,12 @@ const suggestionsModule = (function() {
     charCount = document.getElementById('char-count');
     suggestionSuccess = document.getElementById('suggestion-success');
     suggestionError = document.getElementById('suggestion-error');
+    
+    console.log('DOM elements bound:');
+    console.log('- suggestionForm:', suggestionForm);
+    console.log('- charCount:', charCount);
+    console.log('- suggestionSuccess:', suggestionSuccess);
+    console.log('- suggestionError:', suggestionError);
   }
 
   // Bind event listeners
@@ -35,6 +41,30 @@ const suggestionsModule = (function() {
         descriptionField.addEventListener('input', updateCharCount);
       }
     }
+    
+    // Bind modal close button
+    if (suggestionSuccess) {
+      const closeBtn = suggestionSuccess.querySelector('.modal-close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', hideMessages);
+      }
+    }
+    
+    // Close modal when clicking outside
+    if (suggestionSuccess) {
+      suggestionSuccess.addEventListener('click', function(event) {
+        if (event.target === suggestionSuccess) {
+          hideMessages();
+        }
+      });
+    }
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape' && suggestionSuccess && suggestionSuccess.style.display === 'block') {
+        hideMessages();
+      }
+    });
   }
 
   // Handle form submission
@@ -46,7 +76,6 @@ const suggestionsModule = (function() {
       category: formData.get('category'),
       title: formData.get('title'),
       description: formData.get('description'),
-      priority: formData.get('priority'),
       timestamp: new Date().toISOString(),
       userId: getCurrentUserId() // Will be null for anonymous submissions
     };
@@ -57,12 +86,16 @@ const suggestionsModule = (function() {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
     submitBtn.disabled = true;
 
-    try {
+        try {
+      console.log('Submitting suggestion:', suggestionData);
+      
       // Submit suggestion (this would connect to your backend)
-      await submitSuggestion(suggestionData);
+      const result = await submitSuggestion(suggestionData);
+      console.log('Suggestion submitted successfully:', result);
       
       // Show success message
-      showSuccess();
+      showSuccess('Submitted and posted to Discord!');
+      console.log('Success message should be displayed');
       
       // Reset form
       suggestionForm.reset();
@@ -142,16 +175,77 @@ const suggestionsModule = (function() {
   }
 
   // Show success message
-  function showSuccess() {
+  function showSuccess(message = 'Thank You!') {
+    console.log('showSuccess called with message:', message);
+    console.log('suggestionSuccess element:', suggestionSuccess);
+    
     hideMessages();
     if (suggestionSuccess) {
-      suggestionSuccess.style.display = 'block';
-      suggestionSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      console.log('Success element found, updating content...');
       
-      // Auto-hide after 5 seconds
+      // Update the success message text
+      const successTitle = suggestionSuccess.querySelector('h3');
+      const successText = suggestionSuccess.querySelector('p');
+      
+      console.log('Title element:', successTitle);
+      console.log('Text element:', successText);
+      
+      if (successTitle) {
+        successTitle.textContent = message;
+        console.log('Title updated to:', message);
+      }
+      if (successText) {
+        successText.textContent = 'Your suggestion has been submitted successfully and posted to Discord! We\'ll review it and respond in the server.';
+        console.log('Text updated');
+      }
+      
+      // Show modal using CSS class
+      suggestionSuccess.classList.add('show');
+      
+      // Force modal to be visible with inline styles as backup
+      suggestionSuccess.style.position = 'fixed';
+      suggestionSuccess.style.top = '0';
+      suggestionSuccess.style.left = '0';
+      suggestionSuccess.style.width = '100vw';
+      suggestionSuccess.style.height = '100vh';
+      suggestionSuccess.style.zIndex = '99999';
+      suggestionSuccess.style.background = 'rgba(255, 0, 0, 0.9)';
+      suggestionSuccess.style.display = 'flex';
+      suggestionSuccess.style.alignItems = 'center';
+      suggestionSuccess.style.justifyContent = 'center';
+      
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+      
+      // Temporary alert to confirm modal is triggered
+      alert('MODAL SHOULD BE VISIBLE NOW! Look for a bright red overlay covering the entire screen.');
+      
+      console.log('Modal displayed with show class and inline styles');
+      console.log('Modal classes:', suggestionSuccess.className);
+      console.log('Modal inline styles:', {
+        position: suggestionSuccess.style.position,
+        top: suggestionSuccess.style.top,
+        left: suggestionSuccess.style.left,
+        width: suggestionSuccess.style.width,
+        height: suggestionSuccess.style.height,
+        zIndex: suggestionSuccess.style.zIndex,
+        background: suggestionSuccess.style.background,
+        display: suggestionSuccess.style.display
+      });
+      console.log('Modal computed styles:', {
+        display: window.getComputedStyle(suggestionSuccess).display,
+        visibility: window.getComputedStyle(suggestionSuccess).visibility,
+        opacity: window.getComputedStyle(suggestionSuccess).opacity,
+        position: window.getComputedStyle(suggestionSuccess).position,
+        zIndex: window.getComputedStyle(suggestionSuccess).zIndex
+      });
+      
+      // Auto-hide after 8 seconds (longer for modal)
       setTimeout(() => {
+        console.log('Auto-hiding modal');
         hideMessages();
-      }, 5000);
+      }, 8000);
+    } else {
+      console.error('suggestionSuccess element not found!');
     }
   }
 
@@ -171,8 +265,14 @@ const suggestionsModule = (function() {
 
   // Hide all messages
   function hideMessages() {
-    if (suggestionSuccess) suggestionSuccess.style.display = 'none';
+    if (suggestionSuccess) {
+      suggestionSuccess.classList.remove('show');
+      suggestionSuccess.style.display = 'none';
+    }
     if (suggestionError) suggestionError.style.display = 'none';
+    
+    // Restore background scrolling
+    document.body.style.overflow = '';
   }
 
   // Public API
