@@ -307,6 +307,20 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    message: 'Server is running'
+  });
+});
+
+// Test API page
+app.get('/test-api', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'test-api.html'));
+});
+
 // ------------------- Function: serveLoginPage -------------------
 // Serves the login page
 app.get('/login', (req, res) => {
@@ -3214,6 +3228,131 @@ function formatUptime(ms) {
   return `${days}d ${hours % 24}h ${minutes % 60}m`;
 }
 
+// ------------------- Section: Suggestions API -------------------
+// Test endpoint to verify suggestions API is working
+app.get('/api/suggestions/test', (req, res) => {
+  res.json({ 
+    message: 'Suggestions API is working',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Handle suggestion submissions and post to Discord
+app.post('/api/suggestions', async (req, res) => {
+  console.log('[server.js]: 📝 Suggestion submission received:', { body: req.body });
+  try {
+    const { category, title, description } = req.body;
+    
+    // Validate required fields
+    if (!category || !title || !description) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: category, title, and description are required' 
+      });
+    }
+
+    // Create suggestion object
+    const suggestion = {
+      category,
+      title,
+      description,
+      timestamp: new Date().toISOString(),
+      submittedAt: new Date()
+    };
+
+    // Format category for better display
+    const formatCategory = (cat) => {
+      const categoryMap = {
+        'features': '🚀 New Features',
+        'improvements': '⚡ Server Improvements',
+        'mechanics': '🎮 Game Mechanics',
+        'jobs': '💼 Job System',
+        'mounts': '🐎 Mounts & Pets',
+        'exploration': '🗺️ Exploration & Expeditions',
+        'events': '🎉 Event Suggestions',
+        'content': '📚 Content Ideas',
+        'chat': '💬 Chat & Channels',
+        'moderation': '🛡️ Moderation & Rules',
+        'bugs': '🐛 Bug Reports',
+        'accessibility': '♿ Accessibility',
+        'other': '📝 Other'
+      };
+      return categoryMap[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
+    };
+
+    // Post to Discord channel
+    const discordChannelId = '1381479893090566144';
+    const embed = {
+      title: '💡 New Suggestion Submitted',
+      description: 'A new suggestion has been submitted through the anonymous suggestion box.',
+      color: 0x00a3da, // Blue color matching your theme
+      image: {
+        url: 'https://static.wixstatic.com/media/7573f4_9bdaa09c1bcd4081b48bbe2043a7bf6a~mv2.png'
+      },
+      fields: [
+        {
+          name: '__📋 Category__',
+          value: `> ${formatCategory(category)}`,
+          inline: true
+        },
+        {
+          name: '__⏰ Submitted__',
+          value: `> <t:${Math.floor(Date.now() / 1000)}:R>`,
+          inline: true
+        },
+        {
+          name: '__📝 Title__',
+          value: `> **${title}**`,
+          inline: false
+        },
+        {
+          name: '__📄 Description__',
+          value: `> ${description.length > 1024 ? description.substring(0, 1021) + '...' : description}`,
+          inline: false
+        },
+        {
+          name: '__💭 Want to Suggest Something?__',
+          value: `> [Click here to submit your own suggestion!](https://tinglebot.xyz/#suggestion-box-section)\n\n> 💡 **Note:** All suggestions are posted publicly and will be answered in the server.`,
+          inline: false
+        }
+      ],
+      timestamp: new Date().toISOString()
+    };
+
+    // Send to Discord
+    const discordResponse = await fetch(`https://discord.com/api/v10/channels/${discordChannelId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        embeds: [embed]
+      })
+    });
+
+    if (!discordResponse.ok) {
+      console.error('[server.js]: ❌ Discord API error:', discordResponse.status, discordResponse.statusText);
+      throw new Error(`Discord API error: ${discordResponse.status}`);
+    }
+
+    console.log('[server.js]: ✅ Suggestion posted to Discord successfully');
+
+    // Return success response
+    res.json({ 
+      success: true, 
+      message: 'Suggestion submitted successfully and posted to Discord',
+      suggestionId: Date.now() // Simple ID for reference
+    });
+
+  } catch (error) {
+    console.error('[server.js]: ❌ Error submitting suggestion:', error);
+    res.status(500).json({ 
+      error: 'Failed to submit suggestion',
+      details: error.message 
+    });
+  }
+});
+
 // ------------------- Section: Error Handling Middleware -------------------
 app.use((err, req, res, next) => {
   console.error('[server.js]: ❌ Error:', err);
@@ -3249,7 +3388,8 @@ const startServer = async () => {
     
     // Start server
     app.listen(PORT, () => {
-
+      console.log(`[server.js]: 🚀 Server running on port ${PORT}`);
+      console.log(`[server.js]: 🌐 Dashboard available at http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error('[server.js]: ❌ Failed to start server:', error);
@@ -3428,6 +3568,8 @@ app.get('/api/test', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+
 
 // Test endpoint to check characters in database
 app.get('/api/test/characters', async (req, res) => {

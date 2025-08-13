@@ -51,13 +51,13 @@ const suggestionsModule = (function() {
       userId: getCurrentUserId() // Will be null for anonymous submissions
     };
 
-    try {
-      // Show loading state
-      const submitBtn = suggestionForm.querySelector('.submit-suggestion-btn');
-      const originalText = submitBtn.innerHTML;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-      submitBtn.disabled = true;
+    // Show loading state
+    const submitBtn = suggestionForm.querySelector('.submit-suggestion-btn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    submitBtn.disabled = true;
 
+    try {
       // Submit suggestion (this would connect to your backend)
       await submitSuggestion(suggestionData);
       
@@ -73,7 +73,6 @@ const suggestionsModule = (function() {
       showError();
     } finally {
       // Restore button state
-      const submitBtn = suggestionForm.querySelector('.submit-suggestion-btn');
       submitBtn.innerHTML = originalText;
       submitBtn.disabled = false;
     }
@@ -107,22 +106,26 @@ const suggestionsModule = (function() {
 
   // Submit suggestion to backend
   async function submitSuggestion(suggestionData) {
-    // This is where you'd implement the actual submission logic
-    // For now, we'll simulate a successful submission
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // In a real implementation, you would:
-    // 1. Send the data to your backend API
-    // 2. Store it in your database
-    // 3. Possibly send notifications to admins
-    
-    console.log('Suggestion submitted:', suggestionData);
-    
-    // For demo purposes, we'll just return success
-    // In production, you'd check the actual API response
-    return { success: true };
+    try {
+      // Make actual API call to server
+      const response = await fetch('/api/suggestions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(suggestionData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Error submitting suggestion:', error);
+      throw error;
+    }
   }
 
   // Get current user ID (if logged in)

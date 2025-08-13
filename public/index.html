@@ -1129,52 +1129,52 @@
 
         <div class="suggestion-box-container">
           <div class="suggestion-form-wrapper">
-            <form id="suggestion-form" class="suggestion-form">
-              <div class="form-group">
-                <label for="suggestion-category">Category</label>
-                <select id="suggestion-category" name="category" required>
-                  <option value="">Select a category</option>
-                  <option value="features">New Features</option>
-                  <option value="improvements">Server Improvements</option>
-                  <option value="mechanics">Game Mechanics</option>
-                  <option value="jobs">Job System</option>
-                  <option value="mounts">Mounts & Pets</option>
-                  <option value="exploration">Exploration & Expeditions</option>
-                  <option value="events">Event Suggestions</option>
-                  <option value="content">Content Ideas</option>
-                  <option value="chat">Chat & Channels</option>
-                  <option value="moderation">Moderation & Rules</option>
-                  <option value="bugs">Bug Reports</option>
-                  <option value="accessibility">Accessibility</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
+                                    <form id="suggestion-form" class="suggestion-form">
+                          <div class="form-group">
+                            <label for="suggestion-category">Category</label>
+                            <select id="suggestion-category" name="category" required>
+                              <option value="">Select a category</option>
+                              <option value="features">New Features</option>
+                              <option value="improvements">Server Improvements</option>
+                              <option value="mechanics">Game Mechanics</option>
+                              <option value="jobs">Job System</option>
+                              <option value="mounts">Mounts & Pets</option>
+                              <option value="exploration">Exploration & Expeditions</option>
+                              <option value="events">Event Suggestions</option>
+                              <option value="content">Content Ideas</option>
+                              <option value="chat">Chat & Channels</option>
+                              <option value="moderation">Moderation & Rules</option>
+                              <option value="bugs">Bug Reports</option>
+                              <option value="accessibility">Accessibility</option>
+                              <option value="other">Other</option>
+                            </select>
+                          </div>
 
-              <div class="form-group">
-                <label for="suggestion-title">Title</label>
-                <input type="text" id="suggestion-title" name="title" placeholder="Brief description of your idea or issue" required maxlength="100">
-              </div>
+                          <div class="form-group">
+                            <label for="suggestion-title">Title</label>
+                            <input type="text" id="suggestion-title" name="title" placeholder="Brief description of your idea or issue" required maxlength="100" autocomplete="off" inputmode="text">
+                          </div>
 
-              <div class="form-group">
-                <label for="suggestion-description">Description</label>
-                <textarea id="suggestion-description" name="description" placeholder="Detailed explanation of your idea, suggestion, or issue..." required rows="6" maxlength="1000"></textarea>
-                <div class="char-count">
-                  <span id="char-count">0</span>/1000 characters
-                </div>
-              </div>
+                          <div class="form-group">
+                            <label for="suggestion-description">Description</label>
+                            <textarea id="suggestion-description" name="description" placeholder="Detailed explanation of your idea, suggestion, or issue..." required rows="4" maxlength="1000" inputmode="text"></textarea>
+                            <div class="char-count">
+                              <span id="char-count">0</span>/1000 characters
+                            </div>
+                          </div>
 
 
 
-              <div class="form-actions">
-                <button type="submit" class="submit-suggestion-btn">
-                  <i class="fas fa-paper-plane"></i>
-                  Submit Anonymously
-                </button>
-                <button type="reset" class="reset-form-btn">
-                  <i class="fas fa-undo"></i>
-                  Reset Form
-                </button>
-              </div>
+                                        <div class="form-actions">
+                            <button type="submit" class="submit-suggestion-btn" aria-label="Submit suggestion anonymously">
+                              <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                              <span class="btn-text">Submit Anonymously</span>
+                            </button>
+                            <button type="reset" class="reset-form-btn" aria-label="Reset suggestion form">
+                              <i class="fas fa-undo" aria-hidden="true"></i>
+                              <span class="btn-text">Reset Form</span>
+                            </button>
+                          </div>
             </form>
           </div>
 
