@@ -662,11 +662,18 @@ function generatePieChartBreakdown(data, title, colors) {
         return '<div class="breakdown-empty">No data available</div>';
     }
     
+    // Create a mapping of village names to their colors in the same order as the pie chart
+    const villageColorMapping = {};
+    Object.keys(cleanedData).forEach((village, index) => {
+        villageColorMapping[village] = colors[index];
+    });
+    
     const breakdownItems = Object.entries(cleanedData)
         .sort(([,a], [,b]) => b - a) // Sort by value descending
-        .map(([label, value], index) => {
+        .map(([label, value]) => {
             const percentage = ((value / total) * 100).toFixed(1);
-            const color = colors[index % colors.length];
+            // Use the exact same color as the pie chart for this village
+            const color = villageColorMapping[label] || '#999999';
             return `
                 <div class="breakdown-item">
                     <div class="breakdown-color" style="background-color: ${color}"></div>
@@ -698,11 +705,16 @@ function generatePieChartBreakdown(data, title, colors) {
 // Function: Initialize village distribution chart
 function initializeVillageChart(data) {
     const villageData = data.charactersPerVillage || {};
-    const colors = ['#EF9A9A', '#9FB7F2', '#98D8A7'];
+    const colors = ['#EF9A9A', '#9FB7F2', '#98D8A7']; // Red for Rudania, Blue for Inariko, Green for Vhintl
     const isMobile = isMobileDevice();
     
     // Update chart container to include breakdown
     const chartContainer = document.querySelector('#villageDistributionChart').parentElement;
+    
+    // Clear any existing breakdown sections to prevent duplicates
+    const existingBreakdowns = chartContainer.querySelectorAll('.pie-breakdown');
+    existingBreakdowns.forEach(breakdown => breakdown.remove());
+    
     chartContainer.style.display = 'flex';
     chartContainer.style.gap = isMobile ? '1rem' : '2rem';
     chartContainer.style.alignItems = 'flex-start';
@@ -717,7 +729,7 @@ function initializeVillageChart(data) {
     const canvas = document.getElementById('villageDistributionChart');
     chartWrapper.appendChild(canvas);
     
-    // Create breakdown section
+    // Create breakdown section with village-specific colors
     const breakdownWrapper = document.createElement('div');
     breakdownWrapper.style.flex = '1';
     breakdownWrapper.innerHTML = generatePieChartBreakdown(villageData, 'Village Distribution', colors);
@@ -727,7 +739,7 @@ function initializeVillageChart(data) {
     chartContainer.appendChild(chartWrapper);
     chartContainer.appendChild(breakdownWrapper);
     
-    // Create chart
+    // Create chart with consistent color mapping
     const villageCtx = canvas.getContext('2d');
     villageChart = createPieChart(villageCtx, villageData, {
         labelTransform: v => v.charAt(0).toUpperCase() + v.slice(1),
