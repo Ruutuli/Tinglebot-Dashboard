@@ -7,12 +7,16 @@ const suggestionsModule = (function() {
   let charCount;
   let suggestionSuccess;
   let suggestionError;
+  let modal;
 
   // Initialize the module
   function init() {
+    console.log('Suggestions module initializing...');
     bindElements();
     bindEvents();
     updateCharCount();
+    createModal();
+    console.log('Suggestions module initialized successfully');
   }
 
   // Bind DOM elements
@@ -41,35 +45,87 @@ const suggestionsModule = (function() {
         descriptionField.addEventListener('input', updateCharCount);
       }
     }
-    
-    // Bind modal close button
-    if (suggestionSuccess) {
-      const closeBtn = suggestionSuccess.querySelector('.modal-close');
-      if (closeBtn) {
-        closeBtn.addEventListener('click', hideMessages);
-      }
+  }
+
+  // Create modal element
+  function createModal() {
+    // Remove existing modal if it exists
+    const existingModal = document.getElementById('suggestion-modal');
+    if (existingModal) {
+      existingModal.remove();
     }
-    
-    // Close modal when clicking outside
-    if (suggestionSuccess) {
-      suggestionSuccess.addEventListener('click', function(event) {
-        if (event.target === suggestionSuccess) {
-          hideMessages();
-        }
-      });
-    }
-    
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(event) {
-      if (event.key === 'Escape' && suggestionSuccess && suggestionSuccess.style.display === 'block') {
-        hideMessages();
+
+    // Create modal HTML
+    modal = document.createElement('div');
+    modal.id = 'suggestion-modal';
+    modal.className = 'suggestion-modal';
+    modal.innerHTML = `
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Submission Successful!</h3>
+          <button class="modal-close" aria-label="Close modal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <p>Submission sent to Discord!</p>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-ok-btn">OK</button>
+        </div>
+      </div>
+    `;
+
+    // Add modal to body
+    document.body.appendChild(modal);
+
+    // Bind modal events
+    const closeBtn = modal.querySelector('.modal-close');
+    const okBtn = modal.querySelector('.modal-ok-btn');
+    const overlay = modal.querySelector('.modal-overlay');
+
+    closeBtn.addEventListener('click', hideModal);
+    okBtn.addEventListener('click', hideModal);
+    overlay.addEventListener('click', hideModal);
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && modal.classList.contains('show')) {
+        hideModal();
       }
     });
+  }
+
+  // Show modal
+  function showModal() {
+    if (modal) {
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+      
+      // Focus the OK button for accessibility
+      setTimeout(() => {
+        const okBtn = modal.querySelector('.modal-ok-btn');
+        if (okBtn) okBtn.focus();
+      }, 100);
+    }
+  }
+
+  // Hide modal
+  function hideModal() {
+    if (modal) {
+      modal.classList.remove('show');
+      document.body.style.overflow = '';
+    }
   }
 
   // Handle form submission
   async function handleSubmit(event) {
     event.preventDefault();
+    console.log('Form submission started...');
     
     const formData = new FormData(suggestionForm);
     const suggestionData = {
@@ -80,22 +136,23 @@ const suggestionsModule = (function() {
       userId: getCurrentUserId() // Will be null for anonymous submissions
     };
 
+    console.log('Form data collected:', suggestionData);
+
     // Show loading state
     const submitBtn = suggestionForm.querySelector('.submit-suggestion-btn');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
     submitBtn.disabled = true;
 
-        try {
+    try {
       console.log('Submitting suggestion:', suggestionData);
       
       // Submit suggestion (this would connect to your backend)
       const result = await submitSuggestion(suggestionData);
       console.log('Suggestion submitted successfully:', result);
       
-      // Show success message
-      showSuccess('Submitted and posted to Discord!');
-      console.log('Success message should be displayed');
+      // Show modal instead of success message
+      showModal();
       
       // Reset form
       suggestionForm.reset();
@@ -199,49 +256,13 @@ const suggestionsModule = (function() {
         console.log('Text updated');
       }
       
-      // Show modal using CSS class
-      suggestionSuccess.classList.add('show');
+      // Show success message
+      suggestionSuccess.style.display = 'block';
+      suggestionSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
-      // Force modal to be visible with inline styles as backup
-      suggestionSuccess.style.position = 'fixed';
-      suggestionSuccess.style.top = '0';
-      suggestionSuccess.style.left = '0';
-      suggestionSuccess.style.width = '100vw';
-      suggestionSuccess.style.height = '100vh';
-      suggestionSuccess.style.zIndex = '99999';
-      suggestionSuccess.style.background = 'rgba(255, 0, 0, 0.9)';
-      suggestionSuccess.style.display = 'flex';
-      suggestionSuccess.style.alignItems = 'center';
-      suggestionSuccess.style.justifyContent = 'center';
-      
-      document.body.style.overflow = 'hidden'; // Prevent background scrolling
-      
-      // Temporary alert to confirm modal is triggered
-      alert('MODAL SHOULD BE VISIBLE NOW! Look for a bright red overlay covering the entire screen.');
-      
-      console.log('Modal displayed with show class and inline styles');
-      console.log('Modal classes:', suggestionSuccess.className);
-      console.log('Modal inline styles:', {
-        position: suggestionSuccess.style.position,
-        top: suggestionSuccess.style.top,
-        left: suggestionSuccess.style.left,
-        width: suggestionSuccess.style.width,
-        height: suggestionSuccess.style.height,
-        zIndex: suggestionSuccess.style.zIndex,
-        background: suggestionSuccess.style.background,
-        display: suggestionSuccess.style.display
-      });
-      console.log('Modal computed styles:', {
-        display: window.getComputedStyle(suggestionSuccess).display,
-        visibility: window.getComputedStyle(suggestionSuccess).visibility,
-        opacity: window.getComputedStyle(suggestionSuccess).opacity,
-        position: window.getComputedStyle(suggestionSuccess).position,
-        zIndex: window.getComputedStyle(suggestionSuccess).zIndex
-      });
-      
-      // Auto-hide after 8 seconds (longer for modal)
+      // Auto-hide after 8 seconds
       setTimeout(() => {
-        console.log('Auto-hiding modal');
+        console.log('Auto-hiding success message');
         hideMessages();
       }, 8000);
     } else {
@@ -266,13 +287,9 @@ const suggestionsModule = (function() {
   // Hide all messages
   function hideMessages() {
     if (suggestionSuccess) {
-      suggestionSuccess.classList.remove('show');
       suggestionSuccess.style.display = 'none';
     }
     if (suggestionError) suggestionError.style.display = 'none';
-    
-    // Restore background scrolling
-    document.body.style.overflow = '';
   }
 
   // Public API
@@ -280,7 +297,9 @@ const suggestionsModule = (function() {
     init: init,
     handleSubmit: handleSubmit,
     handleReset: handleReset,
-    updateCharCount: updateCharCount
+    updateCharCount: updateCharCount,
+    showModal: showModal,
+    hideModal: hideModal
   };
 })();
 
