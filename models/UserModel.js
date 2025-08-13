@@ -3,6 +3,10 @@ const mongoose = require('mongoose');
 // ------------------- Define the user schema -------------------
 const userSchema = new mongoose.Schema({
   discordId: { type: String, required: true, unique: true }, // Unique Discord ID of the user
+  username: { type: String, default: '' }, // Discord username
+  discriminator: { type: String, default: '' }, // Discord discriminator
+  avatar: { type: String, default: '' }, // Discord avatar URL
+  email: { type: String, default: '' }, // Discord email
   googleSheetsUrl: { type: String, default: '' }, // URL to user's Google Sheets (if applicable)
   timezone: { type: String, default: 'UTC' }, // User's timezone (default to UTC)
   tokens: { type: Number, default: 0 }, // Number of tokens the user has
@@ -33,6 +37,8 @@ const userSchema = new mongoose.Schema({
       }
     ]
   }
+}, {
+  timestamps: true // This will automatically add createdAt and updatedAt fields
 });
 
 // ------------------- Export the User model -------------------

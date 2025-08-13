@@ -1572,10 +1572,9 @@ function createUserTableRow(user) {
     <td>
       <div class="user-info">
         <img src="${avatarUrl}" alt="${user.username}" class="user-avatar" />
-        <div class="user-details">
-          <span class="user-name">${user.username}</span>
-          <span class="user-discriminator">#${user.discriminator}</span>
-        </div>
+                 <div class="user-details">
+           <span class="user-name">${user.username}</span>
+         </div>
       </div>
     </td>
     <td>
@@ -1590,10 +1589,8 @@ function createUserTableRow(user) {
         <div class="last-message-time">${lastMessageTime}</div>
       </div>
     </td>
-    <td class="days-since ${user.activityStatus}">${daysSince}</td>
-    <td>${user.characterCount || 0}</td>
-    <td>${user.tokens || 0}</td>
-    <td>
+         <td class="days-since ${user.activityStatus}">${daysSince}</td>
+     <td>
       <div class="user-actions">
         <button class="action-btn primary" onclick="updateUserStatus('${user.discordId}', '${user.activityStatus === 'active' ? 'inactive' : 'active'}')">
           <i class="fas fa-${user.activityStatus === 'active' ? 'pause' : 'play'}"></i>
@@ -1603,6 +1600,7 @@ function createUserTableRow(user) {
           <i class="fas fa-eye"></i>
           View
         </button>
+
       </div>
     </td>
   `;
@@ -1695,6 +1693,8 @@ function viewUserDetails(discordId) {
   console.log(`[index.js]: 👁️ Viewing details for user ${discordId}`);
   alert('👁️ User details view coming soon!');
 }
+
+
 
 // Make functions globally available for onclick handlers
 window.updateUserStatus = updateUserStatus;

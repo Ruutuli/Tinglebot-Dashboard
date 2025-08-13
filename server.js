@@ -2908,6 +2908,587 @@ app.get('/api/images/*', async (req, res) => {
   }
 });
 
+// ------------------- Section: Admin User Management -------------------
+
+// Get user activity data for admin management
+app.get('/api/admin/users/activity', async (req, res) => {
+  console.log('[server.js]: 🚀 Admin activity endpoint hit!');
+  console.log('[server.js]: 👤 User authenticated:', req.isAuthenticated());
+  console.log('[server.js]: 👤 User object:', req.user ? { discordId: req.user.discordId, username: req.user.username } : 'No user');
+  
+  try {
+    // Check if user is authenticated and has admin role
+    if (!req.isAuthenticated()) {
+      console.log('[server.js]: ❌ User not authenticated');
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Check if user has admin role in Discord
+    let isAdmin = false;
+    const guildId = process.env.PROD_GUILD_ID;
+    console.log('[server.js]: 🏰 Guild ID:', guildId);
+    console.log('[server.js]: 🔑 Discord Token exists:', !!process.env.DISCORD_TOKEN);
+    
+    if (guildId && req.user) {
+      console.log('[server.js]: 🔍 Checking admin role for user:', req.user.discordId);
+      try {
+        const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+          headers: {
+            'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('[server.js]: 📡 Discord API response status:', response.status);
+        
+        if (response.ok) {
+          const memberData = await response.json();
+          const roles = memberData.roles || [];
+          const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID || '788137728943325185';
+          console.log('[server.js]: 🎭 User roles:', roles);
+          console.log('[server.js]: 👑 Admin role ID:', ADMIN_ROLE_ID);
+          isAdmin = roles.includes(ADMIN_ROLE_ID);
+          console.log('[server.js]: ✅ Is admin:', isAdmin);
+        } else {
+          console.log('[server.js]: ❌ Discord API error:', response.status, response.statusText);
+        }
+      } catch (error) {
+        console.error('[server.js]: ❌ Error checking admin status:', error);
+      }
+    } else {
+      console.log('[server.js]: ⚠️ Missing guild ID or user object');
+    }
+
+    if (!isAdmin) {
+      console.log('[server.js]: ❌ Access denied - not admin');
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    console.log('[server.js]: ✅ Admin access granted, proceeding with data fetch...');
+
+    // Get all users with their message activity data
+    console.log('[server.js]: 🔍 Fetching users for admin activity endpoint...');
+    
+    // First, let's check if we can find any users at all
+    const totalUsers = await User.countDocuments();
+    console.log(`[server.js]: 📊 Total users in database: ${totalUsers}`);
+    
+    if (totalUsers === 0) {
+      console.log('[server.js]: ⚠️ No users found in database');
+      return res.json({
+        users: [],
+        summary: {
+          total: 0,
+          active: 0,
+          inactive: 0,
+          activePercentage: 0
+        },
+        threshold: {
+          threeMonthsAgo: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+          currentTime: new Date().toISOString()
+        }
+      });
+    }
+    
+    // Declare users variable outside try block so it's accessible throughout the function
+    let users = [];
+    
+    try {
+      users = await User.aggregate([
+        {
+          $group: {
+            _id: '$discordId',
+            username: { $first: '$username' },
+            discriminator: { $first: '$discriminator' },
+            avatar: { $first: '$avatar' },
+            tokens: { $first: '$tokens' },
+            characterSlot: { $first: '$characterSlot' },
+            status: { $first: '$status' },
+            createdAt: { $first: '$createdAt' },
+            lastMessageContent: { $first: '$lastMessageContent' },
+            lastMessageTimestamp: { $first: '$lastMessageTimestamp' }
+          }
+        },
+        {
+          $sort: { lastMessageTimestamp: -1, username: 1 }
+        }
+      ]);
+      
+      console.log(`[server.js]: 📊 Aggregated users: ${users.length}`);
+      console.log('[server.js]: 📋 Sample user data:', users.slice(0, 2));
+      
+      // Debug specific user (ruutuli)
+      const ruutuliUser = users.find(u => u._id === '211219306137124865');
+      if (ruutuliUser) {
+        console.log('[server.js]: 🔍 Debug - Ruutuli user data:', {
+          discordId: ruutuliUser._id,
+          username: ruutuliUser.username,
+          lastMessageTimestamp: ruutuliUser.lastMessageTimestamp,
+          lastMessageTimestampType: typeof ruutuliUser.lastMessageTimestamp,
+          lastMessageTimestampValid: ruutuliUser.lastMessageTimestamp ? !isNaN(new Date(ruutuliUser.lastMessageTimestamp).getTime()) : false,
+          currentTime: new Date().toISOString(),
+          timeDifference: ruutuliUser.lastMessageTimestamp ? 
+            Math.floor((Date.now() - new Date(ruutuliUser.lastMessageTimestamp).getTime()) / (1000 * 60 * 60 * 24)) : 'N/A'
+        });
+      }
+    } catch (aggregationError) {
+      console.error('[server.js]: ❌ Error in user aggregation:', aggregationError);
+      return res.status(500).json({ error: 'Failed to aggregate user data' });
+    }
+
+    // Get character counts and Discord roles for each user
+    const usersWithCharacters = await Promise.all(
+      users.map(async (user) => {
+        let characterCount = 0;
+        let discordRoles = user.roles || [];
+        
+        try {
+          characterCount = await Character.countDocuments({ 
+            userId: user._id, // Use _id from aggregated result (which is discordId due to $group)
+            name: { $nin: ['Tingle', 'Tingle test', 'John'] }
+          });
+        } catch (error) {
+          console.warn(`[server.js]: ⚠️ Error counting characters for user ${user._id}:`, error.message);
+          characterCount = 0;
+        }
+        
+        // Always fetch Discord roles from Discord API since they're not stored in the database
+        try {
+          const guildId = process.env.PROD_GUILD_ID;
+          const botToken = process.env.DISCORD_TOKEN;
+          
+          if (guildId && botToken) {
+            const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${user._id}`, {
+              headers: {
+                'Authorization': `Bot ${botToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const memberData = await response.json();
+              discordRoles = memberData.roles || [];
+            } else {
+              console.warn(`[server.js]: ⚠️ Discord API returned ${response.status} for user ${user._id}`);
+              discordRoles = [];
+            }
+          } else {
+            console.warn(`[server.js]: ⚠️ Missing guild ID or bot token`);
+            discordRoles = [];
+          }
+          
+          // Add a small delay to avoid hitting Discord API rate limits
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+        } catch (error) {
+          console.warn(`[server.js]: ⚠️ Could not fetch Discord roles for user ${user._id}:`, error.message);
+          discordRoles = [];
+        }
+        
+        return {
+          discordId: user._id, // Map _id back to discordId for frontend compatibility
+          username: user.username,
+          discriminator: user.discriminator,
+          avatar: user.avatar,
+          tokens: user.tokens,
+          characterSlot: user.characterSlot,
+          status: user.status,
+          createdAt: user.createdAt,
+          lastMessageContent: user.lastMessageContent,
+          lastMessageTimestamp: user.lastMessageTimestamp,
+          roles: discordRoles,
+          characterCount
+        };
+      })
+    );
+
+    // Calculate activity status based on Discord roles and 3-month threshold
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const INACTIVE_ROLE_ID = '788148064182730782';
+
+    const usersWithActivity = usersWithCharacters.map(user => {
+      // Check Discord roles first to determine if user is inactive
+      let isActive = true; // Default to active
+      let daysSinceLastMessage = null;
+      let timestampStatus = 'unknown';
+      let discordRoleStatus = 'unknown';
+      
+      // Check if user has the inactive role
+      if (user.roles && Array.isArray(user.roles)) {
+        if (user.roles.includes(INACTIVE_ROLE_ID)) {
+          isActive = false;
+          discordRoleStatus = 'inactive_role';
+        } else {
+          discordRoleStatus = 'active_role';
+        }
+      } else {
+        discordRoleStatus = 'no_roles_data';
+        // If no roles data, fall back to timestamp-based logic
+        if (user.lastMessageTimestamp) {
+          try {
+            const timestamp = new Date(user.lastMessageTimestamp);
+            if (!isNaN(timestamp.getTime())) {
+              daysSinceLastMessage = Math.floor((Date.now() - timestamp.getTime()) / (1000 * 60 * 60 * 24));
+              isActive = timestamp > threeMonthsAgo;
+              timestampStatus = 'valid';
+            } else {
+              timestampStatus = 'invalid_date';
+              console.warn(`[server.js]: ⚠️ Invalid timestamp for user ${user.discordId}:`, user.lastMessageTimestamp);
+            }
+          } catch (error) {
+            timestampStatus = 'error_parsing';
+            console.warn(`[server.js]: ⚠️ Error parsing timestamp for user ${user.discordId}:`, error.message);
+          }
+        } else {
+          timestampStatus = 'no_timestamp';
+          console.warn(`[server.js]: ⚠️ No timestamp for user ${user.discordId}`);
+        }
+
+        // Fallback: if no valid timestamp, use status field or default to inactive
+        if (timestampStatus !== 'valid') {
+          isActive = user.status === 'active';
+          daysSinceLastMessage = null;
+        }
+      }
+
+      return {
+        discordId: user.discordId,
+        username: user.username,
+        discriminator: user.discriminator,
+        avatar: user.avatar,
+        tokens: user.tokens,
+        characterSlot: user.characterSlot,
+        status: user.status,
+        createdAt: user.createdAt,
+        lastMessageContent: user.lastMessageContent,
+        lastMessageTimestamp: user.lastMessageTimestamp,
+        characterCount: user.characterCount,
+        isActive,
+        daysSinceLastMessage,
+        activityStatus: isActive ? 'active' : 'inactive',
+        timestampStatus, // Add this for debugging
+        discordRoleStatus, // Add this for debugging
+        lastMessageFormatted: user.lastMessageTimestamp 
+          ? new Date(user.lastMessageTimestamp).toLocaleString()
+          : 'Never'
+      };
+    });
+
+    // Get counts
+    const activeCount = usersWithActivity.filter(u => u.isActive).length;
+    const inactiveCount = usersWithActivity.filter(u => !u.isActive).length;
+    const totalCount = usersWithActivity.length;
+
+    console.log(`[server.js]: 📊 User activity results - Total: ${totalCount}, Active: ${activeCount}, Inactive: ${inactiveCount}`);
+    
+    // Log role-based activity summary
+    const roleBasedInactive = usersWithActivity.filter(u => u.discordRoleStatus === 'inactive_role');
+    const roleBasedActive = usersWithActivity.filter(u => u.discordRoleStatus === 'active_role');
+    
+    if (roleBasedInactive.length > 0) {
+      console.log(`[server.js]: 🏷️ Found ${roleBasedInactive.length} users with inactive role`);
+    }
+    
+    // Log timestamp issues for debugging (only for users without role data)
+    const timestampIssues = usersWithActivity.filter(u => u.discordRoleStatus === 'no_roles_data' && u.timestampStatus !== 'valid');
+    if (timestampIssues.length > 0) {
+      console.warn(`[server.js]: ⚠️ ${timestampIssues.length} users without role data have timestamp issues:`, 
+        timestampIssues.map(u => ({ discordId: u.discordId, username: u.username, status: u.timestampStatus }))
+      );
+      console.warn('[server.js]: 💡 Suggestion: The Discord bot needs to update lastMessageTimestamp when users send messages');
+    }
+
+    res.json({
+      users: usersWithActivity,
+      summary: {
+        total: totalCount,
+        active: activeCount,
+        inactive: inactiveCount,
+        activePercentage: totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 0
+      },
+      threshold: {
+        threeMonthsAgo: threeMonthsAgo.toISOString(),
+        currentTime: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching user activity data:', error);
+    res.status(500).json({ error: 'Failed to fetch user activity data' });
+  }
+});
+
+// Update user activity status manually
+app.post('/api/admin/users/update-status', async (req, res) => {
+  try {
+    // Check if user is authenticated and has admin role
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Check if user has admin role in Discord
+    let isAdmin = false;
+    const guildId = process.env.PROD_GUILD_ID;
+    if (guildId && req.user) {
+      try {
+        const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+          headers: {
+            'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const memberData = await response.json();
+          const roles = memberData.roles || [];
+          const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID || '788137728943325185';
+          isAdmin = roles.includes(ADMIN_ROLE_ID);
+        }
+      } catch (error) {
+        console.error('[server.js]: Error checking admin status:', error);
+      }
+    }
+
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { discordId, status } = req.body;
+    
+    if (!discordId || !status || !['active', 'inactive'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid request data' });
+    }
+
+    // Update user status
+    const result = await User.updateMany(
+      { discordId },
+      { 
+        status,
+        statusChangedAt: new Date()
+      }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ error: 'User not found or no changes made' });
+    }
+
+    res.json({ 
+      success: true,
+      message: `User status updated to ${status}`,
+      updatedCount: result.modifiedCount
+    });
+
+  } catch (error) {
+    console.error('[server.js]: ❌ Error updating user status:', error);
+    res.status(500).json({ error: 'Failed to update user status' });
+  }
+});
+
+
+
+// Function to check user's Discord activity via multiple methods
+async function checkUserDiscordActivity(discordId) {
+  try {
+    const guildId = process.env.PROD_GUILD_ID;
+    const botToken = process.env.DISCORD_TOKEN;
+    
+    if (!guildId || !botToken) {
+      throw new Error('Missing Discord configuration');
+    }
+
+    // Method 1: Check recent messages (if bot has access)
+    let messageActivity = null;
+    try {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/messages/search?author_id=${discordId}&limit=10`, {
+        headers: {
+          'Authorization': `Bot ${botToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const recentMessages = data.messages || [];
+        if (recentMessages.length > 0) {
+          const lastMessage = recentMessages[0];
+          messageActivity = {
+            content: lastMessage.content,
+            timestamp: lastMessage.timestamp,
+            channelId: lastMessage.channel_id,
+            messageCount: recentMessages.length
+          };
+        }
+      }
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Could not fetch messages for ${discordId}:`, error.message);
+    }
+
+    // Method 2: Check user's presence/status
+    let presenceActivity = null;
+    try {
+      const presenceResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${discordId}`, {
+        headers: {
+          'Authorization': `Bot ${botToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (presenceResponse.ok) {
+        const memberData = await presenceResponse.json();
+        presenceActivity = {
+          joinedAt: memberData.joined_at,
+          roles: memberData.roles,
+          avatar: memberData.avatar,
+          nick: memberData.nick
+        };
+      }
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Could not fetch member data for ${discordId}:`, error.message);
+    }
+
+    // Method 3: Check database for any stored activity data
+    let databaseActivity = null;
+    try {
+      const user = await User.findOne({ discordId });
+      if (user) {
+        databaseActivity = {
+          lastMessageTimestamp: user.lastMessageTimestamp,
+          lastMessageContent: user.lastMessageContent,
+          status: user.status,
+          createdAt: user.createdAt
+        };
+      }
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Could not fetch database data for ${discordId}:`, error.message);
+    }
+
+    // Combine all methods to determine activity
+    const now = new Date();
+    let lastActivity = null;
+    let daysSinceLastActivity = null;
+    let activitySource = 'unknown';
+    let isActive = false;
+
+    // Priority: Discord messages > Database > Presence
+    if (messageActivity) {
+      lastActivity = new Date(messageActivity.timestamp);
+      daysSinceLastActivity = Math.floor((now - lastActivity) / (1000 * 60 * 60 * 24));
+      activitySource = 'discord_messages';
+      isActive = daysSinceLastActivity <= 90;
+    } else if (databaseActivity?.lastMessageTimestamp) {
+      lastActivity = new Date(databaseActivity.lastMessageTimestamp);
+      daysSinceLastActivity = Math.floor((now - lastActivity) / (1000 * 60 * 60 * 24));
+      activitySource = 'database';
+      isActive = daysSinceLastActivity <= 90;
+    } else if (presenceActivity?.joinedAt) {
+      // If no message activity, check if they joined recently
+      const joinedAt = new Date(presenceActivity.joinedAt);
+      const daysSinceJoined = Math.floor((now - joinedAt) / (1000 * 60 * 60 * 24));
+      if (daysSinceJoined <= 30) {
+        // New member, consider them active
+        lastActivity = joinedAt;
+        daysSinceLastActivity = 0;
+        activitySource = 'new_member';
+        isActive = true;
+      }
+    }
+
+    return {
+      discordId,
+      lastMessage: messageActivity,
+      presence: presenceActivity,
+      database: databaseActivity,
+      lastActivity: lastActivity?.toISOString(),
+      daysSinceLastActivity,
+      activitySource,
+      isActive,
+      confidence: messageActivity ? 'high' : (databaseActivity?.lastMessageTimestamp ? 'medium' : 'low')
+    };
+
+  } catch (error) {
+    console.error(`[server.js]: ❌ Error checking Discord activity for ${discordId}:`, error);
+    return {
+      discordId,
+      error: error.message,
+      isActive: false,
+      confidence: 'none'
+    };
+  }
+}
+
+// Quick fix endpoint to manually update a user's timestamp (for testing)
+app.post('/api/admin/users/update-timestamp', async (req, res) => {
+  try {
+    // Check if user is authenticated and has admin role
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Check if user has admin role in Discord
+    let isAdmin = false;
+    const guildId = process.env.PROD_GUILD_ID;
+    if (guildId && req.user) {
+      try {
+        const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+          headers: {
+            'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const memberData = await response.json();
+          const roles = memberData.roles || [];
+          const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID || '788137728943325185';
+          isAdmin = roles.includes(ADMIN_ROLE_ID);
+        }
+      } catch (error) {
+        console.error('[server.js]: Error checking admin status:', error);
+      }
+    }
+
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { discordId, timestamp } = req.body;
+    
+    if (!discordId) {
+      return res.status(400).json({ error: 'Discord ID is required' });
+    }
+
+    // Use provided timestamp or current time
+    const newTimestamp = timestamp ? new Date(timestamp) : new Date();
+    
+    console.log(`[server.js]: 🔄 Admin updating timestamp for user ${discordId} to ${newTimestamp.toISOString()}`);
+
+    // Update user timestamp
+    const result = await User.updateMany(
+      { discordId },
+      { 
+        lastMessageTimestamp: newTimestamp,
+        lastMessageContent: 'Manually updated by admin'
+      }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ error: 'User not found or no changes made' });
+    }
+
+    res.json({ 
+      success: true,
+      message: `User timestamp updated to ${newTimestamp.toISOString()}`,
+      updatedCount: result.modifiedCount,
+      newTimestamp: newTimestamp.toISOString()
+    });
+
+  } catch (error) {
+    console.error('[server.js]: ❌ Error updating user timestamp:', error);
+    res.status(500).json({ error: 'Failed to update user timestamp' });
+  }
+});
+
 // ------------------- Section: Inventory API Routes -------------------
 
 // ------------------- Function: getInventoryData -------------------
@@ -3454,24 +4035,18 @@ const startServer = async () => {
 // ------------------- Function: gracefulShutdown -------------------
 // Handles graceful shutdown of the server and database connections
 const gracefulShutdown = async () => {
-
-  
   // Close all database connections
   if (mongoose.connection.readyState === 1) {
     await mongoose.connection.close();
-
   }
   
   if (inventoriesConnection) {
     await inventoriesConnection.close();
-    
   }
   
   if (vendingConnection) {
     await vendingConnection.close();
-
   }
-  
   
   process.exit(0);
 };
@@ -3579,219 +4154,11 @@ app.get('/api/test-sunday-midnight', async (req, res) => {
   }
 });
 
-// ------------------- Section: Admin User Management -------------------
-
-// Get user activity data for admin management
-app.get('/api/admin/users/activity', async (req, res) => {
-  try {
-    // Check if user is authenticated and has admin role
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    // Get all users with their message activity data
-    const users = await User.aggregate([
-      {
-        $group: {
-          _id: '$discordId',
-          username: { $first: '$username' },
-          discriminator: { $first: '$discriminator' },
-          avatar: { $first: '$avatar' },
-          tokens: { $first: '$tokens' },
-          characterSlot: { $first: '$characterSlot' },
-          status: { $first: '$status' },
-          createdAt: { $first: '$createdAt' },
-          lastMessageContent: { $first: '$lastMessageContent' },
-          lastMessageTimestamp: { $first: '$lastMessageTimestamp' }
-        }
-      },
-      {
-        $sort: { lastMessageTimestamp: -1, username: 1 }
-      }
-    ]);
-
-    // Get character counts for each user
-    const usersWithCharacters = await Promise.all(
-      users.map(async (user) => {
-        let characterCount = 0;
-        try {
-          characterCount = await Character.countDocuments({ 
-            userId: user._id, // Use _id from aggregated result
-            name: { $nin: ['Tingle', 'Tingle test', 'John'] }
-          });
-        } catch (error) {
-          console.warn(`[server.js]: ⚠️ Error counting characters for user ${user._id}:`, error.message);
-          characterCount = 0;
-        }
-        
-        return {
-          discordId: user._id, // Map _id back to discordId for frontend compatibility
-          username: user.username,
-          discriminator: user.discriminator,
-          avatar: user.avatar,
-          tokens: user.tokens,
-          characterSlot: user.characterSlot,
-          status: user.status,
-          createdAt: user.createdAt,
-          lastMessageContent: user.lastMessageContent,
-          lastMessageTimestamp: user.lastMessageTimestamp,
-          characterCount
-        };
-      })
-    );
-
-    // Calculate activity status based on 3-month threshold
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-
-    const usersWithActivity = usersWithCharacters.map(user => {
-      const isActive = user.lastMessageTimestamp && user.lastMessageTimestamp > threeMonthsAgo;
-      const daysSinceLastMessage = user.lastMessageTimestamp 
-        ? Math.floor((Date.now() - user.lastMessageTimestamp.getTime()) / (1000 * 60 * 60 * 24))
-        : null;
-
-      return {
-        discordId: user.discordId,
-        username: user.username,
-        discriminator: user.discriminator,
-        avatar: user.avatar,
-        tokens: user.tokens,
-        characterSlot: user.characterSlot,
-        status: user.status,
-        createdAt: user.createdAt,
-        lastMessageContent: user.lastMessageContent,
-        lastMessageTimestamp: user.lastMessageTimestamp,
-        characterCount: user.characterCount,
-        isActive,
-        daysSinceLastMessage,
-        activityStatus: isActive ? 'active' : 'inactive'
-      };
-    });
-
-    // Get counts
-    const activeCount = usersWithActivity.filter(u => u.isActive).length;
-    const inactiveCount = usersWithActivity.filter(u => !u.isActive).length;
-    const totalCount = usersWithActivity.length;
-
-    res.json({
-      users: usersWithActivity,
-      summary: {
-        total: totalCount,
-        active: activeCount,
-        inactive: inactiveCount,
-        activePercentage: totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 0
-      },
-      threshold: {
-        threeMonthsAgo: threeMonthsAgo.toISOString(),
-        currentTime: new Date().toISOString()
-      }
-    });
-
-  } catch (error) {
-    console.error('[server.js]: ❌ Error fetching user activity data:', error);
-    res.status(500).json({ error: 'Failed to fetch user activity data' });
-  }
-});
-
-// Update user activity status manually
-app.post('/api/admin/users/update-status', async (req, res) => {
-  try {
-    // Check if user is authenticated and has admin role
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    const { discordId, status } = req.body;
-    
-    if (!discordId || !status || !['active', 'inactive'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid request data' });
-    }
-
-    // Update user status
-    const result = await User.updateMany(
-      { discordId },
-      { 
-        status,
-        statusChangedAt: new Date()
-      }
-    );
-
-    if (result.modifiedCount === 0) {
-      return res.status(404).json({ error: 'User not found or no changes made' });
-    }
-
-    res.json({ 
-      success: true,
-      message: `User status updated to ${status}`,
-      updatedCount: result.modifiedCount
-    });
-
-  } catch (error) {
-    console.error('[server.js]: ❌ Error updating user status:', error);
-    res.status(500).json({ error: 'Failed to update user status' });
-  }
-});
-
-// Debug endpoint to check for duplicate users
-app.get('/api/debug/users/duplicates', async (req, res) => {
-  try {
-    const duplicateUsers = await User.aggregate([
-      {
-        $group: {
-          _id: '$discordId',
-          count: { $sum: 1 },
-          users: { $push: { _id: '$_id', username: '$username', createdAt: '$createdAt' } }
-        }
-      },
-      {
-        $match: {
-          count: { $gt: 1 }
-        }
-      },
-      {
-        $sort: { count: -1 }
-      }
-    ]);
-
-    console.log('[Server] Duplicate users found:', duplicateUsers);
-    
-    res.json({
-      duplicateUsers,
-      totalDuplicates: duplicateUsers.length,
-      totalDuplicateRecords: duplicateUsers.reduce((sum, group) => sum + group.count, 0)
-    });
-  } catch (error) {
-    console.error('[server.js]: Error checking for duplicate users:', error);
-    res.status(500).json({ error: 'Failed to check for duplicate users' });
-  }
-});
-
-// Test endpoint to check if server is working
-app.get('/api/test', (req, res) => {
-  res.json({ 
-    message: 'Server is working',
-    timestamp: new Date().toISOString()
-  });
-});
 
 
 
-// Test endpoint to check characters in database
-app.get('/api/test/characters', async (req, res) => {
-  try {
-    const regularCount = await Character.countDocuments();
-    const modCount = await ModCharacter.countDocuments();
-    const totalCount = regularCount + modCount;
-    
-    res.json({
-      regularCharacters: regularCount,
-      modCharacters: modCount,
-      totalCharacters: totalCount,
-      message: 'Character count retrieved successfully'
-    });
-  } catch (error) {
-    console.error('[server.js]: ❌ Error counting characters:', error);
-    res.status(500).json({ error: 'Failed to count characters' });
-  }
-});
+
+
+
+
 
