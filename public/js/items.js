@@ -351,6 +351,13 @@ function renderDetail(label, value) {
 // Formats and returns item image URL
 function formatItemImageUrl(image) {
   if (!image || image === 'No Image') return '/images/ankleicon.png';
+  
+  // If it's a GCS URL, route it through our proxy to avoid CORS issues
+  if (image.startsWith('https://storage.googleapis.com/tinglebot/')) {
+    const path = image.replace('https://storage.googleapis.com/tinglebot/', '');
+    return `/api/images/${path}`;
+  }
+  
   if (image.startsWith('http')) return image;
   return `/api/images/${image}`;
 }
