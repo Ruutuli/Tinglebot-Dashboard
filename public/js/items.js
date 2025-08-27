@@ -200,7 +200,7 @@ function renderItemCards(items, page = 1, totalItems = null) {
             </div>
           </div>
           
-          ${isCraftable ? `
+          ${(isArmor || isWeapon || isRecipe) ? `
           <div class="item-section modern-item-section">
             <div class="item-section-label modern-item-section-label"><i class="fas fa-chart-bar"></i> Stats</div>
             <div class="item-stats-row modern-item-stats-row">
