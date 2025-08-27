@@ -392,6 +392,10 @@ function generateCharacterStatsSection(data) {
                             <td><strong>Mod Characters</strong></td>
                             <td>${data.modCharacterStats.totalModCharacters || 0}</td>
                         </tr>` : ''}
+                        <tr>
+                            <td><strong>Jailed Characters</strong></td>
+                            <td>${data.jailedCount || 0}</td>
+                        </tr>
                     </tbody>
                 </table>
                 <table class="stats-table">
@@ -475,6 +479,29 @@ function generateStatusEffectsSection(data) {
                                 <tr>
                                     <td>${char.name}</td>
                                     <td>${char.debuff && char.debuff.endDate ? formatDebuffEndMidnight(char.debuff.endDate) : '—'}</td>
+                                </tr>
+                            `).join('')
+                            : '<tr><td colspan="2">None</td></tr>'
+                        }
+                    </tbody>
+                </table>
+                
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th colspan="2">Jailed Characters</th>
+                        </tr>
+                        <tr>
+                            <th>Character</th>
+                            <th>Release Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${(data.jailedCharacters && data.jailedCharacters.length > 0)
+                            ? data.jailedCharacters.map(char => `
+                                <tr>
+                                    <td>${char.name}</td>
+                                    <td>${char.jailReleaseTime ? new Date(char.jailReleaseTime).toLocaleString() : '—'}</td>
                                 </tr>
                             `).join('')
                             : '<tr><td colspan="2">None</td></tr>'
@@ -641,6 +668,61 @@ function generateVisitingCharactersSection(data) {
                             </tbody>
                         </table>
                     ` : '<p style="color: #aaa; text-align: center; margin: 1rem 0;">No visitors</p>'}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// Helper: Generate jail status section
+function generateJailStatusSection(data) {
+    const jailedCharacters = data.jailedCharacters || [];
+    
+    if (jailedCharacters.length === 0) {
+        return `
+            <div class="stats-card-wide jail-status-section">
+                <h3><i class="fas fa-lock"></i> Jail Status</h3>
+                <p style="color: #aaa; text-align: center; margin: 1rem 0;">No characters are currently in jail</p>
+            </div>
+        `;
+    }
+    
+    // Group jailed characters by current village
+    const jailedByVillage = {};
+    jailedCharacters.forEach(char => {
+        const village = char.currentVillage || char.homeVillage || 'Unknown';
+        if (!jailedByVillage[village]) {
+            jailedByVillage[village] = [];
+        }
+        jailedByVillage[village].push(char);
+    });
+    
+    return `
+        <div class="stats-card-wide jail-status-section">
+            <h3><i class="fas fa-lock"></i> Jail Status (${jailedCharacters.length})</h3>
+            <div class="jail-villages-grid">
+                ${Object.entries(jailedByVillage).map(([village, characters]) => `
+                    <div class="jail-village ${village.toLowerCase()}">
+                        <h4>${village.charAt(0).toUpperCase() + village.slice(1)} Jail (${characters.length})</h4>
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Character</th>
+                                    <th>Home Village</th>
+                                    <th>Release Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${characters.map(char => `
+                                    <tr>
+                                        <td>${char.name}</td>
+                                        <td>${char.homeVillage ? char.homeVillage.charAt(0).toUpperCase() + char.homeVillage.slice(1) : '—'}</td>
+                                        <td>${char.jailReleaseTime ? new Date(char.jailReleaseTime).toLocaleString() : '—'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
                     </div>
                 `).join('')}
             </div>
@@ -859,13 +941,22 @@ async function initStatsPage() {
             firstStatsCard.parentNode.insertBefore(visitingSection.firstElementChild, firstStatsCard.nextSibling);
         }
         
+        // Add jail status section
+        const jailStatusSection = document.createElement('div');
+        jailStatusSection.innerHTML = generateJailStatusSection(data);
+        
+        // Insert after the visiting characters section
+        if (visitingSection.firstElementChild) {
+            visitingSection.firstElementChild.parentNode.insertBefore(jailStatusSection.firstElementChild, visitingSection.firstElementChild.nextSibling);
+        }
+        
         // Add mod character statistics section
         const modStatsSection = document.createElement('div');
         modStatsSection.innerHTML = generateModCharacterStatsSection(data);
         
-        // Insert after the visiting characters section
-        if (visitingSection.firstElementChild) {
-            visitingSection.firstElementChild.parentNode.insertBefore(modStatsSection.firstElementChild, visitingSection.firstElementChild.nextSibling);
+        // Insert after the jail status section
+        if (jailStatusSection.firstElementChild) {
+            jailStatusSection.firstElementChild.parentNode.insertBefore(modStatsSection.firstElementChild, jailStatusSection.firstElementChild.nextSibling);
         }
 
         // Clean up existing charts

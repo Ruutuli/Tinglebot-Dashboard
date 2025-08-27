@@ -1057,10 +1057,11 @@ app.get('/api/stats/characters', async (req, res) => {
     } : { names: [], values: [], value: 0 };
 
     // Get special character counts (mod characters are immune to negative effects)
-    const [kodCount, blightedCount, debuffedCount] = await Promise.all([
+    const [kodCount, blightedCount, debuffedCount, jailedCount] = await Promise.all([
       Character.countDocuments({ ko: true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } }),
       Character.countDocuments({ blighted: true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } }),
-      Character.countDocuments({ 'debuff.active': true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } })
+      Character.countDocuments({ 'debuff.active': true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } }),
+      Character.countDocuments({ inJail: true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } })
     ]);
 
     // Get debuffed characters details
@@ -1077,6 +1078,12 @@ app.get('/api/stats/characters', async (req, res) => {
     const blightedCharacters = await Character.find(
       { blighted: true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } },
       { name: 1, blightedAt: 1, blighted: 1 }
+    ).lean();
+
+    // Get jailed characters details
+    const jailedCharacters = await Character.find(
+      { inJail: true, name: { $nin: ['Tingle', 'Tingle test', 'John'] } },
+      { name: 1, jailReleaseTime: 1, currentVillage: 1, homeVillage: 1 }
     ).lean();
 
     // Get mod character statistics
@@ -1111,9 +1118,11 @@ app.get('/api/stats/characters', async (req, res) => {
       kodCount,
       blightedCount,
       debuffedCount,
+      jailedCount,
       debuffedCharacters,
       kodCharacters,
       blightedCharacters,
+      jailedCharacters,
       modCharacterStats,
       timestamp: Date.now() // Add timestamp for cache busting
     });
