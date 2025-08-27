@@ -522,12 +522,18 @@ app.get('/api/user', async (req, res) => {
           if (response.ok) {
             const memberData = await response.json();
             const roles = memberData.roles || [];
-            // Check for admin role (you can customize this role ID)
-            const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID || '788137728943325185'; // Default to resident role for now
-            isAdmin = roles.includes(ADMIN_ROLE_ID);
+            // Check for admin role - require ADMIN_ROLE_ID to be set
+            const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+            if (!ADMIN_ROLE_ID) {
+              console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
+              isAdmin = false;
+            } else {
+              isAdmin = roles.includes(ADMIN_ROLE_ID);
+            }
           }
         } catch (error) {
           console.error('[server.js]: Error checking admin status:', error);
+          isAdmin = false;
         }
       }
     }
@@ -1882,9 +1888,37 @@ app.post('/api/character-of-week', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Character ID is required' });
     }
     
-    // Check if user has admin privileges (you can customize this logic)
-    const user = await User.findOne({ discordId: req.user.discordId });
-    if (!user || !user.isAdmin) {
+    // Check if user has admin role in Discord
+    let isAdmin = false;
+    const guildId = process.env.PROD_GUILD_ID;
+    
+    if (guildId && req.user) {
+      try {
+        const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+          headers: {
+            'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const memberData = await response.json();
+          const roles = memberData.roles || [];
+          const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+          if (!ADMIN_ROLE_ID) {
+            console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
+            isAdmin = false;
+          } else {
+            isAdmin = roles.includes(ADMIN_ROLE_ID);
+          }
+        }
+      } catch (error) {
+        console.error('[server.js]: Error checking admin status:', error);
+        isAdmin = false;
+      }
+    }
+
+    if (!isAdmin) {
       return res.status(403).json({ error: 'Admin privileges required' });
     }
     
@@ -1932,9 +1966,37 @@ app.post('/api/character-of-week', requireAuth, async (req, res) => {
 // Automatically selects a random character for the week
 app.post('/api/character-of-week/random', requireAuth, async (req, res) => {
   try {
-    // Check if user has admin privileges
-    const user = await User.findOne({ discordId: req.user.discordId });
-    if (!user || !user.isAdmin) {
+    // Check if user has admin role in Discord
+    let isAdmin = false;
+    const guildId = process.env.PROD_GUILD_ID;
+    
+    if (guildId && req.user) {
+      try {
+        const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+          headers: {
+            'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const memberData = await response.json();
+          const roles = memberData.roles || [];
+          const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+          if (!ADMIN_ROLE_ID) {
+            console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
+            isAdmin = false;
+          } else {
+            isAdmin = roles.includes(ADMIN_ROLE_ID);
+          }
+        }
+      } catch (error) {
+        console.error('[server.js]: Error checking admin status:', error);
+        isAdmin = false;
+      }
+    }
+
+    if (!isAdmin) {
       return res.status(403).json({ error: 'Admin privileges required' });
     }
     
@@ -1958,9 +2020,37 @@ app.post('/api/character-of-week/random', requireAuth, async (req, res) => {
 // Manually triggers the first character of the week (for testing)
 app.post('/api/character-of-week/trigger-first', requireAuth, async (req, res) => {
   try {
-    // Check if user has admin privileges
-    const user = await User.findOne({ discordId: req.user.discordId });
-    if (!user || !user.isAdmin) {
+    // Check if user has admin role in Discord
+    let isAdmin = false;
+    const guildId = process.env.PROD_GUILD_ID;
+    
+    if (guildId && req.user) {
+      try {
+        const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+          headers: {
+            'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const memberData = await response.json();
+          const roles = memberData.roles || [];
+          const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+          if (!ADMIN_ROLE_ID) {
+            console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
+            isAdmin = false;
+          } else {
+            isAdmin = roles.includes(ADMIN_ROLE_ID);
+          }
+        }
+      } catch (error) {
+        console.error('[server.js]: Error checking admin status:', error);
+        isAdmin = false;
+      }
+    }
+
+    if (!isAdmin) {
       return res.status(403).json({ error: 'Admin privileges required' });
     }
     
@@ -2940,13 +3030,19 @@ app.get('/api/admin/users/activity', async (req, res) => {
         if (response.ok) {
           const memberData = await response.json();
           const roles = memberData.roles || [];
-          const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID || '788137728943325185';
-          isAdmin = roles.includes(ADMIN_ROLE_ID);
+          const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+          if (!ADMIN_ROLE_ID) {
+            console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
+            isAdmin = false;
+          } else {
+            isAdmin = roles.includes(ADMIN_ROLE_ID);
+          }
         } else {
           console.warn(`[server.js]: Discord API error: ${response.status} ${response.statusText}`);
         }
       } catch (error) {
         console.error('[server.js]: Error checking admin status:', error);
+        isAdmin = false;
       }
     }
 
@@ -3191,11 +3287,17 @@ app.post('/api/admin/users/update-status', async (req, res) => {
         if (response.ok) {
           const memberData = await response.json();
           const roles = memberData.roles || [];
-          const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID || '788137728943325185';
-          isAdmin = roles.includes(ADMIN_ROLE_ID);
+          const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+          if (!ADMIN_ROLE_ID) {
+            console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
+            isAdmin = false;
+          } else {
+            isAdmin = roles.includes(ADMIN_ROLE_ID);
+          }
         }
       } catch (error) {
         console.error('[server.js]: Error checking admin status:', error);
+        isAdmin = false;
       }
     }
 
@@ -3389,11 +3491,17 @@ app.post('/api/admin/users/update-timestamp', async (req, res) => {
         if (response.ok) {
           const memberData = await response.json();
           const roles = memberData.roles || [];
-          const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID || '788137728943325185';
-          isAdmin = roles.includes(ADMIN_ROLE_ID);
+          const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+          if (!ADMIN_ROLE_ID) {
+            console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
+            isAdmin = false;
+          } else {
+            isAdmin = roles.includes(ADMIN_ROLE_ID);
+          }
         }
       } catch (error) {
         console.error('[server.js]: Error checking admin status:', error);
+        isAdmin = false;
       }
     }
 
