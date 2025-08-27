@@ -3885,6 +3885,21 @@ app.get('/api/weather/stats', async (req, res) => {
   }
 });
 
+// ------------------- Function: getCalendarSeason -------------------
+// Returns the current season based on the calendar module
+app.get('/api/calendar/season', (req, res) => {
+  try {
+    const currentSeason = calendarModule.getCurrentSeason();
+    res.json({ 
+      season: currentSeason,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error(`[server.js]: ❌ Error getting current season:`, error);
+    res.status(500).json({ error: 'Failed to get current season', details: error.message });
+  }
+});
+
 // ------------------- Section: Utility Functions -------------------
 
 // ------------------- Function: formatUptime -------------------

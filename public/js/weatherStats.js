@@ -6,6 +6,16 @@
 import { scrollToTop } from './ui.js';
 
 // ============================================================================
+// ------------------- Chart.js Plugin Registration -------------------
+// Registers required plugins for weather charts
+// ============================================================================
+
+// Register ChartDataLabels plugin if available
+if (typeof ChartDataLabels !== 'undefined') {
+  Chart.register(ChartDataLabels);
+}
+
+// ============================================================================
 // ------------------- Weather Data Management -------------------
 // Fetches and processes weather data for statistics
 // ============================================================================
@@ -172,7 +182,6 @@ function analyzeWeatherPatterns(weatherData, village) {
   const analysis = {
     village,
     totalDays: data.length,
-    seasons: {},
     temperatures: {},
     winds: {},
     precipitations: {},
@@ -182,11 +191,6 @@ function analyzeWeatherPatterns(weatherData, village) {
   
   // Count occurrences
   data.forEach(day => {
-    // Seasons
-    if (day.season) {
-      analysis.seasons[day.season] = (analysis.seasons[day.season] || 0) + 1;
-    }
-    
     // Temperatures
     if (day.temperature?.label) {
       analysis.temperatures[day.temperature.label] = (analysis.temperatures[day.temperature.label] || 0) + 1;
@@ -206,14 +210,6 @@ function analyzeWeatherPatterns(weatherData, village) {
     if (day.special?.label && day.special.label !== 'None') {
       analysis.specials[day.special.label] = (analysis.specials[day.special.label] || 0) + 1;
     }
-  });
-  
-  // Calculate percentages
-  Object.keys(analysis.seasons).forEach(season => {
-    analysis.seasons[season] = {
-      count: analysis.seasons[season],
-      percentage: ((analysis.seasons[season] / analysis.totalDays) * 100).toFixed(1)
-    };
   });
   
   Object.keys(analysis.temperatures).forEach(temp => {
@@ -345,23 +341,24 @@ function createWeatherPieChart(ctx, data, title, colors) {
             }
           }
         },
-        datalabels: {
-          color: '#FFF',
-          font: {
-            size: 12,
-            weight: 'bold'
-          },
-          textAlign: 'center',
-          textShadowColor: '#22223B',
-          textShadowBlur: 6,
-          formatter: function(value, context) {
-            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-            const percentage = ((value / total) * 100);
-            // Only show label if segment is at least 10%
-            if (percentage < 10) return '';
-            return `${percentage.toFixed(0)}%`;
-          }
-        }
+                 datalabels: {
+           color: '#FFF',
+           font: {
+             size: 12,
+             weight: 'bold'
+           },
+           textAlign: 'center',
+           textShadowColor: '#22223B',
+           textShadowBlur: 6,
+           padding: 6,
+           formatter: function(value, context) {
+             const total = context.dataset.data.reduce((a, b) => a + b, 0);
+             const percentage = ((value / total) * 100);
+             // Only show label if segment is at least 10%
+             if (percentage < 10) return '';
+             return `${percentage.toFixed(0)}%`;
+           }
+         }
       }
     }
   });
@@ -423,23 +420,23 @@ function createWeatherBarChart(ctx, data, title, colors) {
             }
           }
         },
-        datalabels: {
-          color: '#FFF',
-          font: {
-            size: 12,
-            weight: 'bold'
-          },
-          textAlign: 'center',
-          textShadowColor: '#22223B',
-          textShadowBlur: 6,
-          anchor: 'end',
-          offset: 4,
-          formatter: function(value, context) {
-            // Only show label if value is at least 3
-            if (value < 3) return '';
-            return value;
-          }
-        }
+                 datalabels: {
+           color: '#FFF',
+           font: {
+             size: 12,
+             weight: 'bold'
+           },
+           textAlign: 'center',
+           textShadowColor: '#22223B',
+           textShadowBlur: 6,
+           anchor: 'end',
+           offset: 8,
+           padding: 8,
+           formatter: function(value, context) {
+             // Show all values, even small ones
+             return value;
+           }
+         }
       },
       scales: {
         y: {
@@ -477,38 +474,101 @@ function createWeatherBarChart(ctx, data, title, colors) {
 function renderWeatherStatsCards(analysis) {
   if (!analysis) return '';
   
-  const { village, totalDays, seasons, temperatures, winds, precipitations, specials } = analysis;
+  const { village, totalDays, temperatures, winds, precipitations, specials } = analysis;
+  
+  // Get most common values
+  const mostCommonTemp = Object.keys(temperatures).length > 0 ? 
+    Object.entries(temperatures).sort((a, b) => b[1].count - a[1].count)[0] : null;
+  const mostCommonWind = Object.keys(winds).length > 0 ? 
+    Object.entries(winds).sort((a, b) => b[1].count - a[1].count)[0] : null;
+  const mostCommonPrecip = Object.keys(precipitations).length > 0 ? 
+    Object.entries(precipitations).sort((a, b) => b[1].count - a[1].count)[0] : null;
   
   return `
     <div class="weather-stats-cards">
       <div class="weather-stats-card">
         <div class="weather-stats-card-header">
           <img src="${villageCrests[village]}" alt="${village} Crest" class="weather-stats-village-crest" />
-          <h3>${village} Weather Overview</h3>
+          <h3>📊 Data Overview</h3>
         </div>
         <div class="weather-stats-card-content">
           <div class="weather-stats-summary">
             <div class="weather-stats-item">
               <span class="weather-stats-label">Total Days Analyzed:</span>
-              <span class="weather-stats-value">${totalDays}</span>
+              <span class="weather-stats-value">${totalDays} days</span>
             </div>
             <div class="weather-stats-item">
-              <span class="weather-stats-label">Most Common Season:</span>
+              <span class="weather-stats-label">Special Events:</span>
+              <span class="weather-stats-value">${Object.keys(specials).length} unique</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="weather-stats-card">
+        <div class="weather-stats-card-header">
+          <img src="${villageCrests[village]}" alt="${village} Crest" class="weather-stats-village-crest" />
+          <h3>🌡️ Temperature</h3>
+        </div>
+        <div class="weather-stats-card-content">
+          <div class="weather-stats-summary">
+            <div class="weather-stats-item">
+              <span class="weather-stats-label">Most Common:</span>
               <span class="weather-stats-value">
-                ${Object.keys(seasons).length > 0 ? 
-                  Object.entries(seasons).sort((a, b) => b[1].count - a[1].count)[0][0] : 'N/A'}
+                ${mostCommonTemp ? mostCommonTemp[0] : 'No data'}
               </span>
             </div>
             <div class="weather-stats-item">
-              <span class="weather-stats-label">Most Common Temperature:</span>
+              <span class="weather-stats-label">Frequency:</span>
               <span class="weather-stats-value">
-                ${Object.keys(temperatures).length > 0 ? 
-                  Object.entries(temperatures).sort((a, b) => b[1].count - a[1].count)[0][0] : 'N/A'}
+                ${mostCommonTemp ? `${mostCommonTemp[1].count} days` : 'N/A'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="weather-stats-card">
+        <div class="weather-stats-card-header">
+          <img src="${villageCrests[village]}" alt="${village} Crest" class="weather-stats-village-crest" />
+          <h3>💨 Wind</h3>
+        </div>
+        <div class="weather-stats-card-content">
+          <div class="weather-stats-summary">
+            <div class="weather-stats-item">
+              <span class="weather-stats-label">Most Common:</span>
+              <span class="weather-stats-value">
+                ${mostCommonWind ? mostCommonWind[0] : 'No data'}
               </span>
             </div>
             <div class="weather-stats-item">
-              <span class="weather-stats-label">Special Weather Events:</span>
-              <span class="weather-stats-value">${Object.keys(specials).length}</span>
+              <span class="weather-stats-label">Frequency:</span>
+              <span class="weather-stats-value">
+                ${mostCommonWind ? `${mostCommonWind[1].count} days` : 'N/A'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="weather-stats-card">
+        <div class="weather-stats-card-header">
+          <img src="${villageCrests[village]}" alt="${village} Crest" class="weather-stats-village-crest" />
+          <h3>🌧️ Precipitation</h3>
+        </div>
+        <div class="weather-stats-card-content">
+          <div class="weather-stats-summary">
+            <div class="weather-stats-item">
+              <span class="weather-stats-label">Most Common:</span>
+              <span class="weather-stats-value">
+                ${mostCommonPrecip ? mostCommonPrecip[0] : 'No data'}
+              </span>
+            </div>
+            <div class="weather-stats-item">
+              <span class="weather-stats-label">Frequency:</span>
+              <span class="weather-stats-value">
+                ${mostCommonPrecip ? `${mostCommonPrecip[1].count} days` : 'N/A'}
+              </span>
             </div>
           </div>
         </div>
@@ -523,10 +583,9 @@ function renderWeatherStatsCards(analysis) {
 function renderWeatherCharts(analysis) {
   if (!analysis) return '';
   
-  const { village, seasons, temperatures, winds, precipitations, specials } = analysis;
+  const { village, temperatures, winds, precipitations, specials } = analysis;
   
   // Generate colors for charts
-  const seasonColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFE66D'];
   const tempColors = [
     '#FF6B6B', '#FF8E8E', '#FFD6D6', '#FFF3B0', '#B3E5FC', '#81D4FA', '#4FC3F7', '#29B6F6', '#03A9F4', '#039BE5', '#0288D1', '#22223B'
   ];
@@ -570,12 +629,14 @@ function renderRecentWeather(weatherData, village) {
   
   return `
     <div class="weather-history-section">
-      <h3>Recent Weather History - ${village}</h3>
+      <h3>📅 Recent Weather History - ${village}</h3>
+      <p class="weather-history-subtitle">Last 7 days of weather conditions</p>
       <div class="weather-history-grid">
         ${recentData.map(day => {
           const date = new Date(day.date).toLocaleDateString('en-US', { 
             month: 'short', 
-            day: 'numeric' 
+            day: 'numeric',
+            year: 'numeric'
           });
           
           return `
@@ -647,24 +708,27 @@ async function renderWeatherStatsPage() {
     let pageHTML = `
       <div class="weather-stats-page">
         <div class="weather-stats-header">
-          <h2>Weather Statistics & Analysis</h2>
+          <h2>🌤️ Weather Statistics & Analysis</h2>
           <p>Comprehensive weather data analysis for all villages over the past 30 days</p>
         </div>
     `;
     
-    // Render statistics for each village
-    villages.forEach(village => {
-      const analysis = analyses[village];
-      if (analysis) {
-        pageHTML += `
-          <div class="weather-village-section" style="--village-color: ${villageColors[village]?.primary || '#666'}">
-            ${renderWeatherStatsCards(analysis)}
-            ${renderWeatherCharts(analysis)}
-            ${renderRecentWeather(weatherData, village)}
-          </div>
-        `;
-      }
-    });
+         // Render statistics for each village
+     villages.forEach(village => {
+       const analysis = analyses[village];
+       if (analysis) {
+         pageHTML += `
+           <div class="weather-village-section" style="--village-color: ${villageColors[village]?.primary || '#666'}">
+             <div class="weather-village-header">
+               <h2>${village} Weather</h2>
+             </div>
+             ${renderWeatherStatsCards(analysis)}
+             ${renderWeatherCharts(analysis)}
+             ${renderRecentWeather(weatherData, village)}
+           </div>
+         `;
+       }
+     });
     
     pageHTML += '</div>';
     
@@ -699,10 +763,9 @@ async function renderWeatherStatsPage() {
  * Creates all charts for a specific village
  */
 function createWeatherChartsForVillage(analysis, village) {
-  const { seasons, temperatures, winds, precipitations, specials } = analysis;
+  const { temperatures, winds, precipitations, specials } = analysis;
   
   // Generate colors
-  const seasonColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFE66D'];
   const tempColors = [
     '#FF6B6B', '#FF8E8E', '#FFD6D6', '#FFF3B0', '#B3E5FC', '#81D4FA', '#4FC3F7', '#29B6F6', '#03A9F4', '#039BE5', '#0288D1', '#22223B'
   ];
@@ -716,32 +779,32 @@ function createWeatherChartsForVillage(analysis, village) {
     '#9C27B0', '#E91E63', '#F44336', '#FF9800', '#FFEB3B', '#4CAF50', '#2196F3', '#3F51B5', '#795548', '#607D8B'
   ];
   
-  // Create charts
+  // Create charts with better titles and number labels
   if (Object.keys(temperatures).length > 0) {
     const tempsCtx = document.getElementById(`temperatures-chart-${village.toLowerCase()}`);
     if (tempsCtx) {
-      createWeatherBarChart(tempsCtx, temperatures, `${village} - Temperature Patterns`, tempColors);
+      createWeatherBarChart(tempsCtx, temperatures, `🌡️ ${village} Temperature Distribution`, tempColors);
     }
   }
   
   if (Object.keys(winds).length > 0) {
     const windsCtx = document.getElementById(`winds-chart-${village.toLowerCase()}`);
     if (windsCtx) {
-      createWeatherBarChart(windsCtx, winds, `${village} - Wind Patterns`, windColors);
+      createWeatherBarChart(windsCtx, winds, `💨 ${village} Wind Speed Patterns`, windColors);
     }
   }
   
   if (Object.keys(precipitations).length > 0) {
     const precipCtx = document.getElementById(`precipitations-chart-${village.toLowerCase()}`);
     if (precipCtx) {
-      createWeatherBarChart(precipCtx, precipitations, `${village} - Precipitation Patterns`, precipColors);
+      createWeatherBarChart(precipCtx, precipitations, `🌧️ ${village} Precipitation Types`, precipColors);
     }
   }
   
   if (Object.keys(specials).length > 0) {
     const specialsCtx = document.getElementById(`specials-chart-${village.toLowerCase()}`);
     if (specialsCtx) {
-      createWeatherPieChart(specialsCtx, specials, `${village} - Special Weather Events`, specialColors);
+      createWeatherPieChart(specialsCtx, specials, `✨ ${village} Special Weather Events`, specialColors);
     }
   }
 }
@@ -761,8 +824,34 @@ async function initializeWeatherStatsPage() {
   
   // Fetch weather history for all villages
   const weatherData = await fetchWeatherHistory(30);
-  // Get the season from the first village's data (all should match)
-  const season = weatherData && Object.values(weatherData)[0]?.season || '';
+  
+  // Get the current season from the calendar module or from the most recent weather data
+  let currentSeason = '';
+  if (weatherData && Object.values(weatherData).length > 0) {
+    // Try to get season from the most recent weather entry
+    const allVillages = Object.values(weatherData);
+    const mostRecentEntry = allVillages
+      .flat()
+      .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    
+    if (mostRecentEntry && mostRecentEntry.season) {
+      currentSeason = mostRecentEntry.season;
+    }
+  }
+  
+  // If no season found in data, use calendar module
+  if (!currentSeason) {
+    try {
+      // Try to get season from calendar module
+      const calendarResponse = await fetch('/api/calendar/season');
+      if (calendarResponse.ok) {
+        const calendarData = await calendarResponse.json();
+        currentSeason = calendarData.season || '';
+      }
+    } catch (error) {
+      console.warn('[weatherStats.js]: Could not fetch calendar season, using fallback');
+    }
+  }
   
   // Render the page
   await renderWeatherStatsPage();
@@ -770,9 +859,21 @@ async function initializeWeatherStatsPage() {
   // Render header with season
   const header = document.createElement('div');
   header.className = 'weather-stats-header';
-  header.innerHTML = `<h1>Weather Statistics</h1><p>Season: <strong>${season ? season.charAt(0).toUpperCase() + season.slice(1) : 'Unknown'}</strong></p>`;
+  
+  const seasonDisplay = currentSeason ? 
+    currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1) : 
+    'Unknown';
+  
+  header.innerHTML = `
+    <h1>Weather Statistics</h1>
+    <p>Current Season: <strong>${seasonDisplay}</strong></p>
+    <p class="weather-stats-subtitle">Analysis based on the last 30 days of weather data</p>
+  `;
+  
   const weatherStatsPage = document.querySelector('.weather-stats-page');
-  weatherStatsPage.insertBefore(header, weatherStatsPage.firstChild);
+  if (weatherStatsPage) {
+    weatherStatsPage.insertBefore(header, weatherStatsPage.firstChild);
+  }
 }
 
 // ============================================================================
