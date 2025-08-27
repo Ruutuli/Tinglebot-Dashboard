@@ -17,6 +17,8 @@ const MongoStore = require('connect-mongo');
 const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
 const { MongoClient } = require('mongodb');
+const helmet = require('helmet');
+const compression = require('compression');
 
 // Import database methods from db.js
 const {
@@ -273,6 +275,34 @@ async function initializeDatabases() {
 }
 
 // ------------------- Section: Express Middleware -------------------
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      "default-src": ["'self'"],
+      "script-src": ["'self'", "https://kit.fontawesome.com", "https://cdn.jsdelivr.net"],
+      "style-src": ["'self'", "'unsafe-inline'", "https://kit.fontawesome.com"],
+      "img-src": ["'self'", "data:", "https://kit.fontawesome.com"],
+      "font-src": ["'self'", "data:", "https://kit.fontawesome.com", "https://cdn.jsdelivr.net"],
+      "connect-src": ["'self'"],
+      "frame-ancestors": ["'none'"],
+      "upgrade-insecure-requests": []
+    }
+  },
+  crossOriginEmbedderPolicy: false
+}));
+
+// Additional security headers
+app.use(helmet.hsts({ maxAge: 31536000, includeSubDomains: true }));
+app.use(helmet.noSniff());
+app.use(helmet.frameguard({ action: "deny" }));
+app.use(helmet.referrerPolicy({ policy: "no-referrer-when-downgrade" }));
+
+// Compression middleware
+app.use(compression());
+
+// CORS and other middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -280,6 +310,17 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
+
+// HTTPS redirect middleware (only in production)
+if (isProduction) {
+  app.use((req, res, next) => {
+    const xfProto = req.headers["x-forwarded-proto"];
+    if (xfProto && xfProto !== "https") {
+      return res.redirect(301, `https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
+}
 
 // ------------------- Section: Authentication Middleware -------------------
 
@@ -319,6 +360,16 @@ app.get('/health', (req, res) => {
 // Test API page
 app.get('/test-api', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test-api.html'));
+});
+
+// Privacy page
+app.get('/privacy', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
+});
+
+// Contact page
+app.get('/contact', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'contact.html'));
 });
 
 // ------------------- Function: serveLoginPage -------------------
