@@ -282,12 +282,13 @@ app.use(helmet({
     directives: {
       "default-src": ["'self'"],
       "script-src": ["'self'", "https://kit.fontawesome.com", "https://cdn.jsdelivr.net"],
-      "style-src": ["'self'", "'unsafe-inline'", "https://kit.fontawesome.com"],
-      "img-src": ["'self'", "data:", "https://kit.fontawesome.com"],
-      "font-src": ["'self'", "data:", "https://kit.fontawesome.com", "https://cdn.jsdelivr.net"],
-      "connect-src": ["'self'"],
+      "style-src": ["'self'", "'unsafe-inline'", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com"],
+      "img-src": ["'self'", "data:", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://cdn.discordapp.com", "https://storage.googleapis.com", "https://static.wixstatic.com"],
+      "font-src": ["'self'", "data:", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://cdn.jsdelivr.net"],
+      "connect-src": ["'self'", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://discord.com", "https://storage.googleapis.com"],
       "frame-ancestors": ["'none'"],
-      "upgrade-insecure-requests": []
+      "upgrade-insecure-requests": [],
+      "script-src-attr": ["'unsafe-inline'"]
     }
   },
   crossOriginEmbedderPolicy: false
@@ -298,6 +299,11 @@ app.use(helmet.hsts({ maxAge: 31536000, includeSubDomains: true }));
 app.use(helmet.noSniff());
 app.use(helmet.frameguard({ action: "deny" }));
 app.use(helmet.referrerPolicy({ policy: "no-referrer-when-downgrade" }));
+// Permissions Policy header (restricts access to browser features)
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()');
+  next();
+});
 
 // Compression middleware
 app.use(compression());
