@@ -530,7 +530,6 @@ app.get('/api/user', async (req, res) => {
             // Check for admin role - require ADMIN_ROLE_ID to be set
             const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
             if (!ADMIN_ROLE_ID) {
-              console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
               isAdmin = false;
             } else {
               isAdmin = roles.includes(ADMIN_ROLE_ID);
@@ -1911,7 +1910,6 @@ app.post('/api/character-of-week', requireAuth, async (req, res) => {
           const roles = memberData.roles || [];
           const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
           if (!ADMIN_ROLE_ID) {
-            console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
             isAdmin = false;
           } else {
             isAdmin = roles.includes(ADMIN_ROLE_ID);
@@ -1989,7 +1987,6 @@ app.post('/api/character-of-week/random', requireAuth, async (req, res) => {
           const roles = memberData.roles || [];
           const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
           if (!ADMIN_ROLE_ID) {
-            console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
             isAdmin = false;
           } else {
             isAdmin = roles.includes(ADMIN_ROLE_ID);
@@ -2043,7 +2040,6 @@ app.post('/api/character-of-week/trigger-first', requireAuth, async (req, res) =
           const roles = memberData.roles || [];
           const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
           if (!ADMIN_ROLE_ID) {
-            console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
             isAdmin = false;
           } else {
             isAdmin = roles.includes(ADMIN_ROLE_ID);
@@ -3037,7 +3033,6 @@ app.get('/api/admin/users/activity', async (req, res) => {
           const roles = memberData.roles || [];
           const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
           if (!ADMIN_ROLE_ID) {
-            console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
             isAdmin = false;
           } else {
             isAdmin = roles.includes(ADMIN_ROLE_ID);
@@ -3294,7 +3289,6 @@ app.post('/api/admin/users/update-status', async (req, res) => {
           const roles = memberData.roles || [];
           const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
           if (!ADMIN_ROLE_ID) {
-            console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
             isAdmin = false;
           } else {
             isAdmin = roles.includes(ADMIN_ROLE_ID);
@@ -3498,7 +3492,6 @@ app.post('/api/admin/users/update-timestamp', async (req, res) => {
           const roles = memberData.roles || [];
           const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
           if (!ADMIN_ROLE_ID) {
-            console.error('[server.js]: ADMIN_ROLE_ID environment variable not set - admin access disabled');
             isAdmin = false;
           } else {
             isAdmin = roles.includes(ADMIN_ROLE_ID);
