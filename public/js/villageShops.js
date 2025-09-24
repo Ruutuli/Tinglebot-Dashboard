@@ -53,6 +53,12 @@ function renderVillageShopCards(items, page = 1, totalItems = null) {
     // ------------------- Render Village Shop Item Cards -------------------
     grid.innerHTML = sortedItems.map(item => {
       
+      // Debug: Log image URL processing for first few items
+      if (sortedItems.indexOf(item) < 3) {
+        console.log(`🔍 Processing item: ${item.itemName}, image: ${item.image}`);
+        console.log(`🖼️ Formatted URL: ${formatItemImageUrl(item.image)}`);
+      }
+      
       // Helper for tags
       const renderTags = arr => (Array.isArray(arr) ? arr.filter(Boolean).map(tag => `<span class="item-tag">${tag.trim()}</span>`).join('') : '');
       
@@ -221,6 +227,15 @@ function renderDetail(label, value) {
 // Formats and returns item image URL
 function formatItemImageUrl(image) {
   if (!image || image === 'No Image') return '/images/ankleicon.png';
+  
+  // If it's a GCS URL, route it through our proxy to avoid CORS issues
+  if (image.startsWith('https://storage.googleapis.com/tinglebot/')) {
+    const path = image.replace('https://storage.googleapis.com/tinglebot/', '');
+    const proxyUrl = `/api/images/${path}`;
+    console.log(`🖼️ Converting GCS URL: ${image} -> ${proxyUrl}`);
+    return proxyUrl;
+  }
+  
   if (image.startsWith('http')) return image;
   return `/api/images/${image}`;
 }

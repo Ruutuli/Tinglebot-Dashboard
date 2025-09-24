@@ -678,6 +678,35 @@
               </div>
             </div>
           </div>
+
+          <!-- Security Management -->
+          <div class="admin-tool-card">
+            <div class="admin-tool-header">
+              <i class="fas fa-shield-alt"></i>
+              <h3>Security Management</h3>
+            </div>
+            <div class="admin-tool-content">
+              <p>Monitor and manage security threats</p>
+              <div class="admin-tool-actions">
+                <button class="admin-action-btn primary" id="security-comprehensive-btn">
+                  <i class="fas fa-shield-virus"></i>
+                  Full Security Scan
+                </button>
+                <button class="admin-action-btn secondary" id="security-audit-btn">
+                  <i class="fas fa-search"></i>
+                  Quick Audit
+                </button>
+                <button class="admin-action-btn secondary" id="credential-audit-btn">
+                  <i class="fas fa-key"></i>
+                  Credential Audit
+                </button>
+                <button class="admin-action-btn danger" id="security-cleanup-btn">
+                  <i class="fas fa-broom"></i>
+                  Clean Threats
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- User Management Section -->
@@ -1339,7 +1368,9 @@
           <h1><i class="fas fa-lightbulb"></i> Suggestion Box</h1>
           <div class="dashboard-divider"></div>
           <p class="dashboard-welcome">
-            Have an idea to improve the server? Want to see more XYZ? Think there's a problem you're too shy to send in FAQs or to admin? Use this anonymous suggestion box!
+            Have an idea to improve the server? Want to see more XYZ? Think there's a problem you're too shy to send in FAQs or to admin? Use this suggestion box! 
+            <br><br>
+            <em>Login with Discord to submit your suggestions and help improve our community.</em>
           </p>
         </div>
 
@@ -1382,9 +1413,9 @@
 
 
                                         <div class="form-actions">
-                            <button type="submit" class="submit-suggestion-btn" aria-label="Submit suggestion anonymously">
+                            <button type="submit" class="submit-suggestion-btn" aria-label="Submit suggestion">
                               <i class="fas fa-paper-plane" aria-hidden="true"></i>
-                              <span class="btn-text">Submit Anonymously</span>
+                              <span class="btn-text">Submit Suggestion</span>
                             </button>
                             <button type="reset" class="reset-form-btn" aria-label="Reset suggestion form">
                               <i class="fas fa-undo" aria-hidden="true"></i>
@@ -1399,6 +1430,8 @@
               <h3><i class="fas fa-info-circle"></i> How It Works</h3>
               <ul>
                 <li>All suggestions are submitted anonymously</li>
+                <li>You must be logged in with Discord to submit</li>
+                <li>You must be a member of the Discord server</li>
                 <li>We review every suggestion carefully</li>
                 <li>Popular ideas may be implemented in future updates</li>
                 <li>You can submit multiple suggestions</li>
@@ -1412,7 +1445,8 @@
                 <li>Be specific and detailed about your idea</li>
                 <li>Explain the problem you're solving or improvement you want</li>
                 <li>Consider how it benefits the server community</li>
-                <li>Don't worry about being shy - this is completely anonymous</li>
+                <li>No links or URLs are allowed in suggestions</li>
+                <li>All suggestions remain completely anonymous</li>
               </ul>
             </div>
           </div>
@@ -1426,17 +1460,24 @@
             </button>
             <div class="modal-body">
               <i class="fas fa-check-circle"></i>
-              <h3>Submitted and posted to Discord!</h3>
-              <p>Your suggestion has been submitted successfully and posted to Discord! We'll review it and respond in the server.</p>
+              <h3>Submitted Successfully!</h3>
+              <p>Your anonymous suggestion has been submitted successfully! We'll review it and respond in the server.</p>
             </div>
           </div>
         </div>
 
-        <!-- Error Message -->
-        <div id="suggestion-error" class="suggestion-error" style="display: none;">
-          <i class="fas fa-exclamation-circle"></i>
-          <h3>Oops!</h3>
-          <p>There was an error submitting your suggestion. Please try again.</p>
+        <!-- Error Message Modal -->
+        <div id="suggestion-error" class="suggestion-error-modal" style="display: none;">
+          <div class="modal-content">
+            <button class="modal-close" aria-label="Close error message">
+              <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-body">
+              <i class="fas fa-exclamation-triangle"></i>
+              <h3>Submission Error</h3>
+              <p>There was an error submitting your suggestion. Please try again.</p>
+            </div>
+          </div>
         </div>
       </section>
 

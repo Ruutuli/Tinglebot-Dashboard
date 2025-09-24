@@ -59,6 +59,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupSidebarNavigation();
     setupBackToTopButton();
     setupModelCards();
+    
+    // Check for login success and refresh suggestion box if needed
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('login') === 'success') {
+      console.log('✅ Login successful, refreshing suggestion box auth status');
+      // Small delay to ensure auth state is fully updated
+      setTimeout(() => {
+        if (typeof suggestionsModule !== 'undefined' && suggestionsModule.refreshAuthStatus) {
+          suggestionsModule.refreshAuthStatus();
+        }
+      }, 1000);
+    }
   } catch (err) {
     error.logError(err, 'Initialization');
   }
@@ -1423,6 +1435,12 @@ function initializeAdminArea() {
   const dataBackupBtn = document.getElementById('data-backup-btn');
   const dataRestoreBtn = document.getElementById('data-restore-btn');
   
+  // Security management buttons
+  const securityComprehensiveBtn = document.getElementById('security-comprehensive-btn');
+  const securityAuditBtn = document.getElementById('security-audit-btn');
+  const credentialAuditBtn = document.getElementById('credential-audit-btn');
+  const securityCleanupBtn = document.getElementById('security-cleanup-btn');
+  
   // Add placeholder functionality for other buttons
   [systemSettingsBtn, systemStatusBtn, dataBackupBtn, dataRestoreBtn].forEach(btn => {
     if (btn) {
@@ -1431,6 +1449,219 @@ function initializeAdminArea() {
       });
     }
   });
+  
+  // Comprehensive security scan functionality
+  if (securityComprehensiveBtn) {
+    securityComprehensiveBtn.addEventListener('click', async () => {
+      try {
+        securityComprehensiveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running Full Scan...';
+        securityComprehensiveBtn.disabled = true;
+        
+        const response = await fetch('/api/admin/security-comprehensive');
+        const result = await response.json();
+        
+        if (result.success) {
+          const security = result.security;
+          const riskLevel = security.overallRiskLevel;
+          
+          let message = `🛡️ COMPREHENSIVE SECURITY SCAN COMPLETE!\n\n`;
+          message += `Overall Risk Level: ${riskLevel}\n\n`;
+          
+          // Database results
+          message += `📊 DATABASE SCAN:\n`;
+          message += `- Records Scanned: ${security.database.totalRecordsScanned}\n`;
+          message += `- Critical Issues: ${security.database.criticalIssues.length}\n`;
+          message += `- Warnings: ${security.database.warnings.length}\n\n`;
+          
+          // Codebase results
+          message += `💻 CODEBASE SCAN:\n`;
+          message += `- Files Scanned: ${security.codebase.filesScanned}\n`;
+          message += `- Critical Issues: ${security.codebase.criticalIssues.length}\n`;
+          message += `- Warnings: ${security.codebase.warnings.length}\n\n`;
+          
+          // File integrity results
+          message += `📁 FILE INTEGRITY:\n`;
+          message += `- Files Checked: ${security.fileIntegrity.filesChecked}\n`;
+          message += `- Suspicious Files: ${security.fileIntegrity.suspiciousFiles.length}\n`;
+          message += `- Unexpected Files: ${security.fileIntegrity.unexpectedFiles.length}\n`;
+          message += `- Recently Modified: ${security.fileIntegrity.modifiedFiles.length}\n\n`;
+          
+          // Log analysis results
+          message += `📋 LOG ANALYSIS:\n`;
+          message += `- Suspicious Activities: ${security.logAnalysis.suspiciousActivities.length}\n\n`;
+          
+          // Access audit results
+          message += `👥 ACCESS AUDIT:\n`;
+          message += `- Recent Logins: ${security.accessAudit.recentLogins.length}\n`;
+          message += `- Suspicious Access: ${security.accessAudit.suspiciousAccess.length}\n\n`;
+          
+          // Critical actions
+          if (security.criticalActions.length > 0) {
+            message += `🚨 CRITICAL ACTIONS REQUIRED:\n`;
+            security.criticalActions.forEach((action, index) => {
+              message += `${index + 1}. ${action}\n`;
+            });
+            message += `\n`;
+          }
+          
+          // Risk assessment
+          if (riskLevel === 'CRITICAL') {
+            message += `🚨 CRITICAL RISK DETECTED! Immediate action required.`;
+          } else if (riskLevel === 'HIGH') {
+            message += `⚠️ HIGH RISK DETECTED! Review and address issues.`;
+          } else if (riskLevel === 'MEDIUM') {
+            message += `⚠️ MEDIUM RISK DETECTED! Monitor and review.`;
+          } else {
+            message += `✅ System appears secure.`;
+          }
+          
+          alert(message);
+        } else {
+          alert(`❌ Comprehensive security scan failed: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Comprehensive security scan error:', error);
+        alert('❌ Failed to run comprehensive security scan. Check console for details.');
+      } finally {
+        securityComprehensiveBtn.innerHTML = '<i class="fas fa-shield-virus"></i> Full Security Scan';
+        securityComprehensiveBtn.disabled = false;
+      }
+    });
+  }
+  
+  // Credential audit functionality
+  if (credentialAuditBtn) {
+    credentialAuditBtn.addEventListener('click', async () => {
+      try {
+        credentialAuditBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Auditing...';
+        credentialAuditBtn.disabled = true;
+        
+        const response = await fetch('/api/admin/credential-audit');
+        const result = await response.json();
+        
+        if (result.success) {
+          const audit = result.audit;
+          
+          let message = `🔑 CREDENTIAL AUDIT COMPLETE!\n\n`;
+          
+          // Environment variables status
+          message += `🔧 ENVIRONMENT VARIABLES:\n`;
+          audit.environmentVariables.forEach(env => {
+            if (env.hasValue) {
+              message += `✅ ${env.name}: ${env.length} chars (${env.isSecure ? 'Secure' : 'Weak'})\n`;
+            } else {
+              message += `❌ ${env.name}: MISSING ${env.critical ? '(CRITICAL)' : ''}\n`;
+            }
+          });
+          
+          message += `\n📋 RECOMMENDATIONS:\n`;
+          audit.recommendations.forEach((rec, index) => {
+            message += `${index + 1}. ${rec}\n`;
+          });
+          
+          if (audit.criticalActions.length > 0) {
+            message += `\n🚨 CRITICAL ACTIONS:\n`;
+            audit.criticalActions.forEach((action, index) => {
+              message += `${index + 1}. ${action}\n`;
+            });
+          }
+          
+          alert(message);
+        } else {
+          alert(`❌ Credential audit failed: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Credential audit error:', error);
+        alert('❌ Failed to run credential audit. Check console for details.');
+      } finally {
+        credentialAuditBtn.innerHTML = '<i class="fas fa-key"></i> Credential Audit';
+        credentialAuditBtn.disabled = false;
+      }
+    });
+  }
+  
+  // Security audit functionality
+  if (securityAuditBtn) {
+    securityAuditBtn.addEventListener('click', async () => {
+      try {
+        securityAuditBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running Audit...';
+        securityAuditBtn.disabled = true;
+        
+        const response = await fetch('/api/admin/security-audit-full');
+        const result = await response.json();
+        
+        if (result.success) {
+          const audit = result.audit;
+          const riskLevel = audit.overallRiskLevel;
+          
+          let message = `🔍 Security Audit Complete!\n\n`;
+          message += `Overall Risk Level: ${riskLevel}\n\n`;
+          message += `Database Scan:\n`;
+          message += `- Records Scanned: ${audit.database.totalRecordsScanned}\n`;
+          message += `- Critical Issues: ${audit.database.criticalIssues.length}\n`;
+          message += `- Warnings: ${audit.database.warnings.length}\n\n`;
+          message += `Codebase Scan:\n`;
+          message += `- Files Scanned: ${audit.codebase.filesScanned}\n`;
+          message += `- Critical Issues: ${audit.codebase.criticalIssues.length}\n`;
+          message += `- Warnings: ${audit.codebase.warnings.length}\n\n`;
+          
+          if (riskLevel === 'CRITICAL') {
+            message += `🚨 CRITICAL ISSUES DETECTED! Immediate action required.`;
+          } else if (riskLevel === 'HIGH') {
+            message += `⚠️ HIGH RISK DETECTED! Review and address issues.`;
+          } else if (riskLevel === 'MEDIUM') {
+            message += `⚠️ MEDIUM RISK DETECTED! Monitor and review.`;
+          } else {
+            message += `✅ System appears secure.`;
+          }
+          
+          alert(message);
+        } else {
+          alert(`❌ Security audit failed: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Security audit error:', error);
+        alert('❌ Failed to run security audit. Check console for details.');
+      } finally {
+        securityAuditBtn.innerHTML = '<i class="fas fa-search"></i> Run Security Audit';
+        securityAuditBtn.disabled = false;
+      }
+    });
+  }
+  
+  // Security cleanup functionality
+  if (securityCleanupBtn) {
+    securityCleanupBtn.addEventListener('click', async () => {
+      const confirmed = confirm('⚠️ This will remove or sanitize malicious content from the database. This action cannot be undone. Continue?');
+      
+      if (!confirmed) return;
+      
+      try {
+        securityCleanupBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cleaning...';
+        securityCleanupBtn.disabled = true;
+        
+        const response = await fetch('/api/admin/security-cleanup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+          alert(`✅ ${result.message}`);
+        } else {
+          alert(`❌ Security cleanup failed: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Security cleanup error:', error);
+        alert('❌ Failed to run security cleanup. Check console for details.');
+      } finally {
+        securityCleanupBtn.innerHTML = '<i class="fas fa-broom"></i> Clean Malicious Content';
+        securityCleanupBtn.disabled = false;
+      }
+    });
+  }
 }
 
 // ============================================================================

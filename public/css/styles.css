@@ -1681,6 +1681,18 @@ html {
   transform: translateY(-1px);
 }
 
+.admin-action-btn.danger {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+  border: none;
+}
+
+.admin-action-btn.danger:hover {
+  background: linear-gradient(135deg, #c82333, #bd2130);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+}
+
 .admin-action-btn i {
   font-size: 0.9rem;
 }
@@ -2379,5 +2391,111 @@ html {
   
   .footer-content {
     padding: 0;
+  }
+}
+
+/* =============================================================================
+   SUGGESTION ERROR MODAL STYLES
+   ============================================================================= */
+
+.suggestion-error-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+
+.suggestion-error-modal .modal-content {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 2px solid var(--error-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+  animation: errorModalSlideIn 0.3s ease-out;
+}
+
+.suggestion-error-modal .modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.suggestion-error-modal .modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.suggestion-error-modal .modal-body {
+  padding: 2rem;
+  text-align: center;
+}
+
+.suggestion-error-modal .modal-body i {
+  font-size: 3rem;
+  color: var(--error-color);
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.suggestion-error-modal .modal-body h3 {
+  color: var(--error-color);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.suggestion-error-modal .modal-body p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.suggestion-error-modal .login-button {
+  margin-top: 1rem;
+  padding: 12px 24px;
+  background: #5865F2;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.suggestion-error-modal .login-button:hover {
+  background: #4752C4;
+  transform: translateY(-1px);
+}
+
+@keyframes errorModalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }

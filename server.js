@@ -309,7 +309,12 @@ app.use((req, res, next) => {
 app.use(compression());
 
 // CORS and other middleware
-app.use(cors());
+app.use(cors({
+  origin: true, // Allow all origins for now
+  credentials: true, // Allow credentials (cookies, authorization headers)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -3921,18 +3926,156 @@ app.get('/api/suggestions/test', (req, res) => {
   });
 });
 
+// Add middleware to log all requests to /api/suggestions
+app.use('/api/suggestions', (req, res, next) => {
+  console.log('🚀 MIDDLEWARE: Request to /api/suggestions detected');
+  console.log('🚀 Method:', req.method);
+  console.log('🚀 Headers:', req.headers);
+  console.log('🚀 Body:', req.body);
+  next();
+});
+
+// Add general request logging for debugging
+app.use((req, res, next) => {
+  if (req.url.includes('suggestion') || req.method === 'POST') {
+    console.log('📡 GENERAL REQUEST:', req.method, req.url, new Date().toISOString());
+  }
+  next();
+});
+
 // Handle suggestion submissions and post to Discord
 app.post('/api/suggestions', async (req, res) => {
-  console.log('[server.js]: 📝 Suggestion submission received:', { body: req.body });
+  console.log('🔥 ===== SUGGESTION ENDPOINT HIT =====');
+  console.log('🔥 Request received at:', new Date().toISOString());
+  
+  const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 
+    (req.connection.socket ? req.connection.socket.remoteAddress : null) || 'unknown';
+  const userAgent = req.get('User-Agent') || 'unknown';
+  
+  console.log('[server.js]: 📝 Suggestion submission received:', { 
+    body: req.body,
+    clientIP: clientIP,
+    userAgent: userAgent,
+    timestamp: new Date().toISOString()
+  });
+  
   try {
+    // Check if user is authenticated
+    if (!req.isAuthenticated() || !req.user) {
+      console.warn('🚫 SECURITY: Unauthenticated suggestion submission attempt');
+      console.warn('🌐 IP:', clientIP);
+      console.warn('📝 Title:', title);
+      console.warn('📄 Description:', description);
+      console.warn('🔍 Session info:', {
+        isAuthenticated: req.isAuthenticated(),
+        hasUser: !!req.user,
+        sessionID: req.sessionID,
+        userAgent: req.headers['user-agent']
+      });
+      console.warn('⏰ Timestamp:', new Date().toISOString());
+      return res.status(401).json({ 
+        error: 'Authentication required. Please log in with Discord to submit suggestions.' 
+      });
+    }
+
+    // Check if user is member of the required guild
+    const requiredGuildId = '603960955839447050';
+    const guildId = process.env.PROD_GUILD_ID;
+    
+    if (!guildId) {
+      console.error('[server.js]: ❌ PROD_GUILD_ID not configured');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    // Verify guild membership
+    try {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log('[server.js]: 🚫 User not in guild:', {
+            discordId: req.user.discordId,
+            username: req.user.username,
+            clientIP: clientIP
+          });
+          return res.status(403).json({ 
+            error: 'You must be a member of the Discord server to submit suggestions.' 
+          });
+        }
+        throw new Error(`Discord API error: ${response.status}`);
+      }
+      
+      console.log('[server.js]: ✅ Guild membership verified for user:', {
+        discordId: req.user.discordId,
+        username: req.user.username
+      });
+    } catch (error) {
+      console.error('[server.js]: ❌ Error verifying guild membership:', error);
+      return res.status(500).json({ error: 'Failed to verify server membership' });
+    }
+
     const { category, title, description } = req.body;
     
     // Validate required fields
     if (!category || !title || !description) {
+      console.log('[server.js]: 🚫 Missing required fields from user:', {
+        discordId: req.user.discordId,
+        username: req.user.username,
+        clientIP: clientIP
+      });
       return res.status(400).json({ 
         error: 'Missing required fields: category, title, and description are required' 
       });
     }
+
+    // Security: Block links and script tags
+    console.log('🔍 Running security validation checks...');
+    const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,})/gi;
+    const scriptRegex = /<script[^>]*>.*?<\/script>/gi;
+    const scriptTagRegex = /<script[^>]*>/gi;
+    
+    console.log('🔍 Checking for links in title/description...');
+    if (linkRegex.test(title) || linkRegex.test(description)) {
+      console.warn('🚫 SECURITY: Link submission attempt blocked');
+      console.warn('👤 User:', req.user.username, `(${req.user.discordId})`);
+      console.warn('🌐 IP:', clientIP);
+      console.warn('📝 Title:', title);
+      console.warn('📄 Description:', description);
+      console.warn('🔍 Link detected in:', {
+        title: linkRegex.test(title),
+        description: linkRegex.test(description)
+      });
+      console.warn('⏰ Timestamp:', new Date().toISOString());
+      return res.status(400).json({ 
+        error: 'Links are not allowed in suggestions. Please remove any URLs or website addresses.' 
+      });
+    }
+    
+    console.log('🔍 Checking for script tags in title/description...');
+    if (scriptRegex.test(title) || scriptRegex.test(description) || 
+        scriptTagRegex.test(title) || scriptTagRegex.test(description)) {
+      console.error('🚨 CRITICAL SECURITY: Script injection attempt blocked');
+      console.error('👤 User:', req.user.username, `(${req.user.discordId})`);
+      console.error('🌐 IP:', clientIP);
+      console.error('📝 Title:', title);
+      console.error('📄 Description:', description);
+      console.error('🔍 Script detected in:', {
+        title: scriptRegex.test(title) || scriptTagRegex.test(title),
+        description: scriptRegex.test(description) || scriptTagRegex.test(description)
+      });
+      console.error('⏰ Timestamp:', new Date().toISOString());
+      console.error('🚨 This is a potential XSS attack attempt!');
+      return res.status(400).json({ 
+        error: 'Script tags are not allowed in suggestions.' 
+      });
+    }
+
+    console.log('✅ Security validation passed - no malicious content detected');
 
     // Create suggestion object
     const suggestion = {
@@ -3940,8 +4083,19 @@ app.post('/api/suggestions', async (req, res) => {
       title,
       description,
       timestamp: new Date().toISOString(),
-      submittedAt: new Date()
+      submittedAt: new Date(),
+      userId: req.user.discordId,
+      username: req.user.username
     };
+
+    console.log('[server.js]: ✅ Valid suggestion from authenticated user:', {
+      discordId: req.user.discordId,
+      username: req.user.username,
+      category: category,
+      titleLength: title.length,
+      descriptionLength: description.length,
+      clientIP: clientIP
+    });
 
     // Format category for better display
     const formatCategory = (cat) => {
@@ -3967,7 +4121,7 @@ app.post('/api/suggestions', async (req, res) => {
     const discordChannelId = '1381479893090566144';
     const embed = {
       title: '💡 New Suggestion Submitted',
-      description: 'A new suggestion has been submitted through the anonymous suggestion box.',
+      description: 'A new anonymous suggestion has been submitted.',
       color: 0x00a3da, // Blue color matching your theme
       image: {
         url: 'https://static.wixstatic.com/media/7573f4_9bdaa09c1bcd4081b48bbe2043a7bf6a~mv2.png'
@@ -4036,11 +4190,24 @@ app.post('/api/suggestions', async (req, res) => {
     });
 
     if (!discordResponse.ok) {
-      console.error('[server.js]: ❌ Discord API error:', discordResponse.status, discordResponse.statusText);
+      console.error('[server.js]: ❌ Discord API error:', {
+        status: discordResponse.status,
+        statusText: discordResponse.statusText,
+        discordId: req.user.discordId,
+        username: req.user.username,
+        clientIP: clientIP
+      });
       throw new Error(`Discord API error: ${discordResponse.status}`);
     }
 
-            console.log('[server.js]: Suggestion posted to Discord successfully');
+    console.log('[server.js]: ✅ Suggestion posted to Discord successfully:', {
+      discordId: req.user.discordId,
+      username: req.user.username,
+      category: category,
+      title: title,
+      clientIP: clientIP,
+      timestamp: new Date().toISOString()
+    });
 
     // Return success response
     res.json({ 
@@ -4050,13 +4217,1062 @@ app.post('/api/suggestions', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[server.js]: ❌ Error submitting suggestion:', error);
+    console.error('[server.js]: ❌ Error submitting suggestion:', {
+      error: error.message,
+      stack: error.stack,
+      clientIP: clientIP,
+      userAgent: userAgent,
+      userId: req.user?.discordId || 'unauthenticated',
+      username: req.user?.username || 'unauthenticated',
+      timestamp: new Date().toISOString()
+    });
     res.status(500).json({ 
       error: 'Failed to submit suggestion',
       details: error.message 
     });
   }
 });
+
+// ------------------- Section: Security Headers -------------------
+// Set security headers for all responses
+app.use((req, res, next) => {
+  // Content Security Policy - Block remote scripts by default
+  const cspDirectives = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://kit.fontawesome.com https://cdn.jsdelivr.net",
+    "style-src 'self' 'unsafe-inline' https://kit.fontawesome.com https://fonts.googleapis.com",
+    "font-src 'self' https://kit.fontawesome.com https://fonts.gstatic.com",
+    "img-src 'self' data: https: blob:",
+    "connect-src 'self' https://discord.com https://api.discord.com https://cdn.jsdelivr.net",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "object-src 'none'",
+    "media-src 'self'",
+    "worker-src 'self'",
+    "manifest-src 'self'",
+    "upgrade-insecure-requests"
+  ].join('; ');
+  
+  res.setHeader('Content-Security-Policy', cspDirectives);
+  
+  // Prevent clickjacking
+  res.setHeader('X-Frame-Options', 'DENY');
+  
+  // Prevent MIME type sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  
+  // Enable XSS protection
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Strict Transport Security (HTTPS only)
+  if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+  
+  // Referrer Policy
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // Permissions Policy
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  
+  next();
+});
+
+// ------------------- Section: Security Audit System -------------------
+
+// Security patterns to detect malicious content
+const SECURITY_PATTERNS = {
+  // Script injection patterns
+  scriptTags: /<script[^>]*>.*?<\/script>/gi,
+  scriptTagOpen: /<script[^>]*>/gi,
+  javascriptProtocol: /javascript:/gi,
+  dataProtocol: /data:text\/html/gi,
+  
+  // Link patterns (potential phishing/malware)
+  suspiciousLinks: /(https?:\/\/[^\s]*\.(tk|ml|ga|cf|click|download|exe|zip|rar|7z))/gi,
+  ipAddresses: /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/gi,
+  
+  // SQL injection patterns
+  sqlInjection: /(union\s+select|drop\s+table|delete\s+from|insert\s+into|update\s+set|or\s+1\s*=\s*1)/gi,
+  
+  // XSS patterns
+  xssPatterns: /(on\w+\s*=|eval\s*\(|expression\s*\(|url\s*\(|@import)/gi,
+  
+  // Command injection patterns
+  commandInjection: /(;|\||&|\$\(|\`|cmd|powershell|bash|sh)/gi,
+  
+  // Suspicious file extensions
+  suspiciousFiles: /\.(exe|bat|cmd|ps1|sh|php|asp|jsp|py|rb|pl)$/gi,
+  
+  // Base64 encoded content (potential payload)
+  base64Content: /data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/gi
+};
+
+// Fields to scan in each model
+const SCANNABLE_FIELDS = {
+  User: ['username', 'email', 'googleSheetsUrl', 'tokenTracker', 'lastMessageContent'],
+  Character: ['name', 'pronouns', 'race', 'homeVillage', 'currentVillage', 'job', 'icon', 'birthday'],
+  ApprovedSubmission: ['title', 'fileName', 'description', 'fileUrl', 'messageUrl'],
+  Quest: ['title', 'description', 'questType', 'location', 'timeLimit', 'itemReward', 'specialNote'],
+  Item: ['itemName', 'image', 'imageType', 'emoji'],
+  Monster: ['name', 'description', 'image'],
+  Village: ['name', 'description'],
+  Weather: ['name', 'description'],
+  Pet: ['name', 'description'],
+  Mount: ['name', 'description'],
+  Relic: ['name', 'description'],
+  Party: ['name', 'description'],
+  Relationship: ['description'],
+  Inventory: ['itemName'],
+  Vending: ['itemName', 'description'],
+  VillageShops: ['itemName', 'description'],
+  TableRoll: ['itemName', 'description'],
+  StealStats: ['itemName'],
+  BloodMoonTracking: ['description'],
+  BlightRollHistory: ['description'],
+  HelpWantedQuest: ['title', 'description', 'village', 'questType'],
+  CharacterOfWeek: ['name', 'description'],
+  ModCharacter: ['name', 'description'],
+  RuuGame: ['name', 'description'],
+  TempData: ['data']
+};
+
+// Security audit function
+async function performSecurityAudit() {
+  console.log('[server.js]: 🔍 Starting comprehensive security audit...');
+  const auditResults = {
+    timestamp: new Date().toISOString(),
+    totalRecordsScanned: 0,
+    suspiciousRecords: [],
+    criticalIssues: [],
+    warnings: [],
+    summary: {}
+  };
+
+  try {
+    // Scan each model for malicious content
+    for (const [modelName, fields] of Object.entries(SCANNABLE_FIELDS)) {
+      try {
+        const Model = require(`./models/${modelName}Model.js`);
+        console.log(`[server.js]: 🔍 Scanning ${modelName} model...`);
+        
+        const records = await Model.find({}).lean();
+        auditResults.totalRecordsScanned += records.length;
+        
+        for (const record of records) {
+          const recordIssues = [];
+          
+          for (const field of fields) {
+            if (record[field] && typeof record[field] === 'string') {
+              const fieldValue = record[field];
+              
+              // Check each security pattern
+              for (const [patternName, pattern] of Object.entries(SECURITY_PATTERNS)) {
+                if (pattern.test(fieldValue)) {
+                  const issue = {
+                    model: modelName,
+                    recordId: record._id,
+                    field: field,
+                    pattern: patternName,
+                    value: fieldValue.substring(0, 200) + (fieldValue.length > 200 ? '...' : ''),
+                    severity: getSeverity(patternName),
+                    timestamp: new Date().toISOString()
+                  };
+                  
+                  recordIssues.push(issue);
+                  
+                  if (issue.severity === 'critical') {
+                    auditResults.criticalIssues.push(issue);
+                  } else {
+                    auditResults.warnings.push(issue);
+                  }
+                }
+              }
+            }
+          }
+          
+          if (recordIssues.length > 0) {
+            auditResults.suspiciousRecords.push({
+              model: modelName,
+              recordId: record._id,
+              issues: recordIssues
+            });
+          }
+        }
+        
+        console.log(`[server.js]: ✅ Scanned ${records.length} ${modelName} records`);
+      } catch (error) {
+        console.error(`[server.js]: ❌ Error scanning ${modelName}:`, error.message);
+        auditResults.warnings.push({
+          model: modelName,
+          error: error.message,
+          severity: 'warning'
+        });
+      }
+    }
+    
+    // Generate summary
+    auditResults.summary = {
+      totalRecords: auditResults.totalRecordsScanned,
+      suspiciousRecords: auditResults.suspiciousRecords.length,
+      criticalIssues: auditResults.criticalIssues.length,
+      warnings: auditResults.warnings.length,
+      riskLevel: auditResults.criticalIssues.length > 0 ? 'HIGH' : 
+                 auditResults.warnings.length > 5 ? 'MEDIUM' : 'LOW'
+    };
+    
+    console.log('[server.js]: ✅ Security audit completed:', auditResults.summary);
+    return auditResults;
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Security audit failed:', error);
+    throw error;
+  }
+}
+
+// Determine severity of security issue
+function getSeverity(patternName) {
+  const criticalPatterns = ['scriptTags', 'scriptTagOpen', 'javascriptProtocol', 'sqlInjection', 'commandInjection'];
+  const highPatterns = ['xssPatterns', 'dataProtocol', 'suspiciousFiles'];
+  
+  if (criticalPatterns.includes(patternName)) return 'critical';
+  if (highPatterns.includes(patternName)) return 'high';
+  return 'medium';
+}
+
+// Admin endpoint to run security audit
+app.get('/api/admin/security-audit', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const guildId = process.env.PROD_GUILD_ID;
+    if (guildId) {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const memberData = await response.json();
+        const roles = memberData.roles || [];
+        const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+        
+        if (!ADMIN_ROLE_ID || !roles.includes(ADMIN_ROLE_ID)) {
+          return res.status(403).json({ error: 'Admin access required' });
+        }
+      } else {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+    }
+    
+    console.log('[server.js]: 🔍 Admin security audit requested by:', req.user.username);
+    const auditResults = await performSecurityAudit();
+    
+    res.json({
+      success: true,
+      audit: auditResults
+    });
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Security audit endpoint error:', error);
+    res.status(500).json({ 
+      error: 'Security audit failed',
+      details: error.message 
+    });
+  }
+});
+
+// Codebase security scan function
+async function performCodebaseSecurityScan() {
+  console.log('[server.js]: 🔍 Starting codebase security scan...');
+  const fs = require('fs').promises;
+  const path = require('path');
+  
+  const codebaseResults = {
+    timestamp: new Date().toISOString(),
+    filesScanned: 0,
+    suspiciousFiles: [],
+    criticalIssues: [],
+    warnings: []
+  };
+
+  try {
+    // Directories to scan
+    const scanDirectories = [
+      './public/js',
+      './public/css', 
+      './models',
+      './utils',
+      './config'
+    ];
+    
+    // File extensions to scan
+    const scanExtensions = ['.js', '.html', '.css', '.json'];
+    
+    // Suspicious patterns in code
+    const codePatterns = {
+      evalUsage: /eval\s*\(/gi,
+      functionConstructor: /new\s+Function\s*\(/gi,
+      innerHTML: /\.innerHTML\s*=/gi,
+      documentWrite: /document\.write\s*\(/gi,
+      suspiciousUrls: /(https?:\/\/[^\s]*\.(tk|ml|ga|cf|click|download|exe|zip|rar|7z))/gi,
+      hardcodedSecrets: /(password|secret|key|token)\s*[:=]\s*['"][^'"]{8,}['"]/gi,
+      suspiciousImports: /import\s+.*from\s+['"][^'"]*\.(tk|ml|ga|cf)['"]/gi,
+      base64Decode: /atob\s*\(|Buffer\.from.*base64/gi,
+      shellCommands: /(exec|spawn|system|shell)\s*\(/gi
+    };
+    
+    for (const dir of scanDirectories) {
+      try {
+        const files = await fs.readdir(dir, { withFileTypes: true });
+        
+        for (const file of files) {
+          if (file.isFile() && scanExtensions.some(ext => file.name.endsWith(ext))) {
+            const filePath = path.join(dir, file.name);
+            codebaseResults.filesScanned++;
+            
+            try {
+              const content = await fs.readFile(filePath, 'utf8');
+              const fileIssues = [];
+              
+              for (const [patternName, pattern] of Object.entries(codePatterns)) {
+                const matches = content.match(pattern);
+                if (matches) {
+                  const issue = {
+                    file: filePath,
+                    pattern: patternName,
+                    matches: matches.length,
+                    severity: getCodeSeverity(patternName),
+                    timestamp: new Date().toISOString()
+                  };
+                  
+                  fileIssues.push(issue);
+                  
+                  if (issue.severity === 'critical') {
+                    codebaseResults.criticalIssues.push(issue);
+                  } else {
+                    codebaseResults.warnings.push(issue);
+                  }
+                }
+              }
+              
+              if (fileIssues.length > 0) {
+                codebaseResults.suspiciousFiles.push({
+                  file: filePath,
+                  issues: fileIssues
+                });
+              }
+              
+            } catch (error) {
+              console.warn(`[server.js]: ⚠️ Could not read file ${filePath}:`, error.message);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn(`[server.js]: ⚠️ Could not scan directory ${dir}:`, error.message);
+      }
+    }
+    
+    console.log(`[server.js]: ✅ Codebase scan completed. Scanned ${codebaseResults.filesScanned} files`);
+    return codebaseResults;
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Codebase security scan failed:', error);
+    throw error;
+  }
+}
+
+// Determine severity of code security issue
+function getCodeSeverity(patternName) {
+  const criticalPatterns = ['evalUsage', 'functionConstructor', 'shellCommands'];
+  const highPatterns = ['innerHTML', 'documentWrite', 'suspiciousUrls', 'hardcodedSecrets'];
+  
+  if (criticalPatterns.includes(patternName)) return 'critical';
+  if (highPatterns.includes(patternName)) return 'high';
+  return 'medium';
+}
+
+// Cleanup malicious content from database
+async function cleanupMaliciousContent(issues) {
+  console.log('[server.js]: 🧹 Starting malicious content cleanup...');
+  const cleanupResults = {
+    timestamp: new Date().toISOString(),
+    recordsCleaned: 0,
+    recordsDeleted: 0,
+    errors: []
+  };
+
+  try {
+    for (const issue of issues) {
+      try {
+        const Model = require(`./models/${issue.model}Model.js`);
+        
+        if (issue.severity === 'critical') {
+          // For critical issues, delete the entire record
+          await Model.findByIdAndDelete(issue.recordId);
+          cleanupResults.recordsDeleted++;
+          console.log(`[server.js]: 🗑️ Deleted critical record ${issue.recordId} from ${issue.model}`);
+        } else {
+          // For other issues, sanitize the field
+          const record = await Model.findById(issue.recordId);
+          if (record && record[issue.field]) {
+            // Remove malicious content and replace with safe placeholder
+            record[issue.field] = '[CONTENT REMOVED - SECURITY RISK]';
+            await record.save();
+            cleanupResults.recordsCleaned++;
+            console.log(`[server.js]: 🧹 Sanitized field ${issue.field} in ${issue.model} record ${issue.recordId}`);
+          }
+        }
+      } catch (error) {
+        console.error(`[server.js]: ❌ Error cleaning up ${issue.model} record ${issue.recordId}:`, error.message);
+        cleanupResults.errors.push({
+          model: issue.model,
+          recordId: issue.recordId,
+          error: error.message
+        });
+      }
+    }
+    
+    console.log('[server.js]: ✅ Malicious content cleanup completed:', cleanupResults);
+    return cleanupResults;
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Malicious content cleanup failed:', error);
+    throw error;
+  }
+}
+
+// Admin endpoint to clean up malicious content
+app.post('/api/admin/security-cleanup', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const guildId = process.env.PROD_GUILD_ID;
+    if (guildId) {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const memberData = await response.json();
+        const roles = memberData.roles || [];
+        const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+        
+        if (!ADMIN_ROLE_ID || !roles.includes(ADMIN_ROLE_ID)) {
+          return res.status(403).json({ error: 'Admin access required' });
+        }
+      } else {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+    }
+    
+    console.log('[server.js]: 🧹 Security cleanup requested by:', req.user.username);
+    
+    // First run a security audit to get current issues
+    const auditResults = await performSecurityAudit();
+    const allIssues = [...auditResults.criticalIssues, ...auditResults.warnings];
+    
+    if (allIssues.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No malicious content found to clean up',
+        cleanup: { recordsCleaned: 0, recordsDeleted: 0 }
+      });
+    }
+    
+    // Clean up the malicious content
+    const cleanupResults = await cleanupMaliciousContent(allIssues);
+    
+    res.json({
+      success: true,
+      message: `Security cleanup completed. Cleaned ${cleanupResults.recordsCleaned} records, deleted ${cleanupResults.recordsDeleted} records.`,
+      cleanup: cleanupResults
+    });
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Security cleanup endpoint error:', error);
+    res.status(500).json({ 
+      error: 'Security cleanup failed',
+      details: error.message 
+    });
+  }
+});
+
+// Combined security audit endpoint
+app.get('/api/admin/security-audit-full', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const guildId = process.env.PROD_GUILD_ID;
+    if (guildId) {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const memberData = await response.json();
+        const roles = memberData.roles || [];
+        const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+        
+        if (!ADMIN_ROLE_ID || !roles.includes(ADMIN_ROLE_ID)) {
+          return res.status(403).json({ error: 'Admin access required' });
+        }
+      } else {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+    }
+    
+    console.log('[server.js]: 🔍 Full security audit requested by:', req.user.username);
+    
+    // Run both database and codebase scans
+    const [databaseAudit, codebaseAudit] = await Promise.all([
+      performSecurityAudit(),
+      performCodebaseSecurityScan()
+    ]);
+    
+    const fullAuditResults = {
+      timestamp: new Date().toISOString(),
+      database: databaseAudit,
+      codebase: codebaseAudit,
+      overallRiskLevel: 'LOW'
+    };
+    
+    // Determine overall risk level
+    const totalCritical = databaseAudit.criticalIssues.length + codebaseAudit.criticalIssues.length;
+    const totalWarnings = databaseAudit.warnings.length + codebaseAudit.warnings.length;
+    
+    if (totalCritical > 0) {
+      fullAuditResults.overallRiskLevel = 'CRITICAL';
+    } else if (totalWarnings > 10) {
+      fullAuditResults.overallRiskLevel = 'HIGH';
+    } else if (totalWarnings > 5) {
+      fullAuditResults.overallRiskLevel = 'MEDIUM';
+    }
+    
+    res.json({
+      success: true,
+      audit: fullAuditResults
+    });
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Full security audit endpoint error:', error);
+    res.status(500).json({ 
+      error: 'Full security audit failed',
+      details: error.message 
+    });
+  }
+});
+
+// File integrity monitoring system
+async function performFileIntegrityCheck() {
+  console.log('[server.js]: 🔍 Starting file integrity check...');
+  const fs = require('fs').promises;
+  const path = require('path');
+  const crypto = require('crypto');
+  
+  const integrityResults = {
+    timestamp: new Date().toISOString(),
+    filesChecked: 0,
+    unexpectedFiles: [],
+    modifiedFiles: [],
+    suspiciousFiles: [],
+    errors: []
+  };
+
+  try {
+    // Critical directories to monitor
+    const criticalDirs = [
+      './public',
+      './models',
+      './utils',
+      './config'
+    ];
+    
+    // Suspicious file patterns
+    const suspiciousPatterns = [
+      /\.php$/i,
+      /\.asp$/i,
+      /\.jsp$/i,
+      /\.py$/i,
+      /\.rb$/i,
+      /\.pl$/i,
+      /\.sh$/i,
+      /\.bat$/i,
+      /\.cmd$/i,
+      /\.exe$/i,
+      /\.dll$/i,
+      /\.so$/i,
+      /\.dylib$/i,
+      /\.phtml$/i,
+      /\.php3$/i,
+      /\.php4$/i,
+      /\.php5$/i,
+      /\.pht$/i,
+      /\.phtm$/i,
+      /\.shtml$/i,
+      /\.htaccess$/i,
+      /\.htpasswd$/i,
+      /\.user\.ini$/i,
+      /\.env$/i,
+      /config\.php$/i,
+      /wp-config\.php$/i,
+      /\.bak$/i,
+      /\.backup$/i,
+      /\.old$/i,
+      /\.tmp$/i,
+      /\.temp$/i
+    ];
+    
+    // Expected file extensions for this project
+    const expectedExtensions = ['.js', '.html', '.css', '.json', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot'];
+    
+    for (const dir of criticalDirs) {
+      try {
+        const files = await fs.readdir(dir, { withFileTypes: true, recursive: true });
+        
+        for (const file of files) {
+          if (file.isFile()) {
+            const filePath = path.join(dir, file.name);
+            integrityResults.filesChecked++;
+            
+            // Check for suspicious file extensions
+            const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(file.name));
+            const hasExpectedExt = expectedExtensions.some(ext => file.name.endsWith(ext));
+            
+            if (isSuspicious) {
+              integrityResults.suspiciousFiles.push({
+                file: filePath,
+                reason: 'Suspicious file extension',
+                timestamp: new Date().toISOString()
+              });
+            } else if (!hasExpectedExt && !file.name.includes('.')) {
+              // Files without extensions might be suspicious
+              integrityResults.unexpectedFiles.push({
+                file: filePath,
+                reason: 'Unexpected file type',
+                timestamp: new Date().toISOString()
+              });
+            }
+            
+            // Check file modification time (files modified in last 24 hours)
+            try {
+              const stats = await fs.stat(filePath);
+              const now = new Date();
+              const fileTime = new Date(stats.mtime);
+              const hoursSinceModified = (now - fileTime) / (1000 * 60 * 60);
+              
+              if (hoursSinceModified < 24) {
+                integrityResults.modifiedFiles.push({
+                  file: filePath,
+                  modifiedAt: fileTime.toISOString(),
+                  hoursAgo: Math.round(hoursSinceModified * 100) / 100,
+                  size: stats.size
+                });
+              }
+            } catch (error) {
+              integrityResults.errors.push({
+                file: filePath,
+                error: error.message
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.warn(`[server.js]: ⚠️ Could not scan directory ${dir}:`, error.message);
+        integrityResults.errors.push({
+          directory: dir,
+          error: error.message
+        });
+      }
+    }
+    
+    console.log(`[server.js]: ✅ File integrity check completed. Checked ${integrityResults.filesChecked} files`);
+    return integrityResults;
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ File integrity check failed:', error);
+    throw error;
+  }
+}
+
+// Log monitoring for compromise indicators
+async function performLogAnalysis() {
+  console.log('[server.js]: 🔍 Starting log analysis...');
+  const fs = require('fs').promises;
+  
+  const logResults = {
+    timestamp: new Date().toISOString(),
+    suspiciousActivities: [],
+    failedLogins: [],
+    unusualRequests: [],
+    errors: []
+  };
+
+  try {
+    // Patterns to look for in logs
+    const suspiciousPatterns = {
+      failedLogins: /(failed|invalid|unauthorized|denied).*login/i,
+      sqlInjection: /(union|select|drop|delete|insert|update).*(from|table|database)/i,
+      xssAttempts: /<script|javascript:|on\w+\s*=/i,
+      pathTraversal: /\.\.\/|\.\.\\|%2e%2e%2f|%2e%2e%5c/i,
+      commandInjection: /(;|\||&|\$\(|\`|cmd|powershell|bash|sh)/i,
+      suspiciousUserAgents: /(bot|crawler|scanner|hack|exploit|inject)/i,
+      suspiciousIPs: /(127\.0\.0\.1|0\.0\.0\.0|localhost)/i
+    };
+    
+    // Check for recent error logs or access logs
+    const logFiles = [
+      './logs/error.log',
+      './logs/access.log',
+      './logs/app.log',
+      './error.log',
+      './access.log'
+    ];
+    
+    for (const logFile of logFiles) {
+      try {
+        const exists = await fs.access(logFile).then(() => true).catch(() => false);
+        if (exists) {
+          const content = await fs.readFile(logFile, 'utf8');
+          const lines = content.split('\n').slice(-1000); // Check last 1000 lines
+          
+          for (const line of lines) {
+            for (const [patternName, pattern] of Object.entries(suspiciousPatterns)) {
+              if (pattern.test(line)) {
+                logResults.suspiciousActivities.push({
+                  logFile: logFile,
+                  pattern: patternName,
+                  line: line.substring(0, 200),
+                  timestamp: new Date().toISOString()
+                });
+              }
+            }
+          }
+        }
+      } catch (error) {
+        logResults.errors.push({
+          logFile: logFile,
+          error: error.message
+        });
+      }
+    }
+    
+    console.log(`[server.js]: ✅ Log analysis completed. Found ${logResults.suspiciousActivities.length} suspicious activities`);
+    return logResults;
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Log analysis failed:', error);
+    throw error;
+  }
+}
+
+// Credential rotation and access audit system
+async function performAccessAudit() {
+  console.log('[server.js]: 🔍 Starting access audit...');
+  
+  const accessResults = {
+    timestamp: new Date().toISOString(),
+    adminUsers: [],
+    recentLogins: [],
+    suspiciousAccess: [],
+    recommendations: []
+  };
+
+  try {
+    // Get all users with admin roles
+    const User = require('./models/UserModel.js');
+    const users = await User.find({}).lean();
+    
+    for (const user of users) {
+      // Check if user has been active recently
+      const lastActive = user.statusChangedAt || user.createdAt;
+      const daysSinceActive = (new Date() - new Date(lastActive)) / (1000 * 60 * 60 * 24);
+      
+      if (daysSinceActive < 7) {
+        accessResults.recentLogins.push({
+          username: user.username,
+          discordId: user.discordId,
+          lastActive: lastActive,
+          daysSinceActive: Math.round(daysSinceActive * 100) / 100,
+          status: user.status
+        });
+      }
+      
+      // Flag users who haven't been active for a long time
+      if (daysSinceActive > 90) {
+        accessResults.suspiciousAccess.push({
+          username: user.username,
+          discordId: user.discordId,
+          lastActive: lastActive,
+          daysSinceActive: Math.round(daysSinceActive * 100) / 100,
+          reason: 'Inactive for extended period'
+        });
+      }
+    }
+    
+    // Generate recommendations
+    if (accessResults.suspiciousAccess.length > 0) {
+      accessResults.recommendations.push('Review and potentially disable inactive user accounts');
+    }
+    
+    if (accessResults.recentLogins.length > 10) {
+      accessResults.recommendations.push('Consider implementing additional authentication measures');
+    }
+    
+    accessResults.recommendations.push('Rotate Discord bot tokens and API keys regularly');
+    accessResults.recommendations.push('Review and audit admin role assignments');
+    accessResults.recommendations.push('Implement two-factor authentication where possible');
+    
+    console.log(`[server.js]: ✅ Access audit completed. Found ${accessResults.recentLogins.length} recent logins`);
+    return accessResults;
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Access audit failed:', error);
+    throw error;
+  }
+}
+
+// Credential rotation and access management
+app.get('/api/admin/credential-audit', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const guildId = process.env.PROD_GUILD_ID;
+    if (guildId) {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const memberData = await response.json();
+        const roles = memberData.roles || [];
+        const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+        
+        if (!ADMIN_ROLE_ID || !roles.includes(ADMIN_ROLE_ID)) {
+          return res.status(403).json({ error: 'Admin access required' });
+        }
+      } else {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+    }
+    
+    console.log('[server.js]: 🔑 Credential audit requested by:', req.user.username);
+    
+    const credentialAudit = {
+      timestamp: new Date().toISOString(),
+      environmentVariables: [],
+      recommendations: [],
+      criticalActions: []
+    };
+    
+    // Check environment variables for potential security issues
+    const envVars = [
+      'DISCORD_TOKEN',
+      'DISCORD_CLIENT_ID',
+      'DISCORD_CLIENT_SECRET',
+      'MONGODB_URI',
+      'ADMIN_ROLE_ID',
+      'PROD_GUILD_ID',
+      'SESSION_SECRET'
+    ];
+    
+    for (const envVar of envVars) {
+      const value = process.env[envVar];
+      if (value) {
+        credentialAudit.environmentVariables.push({
+          name: envVar,
+          hasValue: true,
+          length: value.length,
+          isSecure: value.length >= 32, // Basic security check
+          lastRotated: 'Unknown', // Would need to track this
+          needsRotation: false // Would need to implement rotation tracking
+        });
+      } else {
+        credentialAudit.environmentVariables.push({
+          name: envVar,
+          hasValue: false,
+          critical: ['DISCORD_TOKEN', 'MONGODB_URI', 'SESSION_SECRET'].includes(envVar)
+        });
+      }
+    }
+    
+    // Generate recommendations
+    credentialAudit.recommendations.push('Rotate Discord bot token every 90 days');
+    credentialAudit.recommendations.push('Rotate session secret every 30 days');
+    credentialAudit.recommendations.push('Review and audit admin role assignments monthly');
+    credentialAudit.recommendations.push('Implement credential rotation tracking system');
+    credentialAudit.recommendations.push('Use environment-specific credentials');
+    credentialAudit.recommendations.push('Implement two-factor authentication for admin accounts');
+    
+    // Check for missing critical credentials
+    const missingCritical = credentialAudit.environmentVariables.filter(env => 
+      env.critical && !env.hasValue
+    );
+    
+    if (missingCritical.length > 0) {
+      credentialAudit.criticalActions.push('CRITICAL: Missing required environment variables');
+    }
+    
+    res.json({
+      success: true,
+      audit: credentialAudit
+    });
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Credential audit error:', error);
+    res.status(500).json({ 
+      error: 'Credential audit failed',
+      details: error.message 
+    });
+  }
+});
+
+// Combined comprehensive security check
+app.get('/api/admin/security-comprehensive', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const guildId = process.env.PROD_GUILD_ID;
+    if (guildId) {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const memberData = await response.json();
+        const roles = memberData.roles || [];
+        const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+        
+        if (!ADMIN_ROLE_ID || !roles.includes(ADMIN_ROLE_ID)) {
+          return res.status(403).json({ error: 'Admin access required' });
+        }
+      } else {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+    }
+    
+    console.log('[server.js]: 🔍 Comprehensive security check requested by:', req.user.username);
+    
+    // Run all security checks in parallel
+    const [databaseAudit, codebaseAudit, fileIntegrity, logAnalysis, accessAudit] = await Promise.all([
+      performSecurityAudit(),
+      performCodebaseSecurityScan(),
+      performFileIntegrityCheck(),
+      performLogAnalysis(),
+      performAccessAudit()
+    ]);
+    
+    const comprehensiveResults = {
+      timestamp: new Date().toISOString(),
+      database: databaseAudit,
+      codebase: codebaseAudit,
+      fileIntegrity: fileIntegrity,
+      logAnalysis: logAnalysis,
+      accessAudit: accessAudit,
+      overallRiskLevel: 'LOW',
+      criticalActions: []
+    };
+    
+    // Determine overall risk level and critical actions
+    const totalCritical = databaseAudit.criticalIssues.length + codebaseAudit.criticalIssues.length;
+    const totalSuspicious = fileIntegrity.suspiciousFiles.length + logAnalysis.suspiciousActivities.length;
+    
+    if (totalCritical > 0) {
+      comprehensiveResults.overallRiskLevel = 'CRITICAL';
+      comprehensiveResults.criticalActions.push('IMMEDIATE: Address critical security issues in database and codebase');
+    }
+    
+    if (fileIntegrity.suspiciousFiles.length > 0) {
+      comprehensiveResults.criticalActions.push('URGENT: Remove suspicious files from server');
+    }
+    
+    if (logAnalysis.suspiciousActivities.length > 5) {
+      comprehensiveResults.criticalActions.push('HIGH: Multiple suspicious activities detected in logs');
+    }
+    
+    if (accessAudit.suspiciousAccess.length > 0) {
+      comprehensiveResults.criticalActions.push('MEDIUM: Review inactive user accounts');
+    }
+    
+    res.json({
+      success: true,
+      security: comprehensiveResults
+    });
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Comprehensive security check error:', error);
+    res.status(500).json({ 
+      error: 'Comprehensive security check failed',
+      details: error.message 
+    });
+  }
+});
+
+// Automated security audit (runs daily)
+setInterval(async () => {
+  try {
+    console.log('[server.js]: 🔍 Running automated security audit...');
+    const [databaseAudit, codebaseAudit, fileIntegrity, logAnalysis, accessAudit] = await Promise.all([
+      performSecurityAudit(),
+      performCodebaseSecurityScan(),
+      performFileIntegrityCheck(),
+      performLogAnalysis(),
+      performAccessAudit()
+    ]);
+    
+    // Log critical issues immediately
+    const totalCritical = databaseAudit.criticalIssues.length + codebaseAudit.criticalIssues.length;
+    const totalSuspicious = fileIntegrity.suspiciousFiles.length + logAnalysis.suspiciousActivities.length;
+    
+    if (totalCritical > 0 || totalSuspicious > 0) {
+      console.error('[server.js]: 🚨 CRITICAL SECURITY ISSUES DETECTED:', {
+        databaseIssues: databaseAudit.criticalIssues.length,
+        codebaseIssues: codebaseAudit.criticalIssues.length,
+        suspiciousFiles: fileIntegrity.suspiciousFiles.length,
+        suspiciousActivities: logAnalysis.suspiciousActivities.length,
+        totalCritical: totalCritical,
+        totalSuspicious: totalSuspicious
+      });
+    }
+    
+    // Log summary
+    console.log('[server.js]: 📊 Daily security audit summary:', {
+      database: databaseAudit.summary,
+      codebase: {
+        filesScanned: codebaseAudit.filesScanned,
+        suspiciousFiles: codebaseAudit.suspiciousFiles.length,
+        criticalIssues: codebaseAudit.criticalIssues.length,
+        warnings: codebaseAudit.warnings.length
+      },
+      fileIntegrity: {
+        filesChecked: fileIntegrity.filesChecked,
+        suspiciousFiles: fileIntegrity.suspiciousFiles.length,
+        unexpectedFiles: fileIntegrity.unexpectedFiles.length,
+        modifiedFiles: fileIntegrity.modifiedFiles.length
+      },
+      logAnalysis: {
+        suspiciousActivities: logAnalysis.suspiciousActivities.length
+      },
+      accessAudit: {
+        recentLogins: accessAudit.recentLogins.length,
+        suspiciousAccess: accessAudit.suspiciousAccess.length
+      }
+    });
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Automated security audit failed:', error);
+  }
+}, 24 * 60 * 60 * 1000); // Run every 24 hours
 
 // ------------------- Section: Error Handling Middleware -------------------
 app.use((err, req, res, next) => {
