@@ -43,6 +43,7 @@
   <!-- Critical CSS - Load immediately -->
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/suggestions.css" />
+  <link rel="stylesheet" href="css/memberLore.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/buttons.css" />
   <link rel="stylesheet" href="css/animations.css" />
@@ -179,6 +180,9 @@
           </li>
           <li>
             <a href="#suggestion-box-section" data-section="suggestion-box-section"><i class="fas fa-lightbulb"></i><span>Suggestion Box</span></a>
+          </li>
+          <li>
+            <a href="#member-lore-section" data-section="member-lore-section"><i class="fas fa-scroll"></i><span>Member Lore</span></a>
           </li>
           <li>
             <a href="#settings" data-section="settings-section"><i class="fas fa-cog"></i><span>Settings</span></a>
@@ -1481,6 +1485,127 @@
         </div>
       </section>
 
+      <!-- Member Lore Submission Section -->
+      <section id="member-lore-section" class="section" style="display:none;">
+        <div class="dashboard-header">
+          <h1><i class="fas fa-scroll"></i> Member Lore Submission</h1>
+          <div class="dashboard-divider"></div>
+          <p class="memberlore-welcome">
+            Fill this out to submit your own lore for the Roots of the Wild world! Please keep these things in mind:
+            <br><br>
+            <strong>1.</strong> Please have your lore concise and to the point for ease of reading and adding to the website.
+            <br>
+            <strong>2.</strong> Submit lore that is open enough for other members to not use if they choose not to.
+            <br>
+            <strong>3.</strong> Alternatively, submit lore that you'd be willing to have others build upon and/or mods have to change a bit.
+            <br>
+            <strong>4.</strong> Mods may deny lore that veers too heavily into something we'd want to review on a case by case basis.
+            <br><br>
+            <em>Login with Discord to submit your lore and help expand the Roots of the Wild universe.</em>
+          </p>
+        </div>
+
+        <div class="lore-box-container">
+          <div class="lore-form-wrapper">
+            <form id="lore-form" class="lore-form">
+              <div class="form-group">
+                <label for="lore-member-name">Member Name</label>
+                <input type="text" id="lore-member-name" name="memberName" placeholder="Your Discord username or character name" required maxlength="50" autocomplete="off" inputmode="text">
+              </div>
+
+              <div class="form-group">
+                <label for="lore-topic">What overall topic does your lore pertain to?</label>
+                <input type="text" id="lore-topic" name="topic" placeholder="Ex; Sheikah, blacksmiths, the outer rings of Vhintl, etc." required maxlength="100" autocomplete="off" inputmode="text">
+                <small style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">Brief answers here please, just for people perusing the site to quickly see topics of interest.</small>
+              </div>
+
+              <div class="form-group">
+                <label for="lore-description">Lore Description</label>
+                <textarea id="lore-description" name="description" placeholder="Here you can write the full overview of the lore. Please restrict it to no more than 3 paragraphs - less is better! Further details can be included in character's backstories." required rows="6" maxlength="1500" inputmode="text"></textarea>
+                <div class="lore-char-count">
+                  <span id="lore-char-count">0</span>/1500 characters
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="submit-lore-btn" aria-label="Submit lore">
+                  <i class="fas fa-scroll" aria-hidden="true"></i>
+                  <span class="btn-text">Submit Lore</span>
+                </button>
+                <button type="reset" class="reset-form-btn" aria-label="Reset lore form">
+                  <i class="fas fa-undo" aria-hidden="true"></i>
+                  <span class="btn-text">Reset Form</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="lore-info">
+            <div class="info-card">
+              <h3><i class="fas fa-info-circle"></i> How It Works</h3>
+              <ul>
+                <li>All lore submissions are reviewed by moderators</li>
+                <li>You must be logged in with Discord to submit</li>
+                <li>You must be a member of the Discord server</li>
+                <li>Lore should be concise and well-written</li>
+                <li>Keep lore open for others to use or build upon</li>
+                <li>Mods may request changes or deny inappropriate content</li>
+                <li>Help expand the Roots of the Wild universe</li>
+              </ul>
+            </div>
+
+            <div class="info-card">
+              <h3><i class="fas fa-scroll"></i> Tips for Great Lore</h3>
+              <ul>
+                <li>Keep it concise - 3 paragraphs maximum</li>
+                <li>Make it open for others to use or ignore</li>
+                <li>Be willing to let others build upon your ideas</li>
+                <li>Focus on world-building and atmosphere</li>
+                <li>Avoid overly specific or restrictive lore</li>
+                <li>Consider how it fits with existing lore</li>
+                <li>Write in a style that matches the world's tone</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Success Message Modal -->
+        <div id="lore-success" class="lore-modal">
+          <div class="modal-content">
+            <button class="modal-close" aria-label="Close success message">
+              <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-body">
+              <i class="fas fa-scroll"></i>
+              <h3>Submitted Successfully!</h3>
+              <p>Your lore has been submitted for review! We'll review it and respond in the server.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error Message Modal -->
+        <div id="lore-error" class="lore-modal" style="display: none;">
+          <div class="modal-overlay"></div>
+          <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+              <h3>Submission Error</h3>
+              <button class="modal-close" aria-label="Close error message">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="modal-icon">
+                <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i>
+              </div>
+              <p>There was an error submitting your lore. Please try again.</p>
+            </div>
+            <div class="modal-footer">
+              <button class="modal-ok-btn" style="background: #e74c3c;">OK</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Inventory Section -->
 
 
@@ -1536,6 +1661,7 @@
   <script type="module" src="js/users.js"></script>
       <script src="js/relationships.js?v=1.0.1"></script>
       <script type="module" src="js/suggestions.js"></script>
+      <script type="module" src="js/memberLore.js"></script>
   
   <!-- Performance and Error Handling Script -->
   <script src="js/performance.js"></script>

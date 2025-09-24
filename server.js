@@ -4233,6 +4233,318 @@ app.post('/api/suggestions', async (req, res) => {
   }
 });
 
+// ------------------- Section: Member Lore API -------------------
+// Test endpoint to verify member lore API is working
+app.get('/api/member-lore/test', (req, res) => {
+  res.json({ 
+    message: 'Member Lore API is working',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Add middleware to log all requests to /api/member-lore
+app.use('/api/member-lore', (req, res, next) => {
+  console.log('🚀 MIDDLEWARE: Request to /api/member-lore detected');
+  console.log('🚀 Method:', req.method);
+  console.log('🚀 Headers:', req.headers);
+  console.log('🚀 Body:', req.body);
+  next();
+});
+
+// Handle member lore submissions and post to Discord
+app.post('/api/member-lore', async (req, res) => {
+  console.log('🔥 ===== MEMBER LORE ENDPOINT HIT =====');
+  console.log('🔥 Request received at:', new Date().toISOString());
+  
+  const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 
+    (req.connection.socket ? req.connection.socket.remoteAddress : null) || 'unknown';
+  const userAgent = req.get('User-Agent') || 'unknown';
+  
+  console.log('[server.js]: 📝 Member lore submission received:', { 
+    body: req.body,
+    clientIP: clientIP,
+    userAgent: userAgent,
+    timestamp: new Date().toISOString()
+  });
+  
+  try {
+    // Check if user is authenticated
+    if (!req.isAuthenticated() || !req.user) {
+      console.warn('🚫 SECURITY: Unauthenticated lore submission attempt');
+      console.warn('🌐 IP:', clientIP);
+      console.warn('📝 Member Name:', req.body.memberName);
+      console.warn('📄 Topic:', req.body.topic);
+      console.warn('🔍 Session info:', {
+        isAuthenticated: req.isAuthenticated(),
+        hasUser: !!req.user,
+        sessionID: req.sessionID,
+        userAgent: req.headers['user-agent']
+      });
+      console.warn('⏰ Timestamp:', new Date().toISOString());
+      return res.status(401).json({ 
+        error: 'Authentication required. Please log in with Discord to submit lore.' 
+      });
+    }
+
+    // Check if user is member of the required guild
+    const guildId = process.env.PROD_GUILD_ID;
+    
+    if (!guildId) {
+      console.error('[server.js]: ❌ PROD_GUILD_ID not configured');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    // Verify guild membership
+    try {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log('[server.js]: 🚫 User not in guild:', {
+            discordId: req.user.discordId,
+            username: req.user.username,
+            clientIP: clientIP
+          });
+          return res.status(403).json({ 
+            error: 'You must be a member of the Discord server to submit lore.' 
+          });
+        }
+        throw new Error(`Discord API error: ${response.status}`);
+      }
+      
+      console.log('[server.js]: ✅ Guild membership verified for user:', {
+        discordId: req.user.discordId,
+        username: req.user.username
+      });
+    } catch (error) {
+      console.error('[server.js]: ❌ Error verifying guild membership:', error);
+      return res.status(500).json({ error: 'Failed to verify server membership' });
+    }
+
+    const { memberName, topic, description } = req.body;
+    
+    // Validate required fields
+    if (!memberName || !topic || !description) {
+      console.log('[server.js]: 🚫 Missing required fields from user:', {
+        discordId: req.user.discordId,
+        username: req.user.username,
+        clientIP: clientIP
+      });
+      return res.status(400).json({ 
+        error: 'Missing required fields: memberName, topic, and description are required' 
+      });
+    }
+
+    // Security: Block links and script tags
+    console.log('🔍 Running security validation checks...');
+    const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,})/gi;
+    const scriptRegex = /<script[^>]*>.*?<\/script>/gi;
+    const scriptTagRegex = /<script[^>]*>/gi;
+    
+    console.log('🔍 Checking for links in memberName/topic/description...');
+    if (linkRegex.test(memberName) || linkRegex.test(topic) || linkRegex.test(description)) {
+      console.warn('🚫 SECURITY: Link submission attempt blocked');
+      console.warn('👤 User:', req.user.username, `(${req.user.discordId})`);
+      console.warn('🌐 IP:', clientIP);
+      console.warn('📝 Member Name:', memberName);
+      console.warn('📄 Topic:', topic);
+      console.warn('📄 Description:', description);
+      console.warn('🔍 Link detected in:', {
+        memberName: linkRegex.test(memberName),
+        topic: linkRegex.test(topic),
+        description: linkRegex.test(description)
+      });
+      console.warn('⏰ Timestamp:', new Date().toISOString());
+      return res.status(400).json({ 
+        error: 'Links are not allowed in lore submissions. Please remove any URLs or website addresses.' 
+      });
+    }
+    
+    console.log('🔍 Checking for script tags in memberName/topic/description...');
+    if (scriptRegex.test(memberName) || scriptRegex.test(topic) || scriptRegex.test(description) || 
+        scriptTagRegex.test(memberName) || scriptTagRegex.test(topic) || scriptTagRegex.test(description)) {
+      console.error('🚨 CRITICAL SECURITY: Script injection attempt blocked');
+      console.error('👤 User:', req.user.username, `(${req.user.discordId})`);
+      console.error('🌐 IP:', clientIP);
+      console.error('📝 Member Name:', memberName);
+      console.error('📄 Topic:', topic);
+      console.error('📄 Description:', description);
+      console.error('🔍 Script detected in:', {
+        memberName: scriptRegex.test(memberName) || scriptTagRegex.test(memberName),
+        topic: scriptRegex.test(topic) || scriptTagRegex.test(topic),
+        description: scriptRegex.test(description) || scriptTagRegex.test(description)
+      });
+      console.error('⏰ Timestamp:', new Date().toISOString());
+      console.error('🚨 This is a potential XSS attack attempt!');
+      return res.status(400).json({ 
+        error: 'Script tags are not allowed in lore submissions.' 
+      });
+    }
+
+    console.log('✅ Security validation passed - no malicious content detected');
+
+    // Save to database
+    const MemberLore = require('./models/MemberLoreModel');
+    const loreSubmission = new MemberLore({
+      memberName: memberName.trim(),
+      topic: topic.trim(),
+      description: description.trim(),
+      userId: req.user.discordId,
+      timestamp: new Date()
+    });
+
+    await loreSubmission.save();
+    console.log('[server.js]: ✅ Lore saved to database:', {
+      loreId: loreSubmission._id,
+      discordId: req.user.discordId,
+      username: req.user.username,
+      memberName: memberName,
+      topic: topic,
+      clientIP: clientIP
+    });
+
+    // Create lore object for Discord
+    const lore = {
+      memberName,
+      topic,
+      description,
+      timestamp: new Date().toISOString(),
+      submittedAt: new Date(),
+      userId: req.user.discordId,
+      username: req.user.username,
+      loreId: loreSubmission._id
+    };
+
+    console.log('[server.js]: ✅ Valid lore from authenticated user:', {
+      discordId: req.user.discordId,
+      username: req.user.username,
+      memberName: memberName,
+      topic: topic,
+      descriptionLength: description.length,
+      clientIP: clientIP
+    });
+
+    // Post to Discord channel
+    const discordChannelId = '1381479893090566144'; // Same channel as suggestions
+    const embed = {
+      title: '📜 New Member Lore Submitted',
+      description: 'A new lore submission has been submitted for review.',
+      color: 0x8B4513, // Brown color for lore theme
+      image: {
+        url: 'https://static.wixstatic.com/media/7573f4_9bdaa09c1bcd4081b48bbe2043a7bf6a~mv2.png'
+      },
+      fields: [
+        {
+          name: '__👤 Member Name__',
+          value: `> **${memberName}**`,
+          inline: true
+        },
+        {
+          name: '__📋 Topic__',
+          value: `> **${topic}**`,
+          inline: true
+        },
+        {
+          name: '__📜 Lore Description__',
+          value: (() => {
+            // Split by newlines, trim each line, filter out empty lines
+            const lines = description.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            // Add > to the beginning of each line
+            const formattedLines = lines.map(line => `> ${line}`);
+            // Join with actual newlines (not \n string)
+            const formattedDescription = formattedLines.join('\n');
+            
+            const maxLength = 1024;
+            if (formattedDescription.length > maxLength) {
+              // Find the last complete line that fits within the limit
+              let truncated = '';
+              for (let i = 0; i < formattedLines.length; i++) {
+                const testLine = truncated + (truncated ? '\n' : '') + formattedLines[i];
+                if (testLine.length <= maxLength - 3) {
+                  truncated = testLine;
+                } else {
+                  break;
+                }
+              }
+              return truncated + '...';
+            }
+            return formattedDescription;
+          })(),
+          inline: false
+        },
+        {
+          name: '__📝 Want to Submit Lore?__',
+          value: `> [Click here to submit your own lore!](https://tinglebot.xyz/#member-lore-section)`,
+          inline: false
+        }
+      ],
+      timestamp: new Date().toISOString(),
+      footer: {
+        text: '📜 Note: All lore submissions are reviewed by moderators before being added to the world.'
+      }
+    };
+
+    // Send to Discord
+    const discordResponse = await fetch(`https://discord.com/api/v10/channels/${discordChannelId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        embeds: [embed]
+      })
+    });
+
+    if (!discordResponse.ok) {
+      console.error('[server.js]: ❌ Discord API error:', {
+        status: discordResponse.status,
+        statusText: discordResponse.statusText,
+        discordId: req.user.discordId,
+        username: req.user.username,
+        clientIP: clientIP
+      });
+      throw new Error(`Discord API error: ${discordResponse.status}`);
+    }
+
+    console.log('[server.js]: ✅ Lore posted to Discord successfully:', {
+      discordId: req.user.discordId,
+      username: req.user.username,
+      memberName: memberName,
+      topic: topic,
+      clientIP: clientIP,
+      timestamp: new Date().toISOString()
+    });
+
+    // Return success response
+    res.json({ 
+      success: true, 
+      message: 'Lore submitted successfully and posted to Discord for review',
+      loreId: loreSubmission._id
+    });
+
+  } catch (error) {
+    console.error('[server.js]: ❌ Error submitting lore:', {
+      error: error.message,
+      stack: error.stack,
+      clientIP: clientIP,
+      userAgent: userAgent,
+      userId: req.user?.discordId || 'unauthenticated',
+      username: req.user?.username || 'unauthenticated',
+      timestamp: new Date().toISOString()
+    });
+    res.status(500).json({ 
+      error: 'Failed to submit lore',
+      details: error.message 
+    });
+  }
+});
+
 // ------------------- Section: Security Headers -------------------
 // Set security headers for all responses
 app.use((req, res, next) => {
