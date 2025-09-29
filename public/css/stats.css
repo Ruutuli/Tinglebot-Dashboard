@@ -1452,8 +1452,74 @@
 /* Mobile responsive for pie chart breakdown */
 @media (max-width: 768px) {
   .pie-breakdown {
+    padding: 1.25rem;
+    min-width: 100%;
+    width: 100%;
+    margin-top: 1rem;
+  }
+  
+  .breakdown-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .breakdown-header h4 {
+    font-size: 1.1rem;
+    margin: 0;
+  }
+  
+  .breakdown-total {
+    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+  }
+  
+  .breakdown-item {
+    gap: 0.75rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .breakdown-color {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .breakdown-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  
+  .breakdown-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+  
+  .breakdown-percentage {
+    font-size: 0.8rem;
+    opacity: 0.8;
+  }
+}
+
+@media (max-width: 640px) {
+  .pie-breakdown {
     padding: 1rem;
-    min-width: 150px;
+    min-width: 100%;
+    width: 100%;
+  }
+  
+  .breakdown-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
   }
   
   .breakdown-header h4 {
@@ -1461,54 +1527,31 @@
   }
   
   .breakdown-total {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    padding: 0.2rem 0.4rem;
   }
   
   .breakdown-item {
-    gap: 0.5rem;
-    padding: 0.4rem;
+    gap: 0.6rem;
+    padding: 0.6rem;
+    margin-bottom: 0.4rem;
   }
   
   .breakdown-color {
-    width: 10px;
-    height: 10px;
+    width: 14px;
+    height: 14px;
   }
   
   .breakdown-label {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
   
   .breakdown-value {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
   
   .breakdown-percentage {
-    font-size: 0.7rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .pie-breakdown {
-    padding: 0.75rem;
-    min-width: 120px;
-  }
-  
-  .breakdown-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-  
-  .breakdown-header h4 {
-    font-size: 0.9rem;
-  }
-  
-  .breakdown-total {
     font-size: 0.75rem;
-  }
-  
-  .breakdown-item {
-    gap: 0.4rem;
   }
 }
 
@@ -1549,16 +1592,37 @@
   }
   
   .pie-breakdown {
-    padding: 0.3rem;
+    padding: 0.75rem;
+    min-width: 100%;
+    width: 100%;
+  }
+  
+  .breakdown-header {
+    margin-bottom: 0.5rem;
+  }
+  
+  .breakdown-header h4 {
+    font-size: 0.9rem;
+  }
+  
+  .breakdown-total {
+    font-size: 0.8rem;
+    padding: 0.15rem 0.3rem;
+  }
+  
+  .breakdown-item {
+    gap: 0.5rem;
+    padding: 0.5rem;
+    margin-bottom: 0.3rem;
   }
   
   .breakdown-color {
-    width: 8px;
-    height: 8px;
+    width: 12px;
+    height: 12px;
   }
   
   .breakdown-label {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
   }
   
   .breakdown-value {
@@ -1567,5 +1631,68 @@
   
   .breakdown-percentage {
     font-size: 0.65rem;
+  }
+}
+
+/* Mobile optimizations for village distribution chart */
+@media (max-width: 768px) {
+  /* Chart container mobile layout */
+  .stats-card-wide .chart-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    align-items: stretch !important;
+    height: auto !important;
+    min-height: 300px;
+  }
+  
+  /* Chart wrapper mobile */
+  .stats-card-wide .chart-container > div:first-child {
+    flex: none !important;
+    width: 100% !important;
+    height: 250px !important;
+    min-height: 250px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  /* Chart canvas mobile */
+  .stats-card-wide .chart-container canvas {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+  }
+  
+  /* Breakdown wrapper mobile */
+  .stats-card-wide .chart-container > div:last-child {
+    flex: none !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-card-wide .chart-container {
+    gap: 0.75rem !important;
+    min-height: 280px;
+  }
+  
+  .stats-card-wide .chart-container > div:first-child {
+    height: 200px !important;
+    min-height: 200px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-card-wide .chart-container {
+    gap: 0.5rem !important;
+    min-height: 260px;
+  }
+  
+  .stats-card-wide .chart-container > div:first-child {
+    height: 180px !important;
+    min-height: 180px !important;
   }
 }

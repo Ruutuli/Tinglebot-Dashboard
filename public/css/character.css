@@ -1148,25 +1148,107 @@
   
   /* Character Header Mobile */
   .character-header {
-    padding: 1rem 1.25rem;
-    gap: 1rem;
+    padding: 1rem 1rem 1.25rem;
+    gap: 0.75rem;
     flex-direction: column;
     text-align: center;
+    position: relative;
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.05) 0%, 
+      rgba(255, 255, 255, 0.02) 100%);
+    border-radius: 12px;
+  }
+  
+  .village-crest {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 28px;
+    height: 28px;
+    z-index: 2;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    padding: 4px;
+    backdrop-filter: blur(4px);
+  }
+  
+  .village-crest-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
+  
+  .character-avatar-container {
+    position: relative;
+    margin: 0 auto 0.5rem;
+    order: 1;
+  }
+  
+  .character-avatar {
+    width: 70px;
+    height: 70px;
+    font-size: 1.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  
+  .character-title {
+    width: 100%;
+    max-width: 100%;
+    order: 2;
+    margin-bottom: 0.5rem;
   }
   
   .character-name-row {
     justify-content: center;
     margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
   }
   
   .character-name {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
+    margin: 0;
+    font-weight: 700;
+    line-height: 1.2;
   }
   
-  .character-avatar {
-    width: 60px;
-    height: 60px;
-    font-size: 1.5rem;
+  .mod-character-badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  
+  .character-race-job-row {
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    line-height: 1.3;
+  }
+  
+  .character-owner {
+    margin-bottom: 0.6rem;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .character-owner i {
+    color: var(--accent);
+    font-size: 0.9rem;
   }
   
   /* Character Content Mobile */
@@ -1213,13 +1295,80 @@
   
   /* Character Links Mobile */
   .character-links {
-    gap: 0.3rem;
-    margin-top: 0.3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+    order: 3;
+    width: 100%;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
   }
   
   .character-link {
-    font-size: 0.75rem;
-    padding: 0.15rem 0.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.6rem 0.5rem;
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.08) 0%, 
+      rgba(255, 255, 255, 0.04) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    min-height: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .character-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+      transparent, 
+      rgba(255, 255, 255, 0.1), 
+      transparent);
+    transition: left 0.5s ease;
+  }
+  
+  .character-link:hover::before {
+    left: 100%;
+  }
+  
+  .character-link:hover {
+    background: linear-gradient(135deg, 
+      var(--accent) 0%, 
+      rgba(0, 163, 218, 0.8) 100%);
+    border-color: var(--accent);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: 
+      0 4px 12px rgba(0, 163, 218, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+  
+  .character-link:active {
+    transform: translateY(0) scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  .character-link i {
+    font-size: 0.85rem;
+    opacity: 0.9;
   }
   
   /* Character Modal Mobile */
@@ -1382,18 +1531,51 @@
   
   /* Character Header Extra Small */
   .character-header {
-    padding: 0.75rem 1rem;
-    gap: 0.75rem;
+    padding: 0.875rem 0.875rem 1rem;
+    gap: 0.6rem;
   }
   
-  .character-name {
-    font-size: 1.1rem;
+  .village-crest {
+    width: 24px;
+    height: 24px;
+    top: 0.6rem;
+    right: 0.6rem;
+    padding: 3px;
   }
   
   .character-avatar {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+  
+  .character-name {
     font-size: 1.25rem;
+  }
+  
+  .mod-character-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.35rem;
+  }
+  
+  .character-race-job-row {
+    font-size: 0.8rem;
+  }
+  
+  .character-owner {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .character-links {
+    gap: 0.5rem;
+    max-width: 260px;
+  }
+  
+  .character-link {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.4rem;
+    min-height: 44px;
   }
   
   /* Character Content Extra Small */
@@ -1591,18 +1773,51 @@
   
   /* Character Header Small */
   .character-header {
-    padding: 0.5rem 0.75rem;
+    padding: 0.75rem 0.75rem 0.875rem;
     gap: 0.5rem;
   }
   
-  .character-name {
-    font-size: 1rem;
+  .village-crest {
+    width: 22px;
+    height: 22px;
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 2px;
   }
   
   .character-avatar {
-    width: 45px;
-    height: 45px;
-    font-size: 1.1rem;
+    width: 55px;
+    height: 55px;
+    font-size: 1.4rem;
+  }
+  
+  .character-name {
+    font-size: 1.15rem;
+  }
+  
+  .mod-character-badge {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.3rem;
+  }
+  
+  .character-race-job-row {
+    font-size: 0.75rem;
+  }
+  
+  .character-owner {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .character-links {
+    gap: 0.4rem;
+    max-width: 240px;
+  }
+  
+  .character-link {
+    font-size: 0.7rem;
+    padding: 0.45rem 0.35rem;
+    min-height: 42px;
   }
   
   /* Character Content Small */

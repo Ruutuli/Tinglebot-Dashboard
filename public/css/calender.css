@@ -564,6 +564,340 @@
   opacity: 0.7;
 }
 
+/* ============================================================================
+   📱 MOBILE CALENDAR - SIMPLE LIST FORMAT
+============================================================================ */
+
+/* Mobile Calendar - Simple List View - Force for all screens */
+/* Hide traditional calendar elements */
+.calendar-weekdays {
+  display: none !important;
+}
+
+.calendar-days {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  grid-template-columns: none !important;
+  grid: none !important;
+}
+
+.calendar-day {
+  display: none !important;
+}
+
+/* Show mobile day cards */
+.mobile-day-card {
+  display: flex !important;
+  width: 100% !important;
+  margin-bottom: 1rem !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  flex: none !important;
+}
+
+/* Mobile List Container */
+.calendar-grid {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+.monthly-calendar-container {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding: 0 0.5rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Add some padding to the calendar days container for better mobile spacing */
+.calendar-days {
+  padding: 0.5rem 0;
+}
+
+/* Mobile Day Cards - Ultra Mobile Friendly */
+.mobile-day-card {
+  display: flex !important;
+  flex-direction: column;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  border: 2px solid var(--border-color);
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  min-height: 120px;
+  position: relative;
+}
+  
+.mobile-day-card:active {
+  transform: scale(0.98);
+  background: var(--bg-primary);
+}
+
+.mobile-day-card.today {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-day-card.has-birthday {
+  border-left: 6px solid #ff6b6b;
+  background: linear-gradient(90deg, rgba(255, 107, 107, 0.1) 0%, var(--bg-secondary) 10%);
+}
+
+.mobile-day-card.has-bloodmoon {
+  border-left: 6px solid #8b5cf6;
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.1) 0%, var(--bg-secondary) 10%);
+}
+
+/* Day Header - Stacked Vertically */
+.mobile-day-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  text-align: center;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.mobile-day-card.today .mobile-day-header {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.mobile-day-number {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-day-of-week {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.mobile-day-card.today .mobile-day-number {
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-day-card.today .mobile-day-of-week {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Day Content - Full Width Below Header */
+.mobile-day-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mobile-hyrulean-date {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  opacity: 0.9;
+  line-height: 1.3;
+}
+
+.mobile-day-card.today .mobile-hyrulean-date {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Events - Larger and More Touch-Friendly */
+.mobile-day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mobile-day-event {
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-weight: 700;
+  background: var(--primary-color);
+  color: white;
+  display: inline-block;
+  width: fit-content;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.mobile-day-event:active {
+  transform: scale(0.95);
+}
+
+.mobile-day-event.birthday {
+  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+}
+
+.mobile-day-event.bloodmoon {
+  background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+}
+
+/* Smaller Mobile Screens */
+@media (max-width: 640px) {
+  .mobile-day-card {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    min-height: 110px;
+  }
+  
+  .mobile-day-header {
+    width: 100%;
+    margin-right: 0;
+    padding: 0.6rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .mobile-day-number {
+    font-size: 2.5rem;
+  }
+  
+  .mobile-day-of-week {
+    font-size: 1rem;
+  }
+  
+  .mobile-hyrulean-date {
+    font-size: 1rem;
+  }
+  
+  .mobile-day-event {
+    font-size: 0.9rem;
+    padding: 0.6rem 0.8rem;
+    min-height: 40px;
+  }
+}
+
+/* Very Small Mobile Screens */
+@media (max-width: 480px) {
+  .mobile-day-card {
+    padding: 0.9rem;
+    margin-bottom: 0.6rem;
+    min-height: 100px;
+    border-radius: 14px;
+  }
+  
+  .mobile-day-header {
+    width: 100%;
+    margin-right: 0;
+    padding: 0.5rem;
+    margin-bottom: 0.6rem;
+  }
+  
+  .mobile-day-number {
+    font-size: 2.2rem;
+  }
+  
+  .mobile-day-of-week {
+    font-size: 0.9rem;
+  }
+  
+  .mobile-hyrulean-date {
+    font-size: 0.95rem;
+  }
+  
+  .mobile-day-event {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.7rem;
+    min-height: 38px;
+  }
+}
+
+/* Extra Small Mobile Screens */
+@media (max-width: 360px) {
+  .mobile-day-card {
+    padding: 0.8rem;
+    margin-bottom: 0.5rem;
+    min-height: 95px;
+  }
+  
+  .mobile-day-header {
+    width: 100%;
+    margin-right: 0;
+    padding: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .mobile-day-number {
+    font-size: 2rem;
+  }
+  
+  .mobile-day-of-week {
+    font-size: 0.8rem;
+  }
+  
+  .mobile-hyrulean-date {
+    font-size: 0.9rem;
+  }
+  
+  .mobile-day-event {
+    font-size: 0.8rem;
+    padding: 0.45rem 0.6rem;
+    min-height: 36px;
+  }
+}
+
+/* ============================================================================
+   🚨 FORCE SINGLE COLUMN LAYOUT - OVERRIDE ALL GRID RULES
+============================================================================ */
+
+/* Force single column layout for all screen sizes */
+.calendar-days {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  grid-template-columns: none !important;
+  grid: none !important;
+  gap: 0 !important;
+}
+
+.mobile-day-card {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  margin-bottom: 1rem !important;
+  box-sizing: border-box !important;
+  flex: none !important;
+  max-width: 100% !important;
+}
+
+/* Hide any remaining grid elements */
+.calendar-day {
+  display: none !important;
+}
+
+.calendar-weekdays {
+  display: none !important;
+}
+
+
     
 /* ============================================================================
    🧩 CALENDAR: DAY GRID STYLES
@@ -659,9 +993,10 @@
 
 /* === Day Number === */
 .day-number {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.125rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--text-primary);
 }
 
 /* === Events Block === */
@@ -673,11 +1008,18 @@
 }
 
 .day-event {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
-  font-size: 0.7rem;
-  padding: 0.125rem 0.25rem;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.5rem;
   text-align: center;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  min-height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .day-event.birthday {
@@ -849,6 +1191,13 @@
    📱 MOBILE RESPONSIVE STYLES
 ============================================================================ */
 
+/* Mobile calendar view - hide by default */
+.calendar-mobile-view {
+  display: none;
+}
+
+/* Mobile calendar improvements - focus on making the grid work better */
+
 /* ============================================================================
    📱 TABLET BREAKPOINT (768px and below)
 ============================================================================ */
@@ -876,15 +1225,26 @@
     gap: 1rem;
     margin-bottom: 1.5rem;
   }
+  
+  /* Improve mobile header layout */
+  .calendar-navigation {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .calendar-controls {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
 
   .calendar-navigation {
     gap: 0.5rem;
   }
 
   .calendar-nav-btn {
-    width: 35px;
-    height: 35px;
-    font-size: 0.9rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
   }
 
   .calendar-controls {
@@ -892,8 +1252,8 @@
   }
 
   .calendar-control-btn {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.85rem;
   }
 
   /* Calendar Title */
@@ -918,14 +1278,16 @@
 
   /* Calendar Tabs */
   .calendar-tabs {
-    gap: 0.25rem;
+    gap: 0.5rem;
     margin-bottom: 1.5rem;
-    padding-bottom: 0.25rem;
+    padding-bottom: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .calendar-tab {
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.85rem;
   }
 
   /* Birthdays Section */
@@ -996,19 +1358,132 @@
     line-height: 25px;
   }
 
-  /* Calendar Day Grid */
+  /* Desktop Calendar Styles */
+  .calendar-grid {
+    border-radius: 8px;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .monthly-calendar-container {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .calendar-weekdays {
+    background: var(--bg-primary);
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+  
+  .weekday {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    width: 100%;
+    gap: 1px;
+  }
+
   .calendar-day {
     min-height: 100px;
-    padding: 0.25rem;
+    padding: 0.75rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .calendar-day:nth-child(7n) {
+    border-right: none;
+  }
+
+  .calendar-day.today {
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .calendar-day.today .day-number {
+    color: white;
+  }
+
+  .calendar-day.today .hyrulean-date {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .calendar-day.has-birthday {
+    border-left: 4px solid #ff6b6b;
+  }
+
+  .calendar-day.has-bloodmoon {
+    border-left: 4px solid #8b5cf6;
   }
 
   .day-number {
-    font-size: 0.9rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+
+  .hyrulean-date {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+  }
+
+  .day-events {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: auto;
   }
 
   .day-event {
-    font-size: 0.6rem;
-    padding: 0.1rem 0.2rem;
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    width: 100%;
+    max-width: 100%;
+    word-wrap: break-word;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.2;
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .day-event.birthday {
+    background: #ff6b6b;
+  }
+
+  .day-event.bloodmoon {
+    background: #8b5cf6;
   }
 
   /* Calendar Events */
@@ -1088,9 +1563,9 @@
   }
 
   .calendar-nav-btn {
-    width: 30px;
-    height: 30px;
-    font-size: 0.8rem;
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
   }
 
   .calendar-controls {
@@ -1099,8 +1574,8 @@
   }
 
   .calendar-control-btn {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.75rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.8rem;
   }
 
   /* Calendar Title */
@@ -1134,8 +1609,8 @@
   }
 
   .calendar-tab {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
   }
 
   /* Birthdays Section */
@@ -1210,19 +1685,46 @@
     font-size: 0.8rem;
   }
 
-  /* Calendar Day Grid */
+  /* Calendar Day Grid - Larger for mobile */
   .calendar-day {
-    min-height: 80px;
-    padding: 0.2rem;
+    min-height: 30px;
+    padding: 0.08rem 0.01rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .calendar-days {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    width: 100% !important;
+    gap: 0.01rem !important;
+  }
+  
+  .calendar-weekdays {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    background: var(--bg-primary);
   }
 
   .day-number {
-    font-size: 0.8rem;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+    color: var(--text-primary);
   }
 
   .day-event {
-    font-size: 0.55rem;
-    padding: 0.05rem 0.15rem;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.6rem;
+    margin-bottom: 0.3rem;
+    border-radius: 6px;
+    font-weight: 600;
+    width: 100%;
+    max-width: 100%;
+    word-wrap: break-word;
   }
 
   /* Calendar Events */
@@ -1311,9 +1813,9 @@
   }
 
   .calendar-nav-btn {
-    width: 28px;
-    height: 28px;
-    font-size: 0.75rem;
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
   }
 
   .calendar-controls {
@@ -1321,8 +1823,8 @@
   }
 
   .calendar-control-btn {
-    padding: 0.3rem 0.5rem;
-    font-size: 0.7rem;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
   }
 
   /* Calendar Title */
@@ -1356,8 +1858,8 @@
   }
 
   .calendar-tab {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.7rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
   }
 
   /* Birthdays Section */
@@ -1432,19 +1934,58 @@
     font-size: 0.75rem;
   }
 
-  /* Calendar Day Grid */
+  /* Calendar Day Grid - Much larger for small mobile */
   .calendar-day {
-    min-height: 70px;
-    padding: 0.15rem;
+    min-height: 25px;
+    padding: 0.05rem 0.005rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .calendar-days {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    width: 100% !important;
+    gap: 0.01rem !important;
+  }
+  
+  .calendar-weekdays {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    background: var(--bg-primary);
+  }
+  
+  /* Improve very small mobile calendar */
+  .calendar-grid {
+    border-radius: 6px;
+  }
+  
+  .weekday {
+    padding: 1rem 0.3rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
   }
 
   .day-number {
-    font-size: 0.75rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
   }
 
   .day-event {
-    font-size: 0.5rem;
-    padding: 0.05rem 0.1rem;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.5rem;
+    margin-bottom: 0.25rem;
+    border-radius: 5px;
+    font-weight: 600;
+    width: 100%;
+    max-width: 100%;
+    word-wrap: break-word;
   }
 
   /* Calendar Events */
@@ -1499,6 +2040,33 @@
     font-size: 0.75rem;
     padding: 0.4rem 0.8rem;
   }
+  
+  /* Additional mobile improvements for very small screens */
+  .calendar-day {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .day-events {
+    gap: 0.1rem;
+  }
+  
+  .day-event {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Make calendar horizontally scrollable on very small screens */
+  .calendar-grid {
+    min-width: 100vw;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .calendar-days {
+    min-width: 100vw;
+  }
 }
 
 /* ============================================================================
@@ -1542,7 +2110,19 @@
 
   /* Calendar Day Grid */
   .calendar-day {
-    min-height: 60px;
+    min-height: 100px;
+    padding: 0.5rem;
+  }
+  
+  .day-number {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+  
+  .day-event {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.3rem;
+    font-weight: 500;
   }
 
   /* Birthdays Section */

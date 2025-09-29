@@ -9,6 +9,67 @@
 // ============================================================================
 document.addEventListener('DOMContentLoaded', initAuth);
 
+// ============================================================================
+// ------------------- Section: Page Cleanup -------------------
+// Handles cleanup when page is being closed or hidden
+// ============================================================================
+
+// ------------------- Function: cleanupAnimations -------------------
+// Stops all animations to prevent lingering effects
+function cleanupAnimations() {
+  const loginPage = document.querySelector('.login-page');
+  if (loginPage) {
+    loginPage.classList.add('closing');
+  }
+  
+  const logoGlow = document.querySelector('.logo-glow');
+  if (logoGlow) {
+    logoGlow.style.animation = 'none';
+    logoGlow.style.opacity = '0';
+  }
+  
+  // Stop any other background animations
+  const floatingShapes = document.querySelectorAll('.floating-shapes .shape');
+  floatingShapes.forEach(shape => {
+    shape.style.animation = 'none';
+  });
+}
+
+// ------------------- Event Listeners for Page Cleanup -------------------
+// Stop animations when page is being hidden or closed
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
+    cleanupAnimations();
+  } else {
+    // Reset animations when page becomes visible again
+    const loginPage = document.querySelector('.login-page');
+    if (loginPage) {
+      loginPage.classList.remove('closing', 'hidden');
+    }
+  }
+});
+
+// Stop animations before page unload
+window.addEventListener('beforeunload', cleanupAnimations);
+
+// Stop animations when page is being hidden (for mobile)
+window.addEventListener('pagehide', cleanupAnimations);
+
+// Additional cleanup for when user navigates away
+window.addEventListener('blur', function() {
+  const loginPage = document.querySelector('.login-page');
+  if (loginPage) {
+    loginPage.classList.add('hidden');
+  }
+});
+
+window.addEventListener('focus', function() {
+  const loginPage = document.querySelector('.login-page');
+  if (loginPage) {
+    loginPage.classList.remove('hidden');
+  }
+});
+
 // ------------------- Function: initAuth -------------------
 // Initializes authentication flows and checks current auth status
 async function initAuth() {

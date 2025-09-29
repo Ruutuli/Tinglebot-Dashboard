@@ -763,65 +763,130 @@
   
   /* Monster Card Mobile */
   .monster-card {
-    padding: 1rem;
-    gap: 1rem;
+    padding: 1.25rem 1rem;
+    gap: 1.25rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--frost-blur));
+    box-shadow: var(--card-shadow);
   }
   
   .model-details-item.monster-card {
-    padding: 1rem;
+    padding: 1.25rem 1rem;
   }
   
   /* Monster Header Mobile */
   .monster-header {
-    gap: 0.75rem;
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+    margin-bottom: 1.25rem;
   }
   
-  /* Monster Image Mobile */
   .monster-image {
-    width: 70px;
-    height: 70px;
+    order: 1;
+    margin: 0 auto;
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 3px solid var(--glass-border);
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
   }
   
   .monster-image img {
-    width: 80%;
-    height: 80%;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
   
   /* Monster Title Mobile */
   .monster-title {
-    gap: 0.5rem;
+    order: 2;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 100%;
   }
   
   .monster-name {
-    font-size: 1.1rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
   }
   
   .monster-species {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
   }
   
   .monster-type {
-    font-size: 0.75rem;
-    padding: 0.15rem 0.4rem;
+    font-size: 0.8rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: inline-block;
   }
   
   /* Monster Stats Mobile */
   .monster-stats {
-    gap: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   .stat-row {
-    height: 18px;
-    margin-bottom: 0.4rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .stat-row:last-child {
+    margin-bottom: 0;
+  }
+  
+  .stat-row:hover {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateX(4px);
   }
   
   .stat-label {
-    font-size: 0.8rem;
-    margin-right: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: 0;
+    flex: 1;
   }
   
   .stat-value {
-    font-size: 0.8rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: right;
+    min-width: 2rem;
+  }
+  
+  .stat-value.tier-1 {
+    color: var(--accent);
+    text-shadow: 0 0 8px rgba(0, 163, 218, 0.3);
   }
   
   /* Blood Moon Indicator Mobile */
@@ -832,25 +897,69 @@
   
   /* Monster Section Mobile */
   .monster-section {
-    margin: 0.75rem 0 0.5rem;
+    margin: 1rem 0;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   .section-title {
-    font-size: 0.8rem;
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.15rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   /* Monster Locations Mobile */
-  .monster-locations,
-  .monster-jobs {
+  .monster-locations {
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.4rem;
   }
   
-  .monster-location-tag,
+  .monster-location-tag {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Location-specific colors */
+  .location-eldin { background: rgba(255, 100, 100, 0.2); color: #ff6464; }
+  .location-lanayru { background: rgba(100, 200, 255, 0.2); color: #64c8ff; }
+  .location-faron { background: rgba(100, 255, 100, 0.2); color: #64ff64; }
+  .location-gerudo { background: rgba(255, 200, 100, 0.2); color: #ffc864; }
+  .location-hebra { background: rgba(200, 200, 255, 0.2); color: #c8c8ff; }
+  .location-scarletleaves { background: rgba(255, 150, 150, 0.2); color: #ff9696; }
+  .location-leafdew { background: rgba(150, 255, 150, 0.2); color: #96ff96; }
+  .location-central-hyrule { background: rgba(200, 200, 200, 0.2); color: #c8c8c8; }
+  
+  /* Monster Jobs Mobile */
+  .monster-jobs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  
   .monster-job-tag {
-    font-size: 0.7rem;
-    padding: 0.1rem 0.4rem;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+    background: var(--accent);
+    color: var(--text-primary);
+    border-radius: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border: 1px solid rgba(0, 163, 218, 0.3);
+    box-shadow: 0 2px 4px rgba(0, 163, 218, 0.2);
   }
   
   /* Monster Card Back Mobile */
@@ -994,23 +1103,27 @@
   
   /* Monster Card Extra Small */
   .monster-card {
-    padding: 0.75rem;
-    gap: 0.75rem;
+    padding: 1rem 0.75rem;
+    gap: 1rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--frost-blur));
+    box-shadow: var(--card-shadow);
   }
   
   .model-details-item.monster-card {
-    padding: 0.75rem;
+    padding: 1rem 0.75rem;
   }
   
   /* Monster Header Extra Small */
   .monster-header {
-    gap: 0.6rem;
+    gap: 0.75rem;
   }
   
   /* Monster Image Extra Small */
   .monster-image {
-    width: 60px;
-    height: 60px;
+    width: 90px;
+    height: 90px;
   }
   
   .monster-image img {
@@ -1038,21 +1151,22 @@
   
   /* Monster Stats Extra Small */
   .monster-stats {
-    gap: 0.5rem;
+    gap: 0.4rem;
+    padding: 0.75rem;
   }
   
   .stat-row {
-    height: 16px;
-    margin-bottom: 0.3rem;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.4rem;
   }
   
   .stat-label {
-    font-size: 0.75rem;
-    margin-right: 0.4rem;
+    font-size: 0.8rem;
+    margin-right: 0;
   }
   
   .stat-value {
-    font-size: 0.75rem;
+    font-size: 1.1rem;
   }
   
   /* Blood Moon Indicator Extra Small */
@@ -1191,28 +1305,32 @@
   
   /* Monster Card Small */
   .monster-card {
-    padding: 0.5rem;
-    gap: 0.5rem;
+    padding: 0.875rem 0.75rem;
+    gap: 0.75rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--frost-blur));
+    box-shadow: var(--card-shadow);
   }
   
   .model-details-item.monster-card {
-    padding: 0.5rem;
+    padding: 0.875rem 0.75rem;
   }
   
   /* Monster Header Small */
   .monster-header {
-    gap: 0.5rem;
+    gap: 0.6rem;
   }
   
   /* Monster Image Small */
   .monster-image {
-    width: 50px;
-    height: 50px;
+    width: 80px;
+    height: 80px;
   }
   
   .monster-image img {
-    width: 70%;
-    height: 70%;
+    width: 100%;
+    height: 100%;
   }
   
   /* Monster Title Small */
@@ -1235,21 +1353,22 @@
   
   /* Monster Stats Small */
   .monster-stats {
-    gap: 0.4rem;
+    gap: 0.3rem;
+    padding: 0.6rem;
   }
   
   .stat-row {
-    height: 14px;
-    margin-bottom: 0.25rem;
+    padding: 0.5rem 0.6rem;
+    margin-bottom: 0.3rem;
   }
   
   .stat-label {
-    font-size: 0.7rem;
-    margin-right: 0.3rem;
+    font-size: 0.75rem;
+    margin-right: 0;
   }
   
   .stat-value {
-    font-size: 0.7rem;
+    font-size: 1rem;
   }
   
   /* Blood Moon Indicator Small */

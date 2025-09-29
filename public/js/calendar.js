@@ -16,6 +16,8 @@ class CalendarModule {
     this.setupEventListeners();
     await this.loadCalendarData();
     this.updateOverview();
+    // Force render the calendar after initialization
+    this.renderMonthlyCalendar();
   }
 
   setupEventListeners() {
@@ -53,6 +55,11 @@ class CalendarModule {
         this.renderMonthlyCalendar();
       });
     }
+
+    // Handle window resize to regenerate calendar for mobile/desktop
+    window.addEventListener('resize', () => {
+      this.renderMonthlyCalendar();
+    });
 
     // Retry button for errors
     document.addEventListener('click', (e) => {
@@ -329,12 +336,70 @@ class CalendarModule {
 
   generateCalendarGrid() {
     const container = document.getElementById('calendar-days');
-    if (!container) return;
+    const weekdaysContainer = document.querySelector('.calendar-weekdays');
+    if (!container || !weekdaysContainer) return;
     
     const year = this.currentDate.getFullYear();
     const month = this.currentDate.getMonth();
     const today = new Date();
     
+    // Force mobile list format for all screen sizes
+    this.generateMobileList(container, year, month, today);
+  }
+
+  generateMobileList(container, year, month, today) {
+    // Get first day of month and last day of month
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    let calendarHTML = '';
+    
+    // Clear any existing content first
+    container.innerHTML = '';
+    
+    // Generate all days of the month in a list format
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      const currentDate = new Date(year, month, day);
+      const isToday = currentDate.toDateString() === today.toDateString();
+      const dayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
+      
+      // Check for events on this day
+      const dayEvents = this.getDayEvents(currentDate);
+      const hasBirthday = dayEvents.some(event => event.type === 'birthday');
+      const hasBloodmoon = dayEvents.some(event => event.type === 'bloodmoon');
+      
+      let dayClass = 'mobile-day-card';
+      if (isToday) dayClass += ' today';
+      if (hasBirthday) dayClass += ' has-birthday';
+      if (hasBloodmoon) dayClass += ' has-bloodmoon';
+      
+      // Get Hyrulean date for this day
+      const hyruleanDate = this.convertToHyruleanDate(currentDate);
+      
+      calendarHTML += `
+        <div class="${dayClass}" data-date="${currentDate.toISOString().split('T')[0]}">
+          <div class="mobile-day-header">
+            <div class="mobile-day-number">${day}</div>
+            <div class="mobile-day-of-week">${dayOfWeek}</div>
+          </div>
+          <div class="mobile-day-content">
+            <div class="mobile-hyrulean-date">${hyruleanDate}</div>
+            <div class="mobile-day-events">
+              ${dayEvents.map(event => `
+                <div class="mobile-day-event ${event.type}">${event.label}</div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    container.innerHTML = calendarHTML;
+    console.log('Generated mobile list with', lastDay.getDate(), 'days');
+    console.log('Container HTML:', container.innerHTML.substring(0, 500));
+  }
+
+  generateDesktopGrid(container, weekdaysContainer, year, month, today) {
     // Get first day of month and last day of month
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
@@ -342,6 +407,14 @@ class CalendarModule {
     startDate.setDate(startDate.getDate() - firstDay.getDay());
     
     let calendarHTML = '';
+    
+    // Generate weekday headers
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let weekdaysHTML = '';
+    weekdays.forEach(day => {
+      weekdaysHTML += `<div class="weekday">${day}</div>`;
+    });
+    weekdaysContainer.innerHTML = weekdaysHTML;
     
     // Generate 6 weeks of calendar days
     for (let week = 0; week < 6; week++) {

@@ -124,6 +124,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .info-card {
@@ -649,12 +650,16 @@
   }
   
   /* Mobile-specific info card improvements */
+  .suggestion-info {
+    margin-bottom: 2.5rem;
+  }
+  
   .info-card {
-    margin-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
   }
   
   .info-card:last-child {
-    margin-bottom: 0;
+    margin-bottom: 2rem;
   }
   
   /* Mobile character count improvements */
