@@ -170,8 +170,37 @@ class CalendarModule {
   getCurrentHyruleanMonth(date) {
     const formattedDate = this.formatDateMMDD(date);
     return this.hyruleanCalendar.find(month => {
-      // Compare MM-DD strings directly to avoid timezone issues
-      return formattedDate >= month.start && formattedDate <= month.end;
+      // Handle date ranges that cross month boundaries
+      const startMonth = parseInt(month.start.split('-')[0]);
+      const startDay = parseInt(month.start.split('-')[1]);
+      const endMonth = parseInt(month.end.split('-')[0]);
+      const endDay = parseInt(month.end.split('-')[1]);
+      
+      const currentMonth = parseInt(formattedDate.split('-')[0]);
+      const currentDay = parseInt(formattedDate.split('-')[1]);
+      
+      // If the range is within the same month
+      if (startMonth === endMonth) {
+        return currentMonth === startMonth && currentDay >= startDay && currentDay <= endDay;
+      }
+      
+      // If the range crosses month boundaries (e.g., 09-18 to 10-13)
+      if (startMonth < endMonth) {
+        // Check if we're in the start month and after the start day
+        if (currentMonth === startMonth && currentDay >= startDay) {
+          return true;
+        }
+        // Check if we're in the end month and before the end day
+        if (currentMonth === endMonth && currentDay <= endDay) {
+          return true;
+        }
+        // Check if we're in any month between start and end
+        if (currentMonth > startMonth && currentMonth < endMonth) {
+          return true;
+        }
+      }
+      
+      return false;
     });
   }
 
@@ -343,8 +372,12 @@ class CalendarModule {
     const month = this.currentDate.getMonth();
     const today = new Date();
     
-    // Force mobile list format for all screen sizes
-    this.generateMobileList(container, year, month, today);
+    // Check if we should use mobile or desktop layout
+    if (window.innerWidth <= 768) {
+      this.generateMobileList(container, year, month, today);
+    } else {
+      this.generateDesktopGrid(container, weekdaysContainer, year, month, today);
+    }
   }
 
   generateMobileList(container, year, month, today) {
@@ -368,6 +401,7 @@ class CalendarModule {
       const hasBirthday = dayEvents.some(event => event.type === 'birthday');
       const hasBloodmoon = dayEvents.some(event => event.type === 'bloodmoon');
       
+      
       let dayClass = 'mobile-day-card';
       if (isToday) dayClass += ' today';
       if (hasBirthday) dayClass += ' has-birthday';
@@ -385,9 +419,14 @@ class CalendarModule {
           <div class="mobile-day-content">
             <div class="mobile-hyrulean-date">${hyruleanDate}</div>
             <div class="mobile-day-events">
-              ${dayEvents.map(event => `
-                <div class="mobile-day-event ${event.type}">${event.label}</div>
-              `).join('')}
+              ${dayEvents.map(event => {
+                return `
+                <div class="mobile-day-event ${event.type}">
+                  ${event.label}
+                  ${event.tooltip ? `<div class="tooltip">${event.tooltip}</div>` : ''}
+                </div>
+              `;
+              }).join('')}
             </div>
           </div>
         </div>
@@ -395,8 +434,6 @@ class CalendarModule {
     }
     
     container.innerHTML = calendarHTML;
-    console.log('Generated mobile list with', lastDay.getDate(), 'days');
-    console.log('Container HTML:', container.innerHTML.substring(0, 500));
   }
 
   generateDesktopGrid(container, weekdaysContainer, year, month, today) {
@@ -431,6 +468,7 @@ class CalendarModule {
         const hasBirthday = dayEvents.some(event => event.type === 'birthday');
         const hasBloodmoon = dayEvents.some(event => event.type === 'bloodmoon');
         
+        
         let dayClass = 'calendar-day';
         if (!isCurrentMonth) dayClass += ' other-month';
         if (isToday) dayClass += ' today';
@@ -445,9 +483,14 @@ class CalendarModule {
             <div class="day-number">${dayNumber}</div>
             <div class="hyrulean-date">${hyruleanDate}</div>
             <div class="day-events">
-              ${dayEvents.map(event => `
-                <div class="day-event ${event.type}">${event.label}</div>
-              `).join('')}
+              ${dayEvents.map(event => {
+                return `
+                <div class="day-event ${event.type}">
+                  ${event.label}
+                  ${event.tooltip ? `<div class="tooltip">${event.tooltip}</div>` : ''}
+                </div>
+              `;
+              }).join('')}
             </div>
           </div>
         `;
@@ -458,23 +501,96 @@ class CalendarModule {
   }
 
   generateEventsList() {
-    const events = [];
+    const container = document.getElementById('calendar-events');
+    if (!container) return;
     
-    // Add birthdays
+    const events = [];
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+    
+    // Add birthdays for current month
     this.birthdays.forEach(birthday => {
-      const [month, day] = birthday.birthday.split('-');
-      const eventDate = new Date(new Date().getFullYear(), parseInt(month) - 1, parseInt(day));
+      const [birthdayMonth, day] = birthday.birthday.split('-');
+      const eventDate = new Date(year, parseInt(birthdayMonth) - 1, parseInt(day));
       
-      // Add birthday to events list
-      events.push({
-        date: eventDate,
-        type: 'birthday',
-        name: birthday.name,
-        icon: birthday.icon || '/api/images/default-avatar.png'
-      });
+      // Only include birthdays in the current month
+      if (eventDate.getMonth() === month) {
+        events.push({
+          date: eventDate,
+          type: 'birthday',
+          name: birthday.name,
+          icon: birthday.icon || '/api/images/default-avatar.png',
+          day: parseInt(day)
+        });
+      }
     });
     
-    return events;
+    // Add blood moons for current month
+    this.bloodmoonDates.forEach(bloodmoon => {
+      const [bloodmoonMonth, day] = bloodmoon.realDate.split('-');
+      const eventDate = new Date(year, parseInt(bloodmoonMonth) - 1, parseInt(day));
+      
+      // Only include blood moons in the current month
+      if (eventDate.getMonth() === month) {
+        events.push({
+          date: eventDate,
+          type: 'bloodmoon',
+          day: parseInt(day),
+          hyruleanMonth: bloodmoon.month
+        });
+      }
+    });
+    
+    // Sort events by day
+    events.sort((a, b) => a.day - b.day);
+    
+    // Generate HTML
+    if (events.length === 0) {
+      container.innerHTML = `
+        <h4>Events This Month</h4>
+        <div class="events-list">
+          <div class="no-events">No events scheduled for this month</div>
+        </div>
+      `;
+      return;
+    }
+    
+    const eventsHTML = events.map(event => {
+      const dateStr = event.date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      const hyruleanDate = this.convertToHyruleanDate(event.date);
+      
+      if (event.type === 'birthday') {
+        return `
+          <div class="event-item birthday-event">
+            <div class="event-icon">🎂</div>
+            <div class="event-details">
+              <div class="event-title">${event.name}'s Birthday</div>
+              <div class="event-date">${dateStr} • ${hyruleanDate}</div>
+            </div>
+          </div>
+        `;
+      } else if (event.type === 'bloodmoon') {
+        return `
+          <div class="event-item bloodmoon-event">
+            <div class="event-icon">🌙</div>
+            <div class="event-details">
+              <div class="event-title">Blood Moon</div>
+              <div class="event-date">${dateStr} • ${hyruleanDate}</div>
+            </div>
+          </div>
+        `;
+      }
+    }).join('');
+    
+    container.innerHTML = `
+      <h4>Events This Month</h4>
+      <div class="events-list">
+        ${eventsHTML}
+      </div>
+    `;
   }
 
   getDayEvents(date) {
@@ -496,10 +612,12 @@ class CalendarModule {
           label: `${dayBirthdays[0].name} 🎂`
         });
       } else {
-        // Multiple birthdays - show count with cake
+        // Multiple birthdays - show count with cake and tooltip
+        const names = dayBirthdays.map(b => b.name).join(', ');
         events.push({
           type: 'birthday',
-          label: `${dayBirthdays.length} Birthdays 🎂`
+          label: `${dayBirthdays.length} Birthdays 🎂`,
+          tooltip: names
         });
       }
     }
