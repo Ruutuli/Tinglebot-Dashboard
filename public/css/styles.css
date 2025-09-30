@@ -48,6 +48,15 @@
   
     /* Global Defaults */
     --primary-color:        var(--botw-blue);
+    
+    /* Theme System */
+    --bg-primary:           var(--botw-white);
+    --bg-secondary:         var(--botw-pale);
+    --text-primary:         var(--botw-black);
+    --text-secondary:       var(--botw-warm-black);
+    --border-color:         var(--botw-dark-blue);
+    --accent-color:         var(--botw-blue);
+    --accent-hover:         var(--botw-dark-blue);
     --primary-hover:        var(--botw-dark-blue);
     --background-color:     var(--botw-black);
     --card-background:      var(--botw-warm-black);
@@ -2714,4 +2723,188 @@ html {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* ============================================================================ */
+/* Theme System */
+/* ============================================================================ */
+
+/* Light Theme (Improved) */
+[data-theme="light"] {
+  --bg-primary:           #FFFFFF;
+  --bg-secondary:         #F8F9FA;
+  --bg-tertiary:          #E9ECEF;
+  --text-primary:         #212529;
+  --text-secondary:       #6C757D;
+  --text-muted:           #ADB5BD;
+  --border-color:         #DEE2E6;
+  --border-light:         #E9ECEF;
+  --accent-color:         #0D6EFD;
+  --accent-hover:         #0B5ED7;
+  --accent-light:         #E7F1FF;
+  --success-color:        #198754;
+  --warning-color:        #FFC107;
+  --danger-color:         #DC3545;
+  --info-color:           #0DCAF0;
+  --shadow:               rgba(0, 0, 0, 0.1);
+  --shadow-hover:         rgba(0, 0, 0, 0.15);
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --bg-primary:           #1A1A1A;
+  --bg-secondary:         #2D2D2D;
+  --bg-tertiary:          #404040;
+  --text-primary:         #FFFFFF;
+  --text-secondary:       #B3B3B3;
+  --text-muted:           #808080;
+  --border-color:         #404040;
+  --border-light:         #2D2D2D;
+  --accent-color:         #00A3DA;
+  --accent-hover:         #0088B8;
+  --accent-light:         #001A26;
+  --success-color:        #28A745;
+  --warning-color:        #FFC107;
+  --danger-color:         #DC3545;
+  --info-color:           #17A2B8;
+  --shadow:               rgba(0, 0, 0, 0.3);
+  --shadow-hover:         rgba(0, 0, 0, 0.4);
+}
+
+/* Rudania Theme (Dark Red) */
+[data-theme="rudania"] {
+  --bg-primary:           #1A0A0A;
+  --bg-secondary:         #2D0F0F;
+  --bg-tertiary:          #401414;
+  --text-primary:         #FFE5E5;
+  --text-secondary:       #FFB3B3;
+  --text-muted:           #CC8080;
+  --border-color:         #8B1A1A;
+  --border-light:         #401414;
+  --accent-color:         #DC2626;
+  --accent-hover:         #B91C1C;
+  --accent-light:         #2D0F0F;
+  --success-color:        #16A34A;
+  --warning-color:        #F59E0B;
+  --danger-color:         #EF4444;
+  --info-color:           #0EA5E9;
+  --shadow:               rgba(220, 38, 38, 0.3);
+  --shadow-hover:         rgba(220, 38, 38, 0.4);
+}
+
+/* Inariko Theme (Dark Blue) */
+[data-theme="inariko"] {
+  --bg-primary:           #0A0F1A;
+  --bg-secondary:         #0F1A2D;
+  --bg-tertiary:          #142640;
+  --text-primary:         #E5F2FF;
+  --text-secondary:       #B3D9FF;
+  --text-muted:           #80BFFF;
+  --border-color:         #1A4A8B;
+  --border-light:         #142640;
+  --accent-color:         #0284C7;
+  --accent-hover:         #0369A1;
+  --accent-light:         #0F1A2D;
+  --success-color:        #059669;
+  --warning-color:         #D97706;
+  --danger-color:         #DC2626;
+  --info-color:           #0891B2;
+  --shadow:               rgba(2, 132, 199, 0.3);
+  --shadow-hover:         rgba(2, 132, 199, 0.4);
+}
+
+/* Vhintl Theme (Dark Green) */
+[data-theme="vhintl"] {
+  --bg-primary:           #0A1A0A;
+  --bg-secondary:         #0F2D0F;
+  --bg-tertiary:          #144014;
+  --text-primary:         #E5FFE5;
+  --text-secondary:       #B3FFB3;
+  --text-muted:           #80FF80;
+  --border-color:         #1A4A1A;
+  --border-light:         #144014;
+  --accent-color:         #16A34A;
+  --accent-hover:         #15803D;
+  --accent-light:         #0F2D0F;
+  --success-color:         #22C55E;
+  --warning-color:         #EAB308;
+  --danger-color:         #EF4444;
+  --info-color:           #06B6D4;
+  --shadow:               rgba(22, 163, 74, 0.3);
+  --shadow-hover:         rgba(22, 163, 74, 0.4);
+}
+
+/* High Contrast Mode */
+[data-contrast="high"] {
+  --text-primary:         #000000;
+  --text-secondary:       #000000;
+  --bg-primary:           #FFFFFF;
+  --bg-secondary:         #F0F0F0;
+  --border-color:         #000000;
+  --accent-color:         #0000FF;
+}
+
+[data-theme="dark"][data-contrast="high"] {
+  --text-primary:         #FFFFFF;
+  --text-secondary:       #FFFFFF;
+  --bg-primary:           #000000;
+  --bg-secondary:         #1A1A1A;
+  --border-color:         #FFFFFF;
+  --accent-color:         #00FFFF;
+}
+
+[data-theme="rudania"][data-contrast="high"] {
+  --text-primary:         #FFFFFF;
+  --text-secondary:       #FFFFFF;
+  --bg-primary:           #000000;
+  --bg-secondary:         #1A0000;
+  --border-color:         #FF0000;
+  --accent-color:         #FF0000;
+}
+
+[data-theme="inariko"][data-contrast="high"] {
+  --text-primary:         #FFFFFF;
+  --text-secondary:       #FFFFFF;
+  --bg-primary:           #000000;
+  --bg-secondary:         #00001A;
+  --border-color:         #0000FF;
+  --accent-color:         #0000FF;
+}
+
+[data-theme="vhintl"][data-contrast="high"] {
+  --text-primary:         #FFFFFF;
+  --text-secondary:       #FFFFFF;
+  --bg-primary:           #000000;
+  --bg-secondary:         #001A00;
+  --border-color:         #00FF00;
+  --accent-color:         #00FF00;
+}
+
+/* Font Size Adjustments */
+[data-font-size="small"] {
+  font-size: 0.875rem;
+}
+
+[data-font-size="large"] {
+  font-size: 1.125rem;
+}
+
+[data-font-size="extra-large"] {
+  font-size: 1.25rem;
+}
+
+/* Animation Speed Adjustments */
+[data-animation-speed="fast"] * {
+  transition-duration: 0.1s !important;
+  animation-duration: 0.1s !important;
+}
+
+[data-animation-speed="slow"] * {
+  transition-duration: 0.8s !important;
+  animation-duration: 0.8s !important;
+}
+
+[data-animation-speed="disabled"] * {
+  transition: none !important;
+  animation: none !important;
 }

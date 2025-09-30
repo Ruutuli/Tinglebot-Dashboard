@@ -620,6 +620,8 @@ function setupSidebarNavigation() {
         relationshipsModule.showRelationshipsSection();
       } else if (sectionId === 'admin-area-section') {
         showAdminAreaSection();
+      } else if (sectionId === 'settings-section') {
+        showSettingsSection();
       } else {
         // For other sections, use the existing showSection function
         console.log('🔍 Using generic showSection for:', sectionId);
@@ -650,6 +652,8 @@ function setupSidebarNavigation() {
       relationshipsModule.showRelationshipsSection();
     } else if (section === 'admin-area-section') {
       showAdminAreaSection();
+    } else if (section === 'settings-section') {
+      showSettingsSection();
     } else {
       showSection(section);
     }
@@ -678,6 +682,8 @@ function setupSidebarNavigation() {
       relationshipsModule.showRelationshipsSection();
     } else if (sectionId === 'admin-area-section') {
       showAdminAreaSection();
+    } else if (sectionId === 'settings-section') {
+      showSettingsSection();
     } else {
       showSection(sectionId);
     }
@@ -1312,6 +1318,54 @@ function showUsersSection() {
   const breadcrumb = document.querySelector('.breadcrumb');
   if (breadcrumb) {
     breadcrumb.textContent = 'Users';
+  }
+}
+
+// ============================================================================
+// ------------------- Settings Navigation -------------------
+// Handles settings page navigation specifically
+// ============================================================================
+function showSettingsSection() {
+  
+  // Hide all main content sections
+  const mainContent = document.querySelector('.main-content');
+  const sections = mainContent.querySelectorAll('section, #model-details-page');
+  
+  sections.forEach(section => {
+    section.style.display = 'none';
+  });
+  
+  // Show the settings section
+  const settingsSection = document.getElementById('settings-section');
+  if (settingsSection) {
+    settingsSection.style.display = 'block';
+    
+    // Initialize settings if not already done
+    if (window.settingsManager) {
+      window.settingsManager.updateUI();
+    }
+  } else {
+    console.error('❌ Settings section not found');
+  }
+  
+  // Update active state in sidebar
+  const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+  sidebarLinks.forEach(link => {
+    const linkSection = link.getAttribute('data-section');
+    const listItem = link.closest('li');
+    if (listItem) {
+      if (linkSection === 'settings-section') {
+        listItem.classList.add('active');
+      } else {
+        listItem.classList.remove('active');
+      }
+    }
+  });
+  
+  // Update breadcrumb
+  const breadcrumb = document.querySelector('.breadcrumb');
+  if (breadcrumb) {
+    breadcrumb.textContent = 'Settings';
   }
 }
 
@@ -1952,5 +2006,6 @@ export {
   showGuildSection,
   showCalendarSection,
   showUsersSection,
+  showSettingsSection,
   showAdminAreaSection
 };

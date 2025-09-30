@@ -69,6 +69,7 @@
   <link rel="stylesheet" href="css/calender.css" />
   <link rel="stylesheet" href="css/bloodmoon.css" />
   <link rel="stylesheet" href="css/relationships.css" />
+  <link rel="stylesheet" href="css/settings.css" />
   
   <!-- External Scripts with Integrity -->
   <script src="https://kit.fontawesome.com/262000d25d.js" crossorigin="anonymous"></script>
@@ -1606,6 +1607,370 @@
         </div>
       </section>
 
+      <!-- Settings Section -->
+      <section id="settings-section" style="display:none;">
+        <div class="dashboard-header">
+          <h1><i class="fas fa-cog"></i> Settings</h1>
+          <div class="dashboard-divider"></div>
+          <p class="dashboard-welcome">
+            Customize your dashboard experience with these personal preferences and settings.
+          </p>
+        </div>
+
+        <div class="settings-container">
+          <!-- Theme & Appearance -->
+          <div class="settings-category">
+            <div class="settings-category-header">
+              <h2><i class="fas fa-palette"></i> Theme & Appearance</h2>
+              <p>Customize the look and feel of your dashboard</p>
+            </div>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label for="theme-select">Theme</label>
+                <select id="theme-select" class="setting-input">
+                  <option value="auto">Auto (System Preference)</option>
+                  <option value="light">Light Mode</option>
+                  <option value="dark">Dark Mode</option>
+                  <option value="rudania">Rudania (Dark Red)</option>
+                  <option value="inariko">Inariko (Dark Blue)</option>
+                  <option value="vhintl">Vhintl (Dark Green)</option>
+                </select>
+                <small>Choose your preferred color scheme and village theme</small>
+              </div>
+              <div class="setting-item">
+                <label for="font-size">Font Size</label>
+                <select id="font-size" class="setting-input">
+                  <option value="small">Small</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="large">Large</option>
+                  <option value="extra-large">Extra Large</option>
+                </select>
+                <small>Adjust text size for better readability</small>
+              </div>
+              <div class="setting-item">
+                <label for="high-contrast">High Contrast Mode</label>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="high-contrast" class="toggle-input">
+                  <span class="toggle-slider"></span>
+                </div>
+                <small>Enhanced contrast for better accessibility</small>
+              </div>
+            </div>
+            
+            <!-- Theme Preview -->
+            <div class="theme-preview">
+              <h3>Theme Preview</h3>
+              <div class="theme-preview-grid">
+                <div class="theme-preview-card" data-theme="light">
+                  <div class="preview-header">
+                    <div class="preview-dot light"></div>
+                    <span>Light</span>
+                  </div>
+                  <div class="preview-content">
+                    <div class="preview-item"></div>
+                    <div class="preview-item"></div>
+                    <div class="preview-item"></div>
+                  </div>
+                </div>
+                <div class="theme-preview-card" data-theme="dark">
+                  <div class="preview-header">
+                    <div class="preview-dot dark"></div>
+                    <span>Dark</span>
+                  </div>
+                  <div class="preview-content">
+                    <div class="preview-item"></div>
+                    <div class="preview-item"></div>
+                    <div class="preview-item"></div>
+                  </div>
+                </div>
+                <div class="theme-preview-card" data-theme="rudania">
+                  <div class="preview-header">
+                    <div class="preview-dot rudania"></div>
+                    <span>Rudania</span>
+                  </div>
+                  <div class="preview-content">
+                    <div class="preview-item"></div>
+                    <div class="preview-item"></div>
+                    <div class="preview-item"></div>
+                  </div>
+                </div>
+                <div class="theme-preview-card" data-theme="inariko">
+                  <div class="preview-header">
+                    <div class="preview-dot inariko"></div>
+                    <span>Inariko</span>
+                  </div>
+                  <div class="preview-content">
+                    <div class="preview-item"></div>
+                    <div class="preview-item"></div>
+                    <div class="preview-item"></div>
+                  </div>
+                </div>
+                <div class="theme-preview-card" data-theme="vhintl">
+                  <div class="preview-header">
+                    <div class="preview-dot vhintl"></div>
+                    <span>Vhintl</span>
+                  </div>
+                  <div class="preview-content">
+                    <div class="preview-item"></div>
+                    <div class="preview-item"></div>
+                    <div class="preview-item"></div>
+                  </div>
+                </div>
+              </div>
+              <small>Click on a theme preview to apply it instantly</small>
+            </div>
+          </div>
+
+          <!-- Performance & Animation -->
+          <div class="settings-category">
+            <div class="settings-category-header">
+              <h2><i class="fas fa-tachometer-alt"></i> Performance & Animation</h2>
+              <p>Optimize performance and customize animations</p>
+            </div>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label for="image-quality">Image Quality</label>
+                <select id="image-quality" class="setting-input">
+                  <option value="high">High Quality</option>
+                  <option value="medium" selected>Medium Quality</option>
+                  <option value="low">Low Quality (Faster Loading)</option>
+                </select>
+                <small>Balance between image quality and loading speed</small>
+              </div>
+              <div class="setting-item">
+                <label for="animation-speed">Animation Speed</label>
+                <select id="animation-speed" class="setting-input">
+                  <option value="fast">Fast</option>
+                  <option value="normal" selected>Normal</option>
+                  <option value="slow">Slow</option>
+                  <option value="disabled">Disabled</option>
+                </select>
+                <small>Control animation speed or disable them entirely</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data Display -->
+          <div class="settings-category">
+            <div class="settings-category-header">
+              <h2><i class="fas fa-chart-bar"></i> Data Display</h2>
+              <p>Customize how data is formatted and displayed</p>
+            </div>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label for="date-format">Date Format</label>
+                <select id="date-format" class="setting-input">
+                  <option value="MM/DD/YYYY">MM/DD/YYYY (US)</option>
+                  <option value="DD/MM/YYYY">DD/MM/YYYY (EU)</option>
+                  <option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option>
+                  <option value="DD MMM YYYY">DD MMM YYYY (Readable)</option>
+                </select>
+                <small>Choose your preferred date format</small>
+              </div>
+              <div class="setting-item">
+                <label for="timezone">Time Zone</label>
+                <select id="timezone" class="setting-input">
+                  <option value="auto">Auto (Browser Default)</option>
+                  <option value="UTC">UTC</option>
+                  <option value="America/New_York">Eastern Time</option>
+                  <option value="America/Chicago">Central Time</option>
+                  <option value="America/Denver">Mountain Time</option>
+                  <option value="America/Los_Angeles">Pacific Time</option>
+                  <option value="Europe/London">London</option>
+                  <option value="Europe/Paris">Paris</option>
+                  <option value="Asia/Tokyo">Tokyo</option>
+                </select>
+                <small>Set your preferred timezone for displaying times</small>
+              </div>
+              <div class="setting-item">
+                <label for="currency-format">Currency Format</label>
+                <select id="currency-format" class="setting-input">
+                  <option value="USD">$1,234.56 (USD)</option>
+                  <option value="EUR">€1.234,56 (EUR)</option>
+                  <option value="GBP">£1,234.56 (GBP)</option>
+                  <option value="JPY">¥1,235 (JPY)</option>
+                </select>
+                <small>Format for displaying item prices and economy values</small>
+              </div>
+              <div class="setting-item">
+                <label for="number-format">Number Formatting</label>
+                <select id="number-format" class="setting-input">
+                  <option value="comma">1,234,567 (Comma Separated)</option>
+                  <option value="space">1 234 567 (Space Separated)</option>
+                  <option value="period">1.234.567 (Period Separated)</option>
+                  <option value="compact">1.2M (Compact)</option>
+                </select>
+                <small>How to display large numbers</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- List Preferences -->
+          <div class="settings-category">
+            <div class="settings-category-header">
+              <h2><i class="fas fa-list"></i> List Preferences</h2>
+              <p>Customize how lists and data tables are displayed</p>
+            </div>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label for="items-per-page">Items Per Page</label>
+                <select id="items-per-page" class="setting-input">
+                  <option value="12">12 items</option>
+                  <option value="24" selected>24 items</option>
+                  <option value="48">48 items</option>
+                  <option value="96">96 items</option>
+                  <option value="all">Show All</option>
+                </select>
+                <small>Number of items to display per page in lists</small>
+              </div>
+              <div class="setting-item">
+                <label for="default-sort">Default Sort Order</label>
+                <select id="default-sort" class="setting-input">
+                  <option value="name-asc">Name (A-Z)</option>
+                  <option value="name-desc">Name (Z-A)</option>
+                  <option value="date-asc">Date (Oldest First)</option>
+                  <option value="date-desc" selected>Date (Newest First)</option>
+                  <option value="rarity-asc">Rarity (Low to High)</option>
+                  <option value="rarity-desc">Rarity (High to Low)</option>
+                </select>
+                <small>Default sorting for characters, items, and other lists</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="settings-category">
+            <div class="settings-category-header">
+              <h2><i class="fas fa-bell"></i> Notifications</h2>
+              <p>Configure bot event notifications and alerts</p>
+            </div>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label for="blood-moon-alerts">Blood Moon Alerts</label>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="blood-moon-alerts" class="toggle-input" checked>
+                  <span class="toggle-slider"></span>
+                </div>
+                <small>Get notified about upcoming Blood Moon events</small>
+              </div>
+              <div class="setting-item">
+                <label for="daily-reset-reminders">Daily Reset Reminders</label>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="daily-reset-reminders" class="toggle-input" checked>
+                  <span class="toggle-slider"></span>
+                </div>
+                <small>Remind me about daily resets and stamina recovery</small>
+              </div>
+              <div class="setting-item">
+                <label for="weather-notifications">Weather Notifications</label>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="weather-notifications" class="toggle-input">
+                  <span class="toggle-slider"></span>
+                </div>
+                <small>Notify about special weather events</small>
+              </div>
+              <div class="setting-item">
+                <label for="character-week-updates">Character of the Week</label>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="character-week-updates" class="toggle-input" checked>
+                  <span class="toggle-slider"></span>
+                </div>
+                <small>Get notified when Character of the Week changes</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data Export -->
+          <div class="settings-category">
+            <div class="settings-category-header">
+              <h2><i class="fas fa-download"></i> Data Export</h2>
+              <p>Export your character and game data</p>
+            </div>
+            <div class="settings-grid">
+              <div class="setting-item full-width">
+                <label>Export Your Data</label>
+                <div class="export-buttons">
+                  <button id="export-characters" class="export-btn">
+                    <i class="fas fa-users"></i>
+                    Export Characters
+                  </button>
+                  <button id="export-inventory" class="export-btn">
+                    <i class="fas fa-box"></i>
+                    Export Inventory
+                  </button>
+                  <button id="export-relationships" class="export-btn">
+                    <i class="fas fa-heart"></i>
+                    Export Relationships
+                  </button>
+                  <button id="export-all-data" class="export-btn primary">
+                    <i class="fas fa-database"></i>
+                    Export All Data
+                  </button>
+                </div>
+                <small>Download your character data in various formats (JSON, CSV)</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Privacy & Security -->
+          <div class="settings-category">
+            <div class="settings-category-header">
+              <h2><i class="fas fa-shield-alt"></i> Privacy & Security</h2>
+              <p>Control your data and privacy settings</p>
+            </div>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label for="activity-logging">Activity Logging</label>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="activity-logging" class="toggle-input" checked>
+                  <span class="toggle-slider"></span>
+                </div>
+                <small>Allow the system to track your activity for analytics</small>
+              </div>
+              <div class="setting-item">
+                <label for="data-retention">Data Retention</label>
+                <select id="data-retention" class="setting-input">
+                  <option value="30">30 days</option>
+                  <option value="90" selected>90 days</option>
+                  <option value="365">1 year</option>
+                  <option value="forever">Forever</option>
+                </select>
+                <small>How long to keep your activity data</small>
+              </div>
+              <div class="setting-item">
+                <label for="profile-visibility">Profile Visibility</label>
+                <select id="profile-visibility" class="setting-input">
+                  <option value="public">Public</option>
+                  <option value="friends" selected>Friends Only</option>
+                  <option value="private">Private</option>
+                </select>
+                <small>Control who can see your profile information</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="settings-actions">
+            <button id="save-settings" class="settings-btn primary">
+              <i class="fas fa-save"></i>
+              Save Settings
+            </button>
+            <button id="reset-settings" class="settings-btn secondary">
+              <i class="fas fa-undo"></i>
+              Reset to Defaults
+            </button>
+            <button id="export-settings" class="settings-btn secondary">
+              <i class="fas fa-download"></i>
+              Export Settings
+            </button>
+            <button id="import-settings" class="settings-btn secondary">
+              <i class="fas fa-upload"></i>
+              Import Settings
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- Inventory Section -->
 
 
@@ -1662,6 +2027,7 @@
       <script src="js/relationships.js?v=1.0.1"></script>
       <script type="module" src="js/suggestions.js"></script>
       <script type="module" src="js/memberLore.js"></script>
+      <script type="module" src="js/settings.js"></script>
   
   <!-- Performance and Error Handling Script -->
   <script src="js/performance.js"></script>

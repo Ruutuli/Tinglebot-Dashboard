@@ -5593,8 +5593,124 @@ app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'API endpoint not found' });
   }
-  // For non-API routes, serve index.html (SPA fallback)
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// For non-API routes, serve index.html (SPA fallback)
+res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ------------------- Section: Data Export API Routes -------------------
+
+// Export character data
+app.get('/api/characters/export', async (req, res) => {
+  try {
+    const characters = await Character.find({}).lean();
+    const modCharacters = await ModCharacter.find({}).lean();
+    
+    const exportData = {
+      version: '1.0',
+      timestamp: new Date().toISOString(),
+      characters: characters,
+      modCharacters: modCharacters,
+      totalCount: characters.length + modCharacters.length
+    };
+    
+    res.json(exportData);
+  } catch (error) {
+    console.error('Error exporting character data:', error);
+    res.status(500).json({ error: 'Failed to export character data' });
+  }
+});
+
+// Export inventory data
+app.get('/api/inventory/export', async (req, res) => {
+  try {
+    const inventories = await getCharacterInventoryCollection().find({}).toArray();
+    
+    const exportData = {
+      version: '1.0',
+      timestamp: new Date().toISOString(),
+      inventories: inventories,
+      totalCount: inventories.length
+    };
+    
+    res.json(exportData);
+  } catch (error) {
+    console.error('Error exporting inventory data:', error);
+    res.status(500).json({ error: 'Failed to export inventory data' });
+  }
+});
+
+// Export relationship data
+app.get('/api/relationships/export', async (req, res) => {
+  try {
+    const relationships = await Relationship.find({}).lean();
+    
+    const exportData = {
+      version: '1.0',
+      timestamp: new Date().toISOString(),
+      relationships: relationships,
+      totalCount: relationships.length
+    };
+    
+    res.json(exportData);
+  } catch (error) {
+    console.error('Error exporting relationship data:', error);
+    res.status(500).json({ error: 'Failed to export relationship data' });
+  }
+});
+
+// Export all user data (requires authentication)
+app.get('/api/user/export-all', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    const userId = req.user.discordId;
+    
+    // Get user's characters
+    const characters = await Character.find({ userId: userId }).lean();
+    const modCharacters = await ModCharacter.find({ userId: userId }).lean();
+    
+    // Get user's inventory
+    const inventories = await getCharacterInventoryCollection().find({ userId: userId }).toArray();
+    
+    // Get user's relationships
+    const relationships = await Relationship.find({ 
+      $or: [
+        { character1Id: { $in: characters.map(c => c._id) } },
+        { character2Id: { $in: characters.map(c => c._id) } }
+      ]
+    }).lean();
+    
+    // Get user's profile
+    const userProfile = await User.findOne({ discordId: userId }).lean();
+    
+    const exportData = {
+      version: '1.0',
+      timestamp: new Date().toISOString(),
+      user: {
+        discordId: userId,
+        username: req.user.username,
+        discriminator: req.user.discriminator,
+        avatar: req.user.avatar
+      },
+      characters: characters,
+      modCharacters: modCharacters,
+      inventories: inventories,
+      relationships: relationships,
+      profile: userProfile,
+      summary: {
+        totalCharacters: characters.length + modCharacters.length,
+        totalInventories: inventories.length,
+        totalRelationships: relationships.length
+      }
+    };
+    
+    res.json(exportData);
+  } catch (error) {
+    console.error('Error exporting user data:', error);
+    res.status(500).json({ error: 'Failed to export user data' });
+  }
 });
 
 // ------------------- Section: Server Startup -------------------
