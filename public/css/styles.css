@@ -49,13 +49,13 @@
     /* Global Defaults */
     --primary-color:        var(--botw-blue);
     
-    /* Theme System */
-    --bg-primary:           var(--botw-white);
-    --bg-secondary:         var(--botw-pale);
-    --text-primary:         var(--botw-black);
-    --text-secondary:       var(--botw-warm-black);
-    --border-color:         var(--botw-dark-blue);
-    --accent-color:         var(--botw-blue);
+    /* Theme System - Default to Dark Mode */
+    --bg-primary:           #1A1A1A;
+    --bg-secondary:         #2D2D2D;
+    --text-primary:         #FFFFFF;
+    --text-secondary:       #B3B3B3;
+    --border-color:         #404040;
+    --accent-color:         #00A3DA;
     --accent-hover:         var(--botw-dark-blue);
     --primary-hover:        var(--botw-dark-blue);
     --background-color:     var(--botw-black);

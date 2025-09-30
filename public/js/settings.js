@@ -12,7 +12,7 @@ class SettingsManager {
   getDefaultSettings() {
     return {
       // Theme & Appearance
-      theme: 'auto',
+      theme: 'dark',
       fontSize: 'medium',
       highContrast: false,
       
@@ -48,6 +48,11 @@ class SettingsManager {
     this.loadSettings();
     this.setupEventListeners();
     this.applySettings();
+    
+    // Ensure dark mode is applied on first load
+    if (!localStorage.getItem('tinglebot-settings')) {
+      this.applyTheme('dark');
+    }
   }
 
   // Load settings from localStorage
