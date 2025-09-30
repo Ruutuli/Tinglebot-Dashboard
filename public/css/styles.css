@@ -2771,67 +2771,70 @@ html {
   --shadow-hover:         rgba(0, 0, 0, 0.4);
 }
 
-/* Rudania Theme (Dark Red) */
+/* Rudania Theme (Dark with Warm Red Accents) */
 [data-theme="rudania"] {
-  --bg-primary:           #1A0A0A;
-  --bg-secondary:         #2D0F0F;
-  --bg-tertiary:          #401414;
-  --text-primary:         #FFE5E5;
-  --text-secondary:       #FFB3B3;
-  --text-muted:           #CC8080;
-  --border-color:         #8B1A1A;
-  --border-light:         #401414;
-  --accent-color:         #DC2626;
-  --accent-hover:         #B91C1C;
-  --accent-light:         #2D0F0F;
+  --bg-primary:           #1A1A1A;
+  --bg-secondary:         #2D2D2D;
+  --bg-tertiary:          #404040;
+  --text-primary:         #FFFFFF;
+  --text-secondary:       #B3B3B3;
+  --text-muted:           #808080;
+  --border-color:         #4A2C2C;
+  --border-light:         #2D1F1F;
+  --accent-color:         #E74C3C;
+  --accent-hover:         #C0392B;
+  --accent-light:         #2D1F1F;
+  --accent-glow:          rgba(231, 76, 60, 0.2);
   --success-color:        #16A34A;
   --warning-color:        #F59E0B;
   --danger-color:         #EF4444;
   --info-color:           #0EA5E9;
-  --shadow:               rgba(220, 38, 38, 0.3);
-  --shadow-hover:         rgba(220, 38, 38, 0.4);
+  --shadow:               rgba(231, 76, 60, 0.15);
+  --shadow-hover:         rgba(231, 76, 60, 0.25);
 }
 
-/* Inariko Theme (Dark Blue) */
+/* Inariko Theme (Dark with Modern Blue Accents) */
 [data-theme="inariko"] {
-  --bg-primary:           #0A0F1A;
-  --bg-secondary:         #0F1A2D;
-  --bg-tertiary:          #142640;
-  --text-primary:         #E5F2FF;
-  --text-secondary:       #B3D9FF;
-  --text-muted:           #80BFFF;
-  --border-color:         #1A4A8B;
-  --border-light:         #142640;
-  --accent-color:         #0284C7;
-  --accent-hover:         #0369A1;
-  --accent-light:         #0F1A2D;
+  --bg-primary:           #1A1A1A;
+  --bg-secondary:         #2D2D2D;
+  --bg-tertiary:          #404040;
+  --text-primary:         #FFFFFF;
+  --text-secondary:       #B3B3B3;
+  --text-muted:           #808080;
+  --border-color:         #2C3E50;
+  --border-light:         #1F2D3D;
+  --accent-color:         #3498DB;
+  --accent-hover:         #2980B9;
+  --accent-light:         #1F2D3D;
+  --accent-glow:          rgba(52, 152, 219, 0.2);
   --success-color:        #059669;
   --warning-color:         #D97706;
   --danger-color:         #DC2626;
   --info-color:           #0891B2;
-  --shadow:               rgba(2, 132, 199, 0.3);
-  --shadow-hover:         rgba(2, 132, 199, 0.4);
+  --shadow:               rgba(52, 152, 219, 0.15);
+  --shadow-hover:         rgba(52, 152, 219, 0.25);
 }
 
-/* Vhintl Theme (Dark Green) */
+/* Vhintl Theme (Dark with Fresh Green Accents) */
 [data-theme="vhintl"] {
-  --bg-primary:           #0A1A0A;
-  --bg-secondary:         #0F2D0F;
-  --bg-tertiary:          #144014;
-  --text-primary:         #E5FFE5;
-  --text-secondary:       #B3FFB3;
-  --text-muted:           #80FF80;
-  --border-color:         #1A4A1A;
-  --border-light:         #144014;
-  --accent-color:         #16A34A;
-  --accent-hover:         #15803D;
-  --accent-light:         #0F2D0F;
+  --bg-primary:           #1A1A1A;
+  --bg-secondary:         #2D2D2D;
+  --bg-tertiary:          #404040;
+  --text-primary:         #FFFFFF;
+  --text-secondary:       #B3B3B3;
+  --text-muted:           #808080;
+  --border-color:         #2D4A2D;
+  --border-light:         #1F2D1F;
+  --accent-color:         #27AE60;
+  --accent-hover:         #229954;
+  --accent-light:         #1F2D1F;
+  --accent-glow:          rgba(39, 174, 96, 0.2);
   --success-color:         #22C55E;
   --warning-color:         #EAB308;
   --danger-color:         #EF4444;
   --info-color:           #06B6D4;
-  --shadow:               rgba(22, 163, 74, 0.3);
-  --shadow-hover:         rgba(22, 163, 74, 0.4);
+  --shadow:               rgba(39, 174, 96, 0.15);
+  --shadow-hover:         rgba(39, 174, 96, 0.25);
 }
 
 /* High Contrast Mode */
@@ -2857,27 +2860,254 @@ html {
   --text-primary:         #FFFFFF;
   --text-secondary:       #FFFFFF;
   --bg-primary:           #000000;
-  --bg-secondary:         #1A0000;
-  --border-color:         #FF0000;
-  --accent-color:         #FF0000;
+  --bg-secondary:         #1A1A1A;
+  --border-color:         #E74C3C;
+  --accent-color:         #E74C3C;
 }
 
 [data-theme="inariko"][data-contrast="high"] {
   --text-primary:         #FFFFFF;
   --text-secondary:       #FFFFFF;
   --bg-primary:           #000000;
-  --bg-secondary:         #00001A;
-  --border-color:         #0000FF;
-  --accent-color:         #0000FF;
+  --bg-secondary:         #1A1A1A;
+  --border-color:         #3498DB;
+  --accent-color:         #3498DB;
 }
 
 [data-theme="vhintl"][data-contrast="high"] {
   --text-primary:         #FFFFFF;
   --text-secondary:       #FFFFFF;
   --bg-primary:           #000000;
-  --bg-secondary:         #001A00;
-  --border-color:         #00FF00;
-  --accent-color:         #00FF00;
+  --bg-secondary:         #1A1A1A;
+  --border-color:         #27AE60;
+  --accent-color:         #27AE60;
+}
+
+/* Village Theme Navigation Enhancements */
+[data-theme="rudania"] .sidebar-nav li.active a {
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+  color: white;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+[data-theme="rudania"] .sidebar-nav li a:hover {
+  background: var(--accent-light);
+  color: var(--accent-color);
+  border-left: 3px solid var(--accent-color);
+}
+
+[data-theme="rudania"] .sidebar-nav li a:hover i {
+  color: var(--accent-color);
+}
+
+[data-theme="inariko"] .sidebar-nav li.active a {
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+  color: white;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+[data-theme="inariko"] .sidebar-nav li a:hover {
+  background: var(--accent-light);
+  color: var(--accent-color);
+  border-left: 3px solid var(--accent-color);
+}
+
+[data-theme="inariko"] .sidebar-nav li a:hover i {
+  color: var(--accent-color);
+}
+
+[data-theme="vhintl"] .sidebar-nav li.active a {
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+  color: white;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+[data-theme="vhintl"] .sidebar-nav li a:hover {
+  background: var(--accent-light);
+  color: var(--accent-color);
+  border-left: 3px solid var(--accent-color);
+}
+
+[data-theme="vhintl"] .sidebar-nav li a:hover i {
+  color: var(--accent-color);
+}
+
+/* Village Theme Button Enhancements */
+[data-theme="rudania"] .btn-primary,
+[data-theme="rudania"] .btn {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+}
+
+[data-theme="rudania"] .btn-primary:hover,
+[data-theme="rudania"] .btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+[data-theme="inariko"] .btn-primary,
+[data-theme="inariko"] .btn {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+}
+
+[data-theme="inariko"] .btn-primary:hover,
+[data-theme="inariko"] .btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+[data-theme="vhintl"] .btn-primary,
+[data-theme="vhintl"] .btn {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+}
+
+[data-theme="vhintl"] .btn-primary:hover,
+[data-theme="vhintl"] .btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+/* Village Theme Card Enhancements */
+[data-theme="rudania"] .card {
+  border-color: var(--border-color);
+}
+
+[data-theme="rudania"] .card:hover {
+  border-color: var(--accent-color);
+  box-shadow: 0 8px 25px var(--shadow-hover);
+}
+
+[data-theme="inariko"] .card {
+  border-color: var(--border-color);
+}
+
+[data-theme="inariko"] .card:hover {
+  border-color: var(--accent-color);
+  box-shadow: 0 8px 25px var(--shadow-hover);
+}
+
+[data-theme="vhintl"] .card {
+  border-color: var(--border-color);
+}
+
+[data-theme="vhintl"] .card:hover {
+  border-color: var(--accent-color);
+  box-shadow: 0 8px 25px var(--shadow-hover);
+}
+
+/* Village Theme Link Enhancements */
+[data-theme="rudania"] a {
+  color: var(--accent-color);
+}
+
+[data-theme="rudania"] a:hover {
+  color: var(--accent-hover);
+  text-shadow: 0 0 8px var(--accent-glow);
+}
+
+[data-theme="inariko"] a {
+  color: var(--accent-color);
+}
+
+[data-theme="inariko"] a:hover {
+  color: var(--accent-hover);
+  text-shadow: 0 0 8px var(--accent-glow);
+}
+
+[data-theme="vhintl"] a {
+  color: var(--accent-color);
+}
+
+[data-theme="vhintl"] a:hover {
+  color: var(--accent-hover);
+  text-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* Village Theme Form Enhancements */
+[data-theme="rudania"] input:focus,
+[data-theme="rudania"] select:focus,
+[data-theme="rudania"] textarea:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+[data-theme="inariko"] input:focus,
+[data-theme="inariko"] select:focus,
+[data-theme="inariko"] textarea:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+[data-theme="vhintl"] input:focus,
+[data-theme="vhintl"] select:focus,
+[data-theme="vhintl"] textarea:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* Village Theme Progress Bars */
+[data-theme="rudania"] .progress-bar {
+  background: linear-gradient(90deg, var(--accent-color), var(--accent-hover));
+}
+
+[data-theme="inariko"] .progress-bar {
+  background: linear-gradient(90deg, var(--accent-color), var(--accent-hover));
+}
+
+[data-theme="vhintl"] .progress-bar {
+  background: linear-gradient(90deg, var(--accent-color), var(--accent-hover));
+}
+
+/* Village Theme Badges and Tags */
+[data-theme="rudania"] .badge,
+[data-theme="rudania"] .tag {
+  background: var(--accent-color);
+  color: white;
+}
+
+[data-theme="inariko"] .badge,
+[data-theme="inariko"] .tag {
+  background: var(--accent-color);
+  color: white;
+}
+
+[data-theme="vhintl"] .badge,
+[data-theme="vhintl"] .tag {
+  background: var(--accent-color);
+  color: white;
+}
+
+/* Village Theme Toggle Switches */
+[data-theme="rudania"] .toggle-input:checked + .toggle-slider {
+  background: var(--accent-color);
+}
+
+[data-theme="rudania"] .toggle-input:checked + .toggle-slider:before {
+  background: white;
+}
+
+[data-theme="inariko"] .toggle-input:checked + .toggle-slider {
+  background: var(--accent-color);
+}
+
+[data-theme="inariko"] .toggle-input:checked + .toggle-slider:before {
+  background: white;
+}
+
+[data-theme="vhintl"] .toggle-input:checked + .toggle-slider {
+  background: var(--accent-color);
+}
+
+[data-theme="vhintl"] .toggle-input:checked + .toggle-slider:before {
+  background: white;
 }
 
 /* Font Size Adjustments */

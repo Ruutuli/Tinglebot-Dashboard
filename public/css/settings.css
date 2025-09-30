@@ -601,33 +601,33 @@
 }
 
 .theme-preview-card[data-theme="rudania"] {
-  background: #1A0A0A;
-  border-color: #8B1A1A;
-  color: #FFE5E5;
+  background: #1A1A1A;
+  border-color: #404040;
+  color: #FFFFFF;
 }
 
 .theme-preview-card[data-theme="rudania"] .preview-item {
-  background: #FFB3B3;
+  background: #E74C3C;
 }
 
 .theme-preview-card[data-theme="inariko"] {
-  background: #0A0F1A;
-  border-color: #1A4A8B;
-  color: #E5F2FF;
+  background: #1A1A1A;
+  border-color: #404040;
+  color: #FFFFFF;
 }
 
 .theme-preview-card[data-theme="inariko"] .preview-item {
-  background: #B3D9FF;
+  background: #3498DB;
 }
 
 .theme-preview-card[data-theme="vhintl"] {
-  background: #0A1A0A;
-  border-color: #1A4A1A;
-  color: #E5FFE5;
+  background: #1A1A1A;
+  border-color: #404040;
+  color: #FFFFFF;
 }
 
 .theme-preview-card[data-theme="vhintl"] .preview-item {
-  background: #B3FFB3;
+  background: #27AE60;
 }
 
 /* High Contrast Mode */
