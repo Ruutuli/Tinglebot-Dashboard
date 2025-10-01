@@ -1079,6 +1079,12 @@ function showDashboardSection() {
       characterOfWeekSection.style.display = 'block';
     }
     
+    // Ensure recent quests section is visible
+    const recentQuestsSection = document.getElementById('recent-quests-section');
+    if (recentQuestsSection) {
+      recentQuestsSection.style.display = 'block';
+    }
+    
     // Check for any loading states that might be hiding content
     const loader = document.getElementById('loader');
     const loadingStates = document.querySelectorAll('.loading-state');
@@ -1112,6 +1118,9 @@ function showDashboardSection() {
       }
     } else {
     }
+    
+    // Load recent quests
+    loadRecentQuests();
     
     // The dashboard content (welcome message, links, model cards) is already in the HTML
     // No need to load data dynamically for the main dashboard view
@@ -1346,6 +1355,13 @@ function showUsersSection() {
 // Handles settings page navigation specifically
 // ============================================================================
 function showSettingsSection() {
+  
+  // Check authentication - redirect to login if not authenticated
+  if (!auth.isAuthenticated || !auth.currentUser) {
+    console.log('🔒 Settings requires authentication, redirecting to login');
+    window.location.href = '/login';
+    return;
+  }
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');

@@ -5596,22 +5596,322 @@ setInterval(async () => {
   }
 }, 24 * 60 * 60 * 1000); // Run every 24 hours
 
-// ------------------- Section: Error Handling Middleware -------------------
-app.use((err, req, res, next) => {
-  console.error('[server.js]: ❌ Error:', err);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
-  });
+// ------------------- Section: User Settings API Routes -------------------
+
+// Get user settings
+app.get('/api/user/settings', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findOne({ discordId: req.user.discordId });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Return settings with defaults if not set
+    const settings = user.settings || {
+      theme: 'dark',
+      fontSize: 'medium',
+      highContrast: false,
+      imageQuality: 'medium',
+      animationSpeed: 'normal',
+      dateFormat: 'MM/DD/YYYY',
+      timezone: 'auto',
+      currencyFormat: 'USD',
+      numberFormat: 'comma',
+      itemsPerPage: 24,
+      defaultSort: 'date-desc',
+      bloodMoonAlerts: false,
+      dailyResetReminders: false,
+      weatherNotifications: false,
+      characterWeekUpdates: false,
+      activityLogging: true,
+      dataRetention: 90,
+      profileVisibility: 'friends'
+    };
+    
+    res.json({ 
+      success: true,
+      settings 
+    });
+  } catch (error) {
+    console.error('[server.js]: Error fetching user settings:', error);
+    res.status(500).json({ error: 'Failed to fetch user settings' });
+  }
 });
 
-// Handle 404s - only for API routes
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'API endpoint not found' });
+// Update user settings
+app.put('/api/user/settings', requireAuth, async (req, res) => {
+  try {
+    const { settings } = req.body;
+    
+    if (!settings || typeof settings !== 'object') {
+      return res.status(400).json({ error: 'Invalid settings' });
+    }
+    
+    // Get current user settings before updating (to detect what changed)
+    const currentUser = await User.findOne({ discordId: req.user.discordId });
+    
+    if (!currentUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const oldSettings = currentUser.settings || {};
+    
+    // Validate and prepare settings to update
+    const validSettings = [
+      'theme', 'fontSize', 'highContrast', 'imageQuality', 'animationSpeed',
+      'dateFormat', 'timezone', 'currencyFormat', 'numberFormat',
+      'itemsPerPage', 'defaultSort',
+      'bloodMoonAlerts', 'dailyResetReminders', 'weatherNotifications', 'characterWeekUpdates',
+      'activityLogging', 'dataRetention', 'profileVisibility'
+    ];
+    
+    const settingsToUpdate = {};
+    const notificationTypes = ['bloodMoonAlerts', 'dailyResetReminders', 'weatherNotifications', 'characterWeekUpdates'];
+    const notificationsEnabled = [];
+    
+    for (const key of validSettings) {
+      if (key in settings) {
+        // Type conversion based on field
+        if (['highContrast', 'bloodMoonAlerts', 'dailyResetReminders', 'weatherNotifications', 'characterWeekUpdates', 'activityLogging'].includes(key)) {
+          settingsToUpdate[`settings.${key}`] = Boolean(settings[key]);
+          
+          // Check if notification was just enabled (changed from false to true)
+          if (notificationTypes.includes(key)) {
+            const wasEnabled = oldSettings[key] === true;
+            const isNowEnabled = Boolean(settings[key]) === true;
+            
+            if (!wasEnabled && isNowEnabled) {
+              notificationsEnabled.push(key);
+            }
+          }
+        } else if (['itemsPerPage', 'dataRetention'].includes(key)) {
+          settingsToUpdate[`settings.${key}`] = parseInt(settings[key]) || settings[key];
+        } else {
+          settingsToUpdate[`settings.${key}`] = settings[key];
+        }
+      }
+    }
+    
+    // Update user settings in database
+    const user = await User.findOneAndUpdate(
+      { discordId: req.user.discordId },
+      { $set: settingsToUpdate },
+      { new: true, runValidators: true }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log(`[server.js]: ✅ Updated settings for user ${req.user.username}`);
+    
+    // Send confirmation DMs for newly enabled notifications (don't await - send in background)
+    if (notificationsEnabled.length > 0) {
+      console.log(`[server.js]: Sending confirmation DMs for enabled notifications: ${notificationsEnabled.join(', ')}`);
+      
+      // Send DMs in the background (don't wait for completion)
+      notificationsEnabled.forEach(notificationType => {
+        notificationService.sendNotificationEnabledConfirmation(req.user.discordId, notificationType)
+          .catch(err => {
+            console.error(`[server.js]: Error sending confirmation for ${notificationType}:`, err);
+          });
+      });
+    }
+    
+    res.json({ 
+      success: true,
+      message: 'Settings updated successfully',
+      settings: user.settings 
+    });
+  } catch (error) {
+    console.error('[server.js]: Error updating user settings:', error);
+    res.status(500).json({ error: 'Failed to update user settings' });
   }
-// For non-API routes, serve index.html (SPA fallback)
-res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ------------------- Section: Notification API Routes -------------------
+
+const notificationService = require('./utils/notificationService');
+
+// Send Blood Moon alerts
+app.post('/api/notifications/blood-moon', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const guildId = process.env.PROD_GUILD_ID;
+    let isAdmin = false;
+    
+    if (guildId) {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const memberData = await response.json();
+        const roles = memberData.roles || [];
+        const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+        isAdmin = ADMIN_ROLE_ID && roles.includes(ADMIN_ROLE_ID);
+      }
+    }
+    
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { description, fields } = req.body;
+    
+    const stats = await notificationService.sendBloodMoonAlerts({
+      description,
+      fields
+    });
+    
+    res.json({
+      success: true,
+      message: 'Blood Moon alerts sent',
+      stats
+    });
+  } catch (error) {
+    console.error('[server.js]: Error sending Blood Moon alerts:', error);
+    res.status(500).json({ error: 'Failed to send Blood Moon alerts' });
+  }
+});
+
+// Send Daily Reset reminders
+app.post('/api/notifications/daily-reset', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const guildId = process.env.PROD_GUILD_ID;
+    let isAdmin = false;
+    
+    if (guildId) {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const memberData = await response.json();
+        const roles = memberData.roles || [];
+        const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+        isAdmin = ADMIN_ROLE_ID && roles.includes(ADMIN_ROLE_ID);
+      }
+    }
+    
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const stats = await notificationService.sendDailyResetReminders();
+    
+    res.json({
+      success: true,
+      message: 'Daily Reset reminders sent',
+      stats
+    });
+  } catch (error) {
+    console.error('[server.js]: Error sending Daily Reset reminders:', error);
+    res.status(500).json({ error: 'Failed to send Daily Reset reminders' });
+  }
+});
+
+// Send Weather notifications
+app.post('/api/notifications/weather', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const guildId = process.env.PROD_GUILD_ID;
+    let isAdmin = false;
+    
+    if (guildId) {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const memberData = await response.json();
+        const roles = memberData.roles || [];
+        const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+        isAdmin = ADMIN_ROLE_ID && roles.includes(ADMIN_ROLE_ID);
+      }
+    }
+    
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { type, description, village, duration, fields } = req.body;
+    
+    const stats = await notificationService.sendWeatherNotifications({
+      type,
+      description,
+      village,
+      duration,
+      fields
+    });
+    
+    res.json({
+      success: true,
+      message: 'Weather notifications sent',
+      stats
+    });
+  } catch (error) {
+    console.error('[server.js]: Error sending Weather notifications:', error);
+    res.status(500).json({ error: 'Failed to send Weather notifications' });
+  }
+});
+
+// Send Character of Week notifications
+app.post('/api/notifications/character-of-week', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const guildId = process.env.PROD_GUILD_ID;
+    let isAdmin = false;
+    
+    if (guildId) {
+      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const memberData = await response.json();
+        const roles = memberData.roles || [];
+        const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+        isAdmin = ADMIN_ROLE_ID && roles.includes(ADMIN_ROLE_ID);
+      }
+    }
+    
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { name, description, icon, fields } = req.body;
+    
+    const stats = await notificationService.sendCharacterOfWeekNotifications({
+      name,
+      description,
+      icon,
+      fields
+    });
+    
+    res.json({
+      success: true,
+      message: 'Character of Week notifications sent',
+      stats
+    });
+  } catch (error) {
+    console.error('[server.js]: Error sending Character of Week notifications:', error);
+    res.status(500).json({ error: 'Failed to send Character of Week notifications' });
+  }
 });
 
 // ------------------- Section: Data Export API Routes -------------------
@@ -5728,6 +6028,24 @@ app.get('/api/user/export-all', async (req, res) => {
     console.error('Error exporting user data:', error);
     res.status(500).json({ error: 'Failed to export user data' });
   }
+});
+
+// ------------------- Section: Error Handling Middleware -------------------
+app.use((err, req, res, next) => {
+  console.error('[server.js]: ❌ Error:', err);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
+});
+
+// Handle 404s - only for API routes
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+  // For non-API routes, serve index.html (SPA fallback)
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ------------------- Section: Server Startup -------------------

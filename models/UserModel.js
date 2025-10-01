@@ -36,6 +36,40 @@ const userSchema = new mongoose.Schema({
         questType: { type: String }
       }
     ]
+  },
+
+  // ------------------- User Settings & Preferences -------------------
+  // All user dashboard settings and preferences
+  settings: {
+    // Theme & Appearance
+    theme: { type: String, enum: ['light', 'dark', 'auto', 'rudania', 'inariko', 'vhintl'], default: 'dark' },
+    fontSize: { type: String, enum: ['small', 'medium', 'large', 'extra-large'], default: 'medium' },
+    highContrast: { type: Boolean, default: false },
+    
+    // Performance & Animation
+    imageQuality: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
+    animationSpeed: { type: String, enum: ['disabled', 'fast', 'normal', 'slow'], default: 'normal' },
+    
+    // Data Display
+    dateFormat: { type: String, default: 'MM/DD/YYYY' },
+    timezone: { type: String, default: 'auto' },
+    currencyFormat: { type: String, default: 'USD' },
+    numberFormat: { type: String, default: 'comma' },
+    
+    // List Preferences
+    itemsPerPage: { type: Number, default: 24 },
+    defaultSort: { type: String, default: 'date-desc' },
+    
+    // Notifications
+    bloodMoonAlerts: { type: Boolean, default: false },
+    dailyResetReminders: { type: Boolean, default: false },
+    weatherNotifications: { type: Boolean, default: false },
+    characterWeekUpdates: { type: Boolean, default: false },
+    
+    // Privacy & Security
+    activityLogging: { type: Boolean, default: true },
+    dataRetention: { type: Number, default: 90 },
+    profileVisibility: { type: String, enum: ['public', 'friends', 'private'], default: 'friends' }
   }
 }, {
   timestamps: true // This will automatically add createdAt and updatedAt fields

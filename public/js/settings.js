@@ -31,10 +31,10 @@ class SettingsManager {
       defaultSort: 'date-desc',
       
       // Notifications
-      bloodMoonAlerts: true,
-      dailyResetReminders: true,
+      bloodMoonAlerts: false,
+      dailyResetReminders: false,
       weatherNotifications: false,
-      characterWeekUpdates: true,
+      characterWeekUpdates: false,
       
       // Privacy & Security
       activityLogging: true,
@@ -44,8 +44,8 @@ class SettingsManager {
   }
 
   // Initialize settings manager
-  init() {
-    this.loadSettings();
+  async init() {
+    await this.loadSettings();
     this.setupEventListeners();
     this.applySettings();
     
@@ -55,27 +55,113 @@ class SettingsManager {
     }
   }
 
-  // Load settings from localStorage
-  loadSettings() {
+  // Load settings from server (or fallback to localStorage)
+  async loadSettings() {
     try {
+      // Try to load settings from server if user is authenticated
+      const loadedFromServer = await this.loadSettingsFromServer();
+      
+      // If not loaded from server, fall back to localStorage
+      if (!loadedFromServer) {
       const savedSettings = localStorage.getItem('tinglebot-settings');
       if (savedSettings) {
         const parsedSettings = JSON.parse(savedSettings);
         this.settings = { ...this.settings, ...parsedSettings };
+        }
       }
     } catch (error) {
       console.error('Error loading settings:', error);
     }
   }
 
-  // Save settings to localStorage
-  saveSettings() {
+  // Load all settings from server
+  async loadSettingsFromServer() {
     try {
+      const response = await fetch('/api/user/settings', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.settings) {
+          // Update all settings with server values
+          this.settings = { ...this.settings, ...data.settings };
+          
+          console.log('[settings.js]: ✅ Loaded all settings from server');
+          return true;
+        }
+      } else if (response.status === 401) {
+        console.log('[settings.js]: User not authenticated, using default settings');
+        return false;
+      } else {
+        console.warn('[settings.js]: Failed to load settings from server');
+        return false;
+      }
+    } catch (error) {
+      console.error('[settings.js]: Error loading settings from server:', error);
+      return false;
+    }
+  }
+
+  // Save settings to server (and localStorage as backup)
+  async saveSettings(isNotificationToggle = false) {
+    try {
+      // Save all settings to server
+      const savedToServer = await this.saveSettingsToServer();
+      
+      if (savedToServer) {
+        if (isNotificationToggle) {
+          this.showNotification('Notification settings saved! Check your Discord DMs for confirmation.', 'success');
+        } else {
+          this.showNotification('Settings saved successfully!', 'success');
+        }
+      } else {
+        // Fallback to localStorage if not authenticated
       localStorage.setItem('tinglebot-settings', JSON.stringify(this.settings));
-      this.showNotification('Settings saved successfully!', 'success');
+        if (isNotificationToggle) {
+          this.showNotification('Please log in to enable Discord notifications.', 'warning');
+        } else {
+          this.showNotification('Settings saved locally. Log in to sync across devices.', 'info');
+        }
+      }
     } catch (error) {
       console.error('Error saving settings:', error);
       this.showNotification('Error saving settings', 'error');
+    }
+  }
+
+  // Save all settings to server
+  async saveSettingsToServer() {
+    try {
+      const response = await fetch('/api/user/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ settings: this.settings })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[settings.js]: ✅ Saved all settings to server');
+        
+        // Also save to localStorage as backup
+        localStorage.setItem('tinglebot-settings', JSON.stringify(this.settings));
+        return true;
+      } else if (response.status === 401) {
+        console.warn('[settings.js]: User not authenticated, settings not saved to server');
+        return false;
+      } else {
+        throw new Error('Failed to save settings to server');
+      }
+    } catch (error) {
+      console.error('[settings.js]: Error saving settings to server:', error);
+      return false;
     }
   }
 
@@ -209,6 +295,14 @@ class SettingsManager {
     if (settingKey) {
       this.settings[settingKey] = settingValue;
       this.applySetting(settingKey, settingValue);
+      
+      // Auto-save notification settings immediately to trigger DM
+      const notificationSettings = ['bloodMoonAlerts', 'dailyResetReminders', 'weatherNotifications', 'characterWeekUpdates'];
+      if (notificationSettings.includes(settingKey)) {
+        console.log(`[settings.js]: Auto-saving notification setting: ${settingKey} = ${settingValue}`);
+        // Only show DM confirmation message if turning ON
+        this.saveSettings(settingValue === true);
+      }
     }
   }
 
@@ -602,8 +696,9 @@ class SettingsManager {
 }
 
 // Initialize settings manager when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   window.settingsManager = new SettingsManager();
+  await window.settingsManager.init();
 });
 
 // Export for use in other modules
