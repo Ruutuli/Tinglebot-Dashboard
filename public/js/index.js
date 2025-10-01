@@ -21,6 +21,7 @@ import * as villageShops from './villageShops.js';
 import * as monsters from './monsters.js';
 import * as pets from './pets.js';
 import * as starterGear from './starterGear.js';
+import * as quests from './quests.js';
 import { createPagination, setupBackToTopButton, scrollToTop } from './ui.js';
 
 // Import specific functions from characters module
@@ -119,6 +120,10 @@ function setupModelCards() {
         window.characterFiltersInitialized = false;
         window.allCharacters = null;
       }
+      if (window.questFiltersInitialized) {
+        window.questFiltersInitialized = false;
+        window.allQuests = null;
+      }
 
       // Add visual feedback for click
       card.classList.add('clicked');
@@ -158,6 +163,9 @@ function setupModelCards() {
             window.itemFiltersInitialized = false;
             window.allItems = null;
             window.savedFilterState = {};
+          } else if (modelName === 'quest') {
+            window.questFiltersInitialized = false;
+            window.allQuests = null;
           }
         };
 
@@ -259,6 +267,9 @@ function setupModelCards() {
           case 'villageShops':
             await villageShops.initializeVillageShopsPage(data, pagination.page, contentDiv);
             break;
+          case 'quest':
+            await quests.initializeQuestPage(data, pagination.page, contentDiv);
+            break;
           default:
             console.error(`Unknown model type: ${modelName}`);
             contentDiv.innerHTML = `
@@ -293,6 +304,11 @@ function setupModelCards() {
 
           // Skip pagination for village shops as it uses its own efficient system
           if (modelName === 'villageShops') {
+            return;
+          }
+
+          // Skip pagination for quests as it uses its own efficient system
+          if (modelName === 'quest') {
             return;
           }
 
@@ -352,6 +368,10 @@ function setupModelCards() {
                   break;
                 case 'villageShops':
                   // Village shops uses its own efficient pagination system
+                  // Skip the main pagination handling
+                  return;
+                case 'quest':
+                  // Quests uses its own efficient pagination system
                   // Skip the main pagination handling
                   return;
                 default:
@@ -1984,6 +2004,594 @@ function viewUserDetails(discordId) {
 // Make functions globally available for onclick handlers
 window.updateUserStatus = updateUserStatus;
 window.viewUserDetails = viewUserDetails;
+
+// ============================================================================
+// ------------------- Recent Quests Dashboard Widget -------------------
+// Loads and displays recent quests on the main dashboard
+// ============================================================================
+
+/**
+ * Loads and displays recent quests on the dashboard
+ */
+async function loadRecentQuests() {
+  const container = document.getElementById('recent-quests-container');
+  if (!container) return;
+
+  // Update month title
+  const monthTitle = document.getElementById('quest-month-title');
+  if (monthTitle) {
+    const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long' });
+    monthTitle.textContent = `${currentMonth} Quests`;
+  }
+
+  try {
+    // Fetch the most recent 6 quests
+    const response = await fetch('/api/models/quest?limit=6&sort=postedAt&order=desc');
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+    const { data: quests } = await response.json();
+    
+    if (!quests || quests.length === 0) {
+      container.innerHTML = `
+        <div class="no-recent-quests">
+          <i class="fas fa-inbox"></i>
+          <p>No recent quests available</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Render quest cards
+    container.innerHTML = quests.map(quest => {
+      const questTypeClass = getQuestTypeClassForDashboard(quest.questType);
+      const questTypeIcon = getQuestTypeIconForDashboard(quest.questType);
+      const statusClass = getQuestStatusClassForDashboard(quest.status);
+      const statusIcon = getQuestStatusIconForDashboard(quest.status);
+      
+      // Get village from location if available
+      const village = extractVillageFromLocation(quest.location);
+      
+      // Get participant info
+      const participantCount = quest.participants ? Object.keys(quest.participants).length : 0;
+      const participantCap = quest.participantCap || '∞';
+      
+      // Format posted date
+      const postedDate = quest.postedAt ? new Date(quest.postedAt).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      }) : null;
+      
+      return `
+        <div class="dashboard-quest-card ${questTypeClass}" data-quest-id="${quest.questID}">
+          <div class="dashboard-quest-header">
+            <div class="dashboard-quest-type ${questTypeClass}">
+              <i class="fas ${questTypeIcon}"></i>
+              <span>${quest.questType}</span>
+            </div>
+            <div class="dashboard-quest-status ${statusClass}">
+              <i class="fas ${statusIcon}"></i>
+            </div>
+          </div>
+          
+          <h3 class="dashboard-quest-title">${quest.title}</h3>
+          
+          <div class="dashboard-quest-info">
+            ${village ? `
+              <div class="dashboard-quest-info-item">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>${village}</span>
+              </div>
+            ` : ''}
+            <div class="dashboard-quest-info-item">
+              <i class="fas fa-users"></i>
+              <span>${participantCount}/${participantCap} Participants</span>
+            </div>
+            ${postedDate ? `
+              <div class="dashboard-quest-info-item">
+                <i class="fas fa-calendar"></i>
+                <span>${postedDate}</span>
+              </div>
+            ` : ''}
+          </div>
+          
+          <button class="dashboard-quest-view-btn" onclick="viewQuestDetails('${quest.questID}')">
+            <span>View Details</span>
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+      `;
+    }).join('');
+    
+  } catch (error) {
+    console.error('❌ Error loading recent quests:', error);
+    container.innerHTML = `
+      <div class="error-loading-quests">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>Failed to load recent quests</p>
+      </div>
+    `;
+  }
+}
+
+/**
+ * Helper function to get quest type class for dashboard cards
+ */
+function getQuestTypeClassForDashboard(questType) {
+  const typeMap = {
+    'Art': 'type-art',
+    'Writing': 'type-writing',
+    'Interactive': 'type-interactive',
+    'RP': 'type-rp',
+    'Art / Writing': 'type-art-writing'
+  };
+  return typeMap[questType] || 'type-unknown';
+}
+
+/**
+ * Helper function to get quest type icon for dashboard cards
+ */
+function getQuestTypeIconForDashboard(questType) {
+  const iconMap = {
+    'Art': 'fa-palette',
+    'Writing': 'fa-pen',
+    'Interactive': 'fa-gamepad',
+    'RP': 'fa-users',
+    'Art / Writing': 'fa-paint-brush'
+  };
+  return iconMap[questType] || 'fa-scroll';
+}
+
+/**
+ * Helper function to get quest status class for dashboard cards
+ */
+function getQuestStatusClassForDashboard(status) {
+  const statusMap = {
+    'active': 'status-active',
+    'completed': 'status-completed',
+    'cancelled': 'status-cancelled'
+  };
+  return statusMap[status] || 'status-unknown';
+}
+
+/**
+ * Helper function to get quest status icon for dashboard cards
+ */
+function getQuestStatusIconForDashboard(status) {
+  const iconMap = {
+    'active': 'fa-play-circle',
+    'completed': 'fa-check-circle',
+    'cancelled': 'fa-times-circle'
+  };
+  return iconMap[status] || 'fa-question-circle';
+}
+
+/**
+ * Helper function to extract village name from location string
+ */
+function extractVillageFromLocation(location) {
+  if (!location) return null;
+  
+  // Common village names to look for
+  const villages = ['Inariko', 'Rudania', 'Vhintl'];
+  
+  for (const village of villages) {
+    if (location.toLowerCase().includes(village.toLowerCase())) {
+      return village;
+    }
+  }
+  
+  // If no village found, return the location as-is (shortened if too long)
+  return location.length > 20 ? location.substring(0, 20) + '...' : location;
+}
+
+/**
+ * View full quest details in a modal
+ */
+window.viewQuestDetails = async function(questID) {
+  console.log('🚀 viewQuestDetails called with questID:', questID);
+  
+  try {
+    // Fetch the specific quest details
+    console.log('📡 Fetching quests data...');
+    const response = await fetch(`/api/models/quest?all=true`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+    const { data: quests } = await response.json();
+    console.log('✅ Fetched quests:', quests.length);
+    
+    const quest = quests.find(q => q.questID === questID);
+    console.log('🔍 Found quest:', quest);
+    
+    if (!quest) {
+      console.error('❌ Quest not found with ID:', questID);
+      alert('Quest not found');
+      return;
+    }
+    
+    // Show quest details in a modal
+    console.log('📝 Showing quest modal...');
+    showQuestDetailsModal(quest);
+  } catch (error) {
+    console.error('❌ Error viewing quest details:', error);
+    alert('Failed to load quest details');
+  }
+};
+
+/**
+ * Show quest details in a modal
+ */
+function showQuestDetailsModal(quest) {
+  console.log('🎯 showQuestDetailsModal called with quest:', quest);
+  
+  // Import helper functions from quests module
+  const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+  
+  const questTypeClass = getQuestTypeClassForDashboard(quest.questType);
+  const questTypeIcon = getQuestTypeIconForDashboard(quest.questType);
+  const statusClass = getQuestStatusClassForDashboard(quest.status);
+  const statusIcon = getQuestStatusIconForDashboard(quest.status);
+  
+  // Format dates
+  const postedDate = quest.postedAt ? new Date(quest.postedAt).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }) : 'N/A';
+  
+  const deadlineDate = quest.signupDeadline ? new Date(quest.signupDeadline).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }) : null;
+  
+  // Participant count
+  const participantCount = quest.participants ? Object.keys(quest.participants).length : 0;
+  const participantCap = quest.participantCap || '∞';
+  
+  // Token reward formatting
+  const tokenReward = formatTokenRewardForModal(quest.tokenReward);
+  
+  // Item rewards
+  const itemRewards = formatItemRewardsForModal(quest.itemRewards, quest.itemReward, quest.itemRewardQty);
+  
+  // Participation requirements
+  const participationReqs = getParticipationRequirements(quest);
+  
+  // Create modal HTML
+  const modalHTML = `
+    <div id="quest-details-modal" class="quest-modal-overlay" onclick="if(event.target === this) closeQuestModal()">
+      <div class="quest-modal-container quest-modal-large">
+        <div class="quest-modal-header">
+          <h2>Quest Details</h2>
+          <button class="quest-modal-close" onclick="closeQuestModal()" aria-label="Close modal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="quest-details-modal">
+          <div class="quest-details-header">
+            <div class="quest-details-title-row">
+              <h2>${quest.title}</h2>
+              <div class="quest-status-badge ${statusClass}">
+                <i class="fas ${statusIcon}"></i>
+                <span>${capitalize(quest.status)}</span>
+              </div>
+            </div>
+            
+            <div class="quest-type-badge ${questTypeClass}">
+              <i class="fas ${questTypeIcon}"></i>
+              <span>${quest.questType}</span>
+            </div>
+          </div>
+          
+          <div class="quest-details-body">
+            <div class="quest-detail-section">
+              <h3><i class="fas fa-info-circle"></i> Description</h3>
+              <p class="quest-description-text">${quest.description || 'No description provided'}</p>
+            </div>
+            
+            <div class="quest-detail-section">
+              <h3><i class="fas fa-list"></i> Quest Information</h3>
+              <div class="quest-info-grid">
+                <div class="quest-info-item">
+                  <strong>📍 Location:</strong>
+                  <span>${quest.location || 'N/A'}</span>
+                </div>
+                <div class="quest-info-item">
+                  <strong>⏰ Time Limit:</strong>
+                  <span>${quest.timeLimit || 'N/A'}</span>
+                </div>
+                <div class="quest-info-item">
+                  <strong>👥 Participants:</strong>
+                  <span>${participantCount}/${participantCap}</span>
+                </div>
+                <div class="quest-info-item">
+                  <strong>📅 Posted:</strong>
+                  <span>${postedDate}</span>
+                </div>
+                ${deadlineDate ? `
+                  <div class="quest-info-item">
+                    <strong>⏳ Signup Deadline:</strong>
+                    <span>${deadlineDate}</span>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+            
+            ${tokenReward || itemRewards ? `
+              <div class="quest-detail-section">
+                <h3><i class="fas fa-gift"></i> Rewards</h3>
+                <div class="quest-rewards-list">
+                  ${tokenReward ? `<div class="reward-item">💰 ${tokenReward}</div>` : ''}
+                  ${itemRewards ? `<div class="reward-item">🎁 ${itemRewards}</div>` : ''}
+                </div>
+              </div>
+            ` : ''}
+            
+            ${participationReqs.length > 0 ? `
+              <div class="quest-detail-section">
+                <h3><i class="fas fa-tasks"></i> Participation Requirements</h3>
+                <div class="quest-requirements-list">
+                  ${participationReqs.map(req => `
+                    <div class="requirement-item-modal">
+                      <span>${req.icon}</span>
+                      <span>${req.text}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+            
+            ${quest.rules ? `
+              <div class="quest-detail-section">
+                <h3><i class="fas fa-gavel"></i> Rules</h3>
+                <p class="quest-rules-text">${quest.rules}</p>
+              </div>
+            ` : ''}
+            
+            ${quest.specialNote ? `
+              <div class="quest-detail-section quest-special-note-section">
+                <h3><i class="fas fa-star"></i> Special Note</h3>
+                <p class="quest-special-note-text">${quest.specialNote}</p>
+              </div>
+            ` : ''}
+            
+            ${participantCount > 0 ? `
+              <div class="quest-detail-section">
+                <h3><i class="fas fa-users"></i> Participants (${participantCount})</h3>
+                <div class="quest-participants-list-modal">
+                  ${Object.values(quest.participants).map(participant => `
+                    <div class="participant-card">
+                      <div class="participant-name">${participant.characterName}</div>
+                      <div class="participant-status ${participant.progress}">${capitalize(participant.progress)}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+          
+          <div class="quest-details-footer">
+            <button class="btn-primary" onclick="closeQuestModal()">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Remove any existing modal
+  const existingModal = document.getElementById('quest-details-modal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
+  // Add modal to body
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  
+  // Show modal with animation
+  setTimeout(() => {
+    const modal = document.getElementById('quest-details-modal');
+    if (modal) {
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+  }, 10);
+}
+
+/**
+ * Close the quest details modal
+ */
+window.closeQuestModal = function() {
+  const modal = document.getElementById('quest-details-modal');
+  if (modal) {
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+    setTimeout(() => {
+      modal.remove();
+    }, 300);
+  }
+};
+
+/**
+ * Navigate to full quest page and highlight specific quest
+ */
+window.viewFullQuestPage = async function(questID) {
+  hideModal();
+  
+  try {
+    // Load the quest model data
+    await loadModelData('quest');
+    
+    // Wait a bit for the model data to load
+    setTimeout(() => {
+      // Find the quest card with the matching ID
+      const questCard = document.querySelector(`.quest-card[data-quest-id="${questID}"]`);
+      if (questCard) {
+        questCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Highlight the card briefly
+        questCard.style.boxShadow = '0 0 30px rgba(0, 163, 218, 0.6)';
+        questCard.style.border = '2px solid rgba(0, 163, 218, 0.8)';
+        setTimeout(() => {
+          questCard.style.boxShadow = '';
+          questCard.style.border = '';
+        }, 3000);
+      }
+    }, 800);
+  } catch (error) {
+    console.error('❌ Error navigating to quest page:', error);
+  }
+};
+
+/**
+ * Helper functions for modal formatting
+ */
+function formatTokenRewardForModal(tokenReward) {
+  if (!tokenReward || tokenReward === 'N/A' || tokenReward === 'No reward' || tokenReward === 'None') {
+    return null;
+  }
+  
+  if (typeof tokenReward === 'number') {
+    return `${tokenReward} tokens`;
+  }
+  
+  if (typeof tokenReward === 'string') {
+    // Parse complex reward formats
+    if (tokenReward.includes('per_unit:')) {
+      const perUnitMatch = tokenReward.match(/per_unit:(\d+)/);
+      const unitMatch = tokenReward.match(/unit:(\w+)/);
+      const maxMatch = tokenReward.match(/max:(\d+)/);
+      
+      if (perUnitMatch && unitMatch && maxMatch) {
+        const perUnit = parseInt(perUnitMatch[1]);
+        const unit = unitMatch[1];
+        const max = parseInt(maxMatch[1]);
+        const total = perUnit * max;
+        return `${perUnit} tokens per ${unit} (max ${max} = ${total} tokens total)`;
+      }
+    } else if (tokenReward.includes('flat:')) {
+      const flatMatch = tokenReward.match(/flat:(\d+)/);
+      if (flatMatch) {
+        return `${flatMatch[1]} tokens (flat rate)`;
+      }
+    } else if (tokenReward.includes('collab_bonus:')) {
+      const bonusMatch = tokenReward.match(/collab_bonus:(\d+)/);
+      if (bonusMatch) {
+        return `${bonusMatch[1]} tokens (collaboration bonus)`;
+      }
+    } else {
+      const parsed = parseFloat(tokenReward);
+      if (!isNaN(parsed)) {
+        return `${parsed} tokens`;
+      }
+    }
+  }
+  
+  return String(tokenReward);
+}
+
+function formatItemRewardsForModal(itemRewards, itemReward, itemRewardQty) {
+  if (itemRewards && itemRewards.length > 0) {
+    return itemRewards.map(item => `${item.quantity}x ${item.name}`).join(', ');
+  }
+  
+  if (itemReward && itemReward !== 'N/A' && itemReward !== 'No reward') {
+    const qty = itemRewardQty || 1;
+    return `${qty}x ${itemReward}`;
+  }
+  
+  return null;
+}
+
+function getParticipationRequirements(quest) {
+  const requirements = [];
+  
+  if (quest.questType === 'RP' && quest.postRequirement) {
+    requirements.push({
+      icon: '💬',
+      text: `${quest.postRequirement} RP Posts Required`
+    });
+  }
+  
+  if (quest.questType === 'Writing' && quest.postRequirement) {
+    requirements.push({
+      icon: '📝',
+      text: `${quest.postRequirement} Writing Submissions`
+    });
+  }
+  
+  if (quest.questType === 'Art' && quest.postRequirement) {
+    requirements.push({
+      icon: '🎨',
+      text: `${quest.postRequirement} Art Submissions`
+    });
+  }
+  
+  if (quest.questType === 'Art / Writing') {
+    if (quest.postRequirement) {
+      requirements.push({
+        icon: '🎨📝',
+        text: `${quest.postRequirement} Submissions Each (Art AND Writing)`
+      });
+    } else {
+      requirements.push({
+        icon: '🎨📝',
+        text: '1 Submission Each (Art AND Writing)'
+      });
+    }
+  }
+  
+  if (quest.questType === 'Interactive' && quest.requiredRolls) {
+    requirements.push({
+      icon: '🎲',
+      text: `${quest.requiredRolls} Successful Rolls`
+    });
+  }
+  
+  if (quest.minRequirements) {
+    if (typeof quest.minRequirements === 'number' && quest.minRequirements > 0) {
+      requirements.push({
+        icon: '📊',
+        text: `Level ${quest.minRequirements}+ Required`
+      });
+    } else if (typeof quest.minRequirements === 'object' && quest.minRequirements.level) {
+      requirements.push({
+        icon: '📊',
+        text: `Level ${quest.minRequirements.level}+ Required`
+      });
+    }
+  }
+  
+  // Default requirements if none specified
+  if (requirements.length === 0) {
+    if (quest.questType === 'RP') {
+      requirements.push({
+        icon: '💬',
+        text: '15 RP Posts Required (default)'
+      });
+    } else if (quest.questType === 'Writing') {
+      requirements.push({
+        icon: '📝',
+        text: '1 Writing Submission'
+      });
+    } else if (quest.questType === 'Art') {
+      requirements.push({
+        icon: '🎨',
+        text: '1 Art Submission'
+      });
+    }
+  }
+  
+  return requirements;
+}
+
+// Load recent quests when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+  loadRecentQuests();
+});
 
 // ============================================================================
 // ------------------- Exports -------------------

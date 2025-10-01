@@ -1319,9 +1319,15 @@ app.get('/api/models/:modelType', async (req, res) => {
 
     
     const page = parseInt(req.query.page) || 1;
-    const limit = 15; // Items per page
+    const defaultLimit = 15; // Default items per page
+    const requestedLimit = parseInt(req.query.limit);
+    const limit = (requestedLimit && requestedLimit > 0 && requestedLimit <= 100) ? requestedLimit : defaultLimit;
     const skip = (page - 1) * limit;
     const allItems = req.query.all === 'true';
+    
+    // Support custom sorting
+    const sortField = req.query.sort || (modelType === 'quest' ? 'postedAt' : 'itemName');
+    const sortOrder = req.query.order === 'asc' ? 1 : -1;
 
     // Check if this is a filtered request for items
     const isFilteredRequest = modelType === 'item' && (
@@ -1391,6 +1397,9 @@ app.get('/api/models/:modelType', async (req, res) => {
         break;
       case 'villageShops':
         Model = VillageShops;
+        break;
+      case 'quest':
+        Model = Quest;
         break;
       case 'inventory':
         // Create inventory model dynamically for the inventories connection
@@ -1604,9 +1613,16 @@ app.get('/api/models/:modelType', async (req, res) => {
 
 
 
-    // Fetch paginated data
+    // Fetch paginated data with custom sorting
+    const sortOptions = {};
+    if (modelType === 'item') {
+      sortOptions.itemName = 1;
+    } else if (modelType === 'quest' && sortField) {
+      sortOptions[sortField] = sortOrder;
+    }
+    
     let data = await Model.find(query)
-      .sort(modelType === 'item' ? { itemName: 1 } : {})
+      .sort(sortOptions)
       .skip(skip)
       .limit(limit)
       .lean();
@@ -3728,6 +3744,7 @@ app.get('/api/items', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch items data', details: error.message });
   }
 });
+
 
 // ------------------- Function: searchInventoryByItem -------------------
 // Searches inventory for specific item across all characters
