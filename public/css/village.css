@@ -90,3 +90,103 @@
   object-fit: contain;
   padding: 2px;
 }
+
+/* ============================================================================ */
+/* MOBILE RESPONSIVE DESIGN                                                     */
+/* ============================================================================ */
+
+/* Mobile-first responsive breakpoints */
+@media (max-width: 768px) {
+  /* Village Crest Mobile */
+  .village-crest {
+    top: 8px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .village-crest-img {
+    width: 85%;
+    height: 85%;
+    padding: 1px;
+  }
+  
+  /* Location Button Mobile - Ensure minimum touch target */
+  [class*="location-"] {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Village Crest Small */
+  .village-crest {
+    top: 6px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+  }
+  
+  .village-crest-img {
+    width: 90%;
+    height: 90%;
+  }
+  
+  /* Location Button Small */
+  [class*="location-"] {
+    min-height: 44px;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Touch-friendly interactions for mobile */
+@media (hover: none) and (pointer: coarse) {
+  /* Ensure all location buttons have adequate touch targets */
+  [class*="location-"] {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 0.75rem 1rem;
+  }
+  
+  /* Remove hover effects on touch devices */
+  [class*="location-"]:hover {
+    background-color: inherit !important;
+  }
+  
+  /* Add active states for better touch feedback */
+  [class*="location-"]:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+    filter: brightness(1.1);
+  }
+}
+
+/* Landscape mobile optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .village-crest {
+    top: 6px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+  }
+  
+  [class*="location-"] {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  [class*="location-"],
+  .stock-badge {
+    transition: none;
+  }
+  
+  [class*="location-"]:active,
+  .stock-badge:active {
+    transform: none;
+  }
+}

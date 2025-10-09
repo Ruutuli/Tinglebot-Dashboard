@@ -56,7 +56,17 @@ function cleanDataObject(data, type = 'unknown') {
             value > 0;
         
         if (isValid) {
-            cleaned[key] = value;
+            // Special handling for race data: combine Dragon and dragon
+            if (type === 'race') {
+                const normalizedKey = key.toLowerCase() === 'dragon' ? 'Dragon' : key;
+                if (cleaned[normalizedKey]) {
+                    cleaned[normalizedKey] += value;
+                } else {
+                    cleaned[normalizedKey] = value;
+                }
+            } else {
+                cleaned[key] = value;
+            }
         }
     });
     return cleaned;
@@ -852,7 +862,7 @@ function initializeRaceChart(data) {
             '#FF9999', '#FFD27A', '#FFF066', '#A6F29A', '#6EEEDD', '#8FCBFF',
             '#B89CFF', '#F78CD2', '#8CE6C0', '#FFDB66', '#BFBFBF'
         ],
-        yMax: isMobile ? 20 : 25
+        yMax: isMobile ? 30 : 35
     });
 }
 
