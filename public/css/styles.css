@@ -3326,6 +3326,34 @@ html {
     color: var(--text-primary) !important;
   }
   
+  /* Theme Select Options Light Mode */
+  #theme-select option,
+  #font-size option,
+  #image-quality option,
+  #animation-speed option,
+  #date-format option,
+  #timezone option,
+  #currency-format option,
+  #number-format option,
+  #items-per-page option,
+  #default-sort option,
+  #profile-visibility option {
+    background: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* Ensure all setting inputs have proper light mode styling */
+  .setting-input {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  .setting-input option {
+    background: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+  }
+  
   /* Modal Enhancements */
   .character-modal {
     background: rgba(0, 0, 0, 0.6);
@@ -3902,6 +3930,185 @@ html {
     border-left: 4px solid var(--accent-color);
     background: var(--bg-secondary);
     color: var(--text-secondary);
+  }
+  
+  /* ========================================================================== */
+  /* NUCLEAR OPTION - Override ALL hardcoded dark backgrounds */
+  /* ========================================================================== */
+  
+  /* Override any element with dark hex colors */
+  [style*="background: #1"],
+  [style*="background: #2"],
+  [style*="background:#1"],
+  [style*="background:#2"],
+  [style*="background-color: #1"],
+  [style*="background-color: #2"],
+  [style*="background-color:#1"],
+  [style*="background-color:#2"] {
+    background: var(--card-background) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  /* Override dark rgba backgrounds */
+  [style*="rgba(20"],
+  [style*="rgba(30"],
+  [style*="rgba(40"],
+  [style*="rgba(50"] {
+    background: var(--card-background) !important;
+  }
+  
+  /* Ensure all common dropdown/modal/overlay elements use light backgrounds */
+  .dropdown,
+  .dropdown-menu,
+  .dropdown-content,
+  .modal-backdrop,
+  .overlay,
+  .popup,
+  .tooltip-content,
+  .popover,
+  .context-menu {
+    background: var(--card-background) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* Fix any remaining dark elements */
+  div[class*="dropdown"],
+  div[class*="select"],
+  div[class*="menu"],
+  div[class*="popup"],
+  div[class*="modal"]:not(.character-modal) {
+    background: var(--card-background) !important;
+  }
+  
+  /* Override leaderboard and controls selects with maximum specificity */
+  .leaderboard-controls select,
+  .leaderboard-controls select option,
+  select.leaderboard-select,
+  select[name*="sort"],
+  select[name*="filter"] {
+    background: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+  }
+  
+  /* Fix loading and empty states */
+  .loading-state,
+  .empty-state,
+  .no-data,
+  .error-container,
+  [class*="loading"],
+  [class*="empty"] {
+    background: var(--card-background) !important;
+    border: 1px solid var(--border-color) !important;
+  }
+  
+  /* Fix any card-like elements with dark backgrounds */
+  [class*="card"]:not(.character-card):not(.monster-card):not(.quest-card):not(.pet-card) {
+    background: var(--card-background) !important;
+  }
+  
+  /* Ensure proper text visibility everywhere */
+  * {
+    color: inherit;
+  }
+  
+  div, span, p, li, td, th, label {
+    color: var(--text-primary);
+  }
+  
+  /* Fix any remaining specific problem elements */
+  .user-dropdown,
+  .user-dropdown *,
+  .user-dropdown-content {
+    color: var(--text-primary) !important;
+  }
+  
+  /* Additional Light Mode Select Fixes - Maximum Specificity */
+  select,
+  select *,
+  select option,
+  .setting-input,
+  .setting-input *,
+  .setting-input option {
+    background-color: var(--input-bg) !important;
+    background: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  /* Force light mode styling with even higher specificity */
+  [data-theme="light"] select,
+  [data-theme="light"] select *,
+  [data-theme="light"] select option {
+    background-color: #FFFFFF !important;
+    background: #FFFFFF !important;
+    color: #1A1A1A !important;
+    border-color: #CBD5E0 !important;
+  }
+  
+  /* Specific theme-select styling */
+  [data-theme="light"] #theme-select,
+  [data-theme="light"] #theme-select option {
+    background-color: #FFFFFF !important;
+    background: #FFFFFF !important;
+    color: #1A1A1A !important;
+    border-color: #CBD5E0 !important;
+  }
+  
+  /* Force all form elements in light mode */
+  [data-theme="light"] input,
+  [data-theme="light"] textarea,
+  [data-theme="light"] select {
+    background-color: #FFFFFF !important;
+    background: #FFFFFF !important;
+    color: #1A1A1A !important;
+    border-color: #CBD5E0 !important;
+  }
+  
+  /* Force light mode styling for all form elements */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  textarea,
+  select {
+    background: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+  }
+  
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  input[type="password"]:focus,
+  input[type="number"]:focus,
+  input[type="search"]:focus,
+  textarea:focus,
+  select:focus {
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 0 0 3px var(--accent-glow) !important;
+  }
+  
+  /* Nuclear option - Override ANY dark backgrounds in light mode */
+  [data-theme="light"] * {
+    background-color: inherit !important;
+  }
+  
+  [data-theme="light"] select,
+  [data-theme="light"] select *,
+  [data-theme="light"] option {
+    background-color: #FFFFFF !important;
+    background: #FFFFFF !important;
+    color: #1A1A1A !important;
+  }
+  
+  /* Override any inline styles or browser defaults */
+  [data-theme="light"] select[style*="background"],
+  [data-theme="light"] option[style*="background"] {
+    background-color: #FFFFFF !important;
+    background: #FFFFFF !important;
+    color: #1A1A1A !important;
   }
 }
 

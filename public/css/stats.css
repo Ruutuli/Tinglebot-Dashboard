@@ -338,6 +338,16 @@
   width: 100%;
   margin: 1rem 0;
   overflow-x: auto;
+  /* Firefox compatibility fixes */
+  -moz-column-gap: 1.5rem;
+  column-gap: 1.5rem;
+  -moz-row-gap: 1.5rem;
+  row-gap: 1.5rem;
+  /* Ensure proper box-sizing for Firefox */
+  box-sizing: border-box;
+  /* Add explicit width constraints for Firefox */
+  min-width: 0;
+  max-width: 100%;
 }
 
 .stats-table,
@@ -349,12 +359,17 @@
   box-shadow: 0 2px 12px 0 rgba(0,0,0,0.10);
   font-size: 0.85rem;
   min-width: 0 !important;
-  max-width: none !important;
+  max-width: 100% !important;
   table-layout: fixed;
   transition: box-shadow 0.2s;
   width: 100% !important;
   margin-bottom: 0.5rem;
   overflow: hidden;
+  /* Firefox compatibility fixes */
+  box-sizing: border-box;
+  /* Prevent table from expanding beyond container */
+  word-wrap: break-word;
+  word-break: break-word;
 }
 
 .stats-table:hover {
@@ -373,6 +388,16 @@
   padding: 0.6rem 0.75rem;
   text-align: left;
   text-transform: uppercase;
+  /* Firefox compatibility fixes */
+  box-sizing: border-box;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  /* Prevent text overflow */
+  max-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stats-table th[colspan="2"] {
@@ -389,6 +414,16 @@
   color: var(--text-primary);
   font-size: 0.8rem;
   padding: 0.6rem 0.75rem;
+  /* Firefox compatibility fixes */
+  box-sizing: border-box;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  /* Prevent text overflow */
+  max-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stats-table tr:last-child td {
@@ -410,6 +445,7 @@
 
 .visiting-villages-grid {
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
   gap: 2rem;
   margin-top: 1rem;
@@ -506,6 +542,7 @@
 
 .jail-villages-grid {
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
   gap: 2rem;
   margin-top: 1rem;
@@ -676,8 +713,457 @@
 }
 
 /* ============================================================================
+   🔥 FIREFOX COMPATIBILITY FIXES
+============================================================================ */
+
+/* Firefox-specific fixes using JS-applied class (modern approach) */
+.firefox-browser .stats-table-container {
+  /* Use flexbox as fallback for Firefox grid issues */
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  gap: 1.5rem !important;
+  overflow-x: visible !important;
+}
+
+.firefox-browser .stats-table-container > .stats-table {
+  flex: 0 0 458px !important;
+  min-width: 458px !important;
+  max-width: 458px !important;
+  width: 458px !important;
+  margin-bottom: 0 !important;
+  box-sizing: border-box !important;
+  /* Override table layout for Firefox */
+  table-layout: auto !important;
+  overflow: visible !important;
+}
+
+/* Fix table cell overflow in Firefox */
+.firefox-browser .stats-table td,
+.firefox-browser .stats-table th {
+  max-width: none !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  /* Ensure proper padding and sizing */
+  padding: 0.6rem 0.75rem !important;
+  box-sizing: border-box !important;
+}
+
+/* Fix header cells specifically */
+.firefox-browser .stats-table th {
+  min-width: auto !important;
+  width: auto !important;
+}
+
+/* Fix data cells specifically */
+.firefox-browser .stats-table td {
+  min-width: auto !important;
+  width: auto !important;
+}
+
+/* Fix chart containers for Firefox */
+.firefox-browser .chart-container {
+  position: relative !important;
+  overflow: visible !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 300px !important;
+}
+
+.firefox-browser .chart-container canvas {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block !important;
+}
+
+/* Fix visiting villages grid for Firefox */
+.firefox-browser .visiting-villages-grid {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  gap: 2rem !important;
+}
+
+.firefox-browser .visiting-village {
+  flex: 1 1 300px !important;
+  min-width: 300px !important;
+  max-width: calc(33.333% - 1.33rem) !important;
+  box-sizing: border-box !important;
+}
+
+/* Firefox jail villages grid fix */
+.firefox-browser .jail-villages-grid {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  gap: 2rem !important;
+}
+
+.firefox-browser .jail-village {
+  flex: 1 1 300px !important;
+  min-width: 300px !important;
+  max-width: calc(33.333% - 1.33rem) !important;
+  box-sizing: border-box !important;
+}
+
+/* Deprecated @-moz-document approach kept for older Firefox versions */
+@-moz-document url-prefix() {
+  .stats-table-container {
+    /* Use flexbox as fallback for Firefox grid issues */
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    gap: 1.5rem !important;
+    overflow-x: visible !important;
+  }
+  
+  .stats-table-container > .stats-table {
+    flex: 0 0 458px !important;
+    min-width: 458px !important;
+    max-width: 458px !important;
+    width: 458px !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box !important;
+    table-layout: auto !important;
+    overflow: visible !important;
+  }
+  
+  /* Fix table cell overflow in Firefox */
+  .stats-table td,
+  .stats-table th {
+    max-width: none !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    padding: 0.6rem 0.75rem !important;
+    box-sizing: border-box !important;
+    min-width: auto !important;
+    width: auto !important;
+  }
+  
+  /* Fix chart containers for Firefox */
+  .chart-container {
+    position: relative !important;
+    overflow: visible !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 300px !important;
+  }
+  
+  .chart-container canvas {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  /* Fix visiting villages grid for Firefox */
+  .visiting-villages-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    gap: 2rem !important;
+  }
+
+  .visiting-village {
+    flex: 1 1 300px !important;
+    min-width: 300px !important;
+    max-width: calc(33.333% - 1.33rem) !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Fix jail villages grid for Firefox */
+  .jail-villages-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    gap: 2rem !important;
+  }
+
+  .jail-village {
+    flex: 1 1 300px !important;
+    min-width: 300px !important;
+    max-width: calc(33.333% - 1.33rem) !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Fallback for browsers with poor grid support */
+@supports not (display: grid) {
+  .stats-table-container {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    gap: 1.5rem !important;
+    overflow-x: visible !important;
+  }
+  
+  .stats-table-container > .stats-table {
+    flex: 0 0 458px !important;
+    min-width: 458px !important;
+    max-width: 458px !important;
+    width: 458px !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box !important;
+    table-layout: auto !important;
+    overflow: visible !important;
+  }
+  
+  .stats-table td,
+  .stats-table th {
+    max-width: none !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    padding: 0.6rem 0.75rem !important;
+    box-sizing: border-box !important;
+    min-width: auto !important;
+    width: auto !important;
+  }
+}
+
+/* ============================================================================
    📱 MOBILE RESPONSIVE STYLES
 ============================================================================ */
+
+/* ============================================================================
+   📱 TABLET/SURFACE PRO BREAKPOINT (769px - 1024px)
+============================================================================ */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Stats Cards Grid - 2 columns for tablets */
+  .stats-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  /* Stats Cards */
+  .stats-card {
+    min-height: 280px;
+    padding: 2rem 1.5rem;
+    font-size: 1.1rem;
+  }
+
+  .stats-card h3 {
+    font-size: 1.6rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .stats-card p,
+  .stats-card ul {
+    font-size: 1rem;
+  }
+
+  .stats-card ul li {
+    font-size: 0.95rem;
+  }
+
+  /* Stats Card Wide */
+  .stats-card-wide {
+    padding: 2.5rem 2rem;
+    margin: 1.5rem 0 0;
+  }
+
+  .stats-card-wide h3 {
+    font-size: 1.6rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .stats-card-wide .chart-container {
+    height: 350px;
+    margin-top: 1rem;
+  }
+
+  /* Stats Tables - 2 columns for better layout */
+  .stats-table-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1.25rem;
+    margin: 1rem 0;
+  }
+
+  .stats-table {
+    font-size: 0.8rem;
+  }
+
+  .stats-table th {
+    font-size: 0.7rem;
+    padding: 0.6rem 0.65rem;
+  }
+
+  .stats-table th[colspan="2"] {
+    font-size: 0.95rem;
+  }
+
+  .stats-table td {
+    font-size: 0.75rem;
+    padding: 0.6rem 0.65rem;
+  }
+
+  /* Visiting Villages - 2 columns */
+  .visiting-villages-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .visiting-village {
+    min-width: calc(50% - 0.75rem);
+    max-width: calc(50% - 0.75rem);
+    padding: 1.25rem;
+  }
+
+  .visiting-village h4 {
+    font-size: 1rem;
+  }
+
+  /* Firefox tablet fixes for visiting villages */
+  .firefox-browser .visiting-villages-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 1.5rem !important;
+  }
+
+  .firefox-browser .visiting-village {
+    flex: 1 1 calc(50% - 0.75rem) !important;
+    min-width: calc(50% - 0.75rem) !important;
+    max-width: calc(50% - 0.75rem) !important;
+  }
+
+  .firefox-browser .jail-villages-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 1.5rem !important;
+  }
+
+  .firefox-browser .jail-village {
+    flex: 1 1 calc(50% - 0.75rem) !important;
+    min-width: calc(50% - 0.75rem) !important;
+    max-width: calc(50% - 0.75rem) !important;
+  }
+
+  /* Jail Villages - 2 columns */
+  .jail-villages-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .jail-village {
+    min-width: calc(50% - 0.75rem);
+    max-width: calc(50% - 0.75rem);
+    padding: 1.25rem;
+  }
+
+  .jail-village h4 {
+    font-size: 1rem;
+  }
+
+  /* Mod Stats Grid - 2 columns */
+  .mod-stats-grid {
+    flex-direction: row;
+    gap: 1.5rem;
+  }
+
+  .mod-stats-item {
+    min-width: calc(50% - 0.75rem);
+    max-width: calc(50% - 0.75rem);
+    padding: 1.25rem;
+  }
+
+  .mod-characters-section h3 {
+    font-size: 1.2rem;
+  }
+
+  .mod-stats-item h4 {
+    font-size: 1rem;
+  }
+
+  /* Pie Chart Breakdown */
+  .pie-breakdown {
+    padding: 1.25rem;
+    min-width: 250px;
+  }
+
+  .breakdown-header h4 {
+    font-size: 1rem;
+  }
+
+  .breakdown-total {
+    font-size: 0.85rem;
+  }
+
+  .breakdown-label {
+    font-size: 0.85rem;
+  }
+
+  .breakdown-value {
+    font-size: 0.9rem;
+  }
+
+  .breakdown-percentage {
+    font-size: 0.7rem;
+  }
+
+  /* Chart container mobile layout for tablets */
+  .stats-card-wide .chart-container {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 1.5rem !important;
+    align-items: flex-start !important;
+    height: auto !important;
+    min-height: 300px;
+  }
+
+  .stats-card-wide .chart-container > div:first-child {
+    flex: 1 !important;
+    width: 50% !important;
+    height: 350px !important;
+    min-height: 300px !important;
+  }
+
+  .stats-card-wide .chart-container > div:last-child {
+    flex: 1 !important;
+    width: 50% !important;
+  }
+
+  /* Stat Items */
+  .stat-item {
+    font-size: 0.9rem;
+    padding: 0.45rem 0.9rem;
+  }
+
+  .stat-item-vertical {
+    padding: 0.9rem;
+  }
+
+  .stat-item-vertical .stat-label {
+    font-size: 0.8rem;
+  }
+
+  .stat-item-vertical .stat-value {
+    font-size: 1.35rem;
+  }
+}
 
 /* ============================================================================
    📱 TABLET BREAKPOINT (768px and below)
@@ -1217,6 +1703,33 @@
     min-width: calc(50% - 0.375rem);
     max-width: calc(50% - 0.375rem);
     padding: 1rem;
+  }
+
+  /* Firefox landscape fixes for visiting villages */
+  .firefox-browser .visiting-villages-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.75rem !important;
+  }
+
+  .firefox-browser .visiting-village {
+    flex: 1 1 calc(50% - 0.375rem) !important;
+    min-width: calc(50% - 0.375rem) !important;
+    max-width: calc(50% - 0.375rem) !important;
+  }
+
+  .firefox-browser .jail-villages-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.75rem !important;
+  }
+
+  .firefox-browser .jail-village {
+    flex: 1 1 calc(50% - 0.375rem) !important;
+    min-width: calc(50% - 0.375rem) !important;
+    max-width: calc(50% - 0.375rem) !important;
   }
 
   /* Stat Items */

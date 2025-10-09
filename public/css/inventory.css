@@ -163,8 +163,8 @@
     min-height: 250px;
     padding: 3rem;
     text-align: center;
-    background: rgba(20, 20, 25, 0.7);
-    border: 1px solid rgba(75, 75, 75, 0.3);
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
     border-radius: var(--card-radius);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     color: var(--botw-blue);
@@ -198,8 +198,8 @@
     min-height: 200px;
     padding: 3rem;
     text-align: center;
-    background: rgba(20, 20, 25, 0.7);
-    border: 1px solid rgba(75, 75, 75, 0.3);
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
     border-radius: var(--card-radius);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     color: var(--text-secondary);

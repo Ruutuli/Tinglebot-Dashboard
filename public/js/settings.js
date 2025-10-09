@@ -53,6 +53,11 @@ class SettingsManager {
     if (!localStorage.getItem('tinglebot-settings')) {
       this.applyTheme('dark');
     }
+    
+    // Force refresh dropdown styling on page load
+    setTimeout(() => {
+      this.refreshDropdownStyling();
+    }, 500);
   }
 
   // Load settings from server (or fallback to localStorage)
@@ -371,6 +376,84 @@ class SettingsManager {
     } else {
       root.setAttribute('data-theme', theme);
     }
+    
+    // Force refresh dropdown styling after theme change
+    this.refreshDropdownStyling();
+  }
+  
+  // Refresh dropdown styling to ensure proper light/dark mode appearance
+  refreshDropdownStyling() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const isLightMode = currentTheme === 'light';
+    
+    // Force re-render of all select elements
+    const selectElements = document.querySelectorAll('select, .setting-input');
+    selectElements.forEach(select => {
+      // Clear any existing inline styles
+      select.style.backgroundColor = '';
+      select.style.background = '';
+      select.style.color = '';
+      select.style.borderColor = '';
+      
+      // If light mode, force white background
+      if (isLightMode) {
+        select.style.backgroundColor = '#FFFFFF';
+        select.style.background = '#FFFFFF';
+        select.style.color = '#1A1A1A';
+        select.style.borderColor = '#CBD5E0';
+      }
+      
+      // Force style recalculation for options
+      const options = select.querySelectorAll('option');
+      options.forEach(option => {
+        option.style.backgroundColor = '';
+        option.style.background = '';
+        option.style.color = '';
+        
+        // If light mode, force white background for options
+        if (isLightMode) {
+          option.style.backgroundColor = '#FFFFFF';
+          option.style.background = '#FFFFFF';
+          option.style.color = '#1A1A1A';
+        }
+      });
+      
+      // Trigger a reflow to force style recalculation
+      select.style.display = 'none';
+      select.offsetHeight; // Trigger reflow
+      select.style.display = '';
+    });
+    
+    // Add a small delay and force styling again
+    setTimeout(() => {
+      selectElements.forEach(select => {
+        if (isLightMode) {
+          select.style.backgroundColor = '#FFFFFF';
+          select.style.background = '#FFFFFF';
+          select.style.color = '#1A1A1A';
+          select.style.borderColor = '#CBD5E0';
+        } else {
+          // Clear inline styles for dark mode to let CSS variables work
+          select.style.backgroundColor = '';
+          select.style.background = '';
+          select.style.color = '';
+          select.style.borderColor = '';
+        }
+        
+        const options = select.querySelectorAll('option');
+        options.forEach(option => {
+          if (isLightMode) {
+            option.style.backgroundColor = '#FFFFFF';
+            option.style.background = '#FFFFFF';
+            option.style.color = '#1A1A1A';
+          } else {
+            option.style.backgroundColor = '';
+            option.style.background = '';
+            option.style.color = '';
+          }
+        });
+      });
+    }, 100);
   }
 
   // Apply font size setting

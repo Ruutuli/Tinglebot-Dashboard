@@ -28,6 +28,16 @@ function isMobileDevice() {
     return window.innerWidth <= 768;
 }
 
+// Helper: Check if browser is Firefox
+function isFirefoxBrowser() {
+    return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+}
+
+// Helper: Check if device is tablet (like Surface Pro)
+function isTabletDevice() {
+    return window.innerWidth > 768 && window.innerWidth <= 1024;
+}
+
 // Helper: Format debuff end date as next midnight
 function formatDebuffEndMidnight(dateStr) {
     if (!dateStr) return '—';
@@ -79,13 +89,18 @@ function cleanDataObject(data, type = 'unknown') {
 // Helper: Get responsive chart options
 function getResponsiveChartOptions() {
     const isMobile = isMobileDevice();
+    const isTablet = isTabletDevice();
+    const fontSize = isMobile ? 10 : (isTablet ? 11 : 12);
+    const titleSize = isMobile ? 11 : (isTablet ? 12 : 13);
+    const padding = isMobile ? 5 : (isTablet ? 8 : 10);
+    
     return {
         responsive: true,
         maintainAspectRatio: false,
         layout: {
             padding: { 
-                top: isMobile ? 5 : 10, 
-                bottom: isMobile ? 5 : 10 
+                top: padding, 
+                bottom: padding 
             }
         },
         plugins: {
@@ -94,8 +109,8 @@ function getResponsiveChartOptions() {
                 position: 'bottom',
                 labels: {
                     color: '#FFFFFF',
-                    font: { size: isMobile ? 10 : 12 },
-                    padding: isMobile ? 10 : 15,
+                    font: { size: fontSize },
+                    padding: isMobile ? 10 : (isTablet ? 12 : 15),
                     usePointStyle: true,
                     pointStyle: 'circle'
                 }
@@ -109,8 +124,8 @@ function getResponsiveChartOptions() {
                 bodyColor: '#ddd',
                 borderColor: '#555',
                 borderWidth: 1,
-                titleFont: { size: isMobile ? 11 : 13 },
-                bodyFont: { size: isMobile ? 10 : 12 },
+                titleFont: { size: titleSize },
+                bodyFont: { size: fontSize },
                 callbacks: {
                     title: function(context) {
                         return context[0].label || 'Unknown';
@@ -126,7 +141,7 @@ function getResponsiveChartOptions() {
                 beginAtZero: true,
                 ticks: {
                     color: '#FFFFFF',
-                    font: { size: isMobile ? 10 : 12 }
+                    font: { size: fontSize }
                 },
                 grid: {
                     color: 'rgba(255, 255, 255, 0.1)'
@@ -135,7 +150,7 @@ function getResponsiveChartOptions() {
             x: {
                 ticks: {
                     color: '#FFFFFF',
-                    font: { size: isMobile ? 10 : 12 }
+                    font: { size: fontSize }
                 },
                 grid: {
                     display: false
@@ -143,7 +158,7 @@ function getResponsiveChartOptions() {
             }
         },
         animation: {
-            duration: isMobile ? 600 : 800,
+            duration: isMobile ? 600 : (isTablet ? 700 : 800),
             easing: 'easeOutQuart'
         }
     };
@@ -152,13 +167,18 @@ function getResponsiveChartOptions() {
 // Helper: Get responsive pie chart options
 function getResponsivePieChartOptions() {
     const isMobile = isMobileDevice();
+    const isTablet = isTabletDevice();
+    const fontSize = isMobile ? 10 : (isTablet ? 11 : 12);
+    const titleSize = isMobile ? 11 : (isTablet ? 12 : 13);
+    const padding = isMobile ? 5 : (isTablet ? 8 : 10);
+    
     return {
         responsive: true,
         maintainAspectRatio: false,
         layout: {
             padding: { 
-                top: isMobile ? 5 : 10, 
-                bottom: isMobile ? 5 : 10 
+                top: padding, 
+                bottom: padding 
             }
         },
         plugins: {
@@ -167,8 +187,8 @@ function getResponsivePieChartOptions() {
                 position: 'bottom',
                 labels: {
                     color: '#FFFFFF',
-                    font: { size: isMobile ? 10 : 12 },
-                    padding: isMobile ? 10 : 15,
+                    font: { size: fontSize },
+                    padding: isMobile ? 10 : (isTablet ? 12 : 15),
                     usePointStyle: true,
                     pointStyle: 'circle'
                 }
@@ -182,8 +202,8 @@ function getResponsivePieChartOptions() {
                 bodyColor: '#ddd',
                 borderColor: '#555',
                 borderWidth: 1,
-                titleFont: { size: isMobile ? 11 : 13 },
-                bodyFont: { size: isMobile ? 10 : 12 },
+                titleFont: { size: titleSize },
+                bodyFont: { size: fontSize },
                 callbacks: {
                     label: function(context) {
                         const label = context.label || '';
@@ -196,7 +216,7 @@ function getResponsivePieChartOptions() {
             }
         },
         animation: {
-            duration: isMobile ? 600 : 800,
+            duration: isMobile ? 600 : (isTablet ? 700 : 800),
             easing: 'easeOutQuart'
         }
     };
@@ -225,6 +245,7 @@ function createBarChart(ctx, data, options = {}) {
     });
     const values = Object.values(cleanedData);
     const isMobile = isMobileDevice();
+    const isTablet = isTabletDevice();
 
     const chartConfig = {
         type: 'bar',
@@ -233,9 +254,9 @@ function createBarChart(ctx, data, options = {}) {
             datasets: [{
                 data: values,
                 backgroundColor: colors,
-                borderRadius: isMobile ? 4 : 8,
-                barPercentage: isMobile ? 0.8 : 0.75,
-                categoryPercentage: isMobile ? 0.9 : 0.85
+                borderRadius: isMobile ? 4 : (isTablet ? 6 : 8),
+                barPercentage: isMobile ? 0.8 : (isTablet ? 0.78 : 0.75),
+                categoryPercentage: isMobile ? 0.9 : (isTablet ? 0.88 : 0.85)
             }]
         },
         options: getResponsiveChartOptions()
@@ -248,13 +269,14 @@ function createBarChart(ctx, data, options = {}) {
 
     // Add datalabels plugin if available
     if (typeof ChartDataLabels !== 'undefined') {
+        const labelSize = isMobile ? 10 : (isTablet ? 11 : 12);
         chartConfig.options.plugins.datalabels = {
             anchor: 'end',
             align: 'top',
             color: '#FFFFFF',
             font: {
                 weight: 'bold',
-                size: isMobile ? 10 : 12
+                size: labelSize
             },
             formatter: (value) => {
                 if (value === undefined || value === null || value === 'undefined' || value === 'null') {
@@ -284,6 +306,7 @@ function createPieChart(ctx, data, options = {}) {
     const labels = Object.keys(cleanedData).map(labelTransform);
     const values = Object.values(cleanedData);
     const isMobile = isMobileDevice();
+    const isTablet = isTabletDevice();
 
     const chartConfig = {
         type: 'pie',
@@ -292,7 +315,7 @@ function createPieChart(ctx, data, options = {}) {
             datasets: [{
                 data: values,
                 backgroundColor: colors,
-                borderWidth: isMobile ? 1 : 2,
+                borderWidth: isMobile ? 1 : (isTablet ? 1.5 : 2),
                 borderColor: '#1a1a1a'
             }]
         },
@@ -301,11 +324,12 @@ function createPieChart(ctx, data, options = {}) {
 
     // Add datalabels plugin with bigger, bolder text
     if (typeof ChartDataLabels !== 'undefined') {
+        const labelSize = isMobile ? 8 : (isTablet ? 10 : 12);
         chartConfig.options.plugins.datalabels = {
             color: '#000000',
             font: {
                 weight: 'bold',
-                size: isMobile ? 8 : 12  // Increased from 14/18 to 16/22
+                size: labelSize
             },
             anchor: 'center',
             align: 'center',
@@ -329,29 +353,45 @@ function createPieChart(ctx, data, options = {}) {
 // Function: Update charts on window resize
 function updateChartsOnResize() {
     const isMobile = isMobileDevice();
+    const isTablet = isTabletDevice();
     
     // Update chart containers height based on screen size
     const chartContainers = document.querySelectorAll('.chart-container');
     chartContainers.forEach(container => {
-        container.style.height = isMobile ? '250px' : '400px';
+        if (isMobile) {
+            container.style.height = '250px';
+        } else if (isTablet) {
+            container.style.height = '350px';
+        } else {
+            container.style.height = '400px';
+        }
     });
     
     // Update pie chart layout for responsive design
     const villageChartContainer = document.querySelector('#villageDistributionChart')?.parentElement?.parentElement;
     if (villageChartContainer && villageChartContainer.style.display === 'flex') {
-        // Adjust flex layout for mobile
+        // Adjust flex layout based on device
         if (isMobile) {
             villageChartContainer.style.flexDirection = 'column';
             villageChartContainer.style.gap = '1rem';
+        } else if (isTablet) {
+            villageChartContainer.style.flexDirection = 'row';
+            villageChartContainer.style.gap = '1.5rem';
         } else {
             villageChartContainer.style.flexDirection = 'row';
             villageChartContainer.style.gap = '2rem';
         }
     }
     
-    // Recreate charts if they exist
-    if (villageChart || raceChart || jobChart) {
-        initStatsPage();
+    // Recreate charts if they exist - but only if we're not already in the middle of initialization
+    if ((villageChart || raceChart || jobChart) && !window.statsInitializing) {
+        window.statsInitializing = true;
+        initStatsPage().finally(() => {
+            window.statsInitializing = false;
+        });
+    } else {
+        // Apply Firefox fixes even if charts don't exist
+        applyFirefoxFixes();
     }
 }
 
@@ -360,6 +400,122 @@ window.addEventListener('resize', () => {
     clearTimeout(window.resizeTimeout);
     window.resizeTimeout = setTimeout(updateChartsOnResize, 250);
 });
+
+// ============================================================================
+// ------------------- Firefox Compatibility Functions -------------------
+// ============================================================================
+
+// Function: Apply Firefox-specific fixes to stats tables
+function applyFirefoxFixes() {
+    if (!isFirefoxBrowser()) return;
+    
+    console.log('🔥 Applying Firefox compatibility fixes...');
+    
+    // Add Firefox class to body for CSS targeting
+    document.body.classList.add('firefox-browser');
+    
+    // Find all stats table containers
+    const tableContainers = document.querySelectorAll('.stats-table-container');
+    
+    console.log(`📊 Found ${tableContainers.length} table containers`);
+    
+    tableContainers.forEach((container, containerIndex) => {
+        // Add Firefox-specific class
+        container.classList.add('firefox-compat');
+        
+        // Force flexbox layout for Firefox
+        container.style.display = 'flex';
+        container.style.flexWrap = 'wrap';
+        container.style.justifyContent = 'flex-start';
+        container.style.alignItems = 'stretch';
+        container.style.gap = '1.5rem';
+        
+        // Ensure proper flexbox layout for Firefox
+        const tables = container.querySelectorAll('.stats-table');
+        console.log(`  Container ${containerIndex}: Found ${tables.length} tables`);
+        
+        tables.forEach((table, index) => {
+            // Add specific Firefox styling - fixed 458px width
+            table.style.flex = '0 0 458px';
+            table.style.minWidth = '458px';
+            table.style.maxWidth = '458px';
+            table.style.width = '458px';
+            table.style.marginBottom = '0';
+            table.style.boxSizing = 'border-box';
+            table.style.tableLayout = 'auto';
+            table.style.overflow = 'visible';
+            
+            // Fix table cell overflow issues
+            const cells = table.querySelectorAll('td, th');
+            cells.forEach(cell => {
+                cell.style.maxWidth = 'none';
+                cell.style.whiteSpace = 'normal';
+                cell.style.overflow = 'visible';
+                cell.style.textOverflow = 'clip';
+                cell.style.wordBreak = 'normal';
+                cell.style.overflowWrap = 'normal';
+                cell.style.padding = '0.6rem 0.75rem';
+                cell.style.boxSizing = 'border-box';
+                cell.style.minWidth = 'auto';
+                cell.style.width = 'auto';
+            });
+        });
+    });
+    
+    // Fix visiting villages grid layout for Firefox
+    const visitingGrids = document.querySelectorAll('.visiting-villages-grid, .jail-villages-grid');
+    console.log(`🏘️ Found ${visitingGrids.length} village grids`);
+    
+    visitingGrids.forEach((grid, gridIndex) => {
+        // Force horizontal flexbox layout
+        grid.style.display = 'flex';
+        grid.style.flexDirection = 'row';
+        grid.style.flexWrap = 'wrap';
+        grid.style.justifyContent = 'flex-start';
+        grid.style.alignItems = 'stretch';
+        grid.style.gap = '2rem';
+        
+        // Fix individual village cards
+        const villages = grid.querySelectorAll('.visiting-village, .jail-village');
+        console.log(`  Grid ${gridIndex}: Found ${villages.length} village cards`);
+        
+        villages.forEach(village => {
+            village.style.flex = '1 1 300px';
+            village.style.minWidth = '300px';
+            village.style.maxWidth = 'calc(33.333% - 1.33rem)';
+            village.style.boxSizing = 'border-box';
+        });
+    });
+    
+    console.log('✅ Firefox fixes applied successfully');
+}
+
+// Function: Apply Firefox-specific fixes to chart containers
+function applyFirefoxChartFixes() {
+    if (!isFirefoxBrowser()) return;
+    
+    console.log('🔥 Applying Firefox chart compatibility fixes...');
+    
+    // Fix chart containers
+    const chartContainers = document.querySelectorAll('.chart-container');
+    chartContainers.forEach(container => {
+        container.style.position = 'relative';
+        container.style.overflow = 'visible';
+        container.style.width = '100%';
+        container.style.height = 'auto';
+        container.style.minHeight = '300px';
+    });
+    
+    // Fix canvas elements
+    const canvases = document.querySelectorAll('canvas');
+    canvases.forEach(canvas => {
+        canvas.style.maxWidth = '100%';
+        canvas.style.height = 'auto';
+        canvas.style.display = 'block';
+    });
+    
+    console.log('✅ Firefox chart fixes applied successfully');
+}
 
 // ============================================================================
 // ------------------- HTML Generation Functions -------------------
@@ -784,7 +940,6 @@ function generatePieChartBreakdown(data, title, colors) {
     return `
         <div class="pie-breakdown">
             <div class="breakdown-header">
-                <h4>${title}</h4>
                 <div class="breakdown-total">Total: ${total}</div>
             </div>
             <div class="breakdown-list">
@@ -799,26 +954,33 @@ function initializeVillageChart(data) {
     const villageData = data.charactersPerVillage || {};
     const colors = ['#EF9A9A', '#9FB7F2', '#98D8A7']; // Red for Rudania, Blue for Inariko, Green for Vhintl
     const isMobile = isMobileDevice();
+    const isTablet = isTabletDevice();
+    
+    // Get the canvas element first
+    let canvas = document.getElementById('villageDistributionChart');
+    if (!canvas) {
+        console.error('Village distribution chart canvas not found');
+        return;
+    }
     
     // Update chart container to include breakdown
-    const chartContainer = document.querySelector('#villageDistributionChart').parentElement;
+    const chartContainer = canvas.parentElement;
     
-    // Clear any existing breakdown sections to prevent duplicates
-    const existingBreakdowns = chartContainer.querySelectorAll('.pie-breakdown');
-    existingBreakdowns.forEach(breakdown => breakdown.remove());
+    // Clear container completely to prevent any duplicates
+    chartContainer.innerHTML = '';
     
+    // Reset container styles
     chartContainer.style.display = 'flex';
-    chartContainer.style.gap = isMobile ? '1rem' : '2rem';
+    chartContainer.style.gap = isMobile ? '1rem' : (isTablet ? '1.5rem' : '2rem');
     chartContainer.style.alignItems = 'flex-start';
     chartContainer.style.flexDirection = isMobile ? 'column' : 'row';
     
     // Create chart wrapper
     const chartWrapper = document.createElement('div');
     chartWrapper.style.flex = '1';
-    chartWrapper.style.minHeight = isMobile ? '250px' : '300px';
+    chartWrapper.style.minHeight = isMobile ? '250px' : (isTablet ? '300px' : '300px');
     
     // Move canvas to wrapper
-    const canvas = document.getElementById('villageDistributionChart');
     chartWrapper.appendChild(canvas);
     
     // Create breakdown section with village-specific colors
@@ -826,8 +988,7 @@ function initializeVillageChart(data) {
     breakdownWrapper.style.flex = '1';
     breakdownWrapper.innerHTML = generatePieChartBreakdown(villageData, 'Village Distribution', colors);
     
-    // Clear container and add new structure
-    chartContainer.innerHTML = '';
+    // Add new structure to container
     chartContainer.appendChild(chartWrapper);
     chartContainer.appendChild(breakdownWrapper);
     
@@ -856,13 +1017,14 @@ function initializeRaceChart(data) {
     );
     
     const isMobile = isMobileDevice();
+    const isTablet = isTabletDevice();
     raceChart = createBarChart(raceCtx, sortedRaceData, {
         labelTransform: v => v || 'Unknown',
         colors: [
             '#FF9999', '#FFD27A', '#FFF066', '#A6F29A', '#6EEEDD', '#8FCBFF',
             '#B89CFF', '#F78CD2', '#8CE6C0', '#FFDB66', '#BFBFBF'
         ],
-        yMax: isMobile ? 30 : 35
+        yMax: isMobile ? 30 : (isTablet ? 32 : 35)
     });
 }
 
@@ -883,6 +1045,7 @@ function initializeJobChart(data) {
     );
     
     const isMobile = isMobileDevice();
+    const isTablet = isTabletDevice();
     jobChart = createBarChart(jobCtx, sortedJobData, {
         labelTransform: v => v || 'Unknown',
         colors: [
@@ -890,7 +1053,7 @@ function initializeJobChart(data) {
             '#8FCBFF', '#B89CFF', '#F78CD2', '#8CE6C0', '#FFDB66',
             '#BFBFBF', '#D6AEFA', '#7BEFC3', '#FFC3A0', '#AAB6FF', '#FFB3B3'
         ],
-        yMax: isMobile ? 12 : 15
+        yMax: isMobile ? 12 : (isTablet ? 13 : 15)
     });
 }
 
@@ -900,7 +1063,13 @@ function initializeJobChart(data) {
 
 // Function: Initialize stats page - fetches data and renders all charts
 async function initStatsPage() {
+    // Prevent multiple simultaneous initializations
+    if (window.statsInitializing) {
+        return;
+    }
+    
     try {
+        window.statsInitializing = true;
         // Fetch stats data with cache-busting
         const timestamp = Date.now();
         const res = await fetch(`/api/stats/characters?t=${timestamp}`);
@@ -976,9 +1145,16 @@ async function initStatsPage() {
 
         // Set responsive chart container heights
         const isMobile = isMobileDevice();
+        const isTablet = isTabletDevice();
         const chartContainers = document.querySelectorAll('.chart-container');
         chartContainers.forEach(container => {
-            container.style.height = isMobile ? '250px' : '400px';
+            if (isMobile) {
+                container.style.height = '250px';
+            } else if (isTablet) {
+                container.style.height = '350px';
+            } else {
+                container.style.height = '400px';
+            }
         });
 
         // Initialize all charts
@@ -986,9 +1162,38 @@ async function initStatsPage() {
         initializeRaceChart(data);
         initializeJobChart(data);
 
+        // Apply Firefox-specific fixes (with multiple attempts to ensure DOM is ready)
+        applyFirefoxFixes();
+        setTimeout(applyFirefoxFixes, 50);
+        setTimeout(applyFirefoxFixes, 200);
+        
+        // Apply Firefox chart fixes
+        if (isFirefoxBrowser()) {
+            applyFirefoxChartFixes();
+        }
+
     } catch (err) {
         document.getElementById('stats-total-characters').textContent = 'Error';
         console.error('Error loading stats:', err);
+    } finally {
+        window.statsInitializing = false;
+    }
+}
+
+// ============================================================================
+// ------------------- Early Initialization -------------------
+// ============================================================================
+
+// Apply Firefox fixes immediately when script loads
+if (isFirefoxBrowser()) {
+    console.log('🦊 Firefox detected - preparing compatibility mode...');
+    document.body.classList.add('firefox-browser');
+    
+    // Apply fixes when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyFirefoxFixes);
+    } else {
+        applyFirefoxFixes();
     }
 }
 

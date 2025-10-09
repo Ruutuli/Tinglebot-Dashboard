@@ -685,6 +685,335 @@
   background: #27AE60;
 }
 
+/* ============================================================================ */
+/* Light Mode Theme - Complete Redesign */
+/* ============================================================================ */
+
+[data-theme="light"] .settings-container {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+  box-shadow: 0 8px 32px rgba(13, 110, 253, 0.1);
+  border: 1px solid rgba(13, 110, 253, 0.08);
+}
+
+[data-theme="light"] .settings-category {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .settings-category:hover {
+  box-shadow: 0 8px 24px rgba(13, 110, 253, 0.12);
+  border-color: #CBD5E0;
+}
+
+[data-theme="light"] .settings-category-header {
+  border-bottom: 2px solid #E7F1FF;
+  background: linear-gradient(90deg, rgba(13, 110, 253, 0.03) 0%, transparent 100%);
+  margin: -2rem -2rem 2rem -2rem;
+  padding: 1.5rem 2rem;
+  border-radius: 12px 12px 0 0;
+}
+
+[data-theme="light"] .settings-category-header h2 {
+  color: #1A1A1A;
+  font-weight: 700;
+}
+
+[data-theme="light"] .settings-category-header h2 i {
+  color: #0D6EFD;
+  text-shadow: 0 0 12px rgba(13, 110, 253, 0.3);
+}
+
+[data-theme="light"] .settings-category-header p {
+  color: #4A5568;
+  font-weight: 500;
+}
+
+/* Setting Items in Light Mode */
+[data-theme="light"] .setting-item label {
+  color: #2D3748;
+  font-weight: 600;
+}
+
+[data-theme="light"] .setting-item small {
+  color: #718096;
+  font-weight: 400;
+}
+
+/* Form Inputs in Light Mode */
+[data-theme="light"] .setting-input {
+  background: var(--input-bg) !important;
+  border: 2px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  font-weight: 500;
+}
+
+[data-theme="light"] .setting-input:hover {
+  border-color: var(--border-color) !important;
+  background: var(--hover-bg) !important;
+}
+
+[data-theme="light"] .setting-input:focus {
+  background: var(--input-bg) !important;
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 4px var(--accent-glow) !important;
+}
+
+/* Light Mode Select Options */
+[data-theme="light"] .setting-input option {
+  background: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Toggle Switches in Light Mode */
+[data-theme="light"] .toggle-slider {
+  background-color: #CBD5E0;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .toggle-slider:before {
+  background-color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .toggle-input:checked + .toggle-slider {
+  background: linear-gradient(135deg, #0D6EFD 0%, #0B5ED7 100%);
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+[data-theme="light"] .toggle-input:focus + .toggle-slider {
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+[data-theme="light"] .toggle-switch:hover .toggle-input:not(:disabled) + .toggle-slider {
+  background-color: #A0AEC0;
+}
+
+[data-theme="light"] .toggle-switch:hover .toggle-input:checked:not(:disabled) + .toggle-slider {
+  background: linear-gradient(135deg, #0B5ED7 0%, #0952B8 100%);
+}
+
+/* Export Buttons in Light Mode */
+[data-theme="light"] .export-btn {
+  background: #FFFFFF;
+  border: 2px solid #E2E8F0;
+  color: #2D3748;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+}
+
+[data-theme="light"] .export-btn:hover {
+  border-color: #0D6EFD;
+  background: linear-gradient(135deg, #0D6EFD 0%, #0B5ED7 100%);
+  color: #FFFFFF;
+  box-shadow: 0 8px 20px rgba(13, 110, 253, 0.25);
+  transform: translateY(-3px);
+}
+
+[data-theme="light"] .export-btn.primary {
+  background: linear-gradient(135deg, #0D6EFD 0%, #0B5ED7 100%);
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+[data-theme="light"] .export-btn.primary:hover {
+  background: linear-gradient(135deg, #0B5ED7 0%, #0952B8 100%);
+  box-shadow: 0 8px 24px rgba(13, 110, 253, 0.4);
+}
+
+[data-theme="light"] .export-btn i {
+  filter: drop-shadow(0 0 2px currentColor);
+}
+
+/* Settings Action Buttons in Light Mode */
+[data-theme="light"] .settings-actions {
+  border-top: 2px solid #E7F1FF;
+  background: linear-gradient(180deg, transparent 0%, rgba(13, 110, 253, 0.02) 100%);
+  margin: 3rem -2rem -2rem -2rem;
+  padding: 2rem 2rem 0 2rem;
+}
+
+[data-theme="light"] .settings-btn {
+  background: #FFFFFF;
+  border: 2px solid #E2E8F0;
+  color: #2D3748;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+}
+
+[data-theme="light"] .settings-btn:hover {
+  border-color: #0D6EFD;
+  background: linear-gradient(135deg, #0D6EFD 0%, #0B5ED7 100%);
+  color: #FFFFFF;
+  box-shadow: 0 8px 20px rgba(13, 110, 253, 0.25);
+  transform: translateY(-3px);
+}
+
+[data-theme="light"] .settings-btn.primary {
+  background: linear-gradient(135deg, #0D6EFD 0%, #0B5ED7 100%);
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+[data-theme="light"] .settings-btn.primary:hover {
+  background: linear-gradient(135deg, #0B5ED7 0%, #0952B8 100%);
+  box-shadow: 0 8px 24px rgba(13, 110, 253, 0.4);
+}
+
+[data-theme="light"] .settings-btn.secondary {
+  background: #F8FAFC;
+  border-color: #CBD5E0;
+  color: #4A5568;
+}
+
+[data-theme="light"] .settings-btn.secondary:hover {
+  background: linear-gradient(135deg, #718096 0%, #4A5568 100%);
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 0 6px 16px rgba(74, 85, 104, 0.25);
+}
+
+[data-theme="light"] .settings-btn i {
+  filter: drop-shadow(0 0 2px currentColor);
+}
+
+/* Theme Preview in Light Mode */
+[data-theme="light"] .theme-preview {
+  border-top: 2px solid #E7F1FF;
+  background: linear-gradient(180deg, rgba(13, 110, 253, 0.02) 0%, transparent 100%);
+  padding-top: 2.5rem;
+  margin-top: 2.5rem;
+}
+
+[data-theme="light"] .theme-preview h3 {
+  color: #1A1A1A;
+  font-weight: 700;
+}
+
+[data-theme="light"] .theme-preview-card {
+  background: #FFFFFF;
+  border: 2px solid #E2E8F0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .theme-preview-card:hover {
+  border-color: #0D6EFD;
+  box-shadow: 0 8px 20px rgba(13, 110, 253, 0.15);
+  transform: translateY(-4px);
+}
+
+[data-theme="light"] .theme-preview-card.active,
+[data-theme="light"] .theme-preview-card[data-theme="light"] {
+  border-color: #0D6EFD;
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
+  box-shadow: 0 4px 16px rgba(13, 110, 253, 0.2),
+              0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+[data-theme="light"] .preview-header span {
+  color: #2D3748;
+  font-weight: 700;
+}
+
+[data-theme="light"] .preview-dot {
+  border: 2px solid #E2E8F0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Import Settings Label in Light Mode */
+[data-theme="light"] .import-settings-label {
+  background: #FFFFFF;
+  border: 2px solid #E2E8F0;
+  color: #2D3748;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+}
+
+[data-theme="light"] .import-settings-label:hover {
+  border-color: #0D6EFD;
+  background: linear-gradient(135deg, #0D6EFD 0%, #0B5ED7 100%);
+  color: #FFFFFF;
+  box-shadow: 0 8px 20px rgba(13, 110, 253, 0.25);
+  transform: translateY(-3px);
+}
+
+/* High Contrast Mode for Light Theme */
+[data-theme="light"][data-contrast="high"] .settings-category {
+  border-width: 3px;
+  border-color: #2D3748;
+}
+
+[data-theme="light"][data-contrast="high"] .settings-category-header h2 {
+  font-weight: 800;
+}
+
+[data-theme="light"][data-contrast="high"] .setting-input {
+  border-width: 3px;
+  border-color: #4A5568;
+  font-weight: 600;
+}
+
+[data-theme="light"][data-contrast="high"] .toggle-slider {
+  border: 3px solid #2D3748;
+}
+
+[data-theme="light"][data-contrast="high"] .export-btn,
+[data-theme="light"][data-contrast="high"] .settings-btn {
+  border-width: 3px;
+  font-weight: 800;
+}
+
+/* Loading State in Light Mode */
+[data-theme="light"] .settings-btn.loading {
+  opacity: 0.6;
+  background: #F8FAFC;
+  border-color: #CBD5E0;
+}
+
+/* Success/Error States in Light Mode */
+[data-theme="light"] .settings-btn.success {
+  background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
+  border-color: transparent;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+}
+
+[data-theme="light"] .settings-btn.error {
+  background: linear-gradient(135deg, #DC3545 0%, #B02A37 100%);
+  border-color: transparent;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+/* Additional Polish for Light Mode */
+[data-theme="light"] .settings-grid {
+  padding: 0.5rem 0;
+}
+
+[data-theme="light"] select.setting-input,
+[data-theme="light"] input.setting-input[type="number"] {
+  cursor: pointer;
+}
+
+[data-theme="light"] select.setting-input:hover,
+[data-theme="light"] input.setting-input[type="number"]:hover {
+  background: #F1F5F9;
+}
+
+/* Notification styling for light mode */
+[data-theme="light"] .settings-notification {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Export buttons grid in light mode */
+[data-theme="light"] .export-buttons {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #E7F1FF;
+}
+
 /* High Contrast Mode */
 [data-contrast="high"] .settings-category {
   border-width: 3px;

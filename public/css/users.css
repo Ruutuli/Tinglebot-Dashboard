@@ -1656,7 +1656,8 @@
   right: 0;
   margin-top: 0.5rem;
   min-width: 280px;
-  background: rgba(20, 20, 25, 0.95);
+  background: var(--card-background);
+  backdrop-filter: blur(10px);
   border: 1px solid var(--glass-border);
   border-radius: 0.75rem;
   box-shadow: var(--section-shadow);

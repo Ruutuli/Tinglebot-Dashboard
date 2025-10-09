@@ -1062,7 +1062,7 @@ function showCharacterModal(character) {
   // Add close functionality
   const closeBtn = modal.querySelector('.close-modal');
   closeBtn?.addEventListener('click', () => {
-    modal.style.animation = 'fadeOut 0.3s ease';
+    modal.style.animation = 'fadeOut 0.3s ease forwards';
     setTimeout(() => {
       if (modal.parentNode) {
         modal.parentNode.removeChild(modal);
@@ -1072,7 +1072,7 @@ function showCharacterModal(character) {
   
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
-      modal.style.animation = 'fadeOut 0.3s ease';
+      modal.style.animation = 'fadeOut 0.3s ease forwards';
       setTimeout(() => {
         if (modal.parentNode) {
           modal.parentNode.removeChild(modal);
@@ -1084,7 +1084,7 @@ function showCharacterModal(character) {
   // Close on Escape key
   const handleEscape = (e) => {
     if (e.key === 'Escape') {
-      modal.style.animation = 'fadeOut 0.3s ease';
+      modal.style.animation = 'fadeOut 0.3s ease forwards';
       setTimeout(() => {
         if (modal.parentNode) {
           modal.parentNode.removeChild(modal);
@@ -1343,7 +1343,7 @@ function showEditCharacterModal(character, parentModal) {
       showProfileMessage('Character updated successfully!', 'success');
       
       // Close edit modal
-      editModal.style.animation = 'fadeOut 0.3s ease';
+      editModal.style.animation = 'fadeOut 0.3s ease forwards';
       setTimeout(() => {
         if (editModal.parentNode) {
           editModal.parentNode.removeChild(editModal);
@@ -1352,7 +1352,7 @@ function showEditCharacterModal(character, parentModal) {
       
       // Close parent modal and reload characters
       if (parentModal && parentModal.parentNode) {
-        parentModal.style.animation = 'fadeOut 0.3s ease';
+        parentModal.style.animation = 'fadeOut 0.3s ease forwards';
         setTimeout(() => {
           if (parentModal.parentNode) {
             parentModal.parentNode.removeChild(parentModal);
@@ -1376,7 +1376,7 @@ function showEditCharacterModal(character, parentModal) {
   // Handle cancel button
   const cancelBtn = editModal.querySelector('.cancel-edit-btn');
   cancelBtn.addEventListener('click', () => {
-    editModal.style.animation = 'fadeOut 0.3s ease';
+    editModal.style.animation = 'fadeOut 0.3s ease forwards';
     setTimeout(() => {
       if (editModal.parentNode) {
         editModal.parentNode.removeChild(editModal);
@@ -1387,7 +1387,7 @@ function showEditCharacterModal(character, parentModal) {
   // Handle close button
   const closeBtn = editModal.querySelector('.close-modal');
   closeBtn.addEventListener('click', () => {
-    editModal.style.animation = 'fadeOut 0.3s ease';
+    editModal.style.animation = 'fadeOut 0.3s ease forwards';
     setTimeout(() => {
       if (editModal.parentNode) {
         editModal.parentNode.removeChild(editModal);
@@ -1398,7 +1398,7 @@ function showEditCharacterModal(character, parentModal) {
   // Handle modal background click
   editModal.addEventListener('click', (e) => {
     if (e.target === editModal) {
-      editModal.style.animation = 'fadeOut 0.3s ease';
+      editModal.style.animation = 'fadeOut 0.3s ease forwards';
       setTimeout(() => {
         if (editModal.parentNode) {
           editModal.parentNode.removeChild(editModal);
