@@ -110,6 +110,10 @@ function setupModelCards() {
     card.addEventListener('click', async (event) => {
       event.preventDefault(); // Prevent default button behavior
 
+      // Update URL with hash
+      const hash = `#${modelName}`;
+      window.history.pushState({ model: modelName }, '', hash);
+
       // Reset filters when switching between models
       if (window.itemFiltersInitialized) {
         window.itemFiltersInitialized = false;
@@ -153,6 +157,9 @@ function setupModelCards() {
 
         // Setup back button handler
         backButton.onclick = () => {
+          // Update URL to go back to dashboard
+          window.history.pushState({ section: 'dashboard-section' }, '', '/');
+          
           modelDetailsPage.style.display = 'none';
           dashboardSection.style.display = 'block';
           // Reset any global state
@@ -447,6 +454,17 @@ function setupModelCards() {
   });
 }
 
+// ------------------- Function: loadModelByName -------------------
+// Loads a model view by triggering the model card click
+async function loadModelByName(modelName) {
+  const modelCard = document.querySelector(`.model-card[data-model="${modelName}"]`);
+  if (modelCard) {
+    modelCard.click();
+  } else {
+    console.warn(`Model card not found for: ${modelName}`);
+  }
+}
+
 // ------------------- Function: loadModelData -------------------
 // Fetches paginated model data by type
 async function loadModelData(modelName, page = 1) {
@@ -652,60 +670,73 @@ function setupSidebarNavigation() {
   
   // Handle browser back/forward buttons
   window.addEventListener('popstate', (event) => {
-    const section = event.state?.section || 'dashboard-section';
-    
-    if (section === 'stats-section') {
-      showStatsSection();
-    } else if (section === 'dashboard-section') {
-      showDashboardSection();
-    } else if (section === 'profile-section') {
-      showProfileSection();
-    } else if (section === 'guilds-section') {
-      showGuildSection();
-    } else if (section === 'commands-section') {
-      commands.showCommandsSection();
-    } else if (section === 'calendar-section') {
-      showCalendarSection();
-    } else if (section === 'users-section') {
-      showUsersSection();
-    } else if (section === 'relationships-section') {
-      relationshipsModule.showRelationshipsSection();
-    } else if (section === 'admin-area-section') {
-      showAdminAreaSection();
-    } else if (section === 'settings-section') {
-      showSettingsSection();
+    // Check if it's a model or a section
+    if (event.state?.model) {
+      // It's a model (characters, mounts, etc.)
+      loadModelByName(event.state.model);
     } else {
-      showSection(section);
+      // It's a section
+      const section = event.state?.section || 'dashboard-section';
+      
+      if (section === 'stats-section') {
+        showStatsSection();
+      } else if (section === 'dashboard-section') {
+        showDashboardSection();
+      } else if (section === 'profile-section') {
+        showProfileSection();
+      } else if (section === 'guilds-section') {
+        showGuildSection();
+      } else if (section === 'commands-section') {
+        commands.showCommandsSection();
+      } else if (section === 'calendar-section') {
+        showCalendarSection();
+      } else if (section === 'users-section') {
+        showUsersSection();
+      } else if (section === 'relationships-section') {
+        relationshipsModule.showRelationshipsSection();
+      } else if (section === 'admin-area-section') {
+        showAdminAreaSection();
+      } else if (section === 'settings-section') {
+        showSettingsSection();
+      } else {
+        showSection(section);
+      }
     }
   });
   
   // Handle initial URL on page load
   const hash = window.location.hash;
   if (hash) {
-    const sectionId = hash.substring(1);
+    const hashValue = hash.substring(1);
     
-    if (sectionId === 'stats-section') {
+    // List of known model names
+    const modelNames = ['character', 'monster', 'pet', 'mount', 'vending', 'item', 'starterGear', 'village', 'villageShops', 'relic', 'quest', 'inventory'];
+    
+    // Check if it's a model hash
+    if (modelNames.includes(hashValue)) {
+      loadModelByName(hashValue);
+    } else if (hashValue === 'stats-section') {
       showStatsSection();
-    } else if (sectionId === 'dashboard-section') {
+    } else if (hashValue === 'dashboard-section') {
       showDashboardSection();
-    } else if (sectionId === 'profile-section') {
+    } else if (hashValue === 'profile-section') {
       showProfileSection();
-    } else if (sectionId === 'guilds-section') {
+    } else if (hashValue === 'guilds-section') {
       showGuildSection();
-    } else if (sectionId === 'commands-section') {
+    } else if (hashValue === 'commands-section') {
       commands.showCommandsSection();
-    } else if (sectionId === 'calendar-section') {
+    } else if (hashValue === 'calendar-section') {
       showCalendarSection();
-    } else if (sectionId === 'users-section') {
+    } else if (hashValue === 'users-section') {
       showUsersSection();
-    } else if (sectionId === 'relationships-section') {
+    } else if (hashValue === 'relationships-section') {
       relationshipsModule.showRelationshipsSection();
-    } else if (sectionId === 'admin-area-section') {
+    } else if (hashValue === 'admin-area-section') {
       showAdminAreaSection();
-    } else if (sectionId === 'settings-section') {
+    } else if (hashValue === 'settings-section') {
       showSettingsSection();
     } else {
-      showSection(sectionId);
+      showSection(hashValue);
     }
   }
   

@@ -2729,25 +2729,85 @@ html {
 /* Theme System */
 /* ============================================================================ */
 
-/* Light Theme (Improved) */
+/* Light Theme (Comprehensive) */
 [data-theme="light"] {
+  /* Base Background Colors */
   --bg-primary:           #FFFFFF;
-  --bg-secondary:         #F8F9FA;
+  --bg-secondary:         #F5F7FA;
   --bg-tertiary:          #E9ECEF;
-  --text-primary:         #212529;
-  --text-secondary:       #6C757D;
-  --text-muted:           #ADB5BD;
-  --border-color:         #DEE2E6;
-  --border-light:         #E9ECEF;
+  --background-color:     #FFFFFF;
+  --card-background:      #FAFBFC;
+  
+  /* Text Colors */
+  --text-primary:         #1A1A1A;
+  --text-secondary:       #4A5568;
+  --text-muted:           #718096;
+  --text-color:           #1A1A1A;
+  --text-tertiary:        #A0AEC0;
+  
+  /* Border Colors */
+  --border-color:         #CBD5E0;
+  --border-light:         #E2E8F0;
+  --glass-border:         rgba(0, 0, 0, 0.1);
+  --glass-divider:        rgba(0, 0, 0, 0.08);
+  
+  /* Accent & Primary Colors */
   --accent-color:         #0D6EFD;
+  --accent:               #0D6EFD;
   --accent-hover:         #0B5ED7;
   --accent-light:         #E7F1FF;
-  --success-color:        #198754;
-  --warning-color:        #FFC107;
+  --primary-color:        #0D6EFD;
+  --primary-hover:        #0B5ED7;
+  --accent-glow:          rgba(13, 110, 253, 0.15);
+  
+  /* Status Colors */
+  --success-color:        #16A34A;
+  --warning-color:        #F59E0B;
   --danger-color:         #DC3545;
-  --info-color:           #0DCAF0;
-  --shadow:               rgba(0, 0, 0, 0.1);
-  --shadow-hover:         rgba(0, 0, 0, 0.15);
+  --error-color:          #DC3545;
+  --info-color:           #0EA5E9;
+  
+  /* TOTK/BOTW Theme Colors (Adjusted for Light) */
+  --totk-light-green:     #059669;
+  --totk-green:           #047857;
+  --totk-dark-green:      #065F46;
+  --botw-blue:            #0D6EFD;
+  --botw-dark-blue:       #0B5ED7;
+  
+  /* Glass Morphism Effects */
+  --glass-bg:             rgba(255, 255, 255, 0.8);
+  --card-bg:              #FAFBFC;
+  --card-bg-secondary:    rgba(255, 255, 255, 0.9);
+  --input-bg:             #FFFFFF;
+  
+  /* Shadows */
+  --shadow:               rgba(0, 0, 0, 0.08);
+  --shadow-hover:         rgba(0, 0, 0, 0.12);
+  --card-shadow:          0 2px 8px rgba(0, 0, 0, 0.08);
+  --section-shadow:       0 2px 12px rgba(0, 0, 0, 0.1);
+  --section-glow:         0 4px 16px rgba(13, 110, 253, 0.12);
+  
+  /* Gradients */
+  --main-gradient:        linear-gradient(135deg, #F9FAFB 0%, #F5F7FA 100%);
+  --primary-gradient:     linear-gradient(90deg, #0D6EFD 0%, #059669 100%);
+  
+  /* Stat Colors */
+  --stat-label:           #4A5568;
+  --stat-value:           #059669;
+  
+  /* Hover & Interactive States */
+  --hover-bg:             rgba(0, 0, 0, 0.04);
+  --hover-bg-strong:      rgba(0, 0, 0, 0.08);
+  
+  /* Blight Theme (Adjusted for Light) */
+  --blight-bg-top:        #F3E5F5;
+  --blight-bg-bottom:     #E1BEE7;
+  --blight-border:        #AB47BC;
+  --blight-text:          #6A1B9A;
+  --blight-glow:          #AB47BC;
+  
+  /* Blur Effects */
+  --frost-blur:           10px;
 }
 
 /* Dark Theme */
@@ -3108,6 +3168,741 @@ html {
 
 [data-theme="vhintl"] .toggle-input:checked + .toggle-slider:before {
   background: white;
+}
+
+/* ============================================================================ */
+/* Light Mode Component Enhancements */
+/* ============================================================================ */
+
+[data-theme="light"] {
+  /* Sidebar Enhancements */
+  .sidebar {
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  .sidebar-nav a {
+    color: var(--text-secondary);
+  }
+  
+  .sidebar-nav li.active a {
+    background: var(--accent-light);
+    color: var(--accent-color);
+    font-weight: 600;
+  }
+  
+  .sidebar-nav a:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+  
+  /* Topbar Enhancements */
+  .topbar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-light);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Card Enhancements */
+  .card {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+  
+  .card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    border-color: var(--border-color);
+  }
+  
+  /* Button Enhancements */
+  .profile-action-btn.secondary {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+  }
+  
+  .profile-action-btn.secondary:hover {
+    background: var(--hover-bg-strong);
+    border-color: var(--accent-color);
+  }
+  
+  /* Input Enhancements */
+  input, textarea, select {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 0 0 3px var(--accent-glow) !important;
+  }
+  
+  /* Select/Dropdown Options Light Mode */
+  select option {
+    background: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* Leaderboard Controls Select Light Mode */
+  .leaderboard-controls select {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  .leaderboard-controls select option {
+    background: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* Search Filter Controls Light Mode */
+  .search-filter-control input,
+  .search-filter-control select {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  .filter-controls select {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* Quest Filters Select Light Mode */
+  .quest-filters select {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* All Select Elements - Universal Override */
+  select[class*="filter"],
+  select[class*="sort"],
+  select[class*="control"] {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* Placeholder Text Light Mode */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.7;
+  }
+  
+  /* Datalist Options Light Mode */
+  datalist option {
+    background: var(--input-bg);
+    color: var(--text-primary);
+  }
+  
+  /* Status Filter Dropdown Light Mode */
+  #status-filter {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* Settings Dropdowns Light Mode */
+  #theme-select,
+  #font-size,
+  #image-quality,
+  #animation-speed,
+  #date-format,
+  #timezone,
+  #currency-format,
+  #number-format,
+  #items-per-page,
+  #default-sort,
+  #profile-visibility {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* Modal Enhancements */
+  .character-modal {
+    background: rgba(0, 0, 0, 0.6);
+  }
+  
+  .character-modal-content {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  }
+  
+  .character-modal-header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  /* Table Enhancements */
+  .user-activity-table th {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border-color);
+  }
+  
+  .user-activity-table tbody tr:hover {
+    background: var(--hover-bg);
+  }
+  
+  .user-activity-table td {
+    border-bottom: 1px solid var(--border-light);
+  }
+  
+  /* Search Box Enhancement */
+  .search-box input {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+  }
+  
+  /* Status Badge Enhancements */
+  .status-badge.active {
+    background: rgba(22, 163, 74, 0.15);
+    color: #15803D;
+    border: 1px solid rgba(22, 163, 74, 0.3);
+  }
+  
+  .status-badge.inactive {
+    background: rgba(220, 53, 69, 0.15);
+    color: #B91C1C;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+  }
+  
+  /* Profile Card Enhancements */
+  .profile-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  .profile-character-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+  }
+  
+  .profile-character-card:hover {
+    background: var(--hover-bg);
+    border-color: var(--accent-color);
+  }
+  
+  .profile-character-stat {
+    background: rgba(0, 0, 0, 0.03);
+  }
+  
+  /* Loading Spinner Enhancement */
+  .loading-spinner {
+    border: 3px solid var(--border-light);
+    border-top: 3px solid var(--accent-color);
+  }
+  
+  /* Back to Top Button */
+  .back-to-top {
+    background: var(--accent-color);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+  }
+  
+  .back-to-top:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.4);
+  }
+  
+  /* Summary Cards Enhancement */
+  .summary-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+  }
+  
+  .summary-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Admin Tool Cards */
+  .admin-tool-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  .admin-tool-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Footer Enhancement */
+  .main-footer {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+  }
+  
+  /* Sidebar Toggle Button */
+  .sidebar-toggle {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  
+  .sidebar-toggle:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+  }
+  
+  /* User Dropdown - Fixed for Light Mode */
+  .user-dropdown {
+    background: var(--card-background) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+    backdrop-filter: blur(10px);
+  }
+  
+  .user-dropdown-content {
+    background: transparent;
+  }
+  
+  .user-details {
+    border-bottom-color: var(--border-color);
+  }
+  
+  .user-stats {
+    border-bottom-color: var(--border-color);
+  }
+  
+  /* Close Modal Button */
+  .close-modal {
+    color: var(--text-secondary);
+  }
+  
+  .close-modal:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+  
+  /* Character Status Colors */
+  .profile-character-status.blighted {
+    background: rgba(220, 53, 69, 0.15);
+    border: 1px solid rgba(220, 53, 69, 0.4);
+    color: #B91C1C;
+  }
+  
+  .profile-character-status.ko {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #D97706;
+  }
+  
+  .profile-character-status.online {
+    background: rgba(22, 163, 74, 0.15);
+    border: 1px solid rgba(22, 163, 74, 0.4);
+    color: #15803D;
+  }
+  
+  /* Roll Status Colors */
+  .profile-character-roll-status.rolled {
+    background: rgba(22, 163, 74, 0.15);
+    border: 1px solid rgba(22, 163, 74, 0.4);
+    color: #15803D;
+  }
+  
+  .profile-character-roll-status.not-rolled {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #D97706;
+  }
+  
+  /* Scrollbar Light Mode */
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, var(--accent-hover), var(--accent-color));
+    box-shadow: 0 0 8px rgba(13, 110, 253, 0.3);
+  }
+  
+  /* Help Wanted Dashboard Light Mode */
+  .hw-stat-card {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  
+  .hw-stat-label {
+    color: var(--text-secondary);
+  }
+  
+  .hw-stat-value {
+    color: var(--text-primary);
+  }
+  
+  .hw-chart-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  .hw-breakdown-item {
+    background: var(--hover-bg);
+  }
+  
+  .hw-breakdown-item:hover {
+    background: var(--hover-bg-strong);
+  }
+  
+  /* Village Badges Light Mode */
+  .village-badge.rudania {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+  }
+  
+  .village-badge.inariko {
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  }
+  
+  .village-badge.vhintl {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+  }
+  
+  .village-badge.unknown {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+  }
+  
+  /* Link Color Light Mode */
+  a {
+    color: var(--accent-color);
+  }
+  
+  a:hover {
+    color: var(--accent-hover);
+  }
+  
+  /* Bot Status Light Mode */
+  .bot-status {
+    background: var(--bg-secondary);
+  }
+  
+  /* Error State Light Mode */
+  .error-state i {
+    color: var(--error-color);
+  }
+  
+  /* User Avatar Border */
+  .user-avatar,
+  .profile-avatar {
+    border: 2px solid var(--border-color);
+  }
+  
+  /* Action Button Enhancements */
+  .action-btn.primary {
+    background: var(--accent-color);
+    color: white;
+  }
+  
+  .action-btn.primary:hover {
+    background: var(--accent-hover);
+  }
+  
+  .action-btn.secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+  }
+  
+  .action-btn.secondary:hover {
+    background: var(--hover-bg);
+    border-color: var(--accent-color);
+    color: var(--text-primary);
+  }
+  
+  /* Dashboard Specific Light Mode Enhancements */
+  .dashboard-welcome {
+    color: var(--text-secondary);
+  }
+  
+  .dashboard-links-icon i {
+    color: var(--accent-color);
+  }
+  
+  .dashboard-divider {
+    background: linear-gradient(90deg, var(--accent-color) 0%, var(--success-color) 100%);
+  }
+  
+  .dashboard-section-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  .dashboard-welcome-box {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  /* Model Cards Light Mode */
+  .model-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  .model-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Countdown & Weather Cards Light Mode */
+  .countdown-card,
+  .weather-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  .countdown-card:hover,
+  .weather-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Character Card Light Mode */
+  .character-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  .character-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Stats Card Light Mode */
+  .stats-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  /* Quest Card Light Mode */
+  .quest-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  .quest-card:hover {
+    border-color: var(--accent-color);
+  }
+  
+  /* Monster Card Light Mode */
+  .monster-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  .monster-card:hover {
+    border-color: var(--accent-color);
+  }
+  
+  /* Pet Card Light Mode */
+  .pet-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  /* Inventory Grid Light Mode */
+  .inventory-grid {
+    background: var(--bg-secondary);
+  }
+  
+  .inventory-item {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  .inventory-item:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  
+  /* Relationship Card Light Mode */
+  .relationship-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-light);
+  }
+  
+  /* Button Primary Light Mode */
+  .btn-primary,
+  button[type="submit"] {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+  }
+  
+  .btn-primary:hover,
+  button[type="submit"]:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+  
+  /* Button Secondary Light Mode */
+  .btn-secondary {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+  }
+  
+  .btn-secondary:hover {
+    background: var(--hover-bg-strong);
+    border-color: var(--accent-color);
+  }
+  
+  /* Pagination Light Mode */
+  .pagination-button {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+  }
+  
+  .pagination-button:hover:not(:disabled) {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+  }
+  
+  .pagination-button.active {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+  }
+  
+  /* Form Elements Light Mode */
+  .form-control,
+  .form-input,
+  .form-select {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+  }
+  
+  .form-control:focus,
+  .form-input:focus,
+  .form-select:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  
+  /* Dropdown Menu Light Mode */
+  .dropdown-menu {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+  
+  .dropdown-item:hover {
+    background: var(--hover-bg);
+  }
+  
+  /* Tooltip Light Mode */
+  .tooltip {
+    background: var(--text-primary);
+    color: var(--bg-primary);
+  }
+  
+  /* Badge Light Mode */
+  .badge {
+    background: var(--accent-color);
+    color: white;
+  }
+  
+  .badge.badge-success {
+    background: var(--success-color);
+  }
+  
+  .badge.badge-warning {
+    background: var(--warning-color);
+  }
+  
+  .badge.badge-danger {
+    background: var(--danger-color);
+  }
+  
+  /* Alert Light Mode */
+  .alert {
+    border: 1px solid var(--border-color);
+  }
+  
+  .alert-info {
+    background: rgba(14, 165, 233, 0.1);
+    border-color: rgba(14, 165, 233, 0.3);
+    color: #0369A1;
+  }
+  
+  .alert-success {
+    background: rgba(22, 163, 74, 0.1);
+    border-color: rgba(22, 163, 74, 0.3);
+    color: #15803D;
+  }
+  
+  .alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: #D97706;
+  }
+  
+  .alert-danger {
+    background: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.3);
+    color: #B91C1C;
+  }
+  
+  /* Progress Bar Light Mode */
+  .progress {
+    background: var(--bg-tertiary);
+  }
+  
+  .progress-bar {
+    background: var(--accent-color);
+  }
+  
+  /* Tab Navigation Light Mode */
+  .tab-nav {
+    border-bottom: 2px solid var(--border-color);
+  }
+  
+  .tab-item {
+    color: var(--text-secondary);
+    border-bottom: 2px solid transparent;
+  }
+  
+  .tab-item:hover {
+    color: var(--text-primary);
+    border-bottom-color: var(--border-color);
+  }
+  
+  .tab-item.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+  }
+  
+  /* Code Block Light Mode */
+  pre, code {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+  }
+  
+  /* Blockquote Light Mode */
+  blockquote {
+    border-left: 4px solid var(--accent-color);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+  }
 }
 
 /* Font Size Adjustments */
