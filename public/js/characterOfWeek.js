@@ -173,16 +173,19 @@ function showCharacterOfWeekNoData(container) {
 function formatCharacterIconUrl(icon) {
   if (!icon) return null;
   
-  if (icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-    // Extract filename from Google Cloud Storage URL and use proxy
-    const filename = icon.replace('https://storage.googleapis.com/tinglebot/', '');
+  // Check for Google Cloud Storage URL first
+  if (icon.includes('storage.googleapis.com/tinglebot/')) {
+    const filename = icon.split('/').pop();
     return `/api/images/${filename}`;
-  } else if (icon.startsWith('http')) {
-    return icon;
-  } else {
-    // For relative paths, use the proxy
-    return `/api/images/${icon}`;
   }
+  
+  // If it's another HTTP URL, return as is
+  if (icon.startsWith('http')) {
+    return icon;
+  }
+  
+  // For local filenames/relative paths, serve from static images folder
+  return `/images/${icon}`;
 }
 
 // ------------------- Function: refreshCharacterOfWeek -------------------

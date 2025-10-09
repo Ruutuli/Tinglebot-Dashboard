@@ -516,19 +516,19 @@ function renderStatRow(label, value, barClass, percent) {
   function formatCharacterIconUrl(icon) {
     if (!icon) return '/images/ankleicon.png';
     
-    // If it's already a relative path or local URL, return as is
-    if (!icon.startsWith('http')) {
-      return `/api/images/${icon}`;
-    }
-    
-    // If it's a Google Cloud Storage URL, extract the filename and use proxy
+    // Check for Google Cloud Storage URL first
     if (icon.includes('storage.googleapis.com/tinglebot/')) {
       const filename = icon.split('/').pop();
       return `/api/images/${filename}`;
     }
     
-    // For other HTTP URLs, return as is
-    return icon;
+    // If it's another HTTP URL, return as is
+    if (icon.startsWith('http')) {
+      return icon;
+    }
+    
+    // For local filenames/relative paths, serve from static images folder
+    return `/images/${icon}`;
   }
   
   // ------------------- Function: generateCharacterModalHTML -------------------

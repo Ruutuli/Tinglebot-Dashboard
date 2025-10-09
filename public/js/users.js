@@ -91,6 +91,23 @@ class UserLookup {
         this.loadAllUsers();
       });
     }
+
+    // Event delegation for user view buttons
+    const handleViewDetails = (e) => {
+      const viewBtn = e.target.closest('.user-view-btn');
+      if (viewBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const userId = viewBtn.getAttribute('data-user-id');
+        if (userId) {
+          this.viewUserDetails(userId);
+        } else {
+          console.error('No user ID found on button:', viewBtn);
+        }
+      }
+    };
+    
+    document.addEventListener('click', handleViewDetails);
   }
 
   handleSearchInput(query) {
@@ -228,6 +245,10 @@ class UserLookup {
   createUserCard(user) {
     const card = document.createElement('div');
     card.className = 'user-card';
+    
+    // Ensure discordId exists
+    const discordId = user.discordId || user._id;
+    
     card.innerHTML = `
       <div class="user-card-header">
         <div class="user-avatar-container">
@@ -262,8 +283,8 @@ class UserLookup {
       </div>
       
       <div class="user-actions">
-        <button class="user-view-btn" onclick="userLookup.viewUserDetails('${user.discordId}')">
-          <i class="fas fa-eye"></i>
+        <button class="user-view-btn" data-user-id="${discordId}">
+          <i class="fas fa-eye" aria-hidden="true"></i>
           <span>View Details</span>
         </button>
       </div>
@@ -273,8 +294,9 @@ class UserLookup {
   }
 
   getUserAvatar(user) {
-    if (user.avatar) {
-      return `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png`;
+    const discordId = user.discordId || user._id;
+    if (user.avatar && discordId) {
+      return `https://cdn.discordapp.com/avatars/${discordId}/${user.avatar}.png`;
     }
     return '/images/ankleicon.png';
   }
@@ -291,6 +313,7 @@ class UserLookup {
       this.showUserDetails(data);
     } catch (error) {
       console.error('View user details error:', error);
+      alert('Failed to load user details: ' + error.message);
       this.showError('Failed to load user details. Please try again.');
     }
   }
@@ -300,23 +323,25 @@ class UserLookup {
   }
 
   createUserDetailsModal(data) {
-    // Create modal container
-    const modal = document.createElement('div');
-    modal.className = 'user-details-modal';
-    
-    // Create modal content
-    const modalContent = document.createElement('div');
-    modalContent.className = 'user-details-modal-content';
-    
-    // Format user avatar
-    const avatarUrl = this.getUserAvatar(data.user);
-    
-    // Characters per page for pagination
-    const charactersPerPage = 6;
-    const totalPages = Math.ceil(data.characters.length / charactersPerPage);
-    
-    // Create modal HTML
-    modalContent.innerHTML = `
+    try {
+      // Create modal container
+      const modal = document.createElement('div');
+      modal.className = 'user-details-modal';
+      modal.style.display = 'flex'; // Ensure modal is visible
+      
+      // Create modal content
+      const modalContent = document.createElement('div');
+      modalContent.className = 'user-details-modal-content';
+      
+      // Format user avatar
+      const avatarUrl = this.getUserAvatar(data.user);
+      
+      // Characters per page for pagination
+      const charactersPerPage = 6;
+      const totalPages = Math.ceil(data.characters.length / charactersPerPage);
+      
+      // Create modal HTML
+      modalContent.innerHTML = `
       <div class="user-details-modal-header">
         <div class="user-details-user-info">
           <img 
@@ -405,14 +430,18 @@ class UserLookup {
       }
     }
     
-    // Close on Escape key
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        this.closeModal(modal);
-        document.removeEventListener('keydown', handleEscape);
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
+      // Close on Escape key
+      const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+          this.closeModal(modal);
+          document.removeEventListener('keydown', handleEscape);
+        }
+      };
+      document.addEventListener('keydown', handleEscape);
+    } catch (error) {
+      console.error('Error creating modal:', error);
+      alert('Error creating modal: ' + error.message);
+    }
   }
 
   renderCharactersPage(characters, page, charactersPerPage) {
@@ -554,12 +583,16 @@ class UserLookup {
   }
 
   closeModal(modal) {
-    modal.style.animation = 'fadeOut 0.3s ease';
+    // Add closing class for animation
+    modal.classList.add('modal-closing');
+    
+    // Wait for animation to complete, then hide and remove
     setTimeout(() => {
-      if (modal.parentNode) {
+      if (modal && modal.parentNode) {
+        modal.style.display = 'none'; // Hide before removing to prevent flash
         modal.parentNode.removeChild(modal);
       }
-    }, 300);
+    }, 280); // Slightly shorter to ensure it hides during animation
   }
 
   formatDate(date) {
@@ -577,19 +610,19 @@ class UserLookup {
   formatCharacterIconUrl(icon) {
     if (!icon) return '/images/ankleicon.png';
     
-    // If it's already a relative path or local URL, return as is
-    if (!icon.startsWith('http')) {
-      return `/api/images/${icon}`;
-    }
-    
-    // If it's a Google Cloud Storage URL, extract the filename and use proxy
+    // Check for Google Cloud Storage URL first
     if (icon.includes('storage.googleapis.com/tinglebot/')) {
       const filename = icon.split('/').pop();
       return `/api/images/${filename}`;
     }
     
-    // For other HTTP URLs, return as is
-    return icon;
+    // If it's another HTTP URL, return as is
+    if (icon.startsWith('http')) {
+      return icon;
+    }
+    
+    // For local filenames/relative paths, serve from static images folder
+    return `/images/${icon}`;
   }
 
   showLoading() {

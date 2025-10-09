@@ -626,8 +626,113 @@ app.get('/api/user', async (req, res) => {
 
 // ------------------- Section: User Lookup API Routes -------------------
 
+// Cache for users not in server (expires after 1 hour)
+let usersNotInServerCache = {
+  userIds: new Set(),
+  lastUpdated: null,
+  expiresIn: 60 * 60 * 1000, // 1 hour
+  isChecking: false // Prevent multiple simultaneous checks
+};
+
+// Function to check and update users not in server
+async function checkUsersInServer() {
+  // Prevent multiple simultaneous checks
+  if (usersNotInServerCache.isChecking) {
+    return;
+  }
+
+  const guildId = process.env.PROD_GUILD_ID;
+  const botToken = process.env.DISCORD_TOKEN;
+
+  if (!guildId || !botToken) {
+    console.warn('[server.js]: ⚠️  Cannot check users - Discord configuration missing');
+    return;
+  }
+
+  usersNotInServerCache.isChecking = true;
+  
+  try {
+    // Get all unique users from database
+    const allUsers = await User.aggregate([
+      {
+        $group: {
+          _id: '$discordId',
+          username: { $first: '$username' }
+        }
+      }
+    ]);
+
+    console.log(`[server.js]: 🔍 Checking ${allUsers.length} users against Discord server...`);
+
+    const notInServer = [];
+    let checked = 0;
+
+    // Check each user against Discord API
+    for (const user of allUsers) {
+      try {
+        const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${user._id}`, {
+          headers: {
+            'Authorization': `Bot ${botToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        checked++;
+
+        // If user not found (404), they're not in server
+        if (response.status === 404) {
+          notInServer.push({
+            discordId: user._id,
+            username: user.username
+          });
+        } else if (response.status === 429) {
+          // Rate limited - wait and retry
+          const retryAfter = parseInt(response.headers.get('retry-after')) || 1000;
+          await new Promise(resolve => setTimeout(resolve, retryAfter));
+          // Put user back in queue
+          checked--;
+          allUsers.push(user);
+        }
+
+        // Add delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+      } catch (error) {
+        console.error(`[server.js]: Error checking user ${user._id}:`, error.message);
+      }
+    }
+
+    // Update cache
+    usersNotInServerCache.userIds = new Set(notInServer.map(u => u.discordId));
+    usersNotInServerCache.lastUpdated = new Date();
+
+    // Log results
+    console.log(`\n[server.js]: ═══════════════════════════════════════════════`);
+    console.log(`[server.js]: 📊 USER CHECK COMPLETE`);
+    console.log(`[server.js]: ═══════════════════════════════════════════════`);
+    console.log(`[server.js]: Total users checked: ${checked}`);
+    console.log(`[server.js]: Users NOT in server: ${notInServer.length}`);
+    
+    if (notInServer.length > 0) {
+      console.log(`[server.js]: \n⚠️  Hidden users (not in server):`);
+      notInServer.forEach((user, index) => {
+        console.log(`[server.js]:   ${index + 1}. ${user.username} (${user.discordId})`);
+      });
+      console.log(`[server.js]: \n🚫 These users are HIDDEN from the user list view.`);
+    } else {
+      console.log(`[server.js]: ✅ All users are still in the server!`);
+    }
+    console.log(`[server.js]: ═══════════════════════════════════════════════\n`);
+
+  } catch (error) {
+    console.error('[server.js]: Error during automatic user check:', error);
+  } finally {
+    usersNotInServerCache.isChecking = false;
+  }
+}
+
 // ------------------- Function: searchUsers -------------------
-// Search users by username or Discord ID
+// Search users by username or Discord ID (filters out users not in server)
 app.get('/api/users/search', async (req, res) => {
   try {
     const { query } = req.query;
@@ -649,9 +754,21 @@ app.get('/api/users/search', async (req, res) => {
     .limit(50)
     .lean();
 
+    // Filter out users not in server based on cache
+    let usersInServer = users;
+    if (usersNotInServerCache.userIds.size > 0) {
+      usersInServer = users.filter(user => !usersNotInServerCache.userIds.has(user.discordId));
+      
+      // Log when users are being filtered from search
+      const hiddenCount = users.length - usersInServer.length;
+      if (hiddenCount > 0) {
+        console.log(`[server.js]: 🚫 Hiding ${hiddenCount} users not in server from search results`);
+      }
+    }
+
     // Get character counts for each user
     const usersWithCharacters = await Promise.all(
-      users.map(async (user) => {
+      usersInServer.map(async (user) => {
         const characterCount = await Character.countDocuments({ 
           userId: user.discordId,
           name: { $nin: ['Tingle', 'Tingle test', 'John'] }
@@ -671,28 +788,27 @@ app.get('/api/users/search', async (req, res) => {
 });
 
 // ------------------- Function: getAllUsers -------------------
-// Get all users with pagination
+// Get all users with pagination (filters out users not in Discord server based on cache)
 app.get('/api/users', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    // Get total count of unique users
-    const totalUsersResult = await User.aggregate([
-      {
-        $group: {
-          _id: '$discordId'
-        }
-      },
-      {
-        $count: 'total'
-      }
-    ]);
-    const totalUsers = totalUsersResult.length > 0 ? totalUsersResult[0].total : 0;
+    // Check if cache needs refresh (expired or never updated)
+    const now = new Date();
+    const cacheExpired = !usersNotInServerCache.lastUpdated || 
+                         (now - usersNotInServerCache.lastUpdated) > usersNotInServerCache.expiresIn;
     
-    // Get users for current page (with deduplication by discordId)
-    const users = await User.aggregate([
+    // Trigger automatic check if cache expired (runs in background)
+    if (cacheExpired && !usersNotInServerCache.isChecking) {
+      checkUsersInServer().catch(err => {
+        console.error('[server.js]: Error in background user check:', err);
+      });
+    }
+
+    // Get all unique users
+    const allUsers = await User.aggregate([
       {
         $group: {
           _id: '$discordId',
@@ -707,26 +823,34 @@ app.get('/api/users', async (req, res) => {
       },
       {
         $sort: { createdAt: -1, _id: 1 }
-      },
-      {
-        $skip: skip
-      },
-      {
-        $limit: limit
       }
     ]);
 
+    // Filter out users not in server based on cache
+    let usersInServer = allUsers;
+    if (usersNotInServerCache.userIds.size > 0) {
+      usersInServer = allUsers.filter(user => !usersNotInServerCache.userIds.has(user._id));
+      
+      // Log when users are being filtered
+      const hiddenCount = allUsers.length - usersInServer.length;
+      if (hiddenCount > 0) {
+        console.log(`[server.js]: 🚫 Hiding ${hiddenCount} users not in server from list view`);
+      }
+    }
 
+    // Apply pagination to filtered users
+    const totalUsers = usersInServer.length;
+    const paginatedUsers = usersInServer.slice(skip, skip + limit);
 
-    // Get character counts for each user
+    // Get character counts for paginated users
     const usersWithCharacters = await Promise.all(
-      users.map(async (user) => {
+      paginatedUsers.map(async (user) => {
         const characterCount = await Character.countDocuments({ 
-          userId: user._id, // Use _id from aggregated result
+          userId: user._id,
           name: { $nin: ['Tingle', 'Tingle test', 'John'] }
         });
         return {
-          discordId: user._id, // Map _id back to discordId for frontend compatibility
+          discordId: user._id,
           username: user.username,
           discriminator: user.discriminator,
           avatar: user.avatar,
@@ -791,6 +915,7 @@ app.get('/api/users/:discordId', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch user details' });
   }
 });
+
 
 // ------------------- Function: getActivities -------------------
 // Returns mock activity data for dashboard
@@ -1582,11 +1707,7 @@ app.get('/api/models/:modelType', async (req, res) => {
             
           // Transform character data
           finalData = filteredData.map(character => {
-            // Transform icon URL
-            if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-              const filename = character.icon.split('/').pop();
-              character.icon = filename;
-            }
+            // Keep icon URL as-is (no transformation needed)
             
             // Handle mod characters differently for user information
             if (character.isModCharacter) {
@@ -1714,11 +1835,7 @@ app.get('/api/models/:modelType', async (req, res) => {
           
           // Transform character data
           data.forEach(character => {
-            // Transform icon URL
-            if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-              const filename = character.icon.split('/').pop();
-              character.icon = filename;
-            }
+            // Keep icon URL as-is (no transformation needed)
             
             // Add user information
             const user = userMap[character.userId];
@@ -1875,13 +1992,8 @@ app.get('/api/user/characters', requireAuth, async (req, res) => {
     // Combine both character types
     const characters = [...regularCharacters, ...modCharacters];
     
-    // Transform icon URLs for characters and count spirit orbs from inventory
+    // Initialize spirit orbs count for characters
     characters.forEach(character => {
-      if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-        const filename = character.icon.split('/').pop();
-        character.icon = filename;
-      }
-      
       // Count spirit orbs from inventory (replace character model field)
       character.spiritOrbs = 0; // Will be updated with actual count from inventory
     });
@@ -2005,12 +2117,7 @@ app.get('/api/character-of-week', async (req, res) => {
       });
     }
     
-    // Transform icon URL if needed
-    if (currentCharacter.characterId && currentCharacter.characterId.icon && 
-        currentCharacter.characterId.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-      const filename = currentCharacter.characterId.icon.split('/').pop();
-      currentCharacter.characterId.icon = filename;
-    }
+    // Keep icon URL as-is (no transformation needed)
     
     // Calculate rotation information
     const now = new Date();
@@ -2584,25 +2691,7 @@ app.get('/api/relationships/all', async (req, res) => {
     
     console.log('[server.js]: 🌍 Total characters:', characters.length);
     
-    // Transform icon URLs for characters (batch operation)
-    characters.forEach(character => {
-      if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-        const filename = character.icon.split('/').pop();
-        character.icon = filename;
-      }
-    });
-    
-    // Transform icon URLs for relationships (batch operation)
-    relationships.forEach(relationship => {
-      if (relationship.characterId && relationship.characterId.icon && relationship.characterId.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-        const filename = relationship.characterId.icon.split('/').pop();
-        relationship.characterId.icon = filename;
-      }
-      if (relationship.targetCharacterId && relationship.targetCharacterId.icon && relationship.targetCharacterId.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-        const filename = relationship.targetCharacterId.icon.split('/').pop();
-        relationship.targetCharacterId.icon = filename;
-      }
-    });
+    // Keep icon URLs as-is (no transformation needed for characters or relationships)
     
     console.log('[server.js]: 🌍 Sending response with', characters.length, 'characters and', relationships.length, 'relationships');
     
@@ -2633,13 +2722,7 @@ app.get('/api/characters', async (req, res) => {
     // Combine both character types
     const characters = [...regularCharacters, ...modCharacters];
     
-    // Transform icon URLs
-    characters.forEach(character => {
-      if (character.icon && character.icon.startsWith('https://storage.googleapis.com/tinglebot/')) {
-        const filename = character.icon.split('/').pop();
-        character.icon = filename;
-      }
-    });
+    // Keep icon URLs as-is (no transformation needed)
     
     res.json({ characters });
   } catch (error) {
@@ -6426,6 +6509,14 @@ const startServer = async () => {
     // Start server
     app.listen(PORT, () => {
       console.log(`[server.js]: Server running on port ${PORT}`);
+      
+      // Trigger initial user check in background (after a short delay)
+      setTimeout(() => {
+        console.log('[server.js]: Starting automatic user check...');
+        checkUsersInServer().catch(err => {
+          console.error('[server.js]: Error in initial user check:', err);
+        });
+      }, 5000); // Wait 5 seconds after server starts
     });
   } catch (error) {
     console.error('[server.js]: Failed to start server:', error);

@@ -1131,55 +1131,6 @@ function showEditCharacterModal(character, parentModal) {
       <form id="edit-character-form" style="display: flex; flex-direction: column; gap: 1.5rem;">
         
         <div class="form-group">
-          <label for="edit-icon" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-color);">
-            Character Icon
-          </label>
-          <div style="display: flex; align-items: center; gap: 1rem;">
-            <img 
-              id="edit-icon-preview" 
-              src="${iconUrl}" 
-              alt="Character Icon" 
-              style="
-                width: 60px;
-                height: 60px;
-                border-radius: 50%;
-                object-fit: cover;
-                border: 2px solid var(--border-color);
-              "
-              onerror="this.src='/images/ankleicon.png'"
-            />
-            <div style="flex: 1;">
-              <input 
-                type="file" 
-                id="edit-icon" 
-                name="icon" 
-                accept="image/*"
-                style="display: none;"
-              />
-              <button 
-                type="button" 
-                id="upload-icon-btn"
-                style="
-                  padding: 0.5rem 1rem;
-                  background: var(--card-bg);
-                  color: var(--text-color);
-                  border: 1px solid var(--border-color);
-                  border-radius: 0.5rem;
-                  cursor: pointer;
-                  font-size: 0.9rem;
-                  transition: all 0.2s ease;
-                "
-              >
-                <i class="fas fa-upload"></i> Upload New Icon
-              </button>
-              <small style="color: var(--text-secondary); margin-top: 0.5rem; display: block;">
-                Recommended: Square image, at least 256x256px
-              </small>
-            </div>
-          </div>
-        </div>
-        
-        <div class="form-group">
           <label for="edit-age" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-color);">
             Age
           </label>
@@ -1339,47 +1290,6 @@ function showEditCharacterModal(character, parentModal) {
   editModal.appendChild(editModalContent);
   document.body.appendChild(editModal);
   
-  // Handle icon upload button click
-  const uploadIconBtn = editModal.querySelector('#upload-icon-btn');
-  const iconInput = editModal.querySelector('#edit-icon');
-  const iconPreview = editModal.querySelector('#edit-icon-preview');
-  
-  uploadIconBtn.addEventListener('click', () => {
-    iconInput.click();
-  });
-  
-  // Handle icon file selection and preview
-  let selectedIconFile = null;
-  iconInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        showProfileMessage('Please select a valid image file', 'error');
-        return;
-      }
-      
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        showProfileMessage('Image size must be less than 5MB', 'error');
-        return;
-      }
-      
-      selectedIconFile = file;
-      
-      // Show preview
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        iconPreview.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-      
-      uploadIconBtn.innerHTML = '<i class="fas fa-check"></i> Icon Selected';
-      uploadIconBtn.style.background = 'var(--primary-color)';
-      uploadIconBtn.style.color = 'white';
-    }
-  });
-  
   // Add birthday input formatting helper
   const birthdayInput = editModal.querySelector('#edit-birthday');
   birthdayInput.addEventListener('input', (e) => {
@@ -1416,11 +1326,6 @@ function showEditCharacterModal(character, parentModal) {
       formData.append('height', parseInt(form.height.value) || '');
       formData.append('birthday', birthdayValue);
       formData.append('canBeStolenFrom', form.canBeStolenFrom.checked);
-      
-      // Add icon if selected
-      if (selectedIconFile) {
-        formData.append('icon', selectedIconFile);
-      }
       
       const response = await fetch(`/api/characters/${character._id}/profile`, {
         method: 'PATCH',
@@ -1726,19 +1631,19 @@ function checkIfCharacterRolledToday(character) {
 function formatCharacterIconUrl(icon) {
   if (!icon) return '/images/ankleicon.png';
   
-  // If it's already a relative path or local URL, return as is
-  if (!icon.startsWith('http')) {
-    return `/api/images/${icon}`;
-  }
-  
-  // If it's a Google Cloud Storage URL, extract the filename and use proxy
+  // Check for Google Cloud Storage URL first
   if (icon.includes('storage.googleapis.com/tinglebot/')) {
     const filename = icon.split('/').pop();
     return `/api/images/${filename}`;
   }
   
-  // For other HTTP URLs, return as is
-  return icon;
+  // If it's another HTTP URL, return as is
+  if (icon.startsWith('http')) {
+    return icon;
+  }
+  
+  // For local filenames/relative paths, serve from static images folder
+  return `/images/${icon}`;
 }
 
 // ============================================================================
