@@ -71,6 +71,7 @@
   <link rel="stylesheet" href="css/relationships.css" />
   <link rel="stylesheet" href="css/settings.css" />
   <link rel="stylesheet" href="css/quests.css" />
+  <link rel="stylesheet" href="css/levels.css" />
   
   <!-- External Scripts with Integrity -->
   <script src="https://kit.fontawesome.com/262000d25d.js" crossorigin="anonymous"></script>
@@ -143,7 +144,7 @@
                 <span>Guest User</span>
               </div>
               <div class="guest-actions">
-                <a href="/login" class="login-button">
+                <a href="javascript:void(0)" onclick="redirectToLogin()" class="login-button">
                   <i class="fab fa-discord"></i>
                   Login with Discord
                 </a>
@@ -177,6 +178,9 @@
           </li>
           <li>
             <a href="#users" data-section="users-section"><i class="fas fa-users"></i><span>Users</span></a>
+          </li>
+          <li>
+            <a href="#levels" data-section="levels-section"><i class="fas fa-level-up-alt"></i><span>Levels</span></a>
           </li>
           <li>
             <a href="#commands" data-section="commands-section"><i class="fas fa-terminal"></i><span>Commands</span></a>
@@ -582,8 +586,49 @@
                 <span class="stat-value" id="profile-slots">2</span>
               </div>
               <div class="stat-item">
+                <span class="stat-label">Level</span>
+                <span class="stat-value" id="profile-level">1</span>
+              </div>
+              <div class="stat-item">
                 <span class="stat-label">Member Since</span>
                 <span class="stat-value" id="profile-joined">Loading...</span>
+              </div>
+            </div>
+            
+            <div id="profile-additional-info" class="profile-additional-info" style="margin-top: 1.5rem;">
+              <div class="profile-stats">
+                <div class="stat-item">
+                  <span class="stat-label">Total XP</span>
+                  <span class="stat-value" id="profile-xp">0</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Birthday</span>
+                  <span class="stat-value" id="profile-birthday">Not Set</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Status</span>
+                  <span class="stat-value" id="profile-status">Active</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Help Wanted</span>
+                  <span class="stat-value" id="profile-help-wanted">0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Help Wanted Quests Section -->
+          <div class="profile-help-wanted-section" style="margin-top: 2rem;">
+            <div class="profile-help-wanted-header">
+              <h3><i class="fas fa-hands-helping"></i> Help Wanted Quests</h3>
+              <div class="profile-help-wanted-count" id="profile-help-wanted-total">
+                <span id="help-wanted-total-count">0</span> total completions
+              </div>
+            </div>
+            <div class="profile-help-wanted-container" id="profile-help-wanted-container">
+              <div class="profile-help-wanted-loading" id="profile-help-wanted-loading">
+                <div class="loading-spinner"></div>
+                <p>Loading your help wanted completions...</p>
               </div>
             </div>
           </div>
@@ -998,6 +1043,360 @@
         </div>
       </section>
 
+      <!-- Levels Section -->
+      <section id="levels-section" style="display:none;">
+        <div class="dashboard-header">
+          <h1><i class="fas fa-level-up-alt"></i> Levels & Progression</h1>
+          <div class="dashboard-divider"></div>
+          <p class="dashboard-welcome">
+            Track your server activity level, view the leaderboard, and exchange your earned levels for tokens!
+          </p>
+        </div>
+
+        <!-- Guest Message -->
+        <div id="levels-guest-message" class="guest-message" style="display: none;">
+          <div class="levels-guest-message-content">
+            <i class="fas fa-level-up-alt"></i>
+            <h2>Login Required</h2>
+            <p>Please log in with Discord to view your level progression and exchange levels for tokens.</p>
+            <button class="login-button" onclick="redirectToLogin()">
+              <i class="fab fa-discord"></i>
+              Login with Discord
+            </button>
+          </div>
+        </div>
+
+        <!-- Levels Content (only shown when logged in) -->
+        <div id="levels-content" class="levels-content" style="display: none;">
+          
+          <!-- Levels Tabs -->
+          <div class="levels-tabs">
+            <button class="levels-tab active" data-tab="rank">
+              <i class="fas fa-user"></i>
+              <span>My Rank</span>
+            </button>
+            <button class="levels-tab" data-tab="leaderboard">
+              <i class="fas fa-trophy"></i>
+              <span>Leaderboard</span>
+            </button>
+            <button class="levels-tab" data-tab="exchange">
+              <i class="fas fa-exchange-alt"></i>
+              <span>Exchange</span>
+            </button>
+          </div>
+
+          <!-- Rank Tab -->
+          <div class="levels-tab-content active" id="rank-tab">
+            <div class="level-rank-container">
+              <!-- User Level Card -->
+              <div class="level-card">
+                <div class="level-card-header">
+                  <div class="level-card-icon">
+                    <i class="fas fa-star"></i>
+                  </div>
+                  <div class="level-card-info">
+                    <h3>Your Level</h3>
+                    <p class="level-number" id="user-level">Loading...</p>
+                  </div>
+                </div>
+                <div class="level-card-body">
+                  <div class="level-stat">
+                    <span class="level-stat-label">Rank</span>
+                    <span class="level-stat-value" id="user-rank">-</span>
+                  </div>
+                  <div class="level-stat">
+                    <span class="level-stat-label">Total XP</span>
+                    <span class="level-stat-value" id="user-xp">-</span>
+                  </div>
+                  <div class="level-stat">
+                    <span class="level-stat-label">Messages</span>
+                    <span class="level-stat-value" id="user-messages">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Progress Card -->
+              <div class="level-card">
+                <div class="level-card-header">
+                  <div class="level-card-icon">
+                    <i class="fas fa-chart-line"></i>
+                  </div>
+                  <div class="level-card-info">
+                    <h3>Progress to Next Level</h3>
+                    <p class="level-next" id="next-level-text">Level 2</p>
+                  </div>
+                </div>
+                <div class="level-card-body">
+                  <div class="level-progress-bar-container">
+                    <div class="level-progress-bar">
+                      <div class="level-progress-fill" id="level-progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="level-progress-text">
+                      <span id="level-progress-percentage">0%</span>
+                      <span id="level-progress-amount">0 / 0 XP</span>
+                    </div>
+                  </div>
+                  <div class="level-import-info" id="level-import-info" style="display: none;">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Imported from MEE6 (Level <span id="imported-level">-</span>)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Exchange Preview Card -->
+              <div class="level-card">
+                <div class="level-card-header">
+                  <div class="level-card-icon">
+                    <i class="fas fa-coins"></i>
+                  </div>
+                  <div class="level-card-info">
+                    <h3>Exchange Preview</h3>
+                    <p class="level-subtitle">Convert levels to tokens</p>
+                  </div>
+                </div>
+                <div class="level-card-body">
+                  <div class="level-stat">
+                    <span class="level-stat-label">Exchangeable Levels</span>
+                    <span class="level-stat-value highlight" id="exchangeable-levels">-</span>
+                  </div>
+                  <div class="level-stat">
+                    <span class="level-stat-label">Potential Tokens</span>
+                    <span class="level-stat-value highlight" id="potential-tokens">-</span>
+                  </div>
+                  <button class="level-exchange-preview-btn" onclick="levelsModule.switchTab('exchange')">
+                    <i class="fas fa-exchange-alt"></i>
+                    Go to Exchange
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Leaderboard Tab -->
+          <div class="levels-tab-content" id="leaderboard-tab">
+            <div class="leaderboard-container">
+              <div class="leaderboard-header">
+                <h3><i class="fas fa-trophy"></i> Top Yappers</h3>
+                <div class="leaderboard-controls">
+                  <select id="leaderboard-limit" onchange="levelsModule.changeLeaderboardLimit(this.value)">
+                    <option value="10" selected>Top 10</option>
+                    <option value="25">Top 25</option>
+                    <option value="50">Top 50</option>
+                  </select>
+                </div>
+              </div>
+              <div class="leaderboard-list" id="leaderboard-list">
+                <!-- Leaderboard entries will be loaded here -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Exchange Tab -->
+          <div class="levels-tab-content" id="exchange-tab">
+            <div class="exchange-container">
+              <div class="exchange-header">
+                <h3><i class="fas fa-exchange-alt"></i> Exchange Levels for Tokens</h3>
+                <p>Convert your earned levels into tokens to spend in the village shops!</p>
+              </div>
+              
+              <div class="exchange-info-cards">
+                <div class="exchange-info-card">
+                  <div class="exchange-info-icon">
+                    <i class="fas fa-level-up-alt"></i>
+                  </div>
+                  <div class="exchange-info-content">
+                    <h4>Current Level</h4>
+                    <p class="exchange-info-value" id="exchange-current-level">-</p>
+                  </div>
+                </div>
+                
+                <div class="exchange-info-card">
+                  <div class="exchange-info-icon">
+                    <i class="fas fa-history"></i>
+                  </div>
+                  <div class="exchange-info-content">
+                    <h4>Last Exchanged Level</h4>
+                    <p class="exchange-info-value" id="exchange-last-level">-</p>
+                  </div>
+                </div>
+                
+                <div class="exchange-info-card highlight">
+                  <div class="exchange-info-icon">
+                    <i class="fas fa-arrow-circle-up"></i>
+                  </div>
+                  <div class="exchange-info-content">
+                    <h4>Exchangeable Levels</h4>
+                    <p class="exchange-info-value" id="exchange-available-levels">-</p>
+                  </div>
+                </div>
+                
+                <div class="exchange-info-card highlight">
+                  <div class="exchange-info-icon">
+                    <i class="fas fa-coins"></i>
+                  </div>
+                  <div class="exchange-info-content">
+                    <h4>Tokens You'll Receive</h4>
+                    <p class="exchange-info-value" id="exchange-tokens-receive">-</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="exchange-rate-info">
+                <i class="fas fa-info-circle"></i>
+                <span>Exchange Rate: <strong>1 Level = 100 Tokens</strong></span>
+              </div>
+
+              <div class="exchange-action">
+                <button class="exchange-btn" id="exchange-btn" onclick="levelsModule.performExchange()" disabled>
+                  <i class="fas fa-exchange-alt"></i>
+                  <span>Exchange Levels</span>
+                </button>
+                <p class="exchange-note" id="exchange-note">Level up more to exchange levels for tokens!</p>
+              </div>
+
+              <div class="exchange-history">
+                <h4><i class="fas fa-history"></i> Exchange History</h4>
+                <div class="exchange-history-stats">
+                  <div class="exchange-stat">
+                    <span class="exchange-stat-label">Total Levels Exchanged</span>
+                    <span class="exchange-stat-value" id="total-levels-exchanged">-</span>
+                  </div>
+                  <div class="exchange-stat">
+                    <span class="exchange-stat-label">Current Token Balance</span>
+                    <span class="exchange-stat-value" id="current-token-balance">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Loading State -->
+        <div id="levels-loading" class="loading-state" style="display: none;">
+          <div class="loading-spinner"></div>
+          <p>Loading level data...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="levels-error" class="error-state" style="display: none;">
+          <i class="fas fa-exclamation-circle"></i>
+          <p>Failed to load level data</p>
+          <button class="retry-button" onclick="levelsModule.loadLevelData()">Retry</button>
+        </div>
+
+        <!-- User Details Modal -->
+        <div id="user-details-modal" class="user-details-modal">
+          <div class="user-details-modal-content">
+            <div class="user-details-modal-header">
+              <button class="user-details-modal-close" onclick="levelsModule.closeUserDetailsModal()">
+                <i class="fas fa-times"></i>
+              </button>
+              <div class="user-details-modal-avatar">
+                <img id="user-details-avatar" src="/images/ankleicon.png" alt="User Avatar">
+              </div>
+              <div class="user-details-modal-user-info">
+                <h3 class="user-details-modal-username" id="user-details-username">Username</h3>
+                <p class="user-details-modal-level" id="user-details-level-header">Level 0</p>
+              </div>
+            </div>
+            <div class="user-details-modal-body">
+              <!-- Rank Badge -->
+              <div class="user-details-rank-badge" id="user-details-rank-badge">
+                <i class="fas fa-medal"></i>
+                <span id="user-details-rank-text">Rank #0</span>
+              </div>
+
+              <!-- Statistics Section -->
+              <div class="user-details-section">
+                <h4 class="user-details-section-title">
+                  <i class="fas fa-chart-bar"></i>
+                  Statistics
+                </h4>
+                <div class="user-details-stats-grid">
+                  <div class="user-details-stat-card">
+                    <p class="user-details-stat-label">Current Level</p>
+                    <p class="user-details-stat-value highlight" id="user-details-level">0</p>
+                  </div>
+                  <div class="user-details-stat-card">
+                    <p class="user-details-stat-label">Total XP</p>
+                    <p class="user-details-stat-value" id="user-details-xp">0</p>
+                  </div>
+                  <div class="user-details-stat-card">
+                    <p class="user-details-stat-label">Total Messages</p>
+                    <p class="user-details-stat-value" id="user-details-messages">0</p>
+                  </div>
+                  <div class="user-details-stat-card">
+                    <p class="user-details-stat-label">Server Rank</p>
+                    <p class="user-details-stat-value" id="user-details-rank">0</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Progress Section -->
+              <div class="user-details-section">
+                <h4 class="user-details-section-title">
+                  <i class="fas fa-chart-line"></i>
+                  Progress to Next Level
+                </h4>
+                <div class="user-details-progress-section">
+                  <div class="user-details-progress-header">
+                    <span class="user-details-progress-label">Current Progress</span>
+                    <span class="user-details-progress-next-level" id="user-details-next-level">Level 0</span>
+                  </div>
+                  <div class="user-details-progress-bar">
+                    <div class="user-details-progress-fill" id="user-details-progress-fill" style="width: 0%;"></div>
+                  </div>
+                  <div class="user-details-progress-text">
+                    <span id="user-details-progress-percentage">0%</span>
+                    <span id="user-details-progress-amount">0 / 0 XP</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Exchange Confirmation Modal -->
+        <div id="exchange-modal" class="exchange-modal">
+          <div class="exchange-modal-content">
+            <div class="exchange-modal-header">
+              <div class="exchange-modal-icon">
+                <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+              </div>
+              <h3>Confirm Exchange</h3>
+            </div>
+            <div class="exchange-modal-body">
+              <p>Are you sure you want to exchange your levels for tokens? <strong>This action cannot be undone.</strong></p>
+              <div class="exchange-modal-details">
+                <div class="exchange-modal-detail">
+                  <span class="exchange-modal-detail-label">Levels to Exchange:</span>
+                  <span class="exchange-modal-detail-value" id="modal-levels-to-exchange">-</span>
+                </div>
+                <div class="exchange-modal-detail">
+                  <span class="exchange-modal-detail-label">Tokens to Receive:</span>
+                  <span class="exchange-modal-detail-value highlight" id="modal-tokens-to-receive">-</span>
+                </div>
+              </div>
+              <div class="exchange-modal-warning">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                <span>Your level progress will be reset, but you'll keep your current level.</span>
+              </div>
+            </div>
+            <div class="exchange-modal-actions">
+              <button class="exchange-modal-btn exchange-modal-btn-cancel" onclick="levelsModule.closeExchangeModal()">
+                <i class="fas fa-times"></i>
+                <span>Cancel</span>
+              </button>
+              <button class="exchange-modal-btn exchange-modal-btn-confirm" onclick="levelsModule.confirmExchange()">
+                <i class="fas fa-check"></i>
+                <span>Confirm Exchange</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Calendar Section -->
       <section id="calendar-section" style="display:none;">
         <div class="dashboard-header">
@@ -1199,7 +1598,7 @@
             <i class="fas fa-heart"></i>
             <h2>Login Required</h2>
             <p>Please log in with Discord to manage character relationships.</p>
-                    <button class="login-button" onclick="window.location.href='/login'">
+                    <button class="login-button" onclick="redirectToLogin()">
           <i class="fab fa-discord"></i>
           Login with Discord
         </button>
@@ -2050,6 +2449,7 @@
       <script type="module" src="js/suggestions.js"></script>
       <script type="module" src="js/memberLore.js"></script>
       <script type="module" src="js/settings.js"></script>
+      <script type="module" src="js/levels.js"></script>
   
   <!-- Performance and Error Handling Script -->
   <script src="js/performance.js"></script>

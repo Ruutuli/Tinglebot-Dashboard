@@ -14,7 +14,7 @@ const VillageShopItemSchema = new Schema({
   type: { type: [String], default: ['Unknown'] },
   subtype: { type: [String], default: ['None'] },
   recipeTag: { type: [String], default: ['#Not Craftable'] },
-  craftingMaterial: { type: [String], default: [] },
+  craftingMaterial: { type: [Schema.Types.Mixed], default: [] },
   buyPrice: { type: Number, default: 0 },
   sellPrice: { type: Number, default: 0 },
   staminaToCraft: { type: Number, default: null },
@@ -47,6 +47,60 @@ const VillageShopItemSchema = new Schema({
   allJobsTags: { type: [String], default: ['None'] },
   stock: { type: Number, required: true },
 }, { collection: 'villageShops', timestamps: true, strict: true }); // strict:true ensures only defined fields are saved
+
+// ------------------- Pre-save hook to fix data type issues -------------------
+VillageShopItemSchema.pre('save', function(next) {
+  try {
+    // Fix craftingMaterial if it contains stringified arrays
+    if (this.craftingMaterial && Array.isArray(this.craftingMaterial)) {
+      this.craftingMaterial = this.craftingMaterial.map(item => {
+        if (typeof item === 'string' && item.startsWith('[') && item.endsWith(']')) {
+          try {
+            // Try to parse the stringified array
+            const parsed = JSON.parse(item);
+            if (Array.isArray(parsed)) {
+              // If it's an array of objects, return the array
+              return parsed;
+            } else {
+              return item; // Return as-is if not an array
+            }
+          } catch (e) {
+            console.warn(`[VillageShopsModel]: Could not parse craftingMaterial item: ${item}`);
+            return item; // Return as-is if parsing fails
+          }
+        }
+        return item;
+      });
+      
+      // Flatten any nested arrays that might have been created
+      this.craftingMaterial = this.craftingMaterial.flat();
+    }
+    
+    // Ensure all array fields are properly formatted
+    const arrayFields = ['category', 'type', 'subtype', 'recipeTag', 'obtain', 'obtainTags', 
+                        'craftingJobs', 'craftingTags', 'locations', 'locationsTags', 'allJobs', 'allJobsTags'];
+    
+    for (const field of arrayFields) {
+      if (this[field] && !Array.isArray(this[field])) {
+        console.warn(`[VillageShopsModel]: Converting ${field} from ${typeof this[field]} to array`);
+        this[field] = [this[field]];
+      }
+    }
+    
+    // Fix specialWeather field if it's an object instead of boolean
+    if (this.specialWeather && typeof this.specialWeather === 'object') {
+      console.warn(`[VillageShopsModel]: Converting specialWeather from object to boolean for item: ${this.itemName}`);
+      // Check if any weather condition is true in the object
+      const hasSpecialWeather = Object.values(this.specialWeather).some(value => value === true);
+      this.specialWeather = hasSpecialWeather;
+    }
+    
+    next();
+  } catch (error) {
+    console.error(`[VillageShopsModel]: Error in pre-save hook:`, error);
+    next(error);
+  }
+});
 
 // ------------------- Export the VillageShopItem model -------------------
 module.exports = mongoose.model('VillageShopItem', VillageShopItemSchema);

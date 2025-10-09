@@ -246,6 +246,91 @@ const ItemSchema = new Schema(
 // ============================================================================
 ItemSchema.index({ itemName: 1 });
 
+// ============================================================================
+// Helper Functions for Job Categorization
+// ============================================================================
+
+// Import job data from jobData to categorize jobs properly
+const { jobPerks } = require('../data/jobData');
+
+/**
+ * Get all jobs that have a specific perk type
+ * @param {string} perkType - The perk type to filter by (e.g., 'GATHERING', 'LOOTING', 'CRAFTING')
+ * @returns {string[]} Array of job names with that perk
+ */
+ItemSchema.statics.getJobsByPerk = function(perkType) {
+  if (!jobPerks || !Array.isArray(jobPerks)) {
+    console.warn('[ItemModel.js]: jobPerks not available, returning empty array');
+    return [];
+  }
+  
+  return jobPerks
+    .filter(job => job.perk && job.perk.toUpperCase().includes(perkType.toUpperCase()))
+    .map(job => job.job);
+};
+
+/**
+ * Get all gathering jobs (jobs with GATHERING perk)
+ * @returns {string[]} Array of gathering job names
+ */
+ItemSchema.statics.getGatheringJobs = function() {
+  return this.getJobsByPerk('GATHERING');
+};
+
+/**
+ * Get all looting jobs (jobs with LOOTING perk)
+ * @returns {string[]} Array of looting job names
+ */
+ItemSchema.statics.getLootingJobs = function() {
+  return this.getJobsByPerk('LOOTING');
+};
+
+/**
+ * Get all crafting jobs (jobs with CRAFTING perk)
+ * @returns {string[]} Array of crafting job names
+ */
+ItemSchema.statics.getCraftingJobs = function() {
+  return this.getJobsByPerk('CRAFTING');
+};
+
+/**
+ * Get all boosting jobs (jobs with BOOST perk)
+ * @returns {string[]} Array of boosting job names
+ */
+ItemSchema.statics.getBoostingJobs = function() {
+  return this.getJobsByPerk('BOOST');
+};
+
+/**
+ * Check if a specific job has a specific perk
+ * @param {string} jobName - The job name to check
+ * @param {string} perkType - The perk type to check for
+ * @returns {boolean} True if the job has that perk
+ */
+ItemSchema.statics.jobHasPerk = function(jobName, perkType) {
+  if (!jobPerks || !Array.isArray(jobPerks)) {
+    console.warn('[ItemModel.js]: jobPerks not available, returning false');
+    return false;
+  }
+  
+  const job = jobPerks.find(j => j.job.toLowerCase() === jobName.toLowerCase());
+  return job ? job.perk.toUpperCase().includes(perkType.toUpperCase()) : false;
+};
+
+/**
+ * Get the perk type for a specific job
+ * @param {string} jobName - The job name to get perk for
+ * @returns {string|null} The perk type or null if not found
+ */
+ItemSchema.statics.getJobPerk = function(jobName) {
+  if (!jobPerks || !Array.isArray(jobPerks)) {
+    console.warn('[ItemModel.js]: jobPerks not available, returning null');
+    return null;
+  }
+  
+  const job = jobPerks.find(j => j.job.toLowerCase() === jobName.toLowerCase());
+  return job ? job.perk : null;
+};
 
 // ============================================================================
 // Exports

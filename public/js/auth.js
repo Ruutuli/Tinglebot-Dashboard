@@ -29,8 +29,20 @@ async function initUserAuth() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('login') === 'success') {
       console.log('[auth.js]: ✅ Login success detected from URL parameter');
-      // Remove the parameter from URL
-      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Check if there's a returnTo hash stored
+      const returnTo = sessionStorage.getItem('returnTo');
+      if (returnTo) {
+        console.log('[auth.js]: 📍 Returning to saved location:', returnTo);
+        sessionStorage.removeItem('returnTo');
+        // Update URL without the login parameter and with the saved hash
+        window.history.replaceState({}, document.title, window.location.pathname + returnTo);
+        window.location.hash = returnTo;
+      } else {
+        // Remove the parameter from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      
       // Wait a moment for server to process login
       setTimeout(async () => {
         await checkUserAuthStatus();
@@ -56,6 +68,20 @@ async function initUserAuth() {
     showGuestUser();
   }
 }
+
+// ------------------- Function: redirectToLogin -------------------
+// Redirects to login page while preserving current location
+window.redirectToLogin = function() {
+  // Save current hash/page so we can return after login
+  const currentHash = window.location.hash;
+  if (currentHash && currentHash !== '#' && currentHash !== '#dashboard-section') {
+    sessionStorage.setItem('returnTo', currentHash);
+    console.log('[auth.js]: 💾 Saving return location:', currentHash);
+  }
+  
+  // Redirect to login page
+  window.location.href = '/login';
+};
 
 // ============================================================================
 // ------------------- Section: Authentication Status -------------------

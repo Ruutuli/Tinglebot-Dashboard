@@ -80,6 +80,12 @@ const characterSchema = new Schema({
   blightedAt: { type: Date, default: null },
   blightStage: { type: Number, default: 0 },
   blightPaused: { type: Boolean, default: false },
+  blightPauseInfo: {
+    pausedAt: { type: Date, default: null },
+    pausedBy: { type: String, default: null },
+    pausedByUsername: { type: String, default: null },
+    reason: { type: String, default: null }
+  },
   lastRollDate: { type: Date, default: null },
   deathDeadline: { type: Date, default: null },
   blightEffects: {
@@ -119,6 +125,15 @@ const characterSchema = new Schema({
   inJail: { type: Boolean, default: false },
   jailReleaseTime: { type: Date, default: null },
   canBeStolenFrom: { type: Boolean, default: true },
+  
+  // ------------------- Steal Protection -------------------
+  // Tracks protection from steal attempts
+  stealProtection: {
+    // Protection: 2-hour cooldown after failed steal, midnight EST after successful steal
+    isProtected: { type: Boolean, default: false },
+    protectionEndTime: { type: Date, default: null }
+  },
+  
   dailyRoll: {
     type: Map,
     of: Schema.Types.Mixed,
@@ -184,6 +199,55 @@ const characterSchema = new Schema({
 characterSchema.pre('save', function (next) {
   if (this.isNew || this.isModified('jobVoucher')) {
     this.jobVoucher = false;
+  }
+  
+  next();
+});
+
+// ============================================================================
+// ------------------- Protection Helper Methods -------------------
+// ============================================================================
+
+// Check if protection is expired
+characterSchema.methods.isProtectionExpired = function() {
+  if (!this.stealProtection.isProtected) {
+    return true;
+  }
+  
+  if (!this.stealProtection.protectionEndTime) {
+    return true;
+  }
+  
+  return new Date() >= this.stealProtection.protectionEndTime;
+};
+
+// Get remaining protection time
+characterSchema.methods.getProtectionTimeLeft = function() {
+  if (!this.stealProtection.isProtected || !this.stealProtection.protectionEndTime) {
+    return 0;
+  }
+  
+  const timeLeft = this.stealProtection.protectionEndTime.getTime() - Date.now();
+  return timeLeft > 0 ? timeLeft : 0;
+};
+
+// Set protection
+characterSchema.methods.setProtection = function(duration = 2 * 60 * 60 * 1000) { // Default 2 hours
+  this.stealProtection.isProtected = true;
+  this.stealProtection.protectionEndTime = new Date(Date.now() + duration);
+};
+
+// Clear protection
+characterSchema.methods.clearProtection = function() {
+  this.stealProtection.isProtected = false;
+  this.stealProtection.protectionEndTime = null;
+};
+
+// Pre-save middleware to clean up expired protections
+characterSchema.pre('save', function(next) {
+  // Clean up expired protection
+  if (this.stealProtection.isProtected && this.isProtectionExpired()) {
+    this.clearProtection();
   }
   
   next();

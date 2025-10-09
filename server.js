@@ -19,6 +19,8 @@ const DiscordStrategy = require('passport-discord').Strategy;
 const { MongoClient } = require('mongodb');
 const helmet = require('helmet');
 const compression = require('compression');
+const multer = require('multer');
+const fs = require('fs').promises;
 
 // Import database methods from db.js
 const {
@@ -285,7 +287,7 @@ app.use(helmet({
       "style-src": ["'self'", "'unsafe-inline'", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com"],
       "img-src": ["'self'", "data:", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://cdn.discordapp.com", "https://storage.googleapis.com", "https://static.wixstatic.com"],
       "font-src": ["'self'", "data:", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://cdn.jsdelivr.net"],
-      "connect-src": ["'self'", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://discord.com", "https://storage.googleapis.com"],
+      "connect-src": ["'self'", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://discord.com", "https://storage.googleapis.com", "https://cdn.jsdelivr.net"],
       "frame-ancestors": ["'none'"],
       "upgrade-insecure-requests": [],
       "script-src-attr": ["'unsafe-inline'"]
@@ -321,6 +323,32 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
+
+// Multer configuration for icon uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, 'images'));
+  },
+  filename: function (req, file, cb) {
+    // Create a unique filename
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'character-icon-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: function (req, file, cb) {
+    // Accept images only
+    if (!file.mimetype.startsWith('image/')) {
+      cb(new Error('Only image files are allowed!'), false);
+      return;
+    }
+    cb(null, true);
+  }
+});
 
 // HTTPS redirect middleware (only in production)
 if (isProduction) {
@@ -540,8 +568,36 @@ app.get('/api/user', async (req, res) => {
           isAdmin = false;
         }
       }
+      
+      // Fetch full user data from database to get leveling, birthday, helpWanted, etc.
+      try {
+        const dbUser = await User.findOne({ discordId: req.user.discordId })
+          .select('discordId username email avatar discriminator tokens characterSlot status leveling birthday helpWanted createdAt')
+          .lean();
+        
+        if (dbUser) {
+          const authInfo = {
+            isAuthenticated: true,
+            isAdmin: isAdmin,
+            user: {
+              ...dbUser,
+              id: dbUser._id
+            },
+            session: req.session ? {
+              id: req.session.id,
+              passport: req.session.passport
+            } : null
+          };
+          
+          return res.json(authInfo);
+        }
+      } catch (dbError) {
+        console.error('[server.js]: Error fetching user from database:', dbError);
+        // Fall through to use session data
+      }
     }
     
+    // Fallback to session data only if not authenticated or DB fetch failed
     const authInfo = {
       isAuthenticated: req.isAuthenticated(),
       isAdmin: isAdmin,
@@ -1843,6 +1899,90 @@ app.get('/api/user/characters', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching user characters:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: updateCharacterProfile -------------------
+// Updates character profile information (editable fields only)
+app.patch('/api/characters/:id/profile', requireAuth, upload.single('icon'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.discordId;
+    const { age, pronouns, height, birthday, canBeStolenFrom } = req.body;
+    
+    // Find the character and verify ownership
+    const character = await Character.findOne({ _id: id, userId });
+    
+    if (!character) {
+      return res.status(404).json({ error: 'Character not found or access denied' });
+    }
+    
+    // Validate birthday format (MM-DD)
+    if (birthday !== undefined && birthday !== null && birthday !== '') {
+      const birthdayRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/;
+      if (!birthdayRegex.test(birthday)) {
+        return res.status(400).json({ error: 'Birthday must be in MM-DD format (e.g., 01-15)' });
+      }
+    }
+    
+    // Handle icon upload
+    if (req.file) {
+      // Delete old icon file if it exists and is not the default
+      if (character.icon && !character.icon.includes('ankleicon') && !character.icon.includes('http')) {
+        try {
+          const oldIconPath = path.join(__dirname, 'images', character.icon);
+          await fs.unlink(oldIconPath).catch(() => {}); // Ignore errors if file doesn't exist
+        } catch (err) {
+          console.log('[server.js]: Could not delete old icon:', err.message);
+        }
+      }
+      
+      // Set new icon filename
+      character.icon = req.file.filename;
+    }
+    
+    // Update only the allowed fields
+    if (age !== undefined && age !== '') {
+      character.age = parseInt(age) || null;
+    }
+    
+    if (pronouns !== undefined) {
+      character.pronouns = pronouns;
+    }
+    
+    if (height !== undefined && height !== '') {
+      character.height = parseInt(height) || null;
+    }
+    
+    if (birthday !== undefined) {
+      character.birthday = birthday;
+    }
+    
+    // Handle permanent steal protection opt-out
+    if (canBeStolenFrom !== undefined) {
+      // Convert string 'true'/'false' to boolean
+      const canBeStolen = canBeStolenFrom === 'true' || canBeStolenFrom === true;
+      character.canBeStolenFrom = canBeStolen;
+    }
+    
+    await character.save();
+    
+    res.json({ 
+      message: 'Character profile updated successfully',
+      character: {
+        _id: character._id,
+        name: character.name,
+        age: character.age,
+        pronouns: character.pronouns,
+        height: character.height,
+        birthday: character.birthday,
+        icon: character.icon,
+        canBeStolenFrom: character.canBeStolenFrom
+      }
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error updating character profile:', error);
+    res.status(500).json({ error: 'Failed to update character profile' });
   }
 });
 
@@ -6027,6 +6167,226 @@ app.get('/api/user/export-all', async (req, res) => {
   } catch (error) {
     console.error('Error exporting user data:', error);
     res.status(500).json({ error: 'Failed to export user data' });
+  }
+});
+
+// ------------------- Section: Leveling System API Routes -------------------
+
+// Get user's level and rank information
+app.get('/api/user/levels/rank', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findOne({ discordId: req.user.discordId });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Get leveling data
+    const leveling = user.leveling || {
+      xp: 0,
+      level: 1,
+      lastMessageTime: null,
+      totalMessages: 0
+    };
+    
+    // Calculate progress to next level
+    const progress = user.getProgressToNextLevel();
+    
+    // Get rank (position on leaderboard)
+    const higherRankedUsers = await User.countDocuments({
+      $or: [
+        { 'leveling.level': { $gt: leveling.level } },
+        { 
+          'leveling.level': leveling.level,
+          'leveling.xp': { $gt: leveling.xp }
+        }
+      ]
+    });
+    const rank = higherRankedUsers + 1;
+    
+    // Get exchange information
+    const exchangeInfo = user.getExchangeableLevels();
+    
+    res.json({
+      success: true,
+      level: leveling.level,
+      xp: leveling.xp,
+      totalMessages: leveling.totalMessages,
+      rank: rank,
+      progress: progress,
+      exchange: exchangeInfo,
+      hasImportedFromMee6: leveling.hasImportedFromMee6 || false,
+      importedMee6Level: leveling.importedMee6Level || null
+    });
+  } catch (error) {
+    console.error('[server.js]: Error fetching user level rank:', error);
+    res.status(500).json({ error: 'Failed to fetch level rank' });
+  }
+});
+
+// Get leaderboard
+app.get('/api/levels/leaderboard', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const limitCapped = Math.min(Math.max(limit, 5), 50); // Between 5 and 50
+    
+    const topUsers = await User.find({})
+      .sort({ 'leveling.level': -1, 'leveling.xp': -1 })
+      .limit(limitCapped)
+      .select('discordId username discriminator avatar leveling')
+      .lean();
+    
+    // Format the response
+    const leaderboard = topUsers.map((user, index) => ({
+      rank: index + 1,
+      discordId: user.discordId,
+      username: user.username || 'Unknown',
+      discriminator: user.discriminator || '0000',
+      avatar: user.avatar,
+      level: user.leveling?.level || 1,
+      xp: user.leveling?.xp || 0,
+      totalMessages: user.leveling?.totalMessages || 0
+    }));
+    
+    res.json({
+      success: true,
+      leaderboard: leaderboard,
+      total: leaderboard.length
+    });
+  } catch (error) {
+    console.error('[server.js]: Error fetching leaderboard:', error);
+    res.status(500).json({ error: 'Failed to fetch leaderboard' });
+  }
+});
+
+// Get individual user level details
+app.get('/api/levels/user/:discordId', async (req, res) => {
+  try {
+    const { discordId } = req.params;
+    
+    const user = await User.findOne({ discordId: discordId })
+      .select('discordId username discriminator avatar leveling')
+      .lean();
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const leveling = user.leveling || {
+      xp: 0,
+      level: 1,
+      lastMessageTime: null,
+      totalMessages: 0
+    };
+    
+    // Calculate progress to next level using cumulative XP
+    const currentLevel = leveling.level;
+    const totalXP = leveling.xp;
+    
+    // Helper function to get XP required for a specific level
+    const getXPForLevel = (level) => {
+      if (level < 1) return 0;
+      return Math.floor(5 * Math.pow(level, 2) + 50 * level + 100);
+    };
+    
+    // Calculate cumulative XP needed to reach current level
+    let cumulativeXPForCurrentLevel = 0;
+    for (let i = 2; i <= currentLevel; i++) {
+      cumulativeXPForCurrentLevel += getXPForLevel(i);
+    }
+    
+    // XP needed for next level
+    const xpNeededForNextLevel = getXPForLevel(currentLevel + 1);
+    
+    // Progress within current level
+    const progressXP = totalXP - cumulativeXPForCurrentLevel;
+    const clampedProgress = Math.max(0, Math.min(progressXP, xpNeededForNextLevel));
+    const percentage = Math.min(100, Math.max(0, Math.round((clampedProgress / xpNeededForNextLevel) * 100)));
+    
+    // Get rank (position on leaderboard)
+    const higherRankedUsers = await User.countDocuments({
+      $or: [
+        { 'leveling.level': { $gt: leveling.level } },
+        { 
+          'leveling.level': leveling.level,
+          'leveling.xp': { $gt: leveling.xp }
+        }
+      ]
+    });
+    const rank = higherRankedUsers + 1;
+    
+    res.json({
+      success: true,
+      discordId: user.discordId,
+      username: user.username || 'Unknown',
+      discriminator: user.discriminator || '0000',
+      avatar: user.avatar,
+      level: leveling.level,
+      xp: leveling.xp,
+      totalMessages: leveling.totalMessages,
+      rank: rank,
+      progress: {
+        current: clampedProgress,
+        needed: xpNeededForNextLevel,
+        percentage: percentage
+      }
+    });
+  } catch (error) {
+    console.error('[server.js]: Error fetching user level details:', error);
+    res.status(500).json({ error: 'Failed to fetch user level details' });
+  }
+});
+
+// Get exchange status and perform exchange
+app.post('/api/user/levels/exchange', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findOne({ discordId: req.user.discordId });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Perform the exchange
+    const exchangeResult = await user.exchangeLevelsForTokens();
+    
+    if (!exchangeResult.success) {
+      return res.json(exchangeResult);
+    }
+    
+    // Update token balance
+    user.tokens = (user.tokens || 0) + exchangeResult.tokensReceived;
+    await user.save();
+    
+    res.json({
+      ...exchangeResult,
+      newTokenBalance: user.tokens
+    });
+  } catch (error) {
+    console.error('[server.js]: Error performing level exchange:', error);
+    res.status(500).json({ error: 'Failed to perform level exchange' });
+  }
+});
+
+// Get exchange status only (no exchange)
+app.get('/api/user/levels/exchange-status', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findOne({ discordId: req.user.discordId });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const exchangeInfo = user.getExchangeableLevels();
+    
+    res.json({
+      success: true,
+      ...exchangeInfo,
+      currentTokenBalance: user.tokens || 0,
+      totalLevelsExchanged: user.leveling?.totalLevelsExchanged || 0
+    });
+  } catch (error) {
+    console.error('[server.js]: Error fetching exchange status:', error);
+    res.status(500).json({ error: 'Failed to fetch exchange status' });
   }
 });
 

@@ -81,6 +81,9 @@ async function loadProfileData() {
     // Load user's characters
     await loadUserCharacters();
     
+    // Load user's help wanted completions
+    await loadHelpWantedCompletions();
+    
   } catch (error) {
     console.error('[profile.js]: ❌ Error loading profile data:', error);
     showProfileError('Failed to load profile data');
@@ -122,6 +125,42 @@ function updateProfileDisplay(userData) {
   // Update stats
   profileTokens.textContent = userData.tokens || 0;
   profileSlots.textContent = userData.characterSlot !== undefined ? userData.characterSlot : 2;
+  
+  // Update level
+  const profileLevel = document.getElementById('profile-level');
+  if (profileLevel && userData.leveling) {
+    profileLevel.textContent = userData.leveling.level || 1;
+  }
+  
+  // Update XP
+  const profileXP = document.getElementById('profile-xp');
+  if (profileXP && userData.leveling) {
+    profileXP.textContent = userData.leveling.xp || 0;
+  }
+  
+  // Update birthday
+  const profileBirthday = document.getElementById('profile-birthday');
+  if (profileBirthday) {
+    if (userData.birthday && userData.birthday.month && userData.birthday.day) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      profileBirthday.textContent = `${months[userData.birthday.month - 1]} ${userData.birthday.day}`;
+    } else {
+      profileBirthday.textContent = 'Not Set';
+    }
+  }
+  
+  // Update status
+  const profileStatus = document.getElementById('profile-status');
+  if (profileStatus) {
+    const status = userData.status || 'active';
+    profileStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+  }
+  
+  // Update help wanted total
+  const profileHelpWanted = document.getElementById('profile-help-wanted');
+  if (profileHelpWanted && userData.helpWanted) {
+    profileHelpWanted.textContent = userData.helpWanted.totalCompletions || 0;
+  }
   
   // Update join date - will be updated by loadExtendedProfileData
   profileJoined.textContent = 'Loading...';
@@ -258,6 +297,336 @@ async function loadUserCharacters() {
         </div>
       `;
     }
+  }
+}
+
+// ------------------- Function: loadHelpWantedCompletions -------------------
+// Loads and displays the user's help wanted quest completions
+async function loadHelpWantedCompletions() {
+  try {
+    
+    
+    const helpWantedContainer = document.getElementById('profile-help-wanted-container');
+    const helpWantedTotalCount = document.getElementById('help-wanted-total-count');
+    const helpWantedLoading = document.getElementById('profile-help-wanted-loading');
+    
+    if (!helpWantedContainer || !helpWantedTotalCount || !helpWantedLoading) {
+      
+      return;
+    }
+    
+    // Show loading state
+    helpWantedLoading.style.display = 'flex';
+    helpWantedContainer.innerHTML = '';
+    helpWantedContainer.appendChild(helpWantedLoading);
+    
+    // Check if currentUser has helpWanted data
+    if (!currentUser || !currentUser.helpWanted) {
+      helpWantedLoading.style.display = 'none';
+      helpWantedContainer.innerHTML = `
+        <div class="profile-no-help-wanted">
+          <i class="fas fa-hands-helping"></i>
+          <h4>No Help Wanted Completions</h4>
+          <p>You haven't completed any Help Wanted quests yet.</p>
+        </div>
+      `;
+      helpWantedTotalCount.textContent = 0;
+      return;
+    }
+    
+    const helpWantedData = currentUser.helpWanted;
+    const completions = helpWantedData.completions || [];
+    
+    // Update total count
+    helpWantedTotalCount.textContent = helpWantedData.totalCompletions || completions.length || 0;
+    
+    // Hide loading state
+    helpWantedLoading.style.display = 'none';
+    
+    if (completions.length === 0) {
+      // Show no completions message
+      helpWantedContainer.innerHTML = `
+        <div class="profile-no-help-wanted">
+          <i class="fas fa-hands-helping"></i>
+          <h4>No Help Wanted Completions</h4>
+          <p>You haven't completed any Help Wanted quests yet.</p>
+        </div>
+      `;
+    } else {
+      // Calculate statistics
+      const stats = calculateHelpWantedStats(completions);
+      
+      // Create dashboard
+      const dashboard = document.createElement('div');
+      dashboard.className = 'help-wanted-dashboard';
+      
+      dashboard.innerHTML = `
+        <div class="hw-stats-grid">
+          <div class="hw-stat-card">
+            <div class="hw-stat-icon">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="hw-stat-content">
+              <div class="hw-stat-label">Total Completed</div>
+              <div class="hw-stat-value">${stats.totalCompleted}</div>
+            </div>
+          </div>
+          
+          <div class="hw-stat-card">
+            <div class="hw-stat-icon">
+              <i class="fas fa-calendar-day"></i>
+            </div>
+            <div class="hw-stat-content">
+              <div class="hw-stat-label">Today</div>
+              <div class="hw-stat-value">${stats.today}</div>
+            </div>
+          </div>
+          
+          <div class="hw-stat-card">
+            <div class="hw-stat-icon">
+              <i class="fas fa-calendar-week"></i>
+            </div>
+            <div class="hw-stat-content">
+              <div class="hw-stat-label">This Week</div>
+              <div class="hw-stat-value">${stats.thisWeek}</div>
+            </div>
+          </div>
+          
+          <div class="hw-stat-card hw-last-quest">
+            <div class="hw-stat-icon">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="hw-stat-content">
+              <div class="hw-stat-label">Last Quest</div>
+              <div class="hw-stat-value-small">${stats.lastQuest.type}</div>
+              <div class="hw-stat-sublabel">${stats.lastQuest.village} • ${stats.lastQuest.date}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="hw-charts-grid">
+          <div class="hw-chart-card">
+            <h4><i class="fas fa-map-marked-alt"></i> Villages Helped</h4>
+            <div class="hw-chart-container">
+              <canvas id="hw-villages-chart"></canvas>
+            </div>
+            <div class="hw-breakdown">
+              ${Object.entries(stats.villageBreakdown)
+                .sort((a, b) => b[1] - a[1])
+                .map(([village, count]) => `
+                  <div class="hw-breakdown-item">
+                    <span class="village-badge ${village.toLowerCase()}">${capitalize(village)}</span>
+                    <span class="hw-breakdown-count">${count}</span>
+                  </div>
+                `).join('')}
+            </div>
+          </div>
+          
+          <div class="hw-chart-card">
+            <h4><i class="fas fa-tasks"></i> Quest Types</h4>
+            <div class="hw-chart-container">
+              <canvas id="hw-types-chart"></canvas>
+            </div>
+            <div class="hw-breakdown">
+              ${Object.entries(stats.typeBreakdown)
+                .sort((a, b) => b[1] - a[1])
+                .map(([type, count]) => `
+                  <div class="hw-breakdown-item">
+                    <span class="hw-breakdown-label">${capitalize(type)}</span>
+                    <span class="hw-breakdown-count">${count}</span>
+                  </div>
+                `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+      
+      helpWantedContainer.appendChild(dashboard);
+      
+      // Render charts after DOM is updated
+      setTimeout(() => {
+        renderHelpWantedCharts(stats);
+      }, 100);
+    }
+    
+  } catch (error) {
+    
+    
+    const helpWantedContainer = document.getElementById('profile-help-wanted-container');
+    if (helpWantedContainer) {
+      helpWantedContainer.innerHTML = `
+        <div class="profile-no-help-wanted">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h4>Error Loading Help Wanted Completions</h4>
+          <p>Failed to load your help wanted completions. Please try refreshing the page.</p>
+        </div>
+      `;
+    }
+  }
+}
+
+// ------------------- Function: calculateHelpWantedStats -------------------
+// Calculates statistics from help wanted completions
+function calculateHelpWantedStats(completions) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  
+  // Sort by date (newest first)
+  const sorted = [...completions].sort((a, b) => {
+    const dateA = new Date(a.timestamp || a.date);
+    const dateB = new Date(b.timestamp || b.date);
+    return dateB - dateA;
+  });
+  
+  // Calculate counts
+  let todayCount = 0;
+  let weekCount = 0;
+  const villageBreakdown = {};
+  const typeBreakdown = {};
+  
+  completions.forEach(completion => {
+    const date = new Date(completion.timestamp || completion.date);
+    
+    // Count today and this week
+    if (date >= today) todayCount++;
+    if (date >= weekAgo) weekCount++;
+    
+    // Village breakdown
+    const village = completion.village || 'Unknown';
+    villageBreakdown[village] = (villageBreakdown[village] || 0) + 1;
+    
+    // Type breakdown
+    const type = completion.questType || 'Unknown';
+    typeBreakdown[type] = (typeBreakdown[type] || 0) + 1;
+  });
+  
+  // Last quest info
+  const lastCompletion = sorted[0];
+  const lastDate = lastCompletion ? new Date(lastCompletion.timestamp || lastCompletion.date) : null;
+  const lastQuest = {
+    type: lastCompletion ? capitalize(lastCompletion.questType || 'Unknown') : 'None',
+    village: lastCompletion ? capitalize(lastCompletion.village || 'Unknown') : '',
+    date: lastDate ? lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
+  };
+  
+  return {
+    totalCompleted: completions.length,
+    today: todayCount,
+    thisWeek: weekCount,
+    lastQuest,
+    villageBreakdown,
+    typeBreakdown
+  };
+}
+
+// ------------------- Function: renderHelpWantedCharts -------------------
+// Renders Chart.js charts for help wanted statistics
+function renderHelpWantedCharts(stats) {
+  try {
+    // Check if Chart.js is available
+    if (typeof Chart === 'undefined') {
+      console.warn('[profile.js]: Chart.js not available for help wanted charts');
+      return;
+    }
+    
+    // Villages Chart
+    const villagesCanvas = document.getElementById('hw-villages-chart');
+    if (villagesCanvas) {
+      const villageColors = {
+        'Rudania': '#ff6b6b',
+        'Inariko': '#4dabf7',
+        'Vhintl': '#51cf66',
+        'Unknown': '#868e96'
+      };
+      
+      new Chart(villagesCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(stats.villageBreakdown),
+          datasets: [{
+            data: Object.values(stats.villageBreakdown),
+            backgroundColor: Object.keys(stats.villageBreakdown).map(v => villageColors[v] || '#868e96'),
+            borderWidth: 2,
+            borderColor: '#1a1a2e'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 12,
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: '#4dabf7',
+              borderWidth: 1
+            },
+            datalabels: {
+              color: '#ffffff',
+              font: {
+                weight: 'bold',
+                size: 14
+              },
+              formatter: (value) => value
+            }
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+    }
+    
+    // Quest Types Chart
+    const typesCanvas = document.getElementById('hw-types-chart');
+    if (typesCanvas) {
+      const typeColors = ['#4dabf7', '#51cf66', '#ff6b6b', '#ffd43b', '#a78bfa', '#f783ac'];
+      
+      new Chart(typesCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(stats.typeBreakdown),
+          datasets: [{
+            data: Object.values(stats.typeBreakdown),
+            backgroundColor: typeColors,
+            borderWidth: 2,
+            borderColor: '#1a1a2e'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 12,
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: '#4dabf7',
+              borderWidth: 1
+            },
+            datalabels: {
+              color: '#ffffff',
+              font: {
+                weight: 'bold',
+                size: 14
+              },
+              formatter: (value) => value
+            }
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+    }
+  } catch (error) {
+    console.error('[profile.js]: Error rendering help wanted charts:', error);
   }
 }
 
@@ -423,7 +792,25 @@ function showCharacterModal(character) {
           </div>
         </div>
       </div>
-      <button class="close-modal">&times;</button>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <button class="edit-character-btn" data-character-id="${character._id}" style="
+          padding: 0.5rem 1rem;
+          background: var(--primary-color);
+          color: white;
+          border: none;
+          border-radius: 0.5rem;
+          cursor: pointer;
+          font-size: 0.9rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          transition: background 0.2s;
+        " onmouseover="this.style.background='var(--primary-hover)'" onmouseout="this.style.background='var(--primary-color)'">
+          <i class="fas fa-edit"></i>
+          Edit
+        </button>
+        <button class="close-modal">&times;</button>
+      </div>
     </div>
     
     <div class="character-modal-body">
@@ -529,21 +916,119 @@ function showCharacterModal(character) {
             <span class="value">${character.blightStage ?? 0}</span>
           </div>
           <div class="character-modal-item">
+            <span class="label">KO'd:</span>
+            <span class="value">${character.ko ? 'Yes' : 'No'}</span>
+          </div>
+          <div class="character-modal-item">
+            <span class="label">In Jail:</span>
+            <span class="value">${character.inJail ? `Yes${character.jailReleaseTime ? ' | Until ' + new Date(character.jailReleaseTime).toLocaleDateString() : ''}` : 'No'}</span>
+          </div>
+          <div class="character-modal-item">
             <span class="label">Debuff:</span>
             <span class="value">${character.debuff?.active
               ? `Debuffed${character.debuff.endDate ? ' | Ends ' + new Date(character.debuff.endDate).toLocaleDateString() : ''}`
               : 'Not Debuffed'}</span>
           </div>
           <div class="character-modal-item">
+            <span class="label">Buff:</span>
+            <span class="value">${character.buff?.active ? `Active (${capitalize(character.buff.type || 'Unknown')})` : 'None'}</span>
+          </div>
+          <div class="character-modal-item">
             <span class="label">Last Stamina Usage:</span>
-            <span class="value">${formatPrettyDate(character.lastStaminaUsage)}</span>
+            <span class="value">${formatDateOnly(character.lastStaminaUsage)}</span>
           </div>
           <div class="character-modal-item">
             <span class="label">Job Changed:</span>
-            <span class="value">${formatPrettyDate(character.jobDateChanged)}</span>
+            <span class="value">${formatDateOnly(character.jobDateChanged)}</span>
+          </div>
+          <div class="character-modal-item">
+            <span class="label">Steal Protection:</span>
+            <span class="value">${
+              !character.canBeStolenFrom || character.stealProtection?.isProtected
+                ? 'Protected' 
+                : 'Not Protected'
+            }</span>
+          </div>
+          <div class="character-modal-item">
+            <span class="label">Failed Steal Attempts:</span>
+            <span class="value">${character.failedStealAttempts || 0}</span>
+          </div>
+          <div class="character-modal-item">
+            <span class="label">Failed Flee Attempts:</span>
+            <span class="value">${character.failedFleeAttempts || 0}</span>
           </div>
         </div>
       </div>
+      
+      <div class="character-modal-section">
+        <h3>Additional Details</h3>
+        <div class="character-modal-grid">
+          ${character.jobVoucher ? `
+          <div class="character-modal-item">
+            <span class="label">Job Voucher:</span>
+            <span class="value">Active${character.jobVoucherJob ? ` (${capitalize(character.jobVoucherJob)})` : ''}</span>
+          </div>
+          ` : ''}
+          ${character.boostedBy ? `
+          <div class="character-modal-item">
+            <span class="label">Boosted By:</span>
+            <span class="value">${character.boostedBy}</span>
+          </div>
+          ` : ''}
+          ${character.helpWanted?.lastCompletion ? `
+          <div class="character-modal-item">
+            <span class="label">Last Help Wanted:</span>
+            <span class="value">${character.helpWanted.lastCompletion}</span>
+          </div>
+          ` : ''}
+          ${character.helpWanted?.completions?.length ? `
+          <div class="character-modal-item">
+            <span class="label">Help Wanted Completions:</span>
+            <span class="value">${character.helpWanted.completions.length}</span>
+          </div>
+          ` : ''}
+          ${character.currentActivePet ? `
+          <div class="character-modal-item">
+            <span class="label">Active Pet:</span>
+            <span class="value">${character.currentActivePet}</span>
+          </div>
+          ` : ''}
+          ${character.currentActiveMount ? `
+          <div class="character-modal-item">
+            <span class="label">Active Mount:</span>
+            <span class="value">${character.currentActiveMount}</span>
+          </div>
+          ` : ''}
+        </div>
+      </div>
+      
+      ${character.vendorType ? `
+      <div class="character-modal-section">
+        <h3>Vendor Info</h3>
+        <div class="character-modal-grid">
+          <div class="character-modal-item">
+            <span class="label">Vendor Type:</span>
+            <span class="value">${capitalize(character.vendorType)}</span>
+          </div>
+          <div class="character-modal-item">
+            <span class="label">Vending Points:</span>
+            <span class="value">${character.vendingPoints || 0}</span>
+          </div>
+          ${character.shopPouch ? `
+          <div class="character-modal-item">
+            <span class="label">Shop Pouch:</span>
+            <span class="value">${character.shopPouch}</span>
+          </div>
+          ` : ''}
+          ${character.pouchSize ? `
+          <div class="character-modal-item">
+            <span class="label">Pouch Size:</span>
+            <span class="value">${character.pouchSize}</span>
+          </div>
+          ` : ''}
+        </div>
+      </div>
+      ` : ''}
 
       <div class="character-modal-section">
         <h3>Links</h3>
@@ -609,6 +1094,413 @@ function showCharacterModal(character) {
     }
   };
   document.addEventListener('keydown', handleEscape);
+  
+  // Add edit button functionality
+  const editBtn = modal.querySelector('.edit-character-btn');
+  editBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showEditCharacterModal(character, modal);
+  });
+}
+
+// ------------------- Function: showEditCharacterModal -------------------
+// Shows a modal to edit character information
+function showEditCharacterModal(character, parentModal) {
+  
+  // Format character icon URL
+  const iconUrl = formatCharacterIconUrl(character.icon);
+  
+  // Create edit modal container
+  const editModal = document.createElement('div');
+  editModal.className = 'character-modal';
+  editModal.style.zIndex = '10001'; // Higher than parent modal
+  
+  const editModalContent = document.createElement('div');
+  editModalContent.className = 'character-modal-content';
+  editModalContent.style.maxWidth = '600px';
+  
+  editModalContent.innerHTML = `
+    <div class="character-modal-header">
+      <h2 style="margin: 0; color: var(--text-color); font-size: 1.5rem;">
+        <i class="fas fa-edit"></i> Edit Character: ${character.name}
+      </h2>
+      <button class="close-modal">&times;</button>
+    </div>
+    
+    <div class="character-modal-body">
+      <form id="edit-character-form" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        
+        <div class="form-group">
+          <label for="edit-icon" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-color);">
+            Character Icon
+          </label>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <img 
+              id="edit-icon-preview" 
+              src="${iconUrl}" 
+              alt="Character Icon" 
+              style="
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 2px solid var(--border-color);
+              "
+              onerror="this.src='/images/ankleicon.png'"
+            />
+            <div style="flex: 1;">
+              <input 
+                type="file" 
+                id="edit-icon" 
+                name="icon" 
+                accept="image/*"
+                style="display: none;"
+              />
+              <button 
+                type="button" 
+                id="upload-icon-btn"
+                style="
+                  padding: 0.5rem 1rem;
+                  background: var(--card-bg);
+                  color: var(--text-color);
+                  border: 1px solid var(--border-color);
+                  border-radius: 0.5rem;
+                  cursor: pointer;
+                  font-size: 0.9rem;
+                  transition: all 0.2s ease;
+                "
+              >
+                <i class="fas fa-upload"></i> Upload New Icon
+              </button>
+              <small style="color: var(--text-secondary); margin-top: 0.5rem; display: block;">
+                Recommended: Square image, at least 256x256px
+              </small>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="edit-age" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-color);">
+            Age
+          </label>
+          <input 
+            type="number" 
+            id="edit-age" 
+            name="age" 
+            value="${character.age || ''}"
+            placeholder="Enter age"
+            min="0"
+            style="
+              width: 100%;
+              padding: 0.75rem;
+              border: 1px solid var(--border-color);
+              border-radius: 0.5rem;
+              background: var(--input-bg);
+              color: var(--text-color);
+              font-size: 1rem;
+            "
+          />
+        </div>
+        
+        <div class="form-group">
+          <label for="edit-pronouns" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-color);">
+            Pronouns
+          </label>
+          <input 
+            type="text" 
+            id="edit-pronouns" 
+            name="pronouns" 
+            value="${character.pronouns || ''}"
+            placeholder="e.g., he/him, she/her, they/them"
+            style="
+              width: 100%;
+              padding: 0.75rem;
+              border: 1px solid var(--border-color);
+              border-radius: 0.5rem;
+              background: var(--input-bg);
+              color: var(--text-color);
+              font-size: 1rem;
+            "
+          />
+        </div>
+        
+        <div class="form-group">
+          <label for="edit-height" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-color);">
+            Height (cm)
+          </label>
+          <input 
+            type="number" 
+            id="edit-height" 
+            name="height" 
+            value="${character.height || ''}"
+            placeholder="Enter height in centimeters"
+            min="0"
+            style="
+              width: 100%;
+              padding: 0.75rem;
+              border: 1px solid var(--border-color);
+              border-radius: 0.5rem;
+              background: var(--input-bg);
+              color: var(--text-color);
+              font-size: 1rem;
+            "
+          />
+          ${character.height ? `<small style="color: var(--text-secondary); margin-top: 0.25rem; display: block;">${convertCmToFeetInches(character.height)}</small>` : ''}
+        </div>
+        
+        <div class="form-group">
+          <label for="edit-birthday" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-color);">
+            Birthday (MM-DD)
+          </label>
+          <input 
+            type="text" 
+            id="edit-birthday" 
+            name="birthday" 
+            value="${character.birthday || ''}"
+            placeholder="MM-DD (e.g., 01-15, 12-25)"
+            pattern="^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+            maxlength="5"
+            style="
+              width: 100%;
+              padding: 0.75rem;
+              border: 1px solid var(--border-color);
+              border-radius: 0.5rem;
+              background: var(--input-bg);
+              color: var(--text-color);
+              font-size: 1rem;
+            "
+          />
+          <small style="color: var(--text-secondary); margin-top: 0.5rem; display: block;">
+            Format: MM-DD (e.g., 01-15 for January 15th, 12-25 for December 25th)
+          </small>
+        </div>
+        
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input 
+              type="checkbox" 
+              id="edit-can-be-stolen-from" 
+              name="canBeStolenFrom" 
+              ${character.canBeStolenFrom !== false ? 'checked' : ''}
+              style="
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
+              "
+            />
+            <span style="font-weight: 500; color: var(--text-color);">Allow This Character to be Stolen From</span>
+          </label>
+          <small style="color: var(--text-secondary); margin-top: 0.5rem; display: block;">
+            When unchecked, this character will be permanently protected from all steal attempts (opt-out of stealing mechanic).
+          </small>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+          <button 
+            type="button" 
+            class="cancel-edit-btn"
+            style="
+              padding: 0.75rem 1.5rem;
+              background: var(--card-bg);
+              color: var(--text-color);
+              border: 1px solid var(--border-color);
+              border-radius: 0.5rem;
+              cursor: pointer;
+              font-size: 1rem;
+              transition: background 0.2s;
+            "
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit"
+            style="
+              padding: 0.75rem 1.5rem;
+              background: var(--primary-color);
+              color: white;
+              border: none;
+              border-radius: 0.5rem;
+              cursor: pointer;
+              font-size: 1rem;
+              transition: background 0.2s;
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+            "
+          >
+            <i class="fas fa-save"></i>
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  
+  editModal.appendChild(editModalContent);
+  document.body.appendChild(editModal);
+  
+  // Handle icon upload button click
+  const uploadIconBtn = editModal.querySelector('#upload-icon-btn');
+  const iconInput = editModal.querySelector('#edit-icon');
+  const iconPreview = editModal.querySelector('#edit-icon-preview');
+  
+  uploadIconBtn.addEventListener('click', () => {
+    iconInput.click();
+  });
+  
+  // Handle icon file selection and preview
+  let selectedIconFile = null;
+  iconInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        showProfileMessage('Please select a valid image file', 'error');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showProfileMessage('Image size must be less than 5MB', 'error');
+        return;
+      }
+      
+      selectedIconFile = file;
+      
+      // Show preview
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        iconPreview.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+      
+      uploadIconBtn.innerHTML = '<i class="fas fa-check"></i> Icon Selected';
+      uploadIconBtn.style.background = 'var(--primary-color)';
+      uploadIconBtn.style.color = 'white';
+    }
+  });
+  
+  // Add birthday input formatting helper
+  const birthdayInput = editModal.querySelector('#edit-birthday');
+  birthdayInput.addEventListener('input', (e) => {
+    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    
+    if (value.length >= 2) {
+      value = value.slice(0, 2) + '-' + value.slice(2, 4);
+    }
+    
+    e.target.value = value.slice(0, 5); // Max length MM-DD
+  });
+  
+  // Handle form submission
+  const form = editModal.querySelector('#edit-character-form');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Validate birthday format if provided
+    const birthdayValue = form.birthday.value.trim();
+    if (birthdayValue && !/^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/.test(birthdayValue)) {
+      showProfileMessage('Birthday must be in MM-DD format (e.g., 01-15)', 'error');
+      return;
+    }
+    
+    try {
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      
+      // Create FormData for multipart upload
+      const formData = new FormData();
+      formData.append('age', parseInt(form.age.value) || '');
+      formData.append('pronouns', form.pronouns.value.trim());
+      formData.append('height', parseInt(form.height.value) || '');
+      formData.append('birthday', birthdayValue);
+      formData.append('canBeStolenFrom', form.canBeStolenFrom.checked);
+      
+      // Add icon if selected
+      if (selectedIconFile) {
+        formData.append('icon', selectedIconFile);
+      }
+      
+      const response = await fetch(`/api/characters/${character._id}/profile`, {
+        method: 'PATCH',
+        credentials: 'include',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update character');
+      }
+      
+      const result = await response.json();
+      
+      showProfileMessage('Character updated successfully!', 'success');
+      
+      // Close edit modal
+      editModal.style.animation = 'fadeOut 0.3s ease';
+      setTimeout(() => {
+        if (editModal.parentNode) {
+          editModal.parentNode.removeChild(editModal);
+        }
+      }, 300);
+      
+      // Close parent modal and reload characters
+      if (parentModal && parentModal.parentNode) {
+        parentModal.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => {
+          if (parentModal.parentNode) {
+            parentModal.parentNode.removeChild(parentModal);
+          }
+        }, 300);
+      }
+      
+      // Reload the character list
+      await loadUserCharacters();
+      
+    } catch (error) {
+      console.error('[profile.js]: ❌ Error updating character:', error);
+      showProfileMessage(error.message || 'Failed to update character', 'error');
+      
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+    }
+  });
+  
+  // Handle cancel button
+  const cancelBtn = editModal.querySelector('.cancel-edit-btn');
+  cancelBtn.addEventListener('click', () => {
+    editModal.style.animation = 'fadeOut 0.3s ease';
+    setTimeout(() => {
+      if (editModal.parentNode) {
+        editModal.parentNode.removeChild(editModal);
+      }
+    }, 300);
+  });
+  
+  // Handle close button
+  const closeBtn = editModal.querySelector('.close-modal');
+  closeBtn.addEventListener('click', () => {
+    editModal.style.animation = 'fadeOut 0.3s ease';
+    setTimeout(() => {
+      if (editModal.parentNode) {
+        editModal.parentNode.removeChild(editModal);
+      }
+    }, 300);
+  });
+  
+  // Handle modal background click
+  editModal.addEventListener('click', (e) => {
+    if (e.target === editModal) {
+      editModal.style.animation = 'fadeOut 0.3s ease';
+      setTimeout(() => {
+        if (editModal.parentNode) {
+          editModal.parentNode.removeChild(editModal);
+        }
+      }, 300);
+    }
+  });
 }
 
 // ------------------- Function: getGearStat -------------------
@@ -624,6 +1516,13 @@ function getGearStat(gear, statName) {
 function formatPrettyDate(date) {
   if (!date) return 'Never';
   return new Date(date).toLocaleString();
+}
+
+// ------------------- Function: formatDateOnly -------------------
+// Converts a date string into a date-only format (no time)
+function formatDateOnly(date) {
+  if (!date) return 'Never';
+  return new Date(date).toLocaleDateString();
 }
 
 // ------------------- Function: convertCmToFeetInches -------------------
