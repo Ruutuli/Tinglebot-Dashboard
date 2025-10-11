@@ -1140,106 +1140,97 @@ function showCharacterModal(character) {
       // Normalize character name for filenames (lowercase, replace spaces with underscores)
       const fileBaseName = character.name.toLowerCase().replace(/\s+/g, '_');
       
-      // Helper function to download a file
-      const downloadFile = (data, filename) => {
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      };
+      // Create a new JSZip instance
+      const zip = new JSZip();
+      let filesAdded = 0;
       
-      // Small delay between downloads to prevent browser blocking
-      const delayBetweenDownloads = 300;
-      let filesDownloaded = 0;
-      
-      // Download character data
+      // Add character data
       if (exportData.character) {
-        downloadFile(exportData.character, `${fileBaseName}.character.json`);
-        filesDownloaded++;
-        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+        zip.file(`${fileBaseName}.character.json`, JSON.stringify(exportData.character, null, 2));
+        filesAdded++;
       }
       
-      // Download inventory data
+      // Add inventory data
       if (exportData.inventory && exportData.inventory.length > 0) {
-        downloadFile(exportData.inventory, `${fileBaseName}.inventory.json`);
-        filesDownloaded++;
-        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+        zip.file(`${fileBaseName}.inventory.json`, JSON.stringify(exportData.inventory, null, 2));
+        filesAdded++;
       }
       
-      // Download pets data
+      // Add pets data
       if (exportData.pets && exportData.pets.length > 0) {
-        downloadFile(exportData.pets, `${fileBaseName}.pets.json`);
-        filesDownloaded++;
-        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+        zip.file(`${fileBaseName}.pets.json`, JSON.stringify(exportData.pets, null, 2));
+        filesAdded++;
       }
       
-      // Download mounts data
+      // Add mounts data
       if (exportData.mounts && exportData.mounts.length > 0) {
-        downloadFile(exportData.mounts, `${fileBaseName}.mounts.json`);
-        filesDownloaded++;
-        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+        zip.file(`${fileBaseName}.mounts.json`, JSON.stringify(exportData.mounts, null, 2));
+        filesAdded++;
       }
       
-      // Download relationships data
+      // Add relationships data
       if (exportData.relationships && exportData.relationships.length > 0) {
-        downloadFile(exportData.relationships, `${fileBaseName}.relationships.json`);
-        filesDownloaded++;
-        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+        zip.file(`${fileBaseName}.relationships.json`, JSON.stringify(exportData.relationships, null, 2));
+        filesAdded++;
       }
       
-      // Download quests data
+      // Add quests data
       if (exportData.quests && exportData.quests.length > 0) {
-        downloadFile(exportData.quests, `${fileBaseName}.quests.json`);
-        filesDownloaded++;
-        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+        zip.file(`${fileBaseName}.quests.json`, JSON.stringify(exportData.quests, null, 2));
+        filesAdded++;
       }
       
-      // Download parties data
+      // Add parties data
       if (exportData.parties && exportData.parties.length > 0) {
-        downloadFile(exportData.parties, `${fileBaseName}.parties.json`);
-        filesDownloaded++;
-        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+        zip.file(`${fileBaseName}.parties.json`, JSON.stringify(exportData.parties, null, 2));
+        filesAdded++;
       }
       
-      // Download raids data
+      // Add raids data
       if (exportData.raids && exportData.raids.length > 0) {
-        downloadFile(exportData.raids, `${fileBaseName}.raids.json`);
-        filesDownloaded++;
-        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+        zip.file(`${fileBaseName}.raids.json`, JSON.stringify(exportData.raids, null, 2));
+        filesAdded++;
       }
       
-      // Download steal stats data
+      // Add steal stats data
       if (exportData.stealStats) {
-        downloadFile(exportData.stealStats, `${fileBaseName}.stealstats.json`);
-        filesDownloaded++;
-        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+        zip.file(`${fileBaseName}.stealstats.json`, JSON.stringify(exportData.stealStats, null, 2));
+        filesAdded++;
       }
       
-      // Download blight history data
+      // Add blight history data
       if (exportData.blightHistory && exportData.blightHistory.length > 0) {
-        downloadFile(exportData.blightHistory, `${fileBaseName}.blighthistory.json`);
-        filesDownloaded++;
-        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+        zip.file(`${fileBaseName}.blighthistory.json`, JSON.stringify(exportData.blightHistory, null, 2));
+        filesAdded++;
       }
       
-      // Download metadata file with export info
+      // Add metadata file
       const metadata = {
         exportDate: exportData.exportDate,
         exportedBy: exportData.exportedBy,
         characterName: character.name,
         characterId: character._id,
         isModCharacter: exportData.isModCharacter,
-        filesExported: filesDownloaded
+        filesExported: filesAdded
       };
-      downloadFile(metadata, `${fileBaseName}.metadata.json`);
+      zip.file(`${fileBaseName}.metadata.json`, JSON.stringify(metadata, null, 2));
+      filesAdded++;
+      
+      // Generate the zip file
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      // Download the zip file
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${fileBaseName}_export_${Date.now()}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
       
       // Show success message
-      exportBtn.innerHTML = `<i class="fas fa-check"></i> Exported ${filesDownloaded + 1} files!`;
+      exportBtn.innerHTML = `<i class="fas fa-check"></i> Exported (${filesAdded} files)`;
       exportBtn.style.background = '#4CAF50';
       
       setTimeout(() => {
@@ -1619,6 +1610,12 @@ function setupProfileEventListeners() {
     profileLink.addEventListener('click', handleProfileLinkClick);
   }
   
+  // Export all user data button
+  const exportAllBtn = document.getElementById('export-all-user-data-btn');
+  if (exportAllBtn) {
+    exportAllBtn.addEventListener('click', handleExportAllUserData);
+  }
+  
   // Listen for custom navigation events
   document.addEventListener('navigateToSection', (event) => {
     if (event.detail.section === 'profile-section') {
@@ -1655,6 +1652,158 @@ function handleProfileLinkClick(event) {
     detail: { section: 'profile-section' } 
   });
   document.dispatchEvent(navEvent);
+}
+
+// ------------------- Function: handleExportAllUserData -------------------
+// Handles exporting all user data (all characters and related data)
+async function handleExportAllUserData(event) {
+  const btn = event.target.closest('button');
+  
+  try {
+    // Disable button and show loading state
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting all data...';
+    
+    // Fetch the export data
+    const response = await fetch('/api/user/export-all', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Export failed: ${response.status}`);
+    }
+    
+    // Get the data as JSON
+    const exportData = await response.json();
+    
+    // Get username for filename
+    const username = currentUser?.username || 'user';
+    const fileBaseName = username.toLowerCase().replace(/\s+/g, '_');
+    
+    // Create a new JSZip instance
+    const zip = new JSZip();
+    let filesAdded = 0;
+    
+    // Add user data
+    if (exportData.user) {
+      zip.file(`${fileBaseName}.user.json`, JSON.stringify(exportData.user, null, 2));
+      filesAdded++;
+    }
+    
+    // Add each character's data as separate files
+    for (const charData of exportData.characters) {
+      const charName = charData.character.name.toLowerCase().replace(/\s+/g, '_');
+      
+      // Add character profile
+      if (charData.character) {
+        zip.file(`${charName}.character.json`, JSON.stringify(charData.character, null, 2));
+        filesAdded++;
+      }
+      
+      // Add inventory
+      if (charData.inventory && charData.inventory.length > 0) {
+        zip.file(`${charName}.inventory.json`, JSON.stringify(charData.inventory, null, 2));
+        filesAdded++;
+      }
+      
+      // Add pets
+      if (charData.pets && charData.pets.length > 0) {
+        zip.file(`${charName}.pets.json`, JSON.stringify(charData.pets, null, 2));
+        filesAdded++;
+      }
+      
+      // Add mounts
+      if (charData.mounts && charData.mounts.length > 0) {
+        zip.file(`${charName}.mounts.json`, JSON.stringify(charData.mounts, null, 2));
+        filesAdded++;
+      }
+      
+      // Add relationships
+      if (charData.relationships && charData.relationships.length > 0) {
+        zip.file(`${charName}.relationships.json`, JSON.stringify(charData.relationships, null, 2));
+        filesAdded++;
+      }
+      
+      // Add quests
+      if (charData.quests && charData.quests.length > 0) {
+        zip.file(`${charName}.quests.json`, JSON.stringify(charData.quests, null, 2));
+        filesAdded++;
+      }
+      
+      // Add steal stats
+      if (charData.stealStats) {
+        zip.file(`${charName}.stealstats.json`, JSON.stringify(charData.stealStats, null, 2));
+        filesAdded++;
+      }
+      
+      // Add blight history
+      if (charData.blightHistory && charData.blightHistory.length > 0) {
+        zip.file(`${charName}.blighthistory.json`, JSON.stringify(charData.blightHistory, null, 2));
+        filesAdded++;
+      }
+    }
+    
+    // Add parties (user-level)
+    if (exportData.parties && exportData.parties.length > 0) {
+      zip.file(`${fileBaseName}.parties.json`, JSON.stringify(exportData.parties, null, 2));
+      filesAdded++;
+    }
+    
+    // Add raids (user-level)
+    if (exportData.raids && exportData.raids.length > 0) {
+      zip.file(`${fileBaseName}.raids.json`, JSON.stringify(exportData.raids, null, 2));
+      filesAdded++;
+    }
+    
+    // Add metadata file
+    const metadata = {
+      exportDate: exportData.exportDate,
+      userId: exportData.userId,
+      username: username,
+      totalCharacters: exportData.characters.length,
+      filesExported: filesAdded
+    };
+    zip.file(`${fileBaseName}.metadata.json`, JSON.stringify(metadata, null, 2));
+    filesAdded++;
+    
+    // Generate the zip file
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    
+    // Download the zip file
+    const url = window.URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${fileBaseName}_complete_export_${Date.now()}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    // Show success message
+    btn.innerHTML = `<i class="fas fa-check"></i> Exported (${filesAdded} files)`;
+    btn.style.background = '#4CAF50';
+    
+    setTimeout(() => {
+      btn.innerHTML = originalHTML;
+      btn.disabled = false;
+    }, 4000);
+    
+  } catch (error) {
+    console.error('[profile.js]: Error exporting all user data:', error);
+    btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Export Failed';
+    btn.style.background = '#f44336';
+    
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-file-download"></i> Export All Data';
+      btn.disabled = false;
+      btn.style.background = '#4CAF50';
+    }, 3000);
+  }
 }
 
 // ============================================================================

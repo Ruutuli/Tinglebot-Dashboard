@@ -2034,6 +2034,166 @@ app.get('/api/characters/:id/export', requireAuth, async (req, res) => {
   }
 });
 
+// ------------------- Function: exportAllUserData -------------------
+// Exports all data for a user including all their characters
+app.get('/api/user/export-all', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.discordId;
+    
+    console.log(`[server.js]: 📦 Exporting all data for user ${userId}`);
+    
+    // Initialize export data object
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      userId: userId,
+      characters: []
+    };
+    
+    // Fetch user data
+    try {
+      const user = await User.findOne({ discordId: userId }).lean();
+      exportData.user = user;
+      console.log(`[server.js]: ✅ Found user data`);
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error fetching user data:`, error.message);
+      exportData.user = null;
+    }
+    
+    // Fetch all characters (both regular and mod characters)
+    const regularCharacters = await Character.find({ userId }).lean();
+    const modCharacters = await ModCharacter.find({ userId }).lean();
+    const allCharacters = [...regularCharacters, ...modCharacters];
+    
+    console.log(`[server.js]: 📋 Found ${allCharacters.length} characters (${regularCharacters.length} regular, ${modCharacters.length} mod)`);
+    
+    // For each character, fetch all related data
+    for (const character of allCharacters) {
+      const characterData = {
+        character: character,
+        isModCharacter: modCharacters.includes(character)
+      };
+      
+      // Fetch inventory data
+      try {
+        const collectionName = character.name.trim().toLowerCase();
+        const inventoriesDb = await connectToInventoriesNative();
+        const inventoryCollection = inventoriesDb.collection(collectionName);
+        const inventoryItems = await inventoryCollection.find().toArray();
+        characterData.inventory = inventoryItems;
+        console.log(`[server.js]: ✅ Found ${inventoryItems.length} inventory items for ${character.name}`);
+      } catch (error) {
+        console.warn(`[server.js]: ⚠️ Error fetching inventory for ${character.name}:`, error.message);
+        characterData.inventory = [];
+      }
+      
+      // Fetch pets
+      try {
+        const pets = await Pet.find({ 
+          $or: [
+            { owner: character._id },
+            { discordId: userId }
+          ]
+        }).lean();
+        characterData.pets = pets;
+      } catch (error) {
+        console.warn(`[server.js]: ⚠️ Error fetching pets for ${character.name}:`, error.message);
+        characterData.pets = [];
+      }
+      
+      // Fetch mounts
+      try {
+        const mounts = await Mount.find({ 
+          $or: [
+            { characterId: character._id },
+            { discordId: userId }
+          ]
+        }).lean();
+        characterData.mounts = mounts;
+      } catch (error) {
+        console.warn(`[server.js]: ⚠️ Error fetching mounts for ${character.name}:`, error.message);
+        characterData.mounts = [];
+      }
+      
+      // Fetch relationships
+      try {
+        const relationships = await Relationship.find({
+          $or: [
+            { characterId: character._id },
+            { targetCharacterId: character._id }
+          ]
+        }).lean();
+        characterData.relationships = relationships;
+      } catch (error) {
+        console.warn(`[server.js]: ⚠️ Error fetching relationships for ${character.name}:`, error.message);
+        characterData.relationships = [];
+      }
+      
+      // Fetch quests
+      try {
+        const quests = await Quest.find({
+          [`participants.${userId}`]: { $exists: true }
+        }).lean();
+        characterData.quests = quests;
+      } catch (error) {
+        console.warn(`[server.js]: ⚠️ Error fetching quests for ${character.name}:`, error.message);
+        characterData.quests = [];
+      }
+      
+      // Fetch steal stats
+      try {
+        const stealStats = await StealStats.findOne({ characterId: character._id }).lean();
+        characterData.stealStats = stealStats || null;
+      } catch (error) {
+        console.warn(`[server.js]: ⚠️ Error fetching steal stats for ${character.name}:`, error.message);
+        characterData.stealStats = null;
+      }
+      
+      // Fetch blight roll history
+      try {
+        const blightHistory = await BlightRollHistory.find({ characterId: character._id }).lean();
+        characterData.blightHistory = blightHistory;
+      } catch (error) {
+        console.warn(`[server.js]: ⚠️ Error fetching blight history for ${character.name}:`, error.message);
+        characterData.blightHistory = [];
+      }
+      
+      exportData.characters.push(characterData);
+    }
+    
+    // Fetch parties for the user (not character-specific)
+    try {
+      const parties = await Party.find({
+        'characters.userId': userId
+      }).lean();
+      exportData.parties = parties;
+      console.log(`[server.js]: ✅ Found ${parties.length} parties`);
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error fetching parties:`, error.message);
+      exportData.parties = [];
+    }
+    
+    // Fetch raids for the user (not character-specific)
+    try {
+      const raids = await Raid.find({
+        'participants.userId': userId
+      }).lean();
+      exportData.raids = raids;
+      console.log(`[server.js]: ✅ Found ${raids.length} raids`);
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error fetching raids:`, error.message);
+      exportData.raids = [];
+    }
+    
+    console.log(`[server.js]: ✅ Successfully exported all data for user ${userId} (${allCharacters.length} characters)`);
+    
+    res.json(exportData);
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Error exporting user data:', error);
+    res.status(500).json({ error: 'Failed to export user data', details: error.message });
+  }
+});
+
 // ------------------- Function: updateCharacterProfile -------------------
 // Updates character profile information (editable fields only)
 app.patch('/api/characters/:id/profile', requireAuth, upload.single('icon'), async (req, res) => {
