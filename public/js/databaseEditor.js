@@ -1699,6 +1699,25 @@ async function generateForm(record) {
     return;
   }
   
+  // Reset any inline styles that might have been applied by Inventory view
+  const modalBody = document.getElementById('modal-body');
+  if (modalBody) {
+    modalBody.style.padding = '';
+    modalBody.style.height = '';
+    modalBody.style.display = '';
+    modalBody.style.flexDirection = '';
+  }
+  
+  form.style.height = '';
+  form.style.display = '';
+  form.style.flexDirection = '';
+  
+  // Show the save button (Inventory hides it)
+  const saveBtn = document.getElementById('modal-save-btn');
+  if (saveBtn) {
+    saveBtn.style.display = '';
+  }
+  
   const orderedFields = getOrderedFieldsFromModel(currentModel);
   
   for (const section of orderedFields) {
