@@ -48,6 +48,7 @@
   <link rel="stylesheet" href="css/buttons.css" />
   <link rel="stylesheet" href="css/animations.css" />
   <link rel="stylesheet" href="css/charts.css" />
+  <link rel="stylesheet" href="css/databaseEditor.css" />
   <link rel="stylesheet" href="css/character.css" />
   <link rel="stylesheet" href="css/characterOfTheWeek.css" />
   <link rel="stylesheet" href="css/commands.css" />
@@ -229,8 +230,6 @@
           </section>
         </div>
 
-        <div class="dashboard-divider"></div>
-
         <!-- Character of the Week Section -->
         <section id="character-of-week-section" class="character-of-week-section">
           <div class="character-of-week-header">
@@ -244,8 +243,6 @@
             <!-- Character of the week content will be dynamically loaded here -->
           </div>
         </section>
-
-        <div class="dashboard-divider"></div>
 
         <!-- Dashboard Countdown Section -->
         <section id="countdown-section" class="countdown-section">
@@ -360,8 +357,6 @@
           </div>
         </section>
 
-        <div class="dashboard-divider"></div>
-
         <!-- Weather Section -->
         <section id="weather-section" class="weather-section">
           <div class="weather-header">
@@ -371,8 +366,6 @@
           </div>
           <!-- Weather content will be dynamically loaded here -->
         </section>
-
-        <div class="dashboard-divider"></div>
 
         <!-- Recent Quests Section -->
         <section id="recent-quests-section" class="recent-quests-section">
@@ -388,8 +381,6 @@
             </div>
           </div>
         </section>
-
-        <div class="dashboard-divider"></div>
 
         <div class="dashboard-section-card dashboard-links-section">
           <span class="dashboard-links-icon"><i class="fas fa-link" aria-hidden="true"></i></span>
@@ -663,8 +654,6 @@
           </section>
         </div>
 
-        <div class="dashboard-divider"></div>
-
         <!-- Admin Tools Grid -->
         <div class="admin-tools-grid">
           <!-- Character of the Week Management -->
@@ -751,6 +740,23 @@
             </div>
           </div>
 
+          <!-- Database Editor -->
+          <div class="admin-tool-card">
+            <div class="admin-tool-header">
+              <i class="fas fa-edit"></i>
+              <h3>Database Editor</h3>
+            </div>
+            <div class="admin-tool-content">
+              <p>Edit database records directly</p>
+              <div class="admin-tool-actions">
+                <button class="admin-action-btn primary" id="database-editor-btn">
+                  <i class="fas fa-table"></i>
+                  Open Editor
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Security Management -->
           <div class="admin-tool-card">
             <div class="admin-tool-header">
@@ -781,14 +787,108 @@
           </div>
         </div>
 
+        <!-- Database Editor Section -->
+        <div id="database-editor-section" style="display: none;">
+          <div class="database-editor-header">
+            <button class="back-button" id="back-to-admin-btn">
+              <i class="fas fa-arrow-left"></i>
+              Back to Admin
+            </button>
+            <h2><i class="fas fa-database"></i> Database Editor</h2>
+          </div>
+
+          <!-- Model Selection -->
+          <div class="db-editor-controls">
+            <div class="model-selector-container">
+              <label for="model-selector">Select Model:</label>
+              <select id="model-selector">
+                <option value="">-- Choose a model --</option>
+              </select>
+            </div>
+
+            <div class="search-container">
+              <input type="text" id="db-search-input" placeholder="Search records...">
+              <button id="db-search-btn" class="search-btn">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+
+            <button id="create-record-btn" class="create-btn" style="display: none;">
+              <i class="fas fa-plus"></i>
+              Create New
+            </button>
+          </div>
+
+          <!-- Records Table -->
+          <div id="records-container" style="display: none;">
+            <div class="records-table-wrapper">
+              <table id="records-table" class="db-records-table">
+                <thead id="records-table-head">
+                  <!-- Dynamic headers will be inserted here -->
+                </thead>
+                <tbody id="records-table-body">
+                  <!-- Dynamic rows will be inserted here -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-controls">
+              <button id="prev-page-btn" class="pagination-btn">
+                <i class="fas fa-chevron-left"></i>
+                Previous
+              </button>
+              <span id="pagination-info">Page 1 of 1</span>
+              <button id="next-page-btn" class="pagination-btn">
+                Next
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div id="empty-state" class="empty-state">
+            <i class="fas fa-database"></i>
+            <p>Select a model to view and edit records</p>
+          </div>
+        </div>
+
+        <!-- Record Edit Modal -->
+        <div id="record-edit-modal" class="modal" style="display: none;">
+          <div class="modal-content db-editor-modal">
+            <div class="modal-header">
+              <h3 id="modal-title">Edit Record</h3>
+              <button class="modal-close" id="modal-close-btn">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body" id="modal-body">
+              <form id="record-form">
+                <!-- Dynamic form fields will be inserted here -->
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button id="modal-cancel-btn" class="btn-secondary">Cancel</button>
+              <button id="modal-delete-btn" class="btn-danger" style="display: none;">
+                <i class="fas fa-trash"></i>
+                Delete
+              </button>
+              <button id="modal-save-btn" class="btn-primary">
+                <i class="fas fa-save"></i>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- User Management Section -->
         <div id="user-management-section" style="display: none;">
           <div class="dashboard-header">
             <div class="header-top">
-              <button class="back-btn" id="back-to-admin-btn">
-                <i class="fas fa-arrow-left"></i>
-                Back to Admin Tools
-              </button>
+            <button class="back-button" id="back-to-admin-tools-btn">
+              <i class="fas fa-arrow-left"></i>
+              Back to Admin Tools
+            </button>
               <h2><i class="fas fa-users"></i> User Activity Management</h2>
             </div>
             <div class="dashboard-divider"></div>
@@ -2440,6 +2540,7 @@
   <script type="module" src="js/commands.js"></script>
   <script type="module" src="js/calendar.js"></script>
   <script type="module" src="js/index.js"></script>
+  <script src="js/databaseEditor.js"></script>
   <script src="js/countdown.js"></script>
   <script src="js/debug.js"></script>
   <script type="module" src="js/characterOfWeek.js"></script>

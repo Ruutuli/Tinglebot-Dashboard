@@ -26,6 +26,7 @@ const fs = require('fs').promises;
 const {
   connectToTinglebot,
   connectToInventories,
+  connectToInventoriesNative,
   connectToVending,
   fetchAllCharacters,
   fetchCharacterById,
@@ -6473,6 +6474,565 @@ app.get('/api/user/levels/exchange-status', requireAuth, async (req, res) => {
   }
 });
 
+// ------------------- Section: Admin Database Editor -------------------
+
+// ------------------- Import all remaining models for database management -------------------
+const ApprovedSubmission = require('./models/ApprovedSubmissionModel');
+const BlightRollHistory = require('./models/BlightRollHistoryModel');
+const BloodMoonTracking = require('./models/BloodMoonTrackingModel');
+const GeneralItem = require('./models/GeneralItemModel');
+const HelpWantedQuest = require('./models/HelpWantedQuestModel');
+const Inventory = require('./models/InventoryModel');
+const MemberLore = require('./models/MemberLoreModel');
+const Minigame = require('./models/MinigameModel');
+const NPC = require('./models/NPCModel');
+const Raid = require('./models/RaidModel');
+const RuuGame = require('./models/RuuGameModel');
+const StealStats = require('./models/StealStatsModel');
+const TableModel = require('./models/TableModel');
+const TableRoll = require('./models/TableRollModel');
+const TempData = require('./models/TempDataModel');
+
+// ------------------- Model Registry -------------------
+// Maps model names to their Mongoose models
+const MODEL_REGISTRY = {
+  'ApprovedSubmission': ApprovedSubmission,
+  'BlightRollHistory': BlightRollHistory,
+  'BloodMoonTracking': BloodMoonTracking,
+  'Character': Character,
+  'CharacterOfWeek': CharacterOfWeek,
+  'GeneralItem': GeneralItem,
+  'HelpWantedQuest': HelpWantedQuest,
+  'Inventory': Inventory,
+  'Item': Item,
+  'MemberLore': MemberLore,
+  'Minigame': Minigame,
+  'ModCharacter': ModCharacter,
+  'Monster': Monster,
+  'Mount': Mount,
+  'NPC': NPC,
+  'Party': Party,
+  'Pet': Pet,
+  'Quest': Quest,
+  'Raid': Raid,
+  'Relationship': Relationship,
+  'Relic': Relic,
+  'RuuGame': RuuGame,
+  'StealStats': StealStats,
+  'TableModel': TableModel,
+  'TableRoll': TableRoll,
+  'TempData': TempData,
+  'User': User,
+  'VendingRequest': VendingRequest,
+  'Village': Village,
+  'VillageShops': VillageShops,
+  'Weather': Weather
+};
+
+// ------------------- Helper: Get Model with Special Handling -------------------
+// Helper function to get the appropriate model, handling special cases like Inventory
+const getModelForAdmin = (modelName) => {
+  if (modelName === 'Inventory') {
+    // Inventory uses a separate database connection
+    if (!inventoriesConnection) {
+      throw new Error('Inventories database connection not available');
+    }
+    
+    // Check if the model already exists to avoid "Cannot overwrite model" error
+    if (inventoriesConnection.models['Inventory']) {
+      return inventoriesConnection.models['Inventory'];
+    }
+    
+    // Create the model dynamically using the inventories connection
+    const inventorySchema = new mongoose.Schema({
+      characterId: { type: mongoose.Schema.Types.ObjectId, ref: 'Character', required: true },
+      itemName: { type: String, required: true },
+      itemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Item', required: true },
+      quantity: { type: Number, default: 1 },
+      category: { type: String },
+      type: { type: String },
+      subtype: { type: String },
+      job: { type: String },
+      perk: { type: String },
+      location: { type: String },
+      date: { type: Date },
+      craftedAt: { type: Date },
+      gatheredAt: { type: Date },
+      obtain: { type: String, default: '' },
+      synced: { type: String, unique: true }
+    });
+    
+    return inventoriesConnection.model('Inventory', inventorySchema);
+  }
+  
+  // For all other models, return from registry
+  return MODEL_REGISTRY[modelName];
+};
+
+// ------------------- Endpoint: Get all available models -------------------
+app.get('/api/admin/db/models', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const models = Object.keys(MODEL_REGISTRY).sort();
+    res.json({ models });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching models:', error);
+    res.status(500).json({ error: 'Failed to fetch models' });
+  }
+});
+
+// ------------------- Endpoint: Get model schema -------------------
+app.get('/api/admin/db/schema/:modelName', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { modelName } = req.params;
+    const Model = getModelForAdmin(modelName);
+    
+    if (!Model) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+    
+    // Extract schema information
+    const schema = Model.schema;
+    const fields = {};
+    
+    schema.eachPath((pathname, schematype) => {
+      // Skip internal mongoose fields
+      if (pathname === '_id' || pathname === '__v') return;
+      
+      fields[pathname] = {
+        type: schematype.instance,
+        required: schematype.isRequired || false,
+        default: schematype.defaultValue,
+        enum: schematype.enumValues,
+        ref: schematype.options?.ref,
+        isArray: Array.isArray(schematype.options?.type)
+      };
+    });
+    
+    res.json({ 
+      modelName,
+      fields 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching schema:', error);
+    res.status(500).json({ error: 'Failed to fetch schema', details: error.message });
+  }
+});
+
+// ------------------- Endpoint: List records (with pagination) -------------------
+app.get('/api/admin/db/:modelName', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { modelName } = req.params;
+    const { page = 1, limit = 50, search = '', sortBy = '_id', sortOrder = 'desc' } = req.query;
+    
+    const Model = getModelForAdmin(modelName);
+    
+    if (!Model) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+    
+    // Special handling for Inventory: return characters grouped by inventory
+    if (modelName === 'Inventory') {
+      console.log('[server.js]: 🎒 Loading Inventory - fetching characters with inventory collections');
+      
+      // Get the inventories database connection
+      const inventoriesDb = await connectToInventoriesNative();
+      
+      // List all collections in the inventories database
+      const collections = await inventoriesDb.listCollections().toArray();
+      const collectionNames = collections
+        .map(col => col.name)
+        .filter(name => !name.startsWith('system.') && name !== 'items' && name !== 'vending_stock');
+      
+      console.log('[server.js]: Found', collectionNames.length, 'inventory collections');
+      
+      // Find matching characters
+      const allCharacters = await fetchAllCharacters();
+      const charactersWithInventory = allCharacters.filter(char => {
+        const collectionName = char.name ? char.name.trim().toLowerCase() : '';
+        return collectionNames.includes(collectionName);
+      });
+      
+      console.log('[server.js]: Found', charactersWithInventory.length, 'characters with inventory');
+      
+      // Apply search filter
+      let filteredCharacters = charactersWithInventory;
+      if (search) {
+        filteredCharacters = charactersWithInventory.filter(char => 
+          char.name && char.name.toLowerCase().includes(search.toLowerCase())
+        );
+      }
+      
+      // Sort by character name
+      filteredCharacters.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      
+      // Apply pagination
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const paginatedCharacters = filteredCharacters.slice(skip, skip + parseInt(limit));
+      
+      // Get item counts for each character
+      const records = await Promise.all(paginatedCharacters.map(async (char) => {
+        const collectionName = char.name.trim().toLowerCase();
+        try {
+          const collection = inventoriesDb.collection(collectionName);
+          const itemCount = await collection.countDocuments();
+          return {
+            _id: char._id,
+            characterName: char.name,
+            characterId: char._id,
+            itemCount: itemCount,
+            icon: char.icon
+          };
+        } catch (err) {
+          console.error(`[server.js]: Error counting items for ${char.name}:`, err);
+          return {
+            _id: char._id,
+            characterName: char.name,
+            characterId: char._id,
+            itemCount: 0,
+            icon: char.icon
+          };
+        }
+      }));
+      
+      console.log('[server.js]: ✅ Returning', records.length, 'character inventories');
+      
+      return res.json({
+        records,
+        pagination: {
+          total: filteredCharacters.length,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(filteredCharacters.length / parseInt(limit))
+        }
+      });
+    }
+    
+    // Build search query for non-Inventory models
+    let query = {};
+    if (search) {
+      // Try to search across common text fields for other models
+      const textFields = ['name', 'title', 'itemName', 'description', 'username', 'discordId'];
+      const orConditions = [];
+      
+      for (const field of textFields) {
+        if (Model.schema.path(field)) {
+          orConditions.push({ [field]: { $regex: search, $options: 'i' } });
+        }
+      }
+      
+      if (orConditions.length > 0) {
+        query = { $or: orConditions };
+      }
+    }
+    
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+    
+    // Fetch records
+    const records = await Model.find(query)
+      .sort(sort)
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+    
+    const total = await Model.countDocuments(query);
+    
+    res.json({
+      records,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching records:', error);
+    res.status(500).json({ error: 'Failed to fetch records', details: error.message });
+  }
+});
+
+// ------------------- Endpoint: Get single record by ID -------------------
+app.get('/api/admin/db/:modelName/:id', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { modelName, id } = req.params;
+    const Model = getModelForAdmin(modelName);
+    
+    if (!Model) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+    
+    // Special handling for Inventory: return all items for the character
+    if (modelName === 'Inventory') {
+      // id is actually a characterId - find the character
+      const character = await fetchCharacterById(id);
+      
+      if (!character) {
+        return res.status(404).json({ error: 'Character not found' });
+      }
+      
+      // Get the character's inventory collection
+      const collectionName = character.name.trim().toLowerCase();
+      const inventoriesDb = await connectToInventoriesNative();
+      const inventoryCollection = inventoriesDb.collection(collectionName);
+      
+      // Get all items from the character's collection
+      const inventoryItems = await inventoryCollection.find().sort({ itemName: 1 }).toArray();
+      
+      console.log(`[server.js]: Found ${inventoryItems.length} items for ${character.name}`);
+      
+      // Return character info with their inventory items
+      return res.json({ 
+        record: {
+          _id: character._id,
+          characterId: character._id,
+          characterName: character.name,
+          icon: character.icon,
+          items: inventoryItems
+        }
+      });
+    }
+    
+    const record = await Model.findById(id).lean();
+    
+    if (!record) {
+      return res.status(404).json({ error: 'Record not found' });
+    }
+    
+    res.json({ record });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching record:', error);
+    res.status(500).json({ error: 'Failed to fetch record', details: error.message });
+  }
+});
+
+// ------------------- Endpoint: Create new record -------------------
+app.post('/api/admin/db/:modelName', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { modelName } = req.params;
+    const Model = getModelForAdmin(modelName);
+    
+    if (!Model) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+    
+    const record = new Model(req.body);
+    await record.save();
+    
+    console.log(`[server.js]: ✅ Admin ${req.user.username} created ${modelName} record:`, record._id);
+    
+    res.status(201).json({ 
+      success: true,
+      record: record.toObject() 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error creating record:', error);
+    res.status(500).json({ 
+      error: 'Failed to create record', 
+      details: error.message,
+      validationErrors: error.errors 
+    });
+  }
+});
+
+// ------------------- Endpoint: Update record -------------------
+app.put('/api/admin/db/:modelName/:id', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { modelName, id } = req.params;
+    const Model = getModelForAdmin(modelName);
+    
+    if (!Model) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+    
+    const record = await Model.findByIdAndUpdate(
+      id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    
+    if (!record) {
+      return res.status(404).json({ error: 'Record not found' });
+    }
+    
+    console.log(`[server.js]: ✅ Admin ${req.user.username} updated ${modelName} record:`, id);
+    
+    res.json({ 
+      success: true,
+      record: record.toObject() 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error updating record:', error);
+    res.status(500).json({ 
+      error: 'Failed to update record', 
+      details: error.message,
+      validationErrors: error.errors 
+    });
+  }
+});
+
+// ------------------- Endpoint: Delete record -------------------
+app.delete('/api/admin/db/:modelName/:id', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { modelName, id } = req.params;
+    const Model = getModelForAdmin(modelName);
+    
+    if (!Model) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+    
+    const record = await Model.findByIdAndDelete(id);
+    
+    if (!record) {
+      return res.status(404).json({ error: 'Record not found' });
+    }
+    
+    console.log(`[server.js]: ⚠️ Admin ${req.user.username} deleted ${modelName} record:`, id);
+    
+    res.json({ 
+      success: true,
+      message: 'Record deleted successfully' 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error deleting record:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete record', 
+      details: error.message 
+    });
+  }
+});
+
+// ------------------- Special Inventory Item Endpoints -------------------
+
+// Update a single inventory item
+app.put('/api/admin/db/Inventory/item/:characterId/:itemId', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { characterId, itemId } = req.params;
+    
+    // Get the character to find their inventory collection
+    const character = await fetchCharacterById(characterId);
+    if (!character) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+    
+    // Get the character's inventory collection
+    const collectionName = character.name.trim().toLowerCase();
+    const inventoriesDb = await connectToInventoriesNative();
+    const inventoryCollection = inventoriesDb.collection(collectionName);
+    
+    // Update the item
+    const { ObjectId } = require('mongodb');
+    const result = await inventoryCollection.updateOne(
+      { _id: new ObjectId(itemId) },
+      { $set: req.body }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Inventory item not found' });
+    }
+    
+    console.log(`[server.js]: ✅ Admin ${req.user.username} updated inventory item:`, itemId, 'for', character.name);
+    
+    res.json({ 
+      success: true,
+      message: 'Item updated successfully'
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error updating inventory item:', error);
+    res.status(500).json({ 
+      error: 'Failed to update inventory item', 
+      details: error.message 
+    });
+  }
+});
+
+// Delete a single inventory item
+app.delete('/api/admin/db/Inventory/item/:characterId/:itemId', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { characterId, itemId } = req.params;
+    
+    // Get the character to find their inventory collection
+    const character = await fetchCharacterById(characterId);
+    if (!character) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+    
+    // Get the character's inventory collection
+    const collectionName = character.name.trim().toLowerCase();
+    const inventoriesDb = await connectToInventoriesNative();
+    const inventoryCollection = inventoriesDb.collection(collectionName);
+    
+    // Delete the item
+    const { ObjectId } = require('mongodb');
+    const result = await inventoryCollection.deleteOne(
+      { _id: new ObjectId(itemId) }
+    );
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Inventory item not found' });
+    }
+    
+    console.log(`[server.js]: ⚠️ Admin ${req.user.username} deleted inventory item:`, itemId, 'from', character.name);
+    
+    res.json({ 
+      success: true,
+      message: 'Inventory item deleted successfully' 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error deleting inventory item:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete inventory item', 
+      details: error.message 
+    });
+  }
+});
+
 // ------------------- Section: Error Handling Middleware -------------------
 app.use((err, req, res, next) => {
   console.error('[server.js]: ❌ Error:', err);
@@ -6648,11 +7208,43 @@ app.get('/api/test-sunday-midnight', async (req, res) => {
   }
 });
 
+// ============================================================================
+// ------------------- Section: Admin Database Management -------------------
+// Provides CRUD operations for all database models (admin-only)
+// ============================================================================
 
-
-
-
-
-
+// ------------------- Function: checkAdminAccess -------------------
+// Helper function to check if user has admin access
+async function checkAdminAccess(req) {
+  if (!req.isAuthenticated() || !req.user) {
+    return false;
+  }
+  
+  const guildId = process.env.PROD_GUILD_ID;
+  const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
+  
+  if (!guildId || !ADMIN_ROLE_ID) {
+    return false;
+  }
+  
+  try {
+    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      const memberData = await response.json();
+      const roles = memberData.roles || [];
+      return roles.includes(ADMIN_ROLE_ID);
+    }
+  } catch (error) {
+    console.error('[server.js]: ❌ Error checking admin access:', error);
+  }
+  
+  return false;
+}
 
 

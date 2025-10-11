@@ -677,6 +677,7 @@ function setupSidebarNavigation() {
     } else {
       // It's a section
       const section = event.state?.section || 'dashboard-section';
+      const subSection = event.state?.subSection;
       
       if (section === 'stats-section') {
         showStatsSection();
@@ -696,6 +697,14 @@ function setupSidebarNavigation() {
         relationshipsModule.showRelationshipsSection();
       } else if (section === 'admin-area-section') {
         showAdminAreaSection();
+        // Check if we need to open database editor
+        if (subSection === 'database-editor') {
+          setTimeout(() => {
+            if (window.openDatabaseEditor) {
+              window.openDatabaseEditor();
+            }
+          }, 100);
+        }
       } else if (section === 'settings-section') {
         showSettingsSection();
       } else {
@@ -712,8 +721,18 @@ function setupSidebarNavigation() {
     // List of known model names
     const modelNames = ['character', 'monster', 'pet', 'mount', 'vending', 'item', 'starterGear', 'village', 'villageShops', 'relic', 'quest', 'inventory'];
     
+    // Check for admin area sub-sections
+    if (hashValue === 'admin-area-section/database-editor') {
+      showAdminAreaSection();
+      // Small delay to ensure admin area is loaded before opening database editor
+      setTimeout(() => {
+        if (window.openDatabaseEditor) {
+          window.openDatabaseEditor();
+        }
+      }, 100);
+    }
     // Check if it's a model hash
-    if (modelNames.includes(hashValue)) {
+    else if (modelNames.includes(hashValue)) {
       loadModelByName(hashValue);
     } else if (hashValue === 'stats-section') {
       showStatsSection();
@@ -1530,7 +1549,7 @@ function initializeAdminArea() {
   // Set up user management
   const userManagementBtn = document.getElementById('user-management-btn');
   const refreshUsersBtn = document.getElementById('refresh-users-btn');
-  const backToAdminBtn = document.getElementById('back-to-admin-btn');
+  const backToAdminBtn = document.getElementById('back-to-admin-tools-btn');
   
   if (userManagementBtn) {
     userManagementBtn.addEventListener('click', () => {
