@@ -793,6 +793,22 @@ function showCharacterModal(character) {
         </div>
       </div>
       <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <button class="export-character-btn" data-character-id="${character._id}" style="
+          padding: 0.5rem 1rem;
+          background: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 0.5rem;
+          cursor: pointer;
+          font-size: 0.9rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          transition: background 0.2s;
+        " onmouseover="this.style.background='#45a049'" onmouseout="this.style.background='#4CAF50'" title="Export all character data">
+          <i class="fas fa-download"></i>
+          Export Data
+        </button>
         <button class="edit-character-btn" data-character-id="${character._id}" style="
           padding: 0.5rem 1rem;
           background: var(--primary-color);
@@ -1094,6 +1110,155 @@ function showCharacterModal(character) {
     }
   };
   document.addEventListener('keydown', handleEscape);
+  
+  // Add export button functionality
+  const exportBtn = modal.querySelector('.export-character-btn');
+  exportBtn?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    try {
+      // Disable button and show loading state
+      const originalHTML = exportBtn.innerHTML;
+      exportBtn.disabled = true;
+      exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+      
+      // Fetch the export data
+      const response = await fetch(`/api/characters/${character._id}/export`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.status}`);
+      }
+      
+      // Get the data as JSON
+      const exportData = await response.json();
+      
+      // Normalize character name for filenames (lowercase, replace spaces with underscores)
+      const fileBaseName = character.name.toLowerCase().replace(/\s+/g, '_');
+      
+      // Helper function to download a file
+      const downloadFile = (data, filename) => {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      };
+      
+      // Small delay between downloads to prevent browser blocking
+      const delayBetweenDownloads = 300;
+      let filesDownloaded = 0;
+      
+      // Download character data
+      if (exportData.character) {
+        downloadFile(exportData.character, `${fileBaseName}.character.json`);
+        filesDownloaded++;
+        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+      }
+      
+      // Download inventory data
+      if (exportData.inventory && exportData.inventory.length > 0) {
+        downloadFile(exportData.inventory, `${fileBaseName}.inventory.json`);
+        filesDownloaded++;
+        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+      }
+      
+      // Download pets data
+      if (exportData.pets && exportData.pets.length > 0) {
+        downloadFile(exportData.pets, `${fileBaseName}.pets.json`);
+        filesDownloaded++;
+        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+      }
+      
+      // Download mounts data
+      if (exportData.mounts && exportData.mounts.length > 0) {
+        downloadFile(exportData.mounts, `${fileBaseName}.mounts.json`);
+        filesDownloaded++;
+        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+      }
+      
+      // Download relationships data
+      if (exportData.relationships && exportData.relationships.length > 0) {
+        downloadFile(exportData.relationships, `${fileBaseName}.relationships.json`);
+        filesDownloaded++;
+        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+      }
+      
+      // Download quests data
+      if (exportData.quests && exportData.quests.length > 0) {
+        downloadFile(exportData.quests, `${fileBaseName}.quests.json`);
+        filesDownloaded++;
+        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+      }
+      
+      // Download parties data
+      if (exportData.parties && exportData.parties.length > 0) {
+        downloadFile(exportData.parties, `${fileBaseName}.parties.json`);
+        filesDownloaded++;
+        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+      }
+      
+      // Download raids data
+      if (exportData.raids && exportData.raids.length > 0) {
+        downloadFile(exportData.raids, `${fileBaseName}.raids.json`);
+        filesDownloaded++;
+        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+      }
+      
+      // Download steal stats data
+      if (exportData.stealStats) {
+        downloadFile(exportData.stealStats, `${fileBaseName}.stealstats.json`);
+        filesDownloaded++;
+        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+      }
+      
+      // Download blight history data
+      if (exportData.blightHistory && exportData.blightHistory.length > 0) {
+        downloadFile(exportData.blightHistory, `${fileBaseName}.blighthistory.json`);
+        filesDownloaded++;
+        await new Promise(resolve => setTimeout(resolve, delayBetweenDownloads));
+      }
+      
+      // Download metadata file with export info
+      const metadata = {
+        exportDate: exportData.exportDate,
+        exportedBy: exportData.exportedBy,
+        characterName: character.name,
+        characterId: character._id,
+        isModCharacter: exportData.isModCharacter,
+        filesExported: filesDownloaded
+      };
+      downloadFile(metadata, `${fileBaseName}.metadata.json`);
+      
+      // Show success message
+      exportBtn.innerHTML = `<i class="fas fa-check"></i> Exported ${filesDownloaded + 1} files!`;
+      exportBtn.style.background = '#4CAF50';
+      
+      setTimeout(() => {
+        exportBtn.innerHTML = originalHTML;
+        exportBtn.disabled = false;
+      }, 3000);
+      
+    } catch (error) {
+      console.error('[profile.js]: Error exporting character data:', error);
+      exportBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Export Failed';
+      exportBtn.style.background = '#f44336';
+      
+      setTimeout(() => {
+        exportBtn.innerHTML = '<i class="fas fa-download"></i> Export Data';
+        exportBtn.disabled = false;
+        exportBtn.style.background = '#4CAF50';
+      }, 3000);
+    }
+  });
   
   // Add edit button functionality
   const editBtn = modal.querySelector('.edit-character-btn');

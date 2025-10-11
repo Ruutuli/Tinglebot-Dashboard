@@ -57,6 +57,9 @@ const Party = require('./models/PartyModel');
 const Relic = require('./models/RelicModel');
 const CharacterOfWeek = require('./models/CharacterOfWeekModel');
 const Relationship = require('./models/RelationshipModel');
+const Raid = require('./models/RaidModel');
+const StealStats = require('./models/StealStatsModel');
+const BlightRollHistory = require('./models/BlightRollHistoryModel');
 
 // Import calendar module
 const calendarModule = require('./calendarModule');
@@ -627,113 +630,8 @@ app.get('/api/user', async (req, res) => {
 
 // ------------------- Section: User Lookup API Routes -------------------
 
-// Cache for users not in server (expires after 1 hour)
-let usersNotInServerCache = {
-  userIds: new Set(),
-  lastUpdated: null,
-  expiresIn: 60 * 60 * 1000, // 1 hour
-  isChecking: false // Prevent multiple simultaneous checks
-};
-
-// Function to check and update users not in server
-async function checkUsersInServer() {
-  // Prevent multiple simultaneous checks
-  if (usersNotInServerCache.isChecking) {
-    return;
-  }
-
-  const guildId = process.env.PROD_GUILD_ID;
-  const botToken = process.env.DISCORD_TOKEN;
-
-  if (!guildId || !botToken) {
-    console.warn('[server.js]: ⚠️  Cannot check users - Discord configuration missing');
-    return;
-  }
-
-  usersNotInServerCache.isChecking = true;
-  
-  try {
-    // Get all unique users from database
-    const allUsers = await User.aggregate([
-      {
-        $group: {
-          _id: '$discordId',
-          username: { $first: '$username' }
-        }
-      }
-    ]);
-
-    console.log(`[server.js]: 🔍 Checking ${allUsers.length} users against Discord server...`);
-
-    const notInServer = [];
-    let checked = 0;
-
-    // Check each user against Discord API
-    for (const user of allUsers) {
-      try {
-        const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${user._id}`, {
-          headers: {
-            'Authorization': `Bot ${botToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        checked++;
-
-        // If user not found (404), they're not in server
-        if (response.status === 404) {
-          notInServer.push({
-            discordId: user._id,
-            username: user.username
-          });
-        } else if (response.status === 429) {
-          // Rate limited - wait and retry
-          const retryAfter = parseInt(response.headers.get('retry-after')) || 1000;
-          await new Promise(resolve => setTimeout(resolve, retryAfter));
-          // Put user back in queue
-          checked--;
-          allUsers.push(user);
-        }
-
-        // Add delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-      } catch (error) {
-        console.error(`[server.js]: Error checking user ${user._id}:`, error.message);
-      }
-    }
-
-    // Update cache
-    usersNotInServerCache.userIds = new Set(notInServer.map(u => u.discordId));
-    usersNotInServerCache.lastUpdated = new Date();
-
-    // Log results
-    console.log(`\n[server.js]: ═══════════════════════════════════════════════`);
-    console.log(`[server.js]: 📊 USER CHECK COMPLETE`);
-    console.log(`[server.js]: ═══════════════════════════════════════════════`);
-    console.log(`[server.js]: Total users checked: ${checked}`);
-    console.log(`[server.js]: Users NOT in server: ${notInServer.length}`);
-    
-    if (notInServer.length > 0) {
-      console.log(`[server.js]: \n⚠️  Hidden users (not in server):`);
-      notInServer.forEach((user, index) => {
-        console.log(`[server.js]:   ${index + 1}. ${user.username} (${user.discordId})`);
-      });
-      console.log(`[server.js]: \n🚫 These users are HIDDEN from the user list view.`);
-    } else {
-      console.log(`[server.js]: ✅ All users are still in the server!`);
-    }
-    console.log(`[server.js]: ═══════════════════════════════════════════════\n`);
-
-  } catch (error) {
-    console.error('[server.js]: Error during automatic user check:', error);
-  } finally {
-    usersNotInServerCache.isChecking = false;
-  }
-}
-
 // ------------------- Function: searchUsers -------------------
-// Search users by username or Discord ID (filters out users not in server)
+// Search users by username or Discord ID
 app.get('/api/users/search', async (req, res) => {
   try {
     const { query } = req.query;
@@ -755,21 +653,9 @@ app.get('/api/users/search', async (req, res) => {
     .limit(50)
     .lean();
 
-    // Filter out users not in server based on cache
-    let usersInServer = users;
-    if (usersNotInServerCache.userIds.size > 0) {
-      usersInServer = users.filter(user => !usersNotInServerCache.userIds.has(user.discordId));
-      
-      // Log when users are being filtered from search
-      const hiddenCount = users.length - usersInServer.length;
-      if (hiddenCount > 0) {
-        console.log(`[server.js]: 🚫 Hiding ${hiddenCount} users not in server from search results`);
-      }
-    }
-
     // Get character counts for each user
     const usersWithCharacters = await Promise.all(
-      usersInServer.map(async (user) => {
+      users.map(async (user) => {
         const characterCount = await Character.countDocuments({ 
           userId: user.discordId,
           name: { $nin: ['Tingle', 'Tingle test', 'John'] }
@@ -789,24 +675,12 @@ app.get('/api/users/search', async (req, res) => {
 });
 
 // ------------------- Function: getAllUsers -------------------
-// Get all users with pagination (filters out users not in Discord server based on cache)
+// Get all users with pagination
 app.get('/api/users', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
-
-    // Check if cache needs refresh (expired or never updated)
-    const now = new Date();
-    const cacheExpired = !usersNotInServerCache.lastUpdated || 
-                         (now - usersNotInServerCache.lastUpdated) > usersNotInServerCache.expiresIn;
-    
-    // Trigger automatic check if cache expired (runs in background)
-    if (cacheExpired && !usersNotInServerCache.isChecking) {
-      checkUsersInServer().catch(err => {
-        console.error('[server.js]: Error in background user check:', err);
-      });
-    }
 
     // Get all unique users
     const allUsers = await User.aggregate([
@@ -827,21 +701,9 @@ app.get('/api/users', async (req, res) => {
       }
     ]);
 
-    // Filter out users not in server based on cache
-    let usersInServer = allUsers;
-    if (usersNotInServerCache.userIds.size > 0) {
-      usersInServer = allUsers.filter(user => !usersNotInServerCache.userIds.has(user._id));
-      
-      // Log when users are being filtered
-      const hiddenCount = allUsers.length - usersInServer.length;
-      if (hiddenCount > 0) {
-        console.log(`[server.js]: 🚫 Hiding ${hiddenCount} users not in server from list view`);
-      }
-    }
-
-    // Apply pagination to filtered users
-    const totalUsers = usersInServer.length;
-    const paginatedUsers = usersInServer.slice(skip, skip + limit);
+    // Apply pagination
+    const totalUsers = allUsers.length;
+    const paginatedUsers = allUsers.slice(skip, skip + limit);
 
     // Get character counts for paginated users
     const usersWithCharacters = await Promise.all(
@@ -2012,6 +1874,163 @@ app.get('/api/user/characters', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching user characters:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: exportCharacterData -------------------
+// Exports all data related to a specific character for backup/download purposes
+app.get('/api/characters/:id/export', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.discordId;
+    
+    // Find the character and verify ownership (check both regular and mod characters)
+    let character = await Character.findOne({ _id: id, userId }).lean();
+    let isModCharacter = false;
+    
+    if (!character) {
+      character = await ModCharacter.findOne({ _id: id, userId }).lean();
+      isModCharacter = true;
+    }
+    
+    if (!character) {
+      return res.status(404).json({ error: 'Character not found or access denied' });
+    }
+    
+    console.log(`[server.js]: 📦 Exporting data for character ${character.name} (${character._id})`);
+    
+    // Initialize export data object
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      exportedBy: userId,
+      character: character,
+      isModCharacter: isModCharacter
+    };
+    
+    // Fetch inventory data
+    try {
+      const collectionName = character.name.trim().toLowerCase();
+      const inventoriesDb = await connectToInventoriesNative();
+      const inventoryCollection = inventoriesDb.collection(collectionName);
+      const inventoryItems = await inventoryCollection.find().toArray();
+      exportData.inventory = inventoryItems;
+      console.log(`[server.js]: ✅ Found ${inventoryItems.length} inventory items`);
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error fetching inventory:`, error.message);
+      exportData.inventory = [];
+    }
+    
+    // Fetch pets
+    try {
+      const pets = await Pet.find({ 
+        $or: [
+          { owner: character._id },
+          { discordId: userId }
+        ]
+      }).lean();
+      exportData.pets = pets;
+      console.log(`[server.js]: ✅ Found ${pets.length} pets`);
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error fetching pets:`, error.message);
+      exportData.pets = [];
+    }
+    
+    // Fetch mounts
+    try {
+      const mounts = await Mount.find({ 
+        $or: [
+          { characterId: character._id },
+          { discordId: userId }
+        ]
+      }).lean();
+      exportData.mounts = mounts;
+      console.log(`[server.js]: ✅ Found ${mounts.length} mounts`);
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error fetching mounts:`, error.message);
+      exportData.mounts = [];
+    }
+    
+    // Fetch relationships
+    try {
+      const relationships = await Relationship.find({
+        $or: [
+          { characterId: character._id },
+          { targetCharacterId: character._id }
+        ]
+      }).lean();
+      exportData.relationships = relationships;
+      console.log(`[server.js]: ✅ Found ${relationships.length} relationships`);
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error fetching relationships:`, error.message);
+      exportData.relationships = [];
+    }
+    
+    // Fetch quests (where character is a participant)
+    try {
+      const quests = await Quest.find({
+        [`participants.${userId}`]: { $exists: true }
+      }).lean();
+      exportData.quests = quests;
+      console.log(`[server.js]: ✅ Found ${quests.length} quests`);
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error fetching quests:`, error.message);
+      exportData.quests = [];
+    }
+    
+    // Fetch parties
+    try {
+      const parties = await Party.find({
+        'characters.userId': userId
+      }).lean();
+      exportData.parties = parties;
+      console.log(`[server.js]: ✅ Found ${parties.length} parties`);
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error fetching parties:`, error.message);
+      exportData.parties = [];
+    }
+    
+    // Fetch raids
+    try {
+      const raids = await Raid.find({
+        'participants.userId': userId
+      }).lean();
+      exportData.raids = raids;
+      console.log(`[server.js]: ✅ Found ${raids.length} raids`);
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error fetching raids:`, error.message);
+      exportData.raids = [];
+    }
+    
+    // Fetch steal stats
+    try {
+      const stealStats = await StealStats.findOne({ characterId: character._id }).lean();
+      exportData.stealStats = stealStats || null;
+      console.log(`[server.js]: ✅ Found steal stats`);
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error fetching steal stats:`, error.message);
+      exportData.stealStats = null;
+    }
+    
+    // Fetch blight roll history
+    try {
+      const blightHistory = await BlightRollHistory.find({ characterId: character._id }).lean();
+      exportData.blightHistory = blightHistory;
+      console.log(`[server.js]: ✅ Found ${blightHistory.length} blight history entries`);
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error fetching blight history:`, error.message);
+      exportData.blightHistory = [];
+    }
+    
+    console.log(`[server.js]: ✅ Successfully exported all data for character ${character.name}`);
+    
+    // Set headers for file download
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${character.name}_data_export_${Date.now()}.json"`);
+    res.json(exportData);
+    
+  } catch (error) {
+    console.error('[server.js]: ❌ Error exporting character data:', error);
+    res.status(500).json({ error: 'Failed to export character data', details: error.message });
   }
 });
 
@@ -6478,7 +6497,6 @@ app.get('/api/user/levels/exchange-status', requireAuth, async (req, res) => {
 
 // ------------------- Import all remaining models for database management -------------------
 const ApprovedSubmission = require('./models/ApprovedSubmissionModel');
-const BlightRollHistory = require('./models/BlightRollHistoryModel');
 const BloodMoonTracking = require('./models/BloodMoonTrackingModel');
 const GeneralItem = require('./models/GeneralItemModel');
 const HelpWantedQuest = require('./models/HelpWantedQuestModel');
@@ -6486,12 +6504,11 @@ const Inventory = require('./models/InventoryModel');
 const MemberLore = require('./models/MemberLoreModel');
 const Minigame = require('./models/MinigameModel');
 const NPC = require('./models/NPCModel');
-const Raid = require('./models/RaidModel');
 const RuuGame = require('./models/RuuGameModel');
-const StealStats = require('./models/StealStatsModel');
 const TableModel = require('./models/TableModel');
 const TableRoll = require('./models/TableRollModel');
 const TempData = require('./models/TempDataModel');
+// Note: Raid, StealStats, and BlightRollHistory are imported at the top of the file
 
 // ------------------- Model Registry -------------------
 // Maps model names to their Mongoose models
@@ -7069,14 +7086,6 @@ const startServer = async () => {
     // Start server
     app.listen(PORT, () => {
       console.log(`[server.js]: Server running on port ${PORT}`);
-      
-      // Trigger initial user check in background (after a short delay)
-      setTimeout(() => {
-        console.log('[server.js]: Starting automatic user check...');
-        checkUsersInServer().catch(err => {
-          console.error('[server.js]: Error in initial user check:', err);
-        });
-      }, 5000); // Wait 5 seconds after server starts
     });
   } catch (error) {
     console.error('[server.js]: Failed to start server:', error);
