@@ -1003,7 +1003,6 @@ app.get('/api/stats/characters', async (req, res) => {
     });
 
 
-
     // Get upcoming birthdays (including mod characters)
     const today = new Date();
     const thisYr = today.getFullYear();
@@ -6916,6 +6915,87 @@ app.patch('/api/user/nickname', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('[server.js]: Error updating user nickname:', error);
     res.status(500).json({ error: 'Failed to update nickname' });
+  }
+});
+
+// ------------------- Section: Blupee Hunt System -------------------
+
+// Claim blupee reward
+app.post('/api/blupee/claim', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findOne({ discordId: req.user.discordId });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Initialize blupeeHunt if it doesn't exist
+    if (!user.blupeeHunt) {
+      user.blupeeHunt = {
+        lastClaimed: null,
+        totalClaimed: 0,
+        claimHistory: []
+      };
+    }
+    
+    const now = new Date();
+    
+    // Award tokens - no cooldown, catch as many as you want!
+    const tokensAwarded = 100;
+    user.tokens = (user.tokens || 0) + tokensAwarded;
+    
+    // Update blupee hunt tracking
+    user.blupeeHunt.lastClaimed = now;
+    user.blupeeHunt.totalClaimed = (user.blupeeHunt.totalClaimed || 0) + 1;
+    user.blupeeHunt.claimHistory.push({
+      tokensReceived: tokensAwarded,
+      timestamp: now
+    });
+    
+    await user.save();
+    
+    logger.success(`User ${user.username || user.discordId} claimed a blupee! (+${tokensAwarded} tokens, Total: ${user.blupeeHunt.totalClaimed})`);
+    
+    res.json({
+      success: true,
+      message: `You found a blupee! +${tokensAwarded} tokens!`,
+      tokensAwarded,
+      newTokenBalance: user.tokens,
+      totalBlupeesFound: user.blupeeHunt.totalClaimed
+    });
+  } catch (error) {
+    console.error('[server.js]: Error claiming blupee:', error);
+    res.status(500).json({ error: 'Failed to claim blupee reward' });
+  }
+});
+
+// Get blupee status (check if user can claim)
+app.get('/api/blupee/status', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findOne({ discordId: req.user.discordId });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Initialize blupeeHunt if it doesn't exist
+    if (!user.blupeeHunt) {
+      return res.json({
+        canClaim: true,
+        totalClaimed: 0,
+        lastClaimed: null
+      });
+    }
+    
+    // Always allow claiming - no cooldown!
+    res.json({
+      canClaim: true,
+      totalClaimed: user.blupeeHunt.totalClaimed || 0,
+      lastClaimed: user.blupeeHunt.lastClaimed
+    });
+  } catch (error) {
+    console.error('[server.js]: Error checking blupee status:', error);
+    res.status(500).json({ error: 'Failed to check blupee status' });
   }
 });
 

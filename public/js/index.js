@@ -105,6 +105,11 @@ function setupModelCards() {
       // Update URL with hash
       const hash = `#${modelName}`;
       window.history.pushState({ model: modelName }, '', hash);
+      
+      // Reinitialize blupee system when viewing a model
+      if (window.reinitializeBlupee) {
+        window.reinitializeBlupee();
+      }
 
       // Reset filters when switching between models
       if (window.itemFiltersInitialized) {
@@ -151,6 +156,11 @@ function setupModelCards() {
         backButton.onclick = () => {
           // Update URL to go back to dashboard
           window.history.pushState({ section: 'dashboard-section' }, '', '/');
+          
+          // Reinitialize blupee system when going back
+          if (window.reinitializeBlupee) {
+            window.reinitializeBlupee();
+          }
           
           modelDetailsPage.style.display = 'none';
           dashboardSection.style.display = 'block';
@@ -640,6 +650,11 @@ function setupSidebarNavigation() {
       const newUrl = sectionId === 'dashboard-section' ? '/' : `#${sectionId}`;
       window.history.pushState({ section: sectionId }, '', newUrl);
       
+      // Reinitialize blupee system when navigating to a new section
+      if (window.reinitializeBlupee) {
+        window.reinitializeBlupee();
+      }
+      
       // Handle different sections
       if (sectionId === 'stats-section') {
         showStatsSection();
@@ -701,6 +716,11 @@ function setupSidebarNavigation() {
         showUsersSection();
       } else if (section === 'relationships-section') {
         relationshipsModule.showRelationshipsSection();
+      } else if (section === 'weatherstats') {
+        // Handle weather statistics page
+        if (window.showWeatherStats) {
+          window.showWeatherStats();
+        }
       } else if (section === 'admin-area-section') {
         showAdminAreaSection();
         // Check if we need to open database editor

@@ -609,6 +609,14 @@ async function showWeatherStats() {
       throw new Error('Required DOM elements not found');
     }
 
+    // Update URL with hash
+    window.history.pushState({ section: 'weatherstats' }, '', '#weatherstats');
+    
+    // Reinitialize blupee system when viewing weather stats
+    if (window.reinitializeBlupee) {
+      window.reinitializeBlupee();
+    }
+
     dashboardSection.style.display = 'none';
     modelDetailsPage.style.display = 'block';
     title.textContent = 'Weather Statistics';
@@ -616,6 +624,14 @@ async function showWeatherStats() {
 
     // Setup back button handler
     backButton.onclick = () => {
+      // Update URL when going back
+      window.history.pushState({ section: 'dashboard-section' }, '', '/');
+      
+      // Reinitialize blupee when going back
+      if (window.reinitializeBlupee) {
+        window.reinitializeBlupee();
+      }
+      
       modelDetailsPage.style.display = 'none';
       dashboardSection.style.display = 'block';
     };

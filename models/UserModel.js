@@ -88,6 +88,16 @@ const userSchema = new mongoose.Schema({
       tokensReceived: { type: Number }, // Tokens received (boostCount × 500)
       timestamp: { type: Date, default: Date.now }
     }]
+  },
+
+  // ------------------- Blupee Hunt System -------------------
+  blupeeHunt: {
+    lastClaimed: { type: Date, default: null }, // Last time user claimed a blupee
+    totalClaimed: { type: Number, default: 0 }, // Total number of blupees claimed
+    claimHistory: [{ // Track blupee claim history
+      tokensReceived: { type: Number },
+      timestamp: { type: Date, default: Date.now }
+    }]
   }
 });
 
