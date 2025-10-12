@@ -524,6 +524,7 @@ app.get('/api/debug/session', (req, res) => {
 
 // ------------------- Health Check Endpoint -------------------
 app.get('/api/health', (req, res) => {
+  // Always return 200 OK - server is running even if databases aren't ready
   const health = {
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -531,9 +532,9 @@ app.get('/api/health', (req, res) => {
     memory: process.memoryUsage(),
     environment: process.env.NODE_ENV || 'development',
     database: {
-      tinglebot: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-      inventories: inventoriesConnection ? 'connected' : 'disconnected',
-      vending: vendingConnection ? 'connected' : 'disconnected'
+      tinglebot: mongoose.connection.readyState === 1 ? 'connected' : 'initializing',
+      inventories: inventoriesConnection ? 'connected' : 'initializing',
+      vending: vendingConnection ? 'connected' : 'initializing'
     },
     models: {
       character: Character ? 'loaded' : 'not loaded',
@@ -541,7 +542,7 @@ app.get('/api/health', (req, res) => {
     }
   };
   
-  res.json(health);
+  res.status(200).json(health);
 });
 
 // ------------------- User Authentication Status -------------------
@@ -8109,11 +8110,9 @@ const startServer = async () => {
     // Initialize cache cleanup
     initializeCacheCleanup();
     
-    // Initialize databases
-    await initializeDatabases();
-    
-    // Start server FIRST so health checks pass
-    app.listen(PORT, () => {
+    // Start server FIRST so health checks pass immediately
+    // Bind to 0.0.0.0 for Railway/Docker deployments
+    app.listen(PORT, '0.0.0.0', () => {
       const env = process.env.NODE_ENV || 'development';
       logger.ready(PORT, env);
       
@@ -8121,6 +8120,11 @@ const startServer = async () => {
       if (process.env.NODE_ENV !== 'production') {
         logger.info('👀 Watching for file changes... (type "rs" to restart)');
       }
+    });
+    
+    // Initialize databases in background (non-blocking)
+    initializeDatabases().catch(err => {
+      logger.error('Database initialization failed - some features will be limited', err);
     });
     
     // Initialize background tasks (non-blocking)
