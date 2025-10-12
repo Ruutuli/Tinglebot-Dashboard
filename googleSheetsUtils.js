@@ -20,6 +20,9 @@ const { google } = require('googleapis');
 const Character = require('./models/CharacterModel');
 const TempData = require('./models/TempDataModel');
 
+// Utilities
+const logger = require('./utils/logger');
+
 // ============================================================================
 // ------------------- Constants -------------------
 // Configuration and static values
@@ -44,7 +47,7 @@ limiter.on('failed', async (error, jobInfo) => {
     const retryCount = jobInfo.retryCount || 0;
     if (retryCount < 3) {
         const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
-        console.error(`[googleSheetsUtils.js]: ⚠️ Rate limit hit, retrying in ${delay}ms (attempt ${retryCount + 1})`);
+        logger.warn(`Rate limit hit, retrying in ${delay}ms (attempt ${retryCount + 1})`, 'googleSheetsUtils.js');
         return delay;
     }
     throw error;
@@ -65,10 +68,7 @@ function getServiceAccountCredentials() {
     const hasEnvVars = process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_PROJECT_ID;
     const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID || process.env.RAILWAY_SERVICE_NAME;
     
-    console.log(`[googleSheetsUtils.js]: 🔍 Credential check - hasEnvVars: ${hasEnvVars}, isRailway: ${isRailway}`);
-    
     if (isRailway || hasEnvVars) {
-        console.log(`[googleSheetsUtils.js]: 🌐 Using environment variables for Google Sheets authentication`);
         // Create service account object from environment variables
         // Handle private key - it might have literal newlines or \n escape sequences
         let privateKey = process.env.GOOGLE_PRIVATE_KEY;
@@ -96,22 +96,16 @@ function getServiceAccountCredentials() {
         };
     } else {
         // Local environment - read from file
-        console.log(`[googleSheetsUtils.js]: 🏠 Using local service account file for Google Sheets authentication`);
-        console.log(`[googleSheetsUtils.js]: 📁 Service account path: ${SERVICE_ACCOUNT_PATH}`);
         try {
             if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
-                console.warn(`[googleSheetsUtils.js]: ⚠️ Service account file not found at ${SERVICE_ACCOUNT_PATH}`);
-                console.warn(`[googleSheetsUtils.js]: ⚠️ Google Sheets functionality will be disabled`);
+                logger.warn('Service account file not found, Google Sheets functionality disabled', 'googleSheetsUtils.js');
                 return null;
             }
             const credentials = JSON.parse(fs.readFileSync(SERVICE_ACCOUNT_PATH));
-            console.log(`[googleSheetsUtils.js]: ✅ Service account loaded successfully`);
-            console.log(`[googleSheetsUtils.js]: 📧 Client email: ${credentials.client_email}`);
-            console.log(`[googleSheetsUtils.js]: 🔑 Private key exists: ${!!credentials.private_key}`);
+            logger.success('Service account loaded successfully', 'googleSheetsUtils.js');
             return credentials;
         } catch (err) {
-            console.error(`[googleSheetsUtils.js]: ❌ Error loading service account file: ${err}`);
-            console.warn(`[googleSheetsUtils.js]: ⚠️ Google Sheets functionality will be disabled`);
+            logger.error('Error loading service account file', err, 'googleSheetsUtils.js');
             return null;
         }
     }
@@ -124,7 +118,6 @@ async function authorizeSheets() {
         try {
             const credentials = getServiceAccountCredentials();
             if (!credentials) {
-                console.warn(`[googleSheetsUtils.js]: ⚠️ No credentials available, Google Sheets functionality disabled`);
                 return reject(new Error('Google Sheets functionality disabled - no credentials available'));
             }
             
@@ -132,13 +125,8 @@ async function authorizeSheets() {
             
             // Validate that we have the required credentials
             if (!client_email || !private_key) {
-                console.warn(`[googleSheetsUtils.js]: ⚠️ Missing client_email or private_key in credentials`);
-                console.warn(`[googleSheetsUtils.js]: ⚠️ client_email: ${!!client_email}, private_key: ${!!private_key}`);
                 return reject(new Error('Google Sheets functionality disabled - incomplete credentials'));
             }
-            
-            console.log(`[googleSheetsUtils.js]: 🔐 Attempting to authorize with client_email: ${client_email}`);
-            console.log(`[googleSheetsUtils.js]: 🔑 Private key preview: ${private_key?.substring(0, 50)}...`);
             
             // Create JWT auth with all credentials
             const auth = new google.auth.JWT({
@@ -146,21 +134,16 @@ async function authorizeSheets() {
                 key: private_key,
                 scopes: SCOPES
             });
-            console.log(`[googleSheetsUtils.js]: 🔑 JWT object created, authorizing...`);
             
             auth.authorize((err, tokens) => {
                 if (err) {
-                    // Don't spam console with auth errors in local dev
-                    const errMsg = err.message || err.toString();
-                    console.error(`[googleSheetsUtils.js]: ❌ Error authorizing service account: ${errMsg}`);
-                    console.error(`[googleSheetsUtils.js]: ❌ Error details:`, err);
+                    logger.error('Google Sheets authorization failed', err, 'googleSheetsUtils.js');
                     return reject(new Error(`Error authorizing service account: ${err.message || err}`));
                 }
-                console.log(`[googleSheetsUtils.js]: ✅ Authorization successful!`);
                 resolve(auth);
             });
         } catch (error) {
-            console.error(`[googleSheetsUtils.js]: ❌ Error parsing service account credentials: ${error}`);
+            logger.error('Error parsing service account credentials', error, 'googleSheetsUtils.js');
             reject(new Error(`Error parsing service account credentials: ${error.message || error}`));
         }
     });
@@ -182,9 +165,8 @@ async function makeApiRequest(fn, { suppressLog = false, context = {} } = {}) {
             }
         } catch (error) {
             if (error.status === 403 || error.message.includes('does not have permission')) {
-                const errorMessage = `⚠️ Permission Error: The service account (${serviceAccountEmail}) does not have access to this spreadsheet.\n\nTo fix this:\n1. Open the Google Spreadsheet\n2. Click "Share" in the top right\n3. Add ${serviceAccountEmail} as an Editor\n4. Make sure to give it at least "Editor" access`;
                 if (!suppressLog) {
-                    console.error(`[googleSheetsUtils.js]: ❌ Permission Error: ${errorMessage}`);
+                    logger.error(`Permission denied for ${serviceAccountEmail}`, null, 'googleSheetsUtils.js');
                 }
                 error.context = {
                     ...context,
@@ -198,8 +180,7 @@ async function makeApiRequest(fn, { suppressLog = false, context = {} } = {}) {
         return await limiter.schedule(() => fn());
     } catch (error) {
         if (!suppressLog) {
-            console.error(`[googleSheetsUtils.js]: ❌ API Request Error: ${error.message}`);
-            // Add context to the error
+            logger.error('API request failed', error, 'googleSheetsUtils.js');
             error.context = {
                 ...context,
                 errorType: error.message.includes('Unable to parse range') ? 'range_parse_error' : 'api_error',
@@ -324,12 +305,8 @@ async function appendSheetData(auth, spreadsheetId, range, values) {
                 });
         } catch (err) {
             const sheetName = range.split('!')[0];
-            console.error(`[googleSheetsUtils.js]: ❌ Failed to append data to sheet "${sheetName}": ${err.message}`);
-            throw new Error(
-                `Could not append data to sheet "${sheetName}". ` +
-                `Please verify the spreadsheet ID, the sheet tab name, ` +
-                `and that your service-account email has Editor access.`
-            );
+            logger.error(`Failed to append data to sheet "${sheetName}"`, err, 'googleSheetsUtils.js');
+            throw new Error(`Could not append data to sheet "${sheetName}"`);
         }
     });
 }
@@ -366,11 +343,8 @@ async function writeSheetData(auth, spreadsheetId, range, values) {
                 });
         } catch (err) {
             const sheetName = range.split('!')[0];
-            console.error(`[googleSheetsUtils.js]: ❌ Failed to write to sheet "${sheetName}": ${err.message}`);
-            throw new Error(
-                `Could not write to sheet "${sheetName}". ` +
-                `Make sure the spreadsheet ID and range are correct and that the service-account has Editor access.`
-            );
+            logger.error(`Failed to write to sheet "${sheetName}"`, err, 'googleSheetsUtils.js');
+            throw new Error(`Could not write to sheet "${sheetName}"`);
         }
     });
 }
@@ -386,7 +360,6 @@ async function writeBatchData(auth, spreadsheetId, batchRequests) {
             await sheets.spreadsheets.get({ spreadsheetId });
         } catch (error) {
             if (error.status === 403 || error.message.includes('does not have permission')) {
-                console.error(`[googleSheetsUtils.js]: ❌ Permission Error: Service account lacks spreadsheet access`);
                 throw new Error('Permission Error: The service account does not have access to this spreadsheet.');
             }
             throw error;
@@ -405,7 +378,6 @@ async function writeBatchData(auth, spreadsheetId, batchRequests) {
                 });
             } catch (error) {
                 if (error.status === 403 || error.message.includes('does not have permission')) {
-                    console.error(`[googleSheetsUtils.js]: ❌ Permission Error: Service account lacks spreadsheet access`);
                     throw new Error('Permission Error: The service account does not have access to this spreadsheet.');
                 }
                 throw error;
@@ -497,7 +469,6 @@ function isValidGoogleSheetsUrl(url) {
 // Extracts the Spreadsheet ID from a Google Sheets URL
 function extractSpreadsheetId(url) {
     if (typeof url !== 'string') {
-        console.error(`[googleSheetsUtils.js]: ❌ Invalid URL input:`, url);
         throw new Error('Invalid URL: URL must be a string');
     }
     
@@ -508,7 +479,6 @@ function extractSpreadsheetId(url) {
     const match = cleanUrl.match(regex);
     
     if (!match) {
-        console.error(`[googleSheetsUtils.js]: ❌ Failed to extract spreadsheet ID from URL: ${url}`);
         return null;
     }
     
@@ -516,7 +486,6 @@ function extractSpreadsheetId(url) {
     
     // Validate the spreadsheet ID format
     if (!spreadsheetId || spreadsheetId.length < 20) {
-        console.error(`[googleSheetsUtils.js]: ❌ Invalid spreadsheet ID format: ${spreadsheetId}`);
         return null;
     }
     
@@ -559,16 +528,6 @@ async function validateInventorySheet(spreadsheetUrl, characterName) {
             });
         } catch (error) {
             if (error.status === 403 || error.message.includes('does not have permission')) {
-                let serviceAccountEmail = 'tinglebot@rotw-tinglebot.iam.gserviceaccount.com'; // Default fallback
-                try {
-                    if (fs.existsSync(SERVICE_ACCOUNT_PATH)) {
-                        const credentials = JSON.parse(fs.readFileSync(SERVICE_ACCOUNT_PATH));
-                        serviceAccountEmail = credentials.client_email;
-                    }
-                } catch (err) {
-                    // Use default email if file read fails
-                }
-                console.error(`[googleSheetsUtils.js]: ❌ Permission denied: ${serviceAccountEmail}`);
                 return {
                     success: false,
                     message: "**Error:** Permission denied.\n\n**Fix:** Make sure the Google Sheet is shared with editor access to:\n📧 `tinglebot@rotw-tinglebot.iam.gserviceaccount.com`"
@@ -585,7 +544,6 @@ async function validateInventorySheet(spreadsheetUrl, characterName) {
         ];
   
         if (!headerRow || headerRow.length === 0) {
-            console.error(`[googleSheetsUtils.js]: ❌ No headers found in inventory sheet`);
             return {
                 success: false,
                 message: "**Error:** The `loggedInventory` tab exists but has no header data.\n\n**Fix:** Please copy the correct header row into A1:M1."
@@ -596,7 +554,6 @@ async function validateInventorySheet(spreadsheetUrl, characterName) {
         const allHeadersMatch = expectedHeaders.every((header, index) => headers[index] === header);
   
         if (!allHeadersMatch) {
-            console.error(`[googleSheetsUtils.js]: ❌ Invalid headers in inventory sheet`);
             return {
                 success: false,
                 message: "**Error:** The headers do not match the required format.\n\n**Fix:** Ensure A1:M1 exactly reads:\nCharacter Name, Item Name, Qty of Item, Category, Type, Subtype, Obtain, Job, Perk, Location, Link, Date/Time, Confirmed Sync"
@@ -625,27 +582,23 @@ async function validateInventorySheet(spreadsheetUrl, characterName) {
   
     } catch (error) {
         if (error.message.includes('Requested entity was not found')) {
-            console.error(`[googleSheetsUtils.js]: ❌ Inventory sheet not found`);
             return {
                 success: false,
                 message: "**Error:** The Google Sheet was not found.\n\n**Fix:** Please double-check your URL and that the sheet is shared publicly (or with the bot)."
             };
         }
         if (error.message.includes('Unable to parse range')) {
-            console.error(`[googleSheetsUtils.js]: ❌ Invalid range for inventory sheet: A1:M1`);
             return {
                 success: false,
                 message: "**Error:** Cannot find the correct cells A1:M1.\n\n**Fix:** Double-check your tab name is exactly `loggedInventory` and that there is data starting at row 1."
             };
         }
         if (error.code === 403) {
-            console.error(`[googleSheetsUtils.js]: ❌ Permission denied for inventory sheet`);
             return {
                 success: false,
                 message: "**Error:** Permission denied.\n\n**Fix:** Make sure the Google Sheet is shared with editor access to:\n📧 `tinglebot@rotw-tinglebot.iam.gserviceaccount.com`"
             };
         }
-        console.error(`[googleSheetsUtils.js]: ❌ Inventory sheet error: ${error.message}`);
         return {
             success: false,
             message: `Unknown error accessing inventory sheet: ${error.message}`
@@ -744,27 +697,23 @@ async function validateVendingSheet(sheetUrl, characterName) {
 
     } catch (error) {
         if (error.message.includes('Requested entity was not found')) {
-            console.error(`[googleSheetsUtils.js]: ❌ Vending shop sheet not found`);
             return {
                 success: false,
                 message: '❌ The vending shop sheet was not found. Please check your URL and sharing settings.'
             };
         }
         if (error.message.includes('Unable to parse range')) {
-            console.error(`[googleSheetsUtils.js]: ❌ Invalid range for vending shop: A1:L1`);
             return {
                 success: false,
                 message: '❌ Cannot find the correct cells A1:L1 in vending shop sheet.\n\n**Fix:** Double-check your tab name is exactly `vendingShop` and that there is data starting at row 1.'
             };
         }
         if (error.code === 403) {
-            console.error(`[googleSheetsUtils.js]: ❌ Permission denied for vending shop`);
             return {
                 success: false,
                 message: "**Error:** Permission denied.\n\n**Fix:** Make sure the Google Sheet is shared with editor access to:\n📧 `tinglebot@rotw-tinglebot.iam.gserviceaccount.com`"
             };
         }
-        console.error(`[googleSheetsUtils.js]: ❌ Vending shop sheet error: ${error.message}`);
         return {
             success: false,
             message: `Unknown error accessing vending shop sheet: ${error.message}`
@@ -874,7 +823,6 @@ async function validateTokenTrackerSheet(spreadsheetUrl) {
                 message: "**Error:** The Google Sheet was not found.\n\n**Fix:** Please double-check your URL and that the sheet is shared publicly (or with the bot)."
             };
         }
-        console.error(`[googleSheetsUtils.js]: ❌ Token tracker sheet error: ${error.message}`);
         return {
             success: false,
             message: `Unknown error accessing token tracker sheet: ${error.message}`
@@ -943,22 +891,15 @@ async function safeAppendDataToSheet(spreadsheetUrl, character, range, values, c
     
     try {
         if (!spreadsheetUrl || typeof spreadsheetUrl !== 'string') {
-            console.error(`[googleSheetsUtils.js]: ❌ Invalid spreadsheet URL:`, spreadsheetUrl);
             return;
         }
 
         if (!character || typeof character !== 'object') {
-            console.error(`[googleSheetsUtils.js]: ❌ Invalid character object:`, character);
             return;
         }
 
         // Validate required character properties
         if (isCharacterObject && (!character.name || !character.inventory || !character.userId)) {
-            console.error(`[googleSheetsUtils.js]: ❌ Character missing required properties:`, {
-                name: character.name,
-                hasInventory: !!character.inventory,
-                userId: character.userId
-            });
             return;
         }
 
@@ -967,7 +908,6 @@ async function safeAppendDataToSheet(spreadsheetUrl, character, range, values, c
         isCharacterObject = character.name;
         
         if (!isUserObject && !isCharacterObject) {
-            console.error(`[googleSheetsUtils.js]: ❌ Invalid object type - neither User nor Character:`, character);
             return;
         }
 
@@ -977,10 +917,8 @@ async function safeAppendDataToSheet(spreadsheetUrl, character, range, values, c
         if (sheetName.toLowerCase() === 'loggedtracker' && isUserObject) {
             // This is a valid case - User object for token tracker
         } else if (sheetName.toLowerCase() === 'loggedinventory' && !isCharacterObject) {
-            console.error(`[googleSheetsUtils.js]: ❌ Character object required for inventory operations:`, character);
             return;
         } else if (!isCharacterObject) {
-            console.error(`[googleSheetsUtils.js]: ❌ Character object required for this operation:`, character);
             return;
         }
 
@@ -1044,7 +982,6 @@ async function safeAppendDataToSheet(spreadsheetUrl, character, range, values, c
             }
             
             if (!validationResult.success) {
-                console.error(`[googleSheetsUtils.js]: ❌ Sheet validation failed:`, validationResult.message);
                 if (isCharacterObject && character.userId && client) {
                     try {
                         const user = await client.users.fetch(character.userId);
@@ -1055,7 +992,7 @@ async function safeAppendDataToSheet(spreadsheetUrl, character, range, values, c
                             );
                         }
                     } catch (dmError) {
-                        console.error(`[googleSheetsUtils.js]: ❌ Error sending DM to user: ${dmError.message}`);
+                        // Silent fail on DM errors
                     }
                 } else if (isUserObject && character.discordId && client) {
                     try {
@@ -1067,7 +1004,7 @@ async function safeAppendDataToSheet(spreadsheetUrl, character, range, values, c
                             );
                         }
                     } catch (dmError) {
-                        console.error(`[googleSheetsUtils.js]: ❌ Error sending DM to user: ${dmError.message}`);
+                        // Silent fail on DM errors
                     }
                 }
                 return;
@@ -1082,7 +1019,6 @@ async function safeAppendDataToSheet(spreadsheetUrl, character, range, values, c
         const resource = {
             values: values.map(row => {
                 if (!Array.isArray(row)) {
-                    console.error(`[googleSheetsUtils.js]: ❌ Invalid row format:`, row);
                     throw new Error('Each value in values array must be an array');
                 }
                 return row.map(value => (value != null ? value.toString() : ''));
@@ -1103,17 +1039,8 @@ async function safeAppendDataToSheet(spreadsheetUrl, character, range, values, c
                     resource
                 });
         } catch (apiError) {
-            console.error(`[googleSheetsUtils.js]: ❌ Google Sheets API error:`, {
-                message: apiError.message,
-                status: apiError.status,
-                code: apiError.code,
-                spreadsheetId,
-                range
-            });
-            
             // Handle 409 Conflict error specifically
             if (apiError.status === 409) {
-                console.log(`[googleSheetsUtils.js]: 🔄 409 Conflict detected - storing operation for retry`);
                 try {
                     const operationData = {
                         operationType: 'append',
@@ -1134,7 +1061,7 @@ async function safeAppendDataToSheet(spreadsheetUrl, character, range, values, c
                     
                     return { success: false, storedForRetry: true, operationId };
                 } catch (storageError) {
-                    console.error(`[googleSheetsUtils.js]: ❌ Failed to store 409 conflict operation: ${storageError.message}`);
+                    logger.error('Failed to store conflict operation', storageError, 'googleSheetsUtils.js');
                 }
             }
             
@@ -1152,7 +1079,7 @@ async function safeAppendDataToSheet(spreadsheetUrl, character, range, values, c
                            errorMessage.includes('functionality disabled');
         
         if (!isAuthError) {
-            console.error(`[googleSheetsUtils.js]: ❌ Error in safeAppendDataToSheet:`, errorMessage);
+            logger.error('Sheet append failed', error, 'googleSheetsUtils.js');
         }
         
         // Check if this is a service unavailable error or conflict error
@@ -1187,7 +1114,7 @@ async function safeAppendDataToSheet(spreadsheetUrl, character, range, values, c
                 return { success: false, storedForRetry: true, operationId };
                 
             } catch (storageError) {
-                console.error(`[googleSheetsUtils.js]: ❌ Failed to store operation for retry: ${storageError?.message || 'Unknown error'}`);
+                logger.error('Failed to store operation for retry', storageError, 'googleSheetsUtils.js');
                 // Fall through to throw the original error
             }
         }
@@ -1250,7 +1177,7 @@ async function parseSheetData(sheetUrl) {
 
         return parsedRows;
     } catch (error) {
-        console.error(`[googleSheetsUtils.js]: ❌ Error parsing sheet data: ${error.message}`);
+        logger.error('Error parsing sheet data', error, 'googleSheetsUtils.js');
         throw error;
     }
 }
@@ -1280,7 +1207,7 @@ async function storePendingSheetOperation(operationData) {
 
     return operationId;
   } catch (error) {
-    console.error(`[googleSheetsUtils.js]: ❌ Error storing pending operation: ${error.message}`);
+    logger.error('Error storing pending operation', error, 'googleSheetsUtils.js');
     throw error;
   }
 }
@@ -1352,7 +1279,7 @@ async function retryPendingSheetOperations() {
     return { success: true, retried: successCount, failed: failureCount };
     
   } catch (error) {
-    console.error(`[googleSheetsUtils.js]: ❌ Error during retry process: ${error.message}`);
+    logger.error('Error during retry process', error, 'googleSheetsUtils.js');
     return { success: false, error: error.message };
   }
 }
@@ -1364,7 +1291,6 @@ async function getPendingSheetOperationsCount() {
     const count = await TempData.countDocuments({ type: 'pendingSheetOperation' });
     return count;
   } catch (error) {
-    console.error(`[googleSheetsUtils.js]: ❌ Error getting pending operations count: ${error.message}`);
     return 0;
   }
 }
@@ -1376,43 +1302,12 @@ function diagnoseGoogleSheetsSetup() {
     const credentials = getServiceAccountCredentials();
     const env = process.env.NODE_ENV || 'development';
     
-    console.log(`[googleSheetsUtils.js]: 🔍 **Google Sheets Setup Diagnostic**`);
-    console.log(`[googleSheetsUtils.js]: 📊 Environment: ${env}`);
-    
     if (!credentials) {
-      console.log(`[googleSheetsUtils.js]: ❌ **No Google Sheets credentials available**`);
-      console.log(`[googleSheetsUtils.js]: ⚠️ Google Sheets functionality is disabled`);
-      return;
+      logger.warn('No Google Sheets credentials available', 'googleSheetsUtils.js');
+      return { success: false, error: 'No credentials' };
     }
     
-    console.log(`[googleSheetsUtils.js]: 📧 Service Account Email: ${credentials.client_email}`);
-    console.log(`[googleSheetsUtils.js]: 🆔 Project ID: ${credentials.project_id}`);
-    console.log(`[googleSheetsUtils.js]: 🔑 Private Key: ${credentials.private_key ? '✅ Present' : '❌ Missing'}`);
-    console.log(`[googleSheetsUtils.js]: 🏷️ Private Key ID: ${credentials.private_key_id ? '✅ Present' : '❌ Missing'}`);
-    
-    // Check environment variables
-    const hasEnvVars = process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_PROJECT_ID;
-    const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID || process.env.RAILWAY_SERVICE_NAME;
-    
-    if (isRailway || hasEnvVars) {
-      console.log(`[googleSheetsUtils.js]: 🌐 Railway Environment: ${isRailway ? '✅ Yes' : '❌ No'}`);
-      console.log(`[googleSheetsUtils.js]: 🔐 GOOGLE_CLIENT_EMAIL: ${process.env.GOOGLE_CLIENT_EMAIL ? '✅ Set' : '❌ Missing'}`);
-      console.log(`[googleSheetsUtils.js]: 🔑 GOOGLE_PRIVATE_KEY: ${process.env.GOOGLE_PRIVATE_KEY ? '✅ Set' : '❌ Missing'}`);
-      console.log(`[googleSheetsUtils.js]: 🆔 GOOGLE_PROJECT_ID: ${process.env.GOOGLE_PROJECT_ID ? '✅ Set' : '❌ Missing'}`);
-    } else {
-      console.log(`[googleSheetsUtils.js]: 📁 Local Environment: Using service_account.json file`);
-      console.log(`[googleSheetsUtils.js]: 📂 Service Account Path: ${SERVICE_ACCOUNT_PATH}`);
-    }
-    
-    console.log(`[googleSheetsUtils.js]: 📋 **Common Permission Issues & Solutions:**`);
-    console.log(`[googleSheetsUtils.js]: 1. ❌ "The caller does not have permission"`);
-    console.log(`[googleSheetsUtils.js]:    → Solution: Share spreadsheet with ${credentials.client_email} as Editor`);
-    console.log(`[googleSheetsUtils.js]: 2. ❌ "Sheet not found"`);
-    console.log(`[googleSheetsUtils.js]:    → Solution: Check sheet tab names (loggedInventory, loggedTracker)`);
-    console.log(`[googleSheetsUtils.js]: 3. ❌ "Rate limit exceeded"`);
-    console.log(`[googleSheetsUtils.js]:    → Solution: Wait a few minutes, retries are automatic`);
-    console.log(`[googleSheetsUtils.js]: 4. ❌ "Service unavailable"`);
-    console.log(`[googleSheetsUtils.js]:    → Solution: Google Sheets API is down, try again later`);
+    logger.info(`Google Sheets: ${credentials.client_email} (${env})`, 'googleSheetsUtils.js');
     
     return {
       success: true,
@@ -1423,7 +1318,7 @@ function diagnoseGoogleSheetsSetup() {
       hasPrivateKeyId: !!credentials.private_key_id
     };
   } catch (error) {
-    console.error(`[googleSheetsUtils.js]: ❌ Diagnostic failed: ${error.message}`);
+    logger.error('Diagnostic failed', error, 'googleSheetsUtils.js');
     return {
       success: false,
       error: error.message
