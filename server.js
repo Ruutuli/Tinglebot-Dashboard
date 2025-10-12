@@ -8112,27 +8112,7 @@ const startServer = async () => {
     // Initialize databases
     await initializeDatabases();
     
-    // Setup weekly character rotation
-    await setupWeeklyCharacterRotation();
-    
-    // Setup daily reset reminders
-    setupDailyResetReminders();
-    
-    // Setup blood moon alerts
-    setupBloodMoonAlerts();
-    
-    logger.divider('SCHEDULERS INITIALIZED');
-    
-    // Initialize Discord Gateway
-    const gateway = getDiscordGateway();
-    const gatewayConnected = await gateway.connect();
-    if (gatewayConnected) {
-      logger.info('Discord Gateway connected successfully');
-    } else {
-      logger.warn('Discord Gateway failed to connect - some features will be limited');
-    }
-    
-    // Start server
+    // Start server FIRST so health checks pass
     app.listen(PORT, () => {
       const env = process.env.NODE_ENV || 'development';
       logger.ready(PORT, env);
@@ -8141,6 +8121,30 @@ const startServer = async () => {
       if (process.env.NODE_ENV !== 'production') {
         logger.info('👀 Watching for file changes... (type "rs" to restart)');
       }
+    });
+    
+    // Initialize background tasks (non-blocking)
+    // These run after server is listening so health checks pass
+    Promise.all([
+      setupWeeklyCharacterRotation(),
+      Promise.resolve(setupDailyResetReminders()),
+      Promise.resolve(setupBloodMoonAlerts())
+    ]).then(() => {
+      logger.divider('SCHEDULERS INITIALIZED');
+    }).catch(err => {
+      logger.error('Error initializing schedulers', err);
+    });
+    
+    // Initialize Discord Gateway (non-blocking)
+    const gateway = getDiscordGateway();
+    gateway.connect().then(gatewayConnected => {
+      if (gatewayConnected) {
+        logger.info('Discord Gateway connected successfully');
+      } else {
+        logger.warn('Discord Gateway failed to connect - some features will be limited');
+      }
+    }).catch(err => {
+      logger.warn('Discord Gateway connection error - some features will be limited', err);
     });
   } catch (error) {
     logger.error('Failed to start server', error);
