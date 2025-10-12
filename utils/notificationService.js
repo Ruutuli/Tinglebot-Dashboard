@@ -4,6 +4,7 @@
  * ============================================================================ */
 
 const User = require('../models/UserModel');
+const logger = require('./logger');
 
 /**
  * Sends a Discord DM to a user
@@ -16,7 +17,7 @@ async function sendDiscordDM(userId, embed) {
     const DISCORD_BOT_TOKEN = process.env.DISCORD_TOKEN;
     
     if (!DISCORD_BOT_TOKEN) {
-      console.error('[notificationService]: DISCORD_TOKEN not configured');
+      logger.error('DISCORD_TOKEN not configured', null, 'notificationService');
       return false;
     }
 
@@ -33,7 +34,8 @@ async function sendDiscordDM(userId, embed) {
     });
 
     if (!dmChannelResponse.ok) {
-      console.error(`[notificationService]: Failed to create DM channel for user ${userId}`);
+      const errorData = await dmChannelResponse.json();
+      logger.warn(`Failed to create DM channel: ${errorData.message || 'Unknown error'} (User: ${userId})`, 'notificationService');
       return false;
     }
 
@@ -53,14 +55,14 @@ async function sendDiscordDM(userId, embed) {
 
     if (!messageResponse.ok) {
       const errorData = await messageResponse.json();
-      console.error(`[notificationService]: Failed to send DM to user ${userId}:`, errorData);
+      logger.warn(`Failed to send DM: ${errorData.message || 'Unknown error'} (User: ${userId})`, 'notificationService');
       return false;
     }
 
-    console.log(`[notificationService]: ✅ Sent notification to user ${userId}`);
+    logger.success(`Sent notification to user ${userId}`, 'notificationService');
     return true;
   } catch (error) {
-    console.error(`[notificationService]: Error sending DM to user ${userId}:`, error);
+    logger.error(`Error sending DM to user ${userId}`, error, 'notificationService');
     return false;
   }
 }
@@ -72,12 +74,12 @@ async function sendDiscordDM(userId, embed) {
  */
 async function sendBloodMoonAlerts(bloodMoonData = {}) {
   try {
-    console.log('[notificationService]: 🌑 Sending Blood Moon alerts...');
+    logger.custom('🌑', 'Sending Blood Moon alerts...', '\x1b[35m', 'notificationService');
     
     // Find all users who have Blood Moon alerts enabled
     const users = await User.find({ 'settings.bloodMoonAlerts': true });
     
-    console.log(`[notificationService]: Found ${users.length} users with Blood Moon alerts enabled`);
+    logger.info(`Found ${users.length} users with Blood Moon alerts enabled`, 'notificationService');
     
     const embed = {
       title: '🌑 Blood Moon Alert!',
@@ -105,7 +107,7 @@ async function sendBloodMoonAlerts(bloodMoonData = {}) {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    console.log(`[notificationService]: ✅ Blood Moon alerts sent: ${successCount} successful, ${failCount} failed`);
+    logger.success(`Blood Moon alerts sent: ${successCount} successful, ${failCount} failed`, 'notificationService');
     
     return {
       total: users.length,
@@ -113,7 +115,7 @@ async function sendBloodMoonAlerts(bloodMoonData = {}) {
       failed: failCount
     };
   } catch (error) {
-    console.error('[notificationService]: Error sending Blood Moon alerts:', error);
+    logger.error('Error sending Blood Moon alerts', error, 'notificationService');
     throw error;
   }
 }
@@ -124,12 +126,12 @@ async function sendBloodMoonAlerts(bloodMoonData = {}) {
  */
 async function sendDailyResetReminders() {
   try {
-    console.log('[notificationService]: ⏰ Sending Daily Reset reminders...');
+    logger.custom('⏰', 'Sending Daily Reset reminders...', '\x1b[36m', 'notificationService');
     
     // Find all users who have Daily Reset reminders enabled
     const users = await User.find({ 'settings.dailyResetReminders': true });
     
-    console.log(`[notificationService]: Found ${users.length} users with Daily Reset reminders enabled`);
+    logger.info(`Found ${users.length} users with Daily Reset reminders enabled`, 'notificationService');
     
     const embed = {
       title: '⏰ Daily Reset Reminder!',
@@ -168,7 +170,7 @@ async function sendDailyResetReminders() {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    console.log(`[notificationService]: ✅ Daily Reset reminders sent: ${successCount} successful, ${failCount} failed`);
+    logger.success(`Daily Reset reminders sent: ${successCount} successful, ${failCount} failed`, 'notificationService');
     
     return {
       total: users.length,
@@ -176,7 +178,7 @@ async function sendDailyResetReminders() {
       failed: failCount
     };
   } catch (error) {
-    console.error('[notificationService]: Error sending Daily Reset reminders:', error);
+    logger.error('Error sending Daily Reset reminders', error, 'notificationService');
     throw error;
   }
 }
@@ -188,12 +190,12 @@ async function sendDailyResetReminders() {
  */
 async function sendWeatherNotifications(weatherData = {}) {
   try {
-    console.log('[notificationService]: 🌦️ Sending Weather notifications...');
+    logger.custom('🌦️', 'Sending Weather notifications...', '\x1b[34m', 'notificationService');
     
     // Find all users who have Weather notifications enabled
     const users = await User.find({ 'settings.weatherNotifications': true });
     
-    console.log(`[notificationService]: Found ${users.length} users with Weather notifications enabled`);
+    logger.info(`Found ${users.length} users with Weather notifications enabled`, 'notificationService');
     
     const weatherEmojis = {
       'blightrain': '☠️',
@@ -257,7 +259,7 @@ async function sendWeatherNotifications(weatherData = {}) {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    console.log(`[notificationService]: ✅ Weather notifications sent: ${successCount} successful, ${failCount} failed`);
+    logger.success(`Weather notifications sent: ${successCount} successful, ${failCount} failed`, 'notificationService');
     
     return {
       total: users.length,
@@ -265,7 +267,7 @@ async function sendWeatherNotifications(weatherData = {}) {
       failed: failCount
     };
   } catch (error) {
-    console.error('[notificationService]: Error sending Weather notifications:', error);
+    logger.error('Error sending Weather notifications', error, 'notificationService');
     throw error;
   }
 }
@@ -277,12 +279,12 @@ async function sendWeatherNotifications(weatherData = {}) {
  */
 async function sendCharacterOfWeekNotifications(characterData = {}) {
   try {
-    console.log('[notificationService]: ⭐ Sending Character of the Week notifications...');
+    logger.custom('⭐', 'Sending Character of the Week notifications...', '\x1b[33m', 'notificationService');
     
     // Find all users who have Character of Week notifications enabled
     const users = await User.find({ 'settings.characterWeekUpdates': true });
     
-    console.log(`[notificationService]: Found ${users.length} users with Character of Week notifications enabled`);
+    logger.info(`Found ${users.length} users with Character of Week notifications enabled`, 'notificationService');
     
     const embed = {
       title: '⭐ Character of the Week!',
@@ -317,7 +319,7 @@ async function sendCharacterOfWeekNotifications(characterData = {}) {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    console.log(`[notificationService]: ✅ Character of Week notifications sent: ${successCount} successful, ${failCount} failed`);
+    logger.success(`Character of Week notifications sent: ${successCount} successful, ${failCount} failed`, 'notificationService');
     
     return {
       total: users.length,
@@ -325,7 +327,7 @@ async function sendCharacterOfWeekNotifications(characterData = {}) {
       failed: failCount
     };
   } catch (error) {
-    console.error('[notificationService]: Error sending Character of Week notifications:', error);
+    logger.error('Error sending Character of Week notifications', error, 'notificationService');
     throw error;
   }
 }
@@ -368,7 +370,7 @@ async function sendNotificationEnabledConfirmation(userId, notificationType) {
     const info = notificationInfo[notificationType];
     
     if (!info) {
-      console.error(`[notificationService]: Unknown notification type: ${notificationType}`);
+      logger.error(`Unknown notification type: ${notificationType}`, null, 'notificationService');
       return false;
     }
 
@@ -397,12 +399,12 @@ async function sendNotificationEnabledConfirmation(userId, notificationType) {
     const success = await sendDiscordDM(userId, embed);
     
     if (success) {
-      console.log(`[notificationService]: ✅ Sent confirmation for ${notificationType} to user ${userId}`);
+      logger.success(`Sent confirmation for ${notificationType} to user ${userId}`, 'notificationService');
     }
     
     return success;
   } catch (error) {
-    console.error(`[notificationService]: Error sending notification confirmation to user ${userId}:`, error);
+    logger.error(`Error sending notification confirmation to user ${userId}`, error, 'notificationService');
     return false;
   }
 }

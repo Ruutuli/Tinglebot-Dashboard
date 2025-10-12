@@ -22,18 +22,15 @@ document.addEventListener('DOMContentLoaded', initUserAuth);
 // ------------------- Function: initUserAuth -------------------
 // Initializes user authentication and menu functionality
 async function initUserAuth() {
-  console.log('[auth.js]: 🔄 Initializing user authentication...');
   try {
     
     // Check if user just logged in (check URL parameters)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('login') === 'success') {
-      console.log('[auth.js]: ✅ Login success detected from URL parameter');
       
       // Check if there's a returnTo hash stored
       const returnTo = sessionStorage.getItem('returnTo');
       if (returnTo) {
-        console.log('[auth.js]: 📍 Returning to saved location:', returnTo);
         sessionStorage.removeItem('returnTo');
         // Update URL without the login parameter and with the saved hash
         window.history.replaceState({}, document.title, window.location.pathname + returnTo);
@@ -48,7 +45,6 @@ async function initUserAuth() {
         await checkUserAuthStatus();
       }, 500);
     } else {
-      console.log('[auth.js]: 🔍 Checking authentication status...');
       // Check authentication status
       await checkUserAuthStatus();
     }
@@ -76,7 +72,6 @@ window.redirectToLogin = function() {
   const currentHash = window.location.hash;
   if (currentHash && currentHash !== '#' && currentHash !== '#dashboard-section') {
     sessionStorage.setItem('returnTo', currentHash);
-    console.log('[auth.js]: 💾 Saving return location:', currentHash);
   }
   
   // Redirect to login page
@@ -91,7 +86,6 @@ window.redirectToLogin = function() {
 // ------------------- Function: checkUserAuthStatus -------------------
 // Checks current user authentication status from server
 async function checkUserAuthStatus() {
-  console.log('[auth.js]: 🔍 Checking user authentication status...');
   try {
     const response = await fetch('/api/user', {
       method: 'GET',
@@ -101,7 +95,6 @@ async function checkUserAuthStatus() {
       credentials: 'include'
     });
     
-    console.log('[auth.js]: 📡 Auth status response:', response.status, response.statusText);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch user data: ${response.status} ${response.statusText}`);
@@ -267,8 +260,9 @@ function updateUserMenu(userData) {
     return;
   }
   
-  // Update main username display
-  usernameElement.textContent = userData.username || 'User';
+  // Update main username display (use nickname if available)
+  const displayName = userData.nickname || userData.username || 'User';
+  usernameElement.textContent = displayName;
   
   // Update avatars
   const avatarUrl = userData.avatar ? `https://cdn.discordapp.com/avatars/${userData.discordId}/${userData.avatar}.png` : '/images/ankleicon.png';
@@ -276,7 +270,7 @@ function updateUserMenu(userData) {
   userDropdownAvatar.src = avatarUrl;
   
   // Update dropdown user info
-  userName.textContent = userData.username || 'User';
+  userName.textContent = displayName;
   userDiscriminator.textContent = userData.discriminator ? `#${userData.discriminator}` : '';
   userTokens.textContent = userData.tokens || 0;
   userSlots.textContent = userData.characterSlot || 2;
@@ -345,17 +339,14 @@ async function refreshUserData() {
 // ------------------- Function: logout -------------------
 // Handles user logout
 async function logout() {
-  console.log('[auth.js]: 🚪 Logging out user...');
   try {
     const response = await fetch('/auth/logout', {
       method: 'GET',
       credentials: 'include'
     });
     
-    console.log('[auth.js]: 📡 Logout response:', response.status, response.statusText);
     
     if (response.ok) {  
-      console.log('[auth.js]: ✅ Logout successful');
       currentUser = null;
       isAuthenticated = false;
       showGuestUser();
@@ -383,7 +374,6 @@ function showAdminArea() {
   const adminNavItem = document.getElementById('admin-area-nav-item');
   if (adminNavItem) {
     adminNavItem.style.display = 'block';
-    console.log('[auth.js]: ✅ Admin area shown for admin user');
   }
 }
 
@@ -393,7 +383,6 @@ function hideAdminArea() {
   const adminNavItem = document.getElementById('admin-area-nav-item');
   if (adminNavItem) {
     adminNavItem.style.display = 'none';
-    console.log('[auth.js]: 🔒 Admin area hidden for non-admin user');
   }
 }
 

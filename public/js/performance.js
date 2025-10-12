@@ -69,8 +69,6 @@ window.addEventListener('load', function() {
   if ('performance' in window) {
     const perfData = performance.getEntriesByType('navigation')[0];
     if (perfData) {
-      console.log('Page Load Time:', perfData.loadEventEnd - perfData.loadEventStart, 'ms');
-      console.log('DOM Content Loaded:', perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart, 'ms');
     }
   }
 });
@@ -91,7 +89,6 @@ document.addEventListener('click', function(event) {
         }
         break;
       default:
-        console.log('Unknown retry action:', action);
     }
   }
 });

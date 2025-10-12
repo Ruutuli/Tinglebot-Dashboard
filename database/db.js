@@ -202,8 +202,6 @@ async function connectToVending() {
   if (!vendingDbConnection) {
    const uri = dbConfig.vending;
    vendingDbConnection = await mongoose.createConnection(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
     serverSelectionTimeoutMS: 30000,
     socketTimeoutMS: 45000,
     connectTimeoutMS: 30000,

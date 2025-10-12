@@ -42,7 +42,6 @@ document.addEventListener('DOMContentLoaded', initDatabaseEditor);
 // Set up event listeners and initialize the database editor UI
 //
 function initDatabaseEditor() {
-  console.log('[databaseEditor.js]: 🔧 Initializing database editor...');
   
   const databaseEditorBtn = document.getElementById('database-editor-btn');
   const backToAdminBtn = document.getElementById('back-to-admin-btn');
@@ -58,9 +57,7 @@ function initDatabaseEditor() {
   const modalDeleteBtn = document.getElementById('modal-delete-btn');
   
   if (databaseEditorBtn) {
-    console.log('[databaseEditor.js]: ✅ Database editor button found');
     databaseEditorBtn.addEventListener('click', (e) => {
-      console.log('[databaseEditor.js]: 🔴 Database editor button clicked!');
       e.preventDefault();
       openDatabaseEditor();
     });
@@ -89,7 +86,6 @@ function initDatabaseEditor() {
   if (modal) {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
-        console.log('[databaseEditor.js]: 🔴 Modal background clicked');
         dbEditorCloseModal();
       }
     });
@@ -99,13 +95,11 @@ function initDatabaseEditor() {
     if (e.key === 'Escape') {
       const modal = document.getElementById('record-edit-modal');
       if (modal && modal.classList.contains('show')) {
-        console.log('[databaseEditor.js]: 🔴 Escape key pressed');
         dbEditorCloseModal();
       }
     }
   });
   
-  console.log('[databaseEditor.js]: ✅ Database editor initialized');
   
   // Make openDatabaseEditor globally accessible for URL routing
   window.openDatabaseEditor = openDatabaseEditor;
@@ -119,7 +113,6 @@ function initDatabaseEditor() {
 // Show database editor UI and load available models
 //
 async function openDatabaseEditor() {
-  console.log('[databaseEditor.js]: 📂 Opening database editor...');
   
   const adminToolsGrid = document.querySelector('.admin-tools-grid');
   if (adminToolsGrid) adminToolsGrid.style.display = 'none';
@@ -141,7 +134,6 @@ async function openDatabaseEditor() {
 // Hide database editor UI and return to admin tools
 //
 function closeDatabaseEditor() {
-  console.log('[databaseEditor.js]: 🔙 Closing database editor...');
   
   const adminToolsGrid = document.querySelector('.admin-tools-grid');
   if (adminToolsGrid) adminToolsGrid.style.display = 'grid';
@@ -188,7 +180,6 @@ async function fetchAPI(url, options = {}) {
 // Fetch and populate model selector dropdown
 //
 async function loadModels() {
-  console.log('[databaseEditor.js]: 📋 Loading models...');
   
   try {
     const response = await fetchAPI('/api/admin/db/models', { method: 'GET' });
@@ -207,7 +198,6 @@ async function loadModels() {
       modelSelector.appendChild(option);
     });
     
-    console.log('[databaseEditor.js]: ✅ Loaded', data.models.length, 'models');
   } catch (error) {
     console.error('[databaseEditor.js]: ❌ Error loading models:', error);
     showNotification('Failed to load models', 'error');
@@ -232,7 +222,6 @@ async function handleModelChange(event) {
     return;
   }
   
-  console.log('[databaseEditor.js]: 📊 Loading model:', modelName);
   
   currentModel = modelName;
   currentPage = 1;
@@ -259,7 +248,6 @@ async function loadSchema(modelName) {
     const data = await response.json();
     currentSchema = data.fields;
     
-    console.log('[databaseEditor.js]: ✅ Schema loaded for', modelName);
   } catch (error) {
     console.error('[databaseEditor.js]: ❌ Error loading schema:', error);
     showNotification('Failed to load schema', 'error');
@@ -290,7 +278,6 @@ async function loadRecords(modelName, page = 1, search = '') {
     setElementDisplay('records-container', 'block');
     setElementDisplay('empty-state', 'none');
     
-    console.log('[databaseEditor.js]: ✅ Loaded', data.records.length, 'records');
   } catch (error) {
     console.error('[databaseEditor.js]: ❌ Error loading records:', error);
     showNotification('Failed to load records', 'error');
@@ -584,7 +571,6 @@ function showLoadingModal() {
   }
   
   document.body.appendChild(loadingModal);
-  console.log('[databaseEditor.js]: 🔄 Loading modal shown');
 }
 
 // ------------------- hideLoadingModal -------------------
@@ -594,7 +580,6 @@ function hideLoadingModal() {
   const loadingModal = document.getElementById('db-editor-loading-modal');
   if (loadingModal) {
     loadingModal.remove();
-    console.log('[databaseEditor.js]: ✅ Loading modal hidden');
   }
 }
 
@@ -602,7 +587,6 @@ function hideLoadingModal() {
 // Open modal to edit an existing record
 //
 async function openEditModal(recordId) {
-  console.log('[databaseEditor.js]: ✏️ Opening edit modal for:', recordId);
   
   // Show loading modal
   showLoadingModal();
@@ -645,8 +629,6 @@ async function openEditModal(recordId) {
       modalBody.scrollTop = 0;
     }
     
-    console.log('[databaseEditor.js]: ✅ Modal opened');
-    console.log('[databaseEditor.js]: Modal classes:', modal.className);
   } catch (error) {
     console.error('[databaseEditor.js]: ❌ Error opening edit modal:', error);
     hideLoadingModal(); // Make sure to hide loading modal on error
@@ -658,7 +640,6 @@ async function openEditModal(recordId) {
 // Open modal to create a new record
 //
 async function openCreateModal() {
-  console.log('[databaseEditor.js]: ➕ Opening create modal');
   
   // Show loading modal
   showLoadingModal();
@@ -686,8 +667,6 @@ async function openCreateModal() {
       modalBody.scrollTop = 0;
     }
     
-    console.log('[databaseEditor.js]: ✅ Create modal opened');
-    console.log('[databaseEditor.js]: Modal classes:', modal.className);
   } catch (error) {
     console.error('[databaseEditor.js]: ❌ Error opening create modal:', error);
     hideLoadingModal(); // Make sure to hide loading modal on error
@@ -704,7 +683,6 @@ function dbEditorCloseModal(e) {
     e.stopPropagation();
   }
   
-  console.log('[databaseEditor.js]: 🔴 dbEditorCloseModal function called');
   
   // Make sure to hide loading modal if it's still showing
   hideLoadingModal();
@@ -716,8 +694,6 @@ function dbEditorCloseModal(e) {
     modal.classList.remove('show');
     modal.classList.add('hidden');
     
-    console.log('[databaseEditor.js]: ✅ Modal hidden');
-    console.log('[databaseEditor.js]: Modal classes:', modal.className);
   } else {
     console.error('[databaseEditor.js]: ❌ Modal element not found');
   }
@@ -751,7 +727,6 @@ function dbEditorCloseModal(e) {
 // Validate and sanitize field value based on type
 //
 function validateAndSanitizeField(fieldName, value, fieldType) {
-  console.log(`[databaseEditor.js]: 🔍 Validating field: ${fieldName} = "${value}" (type: ${fieldType})`);
   
   if (value === null || value === undefined || value === '') {
     if (fieldType === 'Boolean') return false;
@@ -876,7 +851,6 @@ function sanitizeArray(fieldName, value) {
         .filter(item => item.length > 0);
       
       if (items.length > 0) {
-        console.log(`[databaseEditor.js]: ✅ Converted ${items.length} items from line-separated format`);
         return items;
       }
     }
@@ -932,7 +906,6 @@ function sanitizeMap(fieldName, value) {
     try {
       const parsed = JSON.parse(value);
       if (typeof parsed === 'object' && parsed !== null) {
-        console.log(`[databaseEditor.js]: ✅ Successfully parsed Map field "${fieldName}":`, parsed);
         return parsed;
       }
     } catch (e) {
@@ -995,7 +968,6 @@ function buildLocationArray(formData, fieldName) {
     }
   }
   
-  console.log(`[databaseEditor.js]: 🗺️ Built locations array: [${locations.join(', ')}]`);
   return locations;
 }
 
@@ -1026,7 +998,6 @@ function buildJobArray(formData, fieldName) {
     }
   }
   
-  console.log(`[databaseEditor.js]: 💼 Built jobs array: [${jobs.join(', ')}]`);
   return jobs;
 }
 
@@ -2094,7 +2065,6 @@ async function createFieldGroup(fieldInfo, record) {
   // Make entries field full-width for TableRoll model
   if (fieldNameLower === 'entries' && currentModel === 'TableRoll') {
     fieldGroup.classList.add('full-width');
-    console.log('[databaseEditor.js]: ✅ Added full-width class to TableRoll entries field');
   }
   
   const fieldDescription = getFieldDescription(fieldName, currentModel);
@@ -3216,11 +3186,9 @@ function createImageInput(value) {
 //
 async function getDistinctValuesFromDatabase(modelName, fieldName) {
   try {
-    console.log(`[databaseEditor.js]: Fetching distinct values for field "${fieldName}" from model "${modelName}"`);
     const response = await fetchAPI(`/api/admin/db/${modelName}?limit=5000`);
     if (response.ok) {
       const data = await response.json();
-      console.log(`[databaseEditor.js]: Fetched ${data.records.length} records from ${modelName}`);
       const values = new Set();
       
       data.records.forEach(record => {
@@ -3235,7 +3203,6 @@ async function getDistinctValuesFromDatabase(modelName, fieldName) {
         }
       });
       
-      console.log(`[databaseEditor.js]: Found ${values.size} distinct values for "${fieldName}":`, Array.from(values));
       return Array.from(values).sort();
     }
   } catch (error) {
@@ -3383,7 +3350,6 @@ async function createAutocompleteInput(fieldName, value, modelName) {
   
   const renderDropdown = (items) => {
     dropdown.innerHTML = '';
-    console.log(`[databaseEditor.js]: Rendering ${items.length} autocomplete options for "${fieldName}"`);
     
     if (items.length === 0) {
       dropdown.innerHTML = '<div style="padding: 8px; color: rgba(203, 182, 135, 0.6); font-style: italic;">No suggestions (you can type freely)</div>';
@@ -5199,7 +5165,6 @@ function createTextInput(fieldName, value) {
 // Validate and save record (create or update)
 //
 async function handleSaveRecord() {
-  console.log('[databaseEditor.js]: 💾 Saving record...');
   
   const form = document.getElementById('record-form');
   const formData = new FormData(form);
@@ -5226,7 +5191,6 @@ async function handleSaveRecord() {
     return;
   }
   
-  console.log('[databaseEditor.js]: ✅ Data validated and sanitized:', recordData);
   
   try {
     const url = editingRecordId 
@@ -5265,7 +5229,6 @@ async function handleDeleteRecord() {
   
   // Show custom delete confirmation modal
   showDeleteConfirmation(recordName, async () => {
-    console.log('[databaseEditor.js]: 🗑️ Deleting record...');
     
     try {
       const response = await fetchAPI(`/api/admin/db/${currentModel}/${editingRecordId}`, {
@@ -5693,16 +5656,6 @@ function showNotification(message, type = 'info') {
   notification.appendChild(text);
   
   document.body.appendChild(notification);
-  
-  const computedStyle = window.getComputedStyle(notification);
-  console.log('[databaseEditor.js]: Notification computed styles:', {
-    position: computedStyle.position,
-    top: computedStyle.top,
-    right: computedStyle.right,
-    bottom: computedStyle.bottom,
-    left: computedStyle.left,
-    zIndex: computedStyle.zIndex
-  });
   
   setTimeout(() => {
     notification.classList.add('show');

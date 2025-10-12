@@ -5,6 +5,7 @@
 class SettingsManager {
   constructor() {
     this.settings = this.getDefaultSettings();
+    this.saveTimeouts = {}; // Track save timeouts to prevent duplicates
     this.init();
   }
 
@@ -34,12 +35,7 @@ class SettingsManager {
       bloodMoonAlerts: false,
       dailyResetReminders: false,
       weatherNotifications: false,
-      characterWeekUpdates: false,
-      
-      // Privacy & Security
-      activityLogging: true,
-      dataRetention: 90,
-      profileVisibility: 'friends'
+      characterWeekUpdates: false
     };
   }
 
@@ -96,11 +92,9 @@ class SettingsManager {
           // Update all settings with server values
           this.settings = { ...this.settings, ...data.settings };
           
-          console.log('[settings.js]: ✅ Loaded all settings from server');
           return true;
         }
       } else if (response.status === 401) {
-        console.log('[settings.js]: User not authenticated, using default settings');
         return false;
       } else {
         console.warn('[settings.js]: Failed to load settings from server');
@@ -153,7 +147,6 @@ class SettingsManager {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('[settings.js]: ✅ Saved all settings to server');
         
         // Also save to localStorage as backup
         localStorage.setItem('tinglebot-settings', JSON.stringify(this.settings));
@@ -184,43 +177,11 @@ class SettingsManager {
       resetBtn.addEventListener('click', () => this.resetSettings());
     }
 
-    // Export settings button
-    const exportBtn = document.getElementById('export-settings');
-    if (exportBtn) {
-      exportBtn.addEventListener('click', () => this.exportSettings());
-    }
-
-    // Import settings button
-    const importBtn = document.getElementById('import-settings');
-    if (importBtn) {
-      importBtn.addEventListener('click', () => this.importSettings());
-    }
-
-    // Data export buttons
-    this.setupDataExportButtons();
-
     // Settings change listeners
     this.setupSettingsChangeListeners();
 
     // Theme preview cards
     this.setupThemePreviewCards();
-  }
-
-  // Setup data export buttons
-  setupDataExportButtons() {
-    const exportButtons = {
-      'export-characters': () => this.exportCharacterData(),
-      'export-inventory': () => this.exportInventoryData(),
-      'export-relationships': () => this.exportRelationshipData(),
-      'export-all-data': () => this.exportAllData()
-    };
-
-    Object.entries(exportButtons).forEach(([id, handler]) => {
-      const btn = document.getElementById(id);
-      if (btn) {
-        btn.addEventListener('click', handler);
-      }
-    });
   }
 
   // Setup settings change listeners
@@ -230,8 +191,7 @@ class SettingsManager {
       'image-quality', 'animation-speed',
       'date-format', 'timezone', 'currency-format', 'number-format',
       'items-per-page', 'default-sort',
-      'blood-moon-alerts', 'daily-reset-reminders', 'weather-notifications', 'character-week-updates',
-      'activity-logging', 'data-retention', 'profile-visibility'
+      'blood-moon-alerts', 'daily-reset-reminders', 'weather-notifications', 'character-week-updates'
     ];
 
     settingsInputs.forEach(id => {
@@ -291,7 +251,7 @@ class SettingsManager {
     let settingValue = type === 'checkbox' ? checked : value;
     
     // Convert string numbers to actual numbers
-    if (['items-per-page', 'data-retention'].includes(id)) {
+    if (['items-per-page'].includes(id)) {
       settingValue = parseInt(settingValue) || settingValue;
     }
 
@@ -304,9 +264,17 @@ class SettingsManager {
       // Auto-save notification settings immediately to trigger DM
       const notificationSettings = ['bloodMoonAlerts', 'dailyResetReminders', 'weatherNotifications', 'characterWeekUpdates'];
       if (notificationSettings.includes(settingKey)) {
-        console.log(`[settings.js]: Auto-saving notification setting: ${settingKey} = ${settingValue}`);
-        // Only show DM confirmation message if turning ON
-        this.saveSettings(settingValue === true);
+        // Clear any existing timeout for this setting to prevent duplicates
+        if (this.saveTimeouts[settingKey]) {
+          clearTimeout(this.saveTimeouts[settingKey]);
+        }
+        
+        // Debounce the save to prevent duplicate API calls
+        this.saveTimeouts[settingKey] = setTimeout(() => {
+          // Only show DM confirmation message if turning ON
+          this.saveSettings(settingValue === true);
+          delete this.saveTimeouts[settingKey];
+        }, 300); // 300ms debounce
       }
     }
   }
@@ -328,10 +296,7 @@ class SettingsManager {
       'blood-moon-alerts': 'bloodMoonAlerts',
       'daily-reset-reminders': 'dailyResetReminders',
       'weather-notifications': 'weatherNotifications',
-      'character-week-updates': 'characterWeekUpdates',
-      'activity-logging': 'activityLogging',
-      'data-retention': 'dataRetention',
-      'profile-visibility': 'profileVisibility'
+      'character-week-updates': 'characterWeekUpdates'
     };
     return mapping[elementId];
   }
@@ -475,7 +440,6 @@ class SettingsManager {
   applyImageQuality(quality) {
     // This would affect how images are loaded/displayed
     // Implementation depends on your image loading system
-    console.log('Image quality set to:', quality);
   }
 
   // Update UI with current settings
@@ -515,10 +479,7 @@ class SettingsManager {
       'bloodMoonAlerts': 'blood-moon-alerts',
       'dailyResetReminders': 'daily-reset-reminders',
       'weatherNotifications': 'weather-notifications',
-      'characterWeekUpdates': 'character-week-updates',
-      'activityLogging': 'activity-logging',
-      'dataRetention': 'data-retention',
-      'profileVisibility': 'profile-visibility'
+      'characterWeekUpdates': 'character-week-updates'
     };
     return mapping[settingKey];
   }
@@ -531,167 +492,6 @@ class SettingsManager {
       this.updateUI();
       this.showNotification('Settings reset to defaults', 'success');
     }
-  }
-
-  // Export settings to file
-  exportSettings() {
-    try {
-      const settingsData = {
-        version: '1.0',
-        timestamp: new Date().toISOString(),
-        settings: this.settings
-      };
-
-      const blob = new Blob([JSON.stringify(settingsData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `tinglebot-settings-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      this.showNotification('Settings exported successfully!', 'success');
-    } catch (error) {
-      console.error('Error exporting settings:', error);
-      this.showNotification('Error exporting settings', 'error');
-    }
-  }
-
-  // Import settings from file
-  importSettings() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const data = JSON.parse(e.target.result);
-            if (data.settings) {
-              this.settings = { ...this.settings, ...data.settings };
-              this.applySettings();
-              this.updateUI();
-              this.showNotification('Settings imported successfully!', 'success');
-            } else {
-              throw new Error('Invalid settings file format');
-            }
-          } catch (error) {
-            console.error('Error importing settings:', error);
-            this.showNotification('Error importing settings: Invalid file format', 'error');
-          }
-        };
-        reader.readAsText(file);
-      }
-    };
-    input.click();
-  }
-
-  // Export character data
-  async exportCharacterData() {
-    try {
-      this.setButtonLoading('export-characters', true);
-      const response = await fetch('/api/characters/export');
-      if (response.ok) {
-        const data = await response.json();
-        this.downloadData(data, 'characters', 'json');
-        this.showNotification('Character data exported successfully!', 'success');
-      } else {
-        throw new Error('Failed to export character data');
-      }
-    } catch (error) {
-      console.error('Error exporting character data:', error);
-      this.showNotification('Error exporting character data', 'error');
-    } finally {
-      this.setButtonLoading('export-characters', false);
-    }
-  }
-
-  // Export inventory data
-  async exportInventoryData() {
-    try {
-      this.setButtonLoading('export-inventory', true);
-      const response = await fetch('/api/inventory/export');
-      if (response.ok) {
-        const data = await response.json();
-        this.downloadData(data, 'inventory', 'json');
-        this.showNotification('Inventory data exported successfully!', 'success');
-      } else {
-        throw new Error('Failed to export inventory data');
-      }
-    } catch (error) {
-      console.error('Error exporting inventory data:', error);
-      this.showNotification('Error exporting inventory data', 'error');
-    } finally {
-      this.setButtonLoading('export-inventory', false);
-    }
-  }
-
-  // Export relationship data
-  async exportRelationshipData() {
-    try {
-      this.setButtonLoading('export-relationships', true);
-      const response = await fetch('/api/relationships/export');
-      if (response.ok) {
-        const data = await response.json();
-        this.downloadData(data, 'relationships', 'json');
-        this.showNotification('Relationship data exported successfully!', 'success');
-      } else {
-        throw new Error('Failed to export relationship data');
-      }
-    } catch (error) {
-      console.error('Error exporting relationship data:', error);
-      this.showNotification('Error exporting relationship data', 'error');
-    } finally {
-      this.setButtonLoading('export-relationships', false);
-    }
-  }
-
-  // Export all data
-  async exportAllData() {
-    try {
-      this.setButtonLoading('export-all-data', true);
-      const [characters, inventory, relationships] = await Promise.all([
-        fetch('/api/characters/export').then(r => r.ok ? r.json() : null),
-        fetch('/api/inventory/export').then(r => r.ok ? r.json() : null),
-        fetch('/api/relationships/export').then(r => r.ok ? r.json() : null)
-      ]);
-
-      const allData = {
-        version: '1.0',
-        timestamp: new Date().toISOString(),
-        characters,
-        inventory,
-        relationships,
-        settings: this.settings
-      };
-
-      this.downloadData(allData, 'tinglebot-complete-data', 'json');
-      this.showNotification('All data exported successfully!', 'success');
-    } catch (error) {
-      console.error('Error exporting all data:', error);
-      this.showNotification('Error exporting all data', 'error');
-    } finally {
-      this.setButtonLoading('export-all-data', false);
-    }
-  }
-
-  // Download data as file
-  downloadData(data, filename, format) {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { 
-      type: format === 'json' ? 'application/json' : 'text/plain' 
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${filename}-${new Date().toISOString().split('T')[0]}.${format}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   }
 
   // Set button loading state

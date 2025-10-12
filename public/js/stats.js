@@ -18,6 +18,8 @@ if (typeof ChartDataLabels !== 'undefined') {
 let villageChart = null;
 let raceChart = null;
 let jobChart = null;
+let hwqTypeChart = null;
+let hwqNPCChart = null;
 
 // ============================================================================
 // ------------------- Utility Functions -------------------
@@ -1072,11 +1074,21 @@ async function initStatsPage() {
         window.statsInitializing = true;
         // Fetch stats data with cache-busting
         const timestamp = Date.now();
-        const res = await fetch(`/api/stats/characters?t=${timestamp}`);
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const [charRes, hwqRes] = await Promise.all([
+            fetch(`/api/stats/characters?t=${timestamp}`),
+            fetch(`/api/stats/hwqs?t=${timestamp}`)
+        ]);
+        
+        if (!charRes.ok) throw new Error(`HTTP error! status: ${charRes.status}`);
 
-        const data = await res.json();
+        const data = await charRes.json();
         if (!data) throw new Error('No data received');
+        
+        // Fetch HWQ stats
+        let hwqData = null;
+        if (hwqRes.ok) {
+            hwqData = await hwqRes.json();
+        }
 
         // Update total characters card
         const totalCard = document.getElementById('stats-total-characters');
@@ -1161,6 +1173,11 @@ async function initStatsPage() {
         initializeVillageChart(data);
         initializeRaceChart(data);
         initializeJobChart(data);
+        
+        // Initialize HWQ stats if data is available
+        if (hwqData) {
+            initializeHWQStats(hwqData);
+        }
 
         // Apply Firefox-specific fixes (with multiple attempts to ensure DOM is ready)
         applyFirefoxFixes();
@@ -1178,6 +1195,287 @@ async function initStatsPage() {
     } finally {
         window.statsInitializing = false;
     }
+}
+
+// ============================================================================
+// ------------------- HWQ Statistics Functions -------------------
+// ============================================================================
+
+// Function: Initialize HWQ statistics section
+function initializeHWQStats(hwqData) {
+    // Render overview stats
+    renderHWQOverview(hwqData);
+    
+    // Initialize charts (removed village chart - all villages post same amount)
+    initializeHWQTypeChart(hwqData);
+    initializeHWQNPCChart(hwqData);
+    
+    // Render top completers with detailed stats
+    renderHWQTopCompleters(hwqData);
+}
+
+// Function: Render HWQ overview statistics
+function renderHWQOverview(hwqData) {
+    const overviewDiv = document.getElementById('hwq-stats-overview');
+    if (!overviewDiv) return;
+    
+    overviewDiv.innerHTML = `
+        <div class="stats-table-section">
+            <h4 class="stats-section-header"><i class="fas fa-info-circle"></i> Overview</h4>
+            <div class="stats-table-container">
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th colspan="2">General Statistics</th>
+                        </tr>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Total Help Wanted Quests</strong></td>
+                            <td>${hwqData.totalQuests || 0}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Completed</strong></td>
+                            <td>${hwqData.completedQuests || 0}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Active</strong></td>
+                            <td>${hwqData.activeQuests || 0}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Completion Rate</strong></td>
+                            <td>${hwqData.completionRate}%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Unique Completers</strong></td>
+                            <td>${hwqData.uniqueCompleterCount || 0} users</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th colspan="2">Completion by Type</th>
+                        </tr>
+                        <tr>
+                            <th>Type</th>
+                            <th>Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(hwqData.completionRateByType || {})
+                            .sort(([,a], [,b]) => b - a)
+                            .map(([type, rate]) => `
+                                <tr>
+                                    <td>${type.charAt(0).toUpperCase() + type.slice(1)}</td>
+                                    <td>${rate}%</td>
+                                </tr>
+                            `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+// Function: Initialize HWQ type distribution chart
+function initializeHWQTypeChart(hwqData) {
+    const canvas = document.getElementById('hwqTypeChart');
+    if (!canvas) return;
+    
+    // Hide loading indicator
+    const loadingIndicator = canvas.parentElement.querySelector('.chart-loading');
+    if (loadingIndicator) loadingIndicator.style.display = 'none';
+    
+    const ctx = canvas.getContext('2d');
+    const typeData = hwqData.questsPerType || {};
+    
+    if (hwqTypeChart) hwqTypeChart.destroy();
+    
+    // Calculate dynamic y-axis max: use highest value + 20% buffer, minimum 100
+    const maxValue = Math.max(...Object.values(typeData), 0);
+    const dynamicMax = Math.max(100, Math.ceil(maxValue * 1.2 / 10) * 10); // Round up to nearest 10
+    
+    hwqTypeChart = createBarChart(ctx, typeData, {
+        labelTransform: v => v.charAt(0).toUpperCase() + v.slice(1),
+        colors: [
+            '#00bcd4', // Item (cyan)
+            '#f44336', // Monster (red)
+            '#673ab7', // Escort (purple)
+            '#ffc107', // Crafting (gold)
+            '#e91e63', // Art (pink)
+            '#2196f3'  // Writing (blue)
+        ],
+        yMax: dynamicMax
+    });
+}
+
+// Function: Initialize HWQ NPC chart (top requesters)
+function initializeHWQNPCChart(hwqData) {
+    const canvas = document.getElementById('hwqNPCChart');
+    if (!canvas) return;
+    
+    // Hide loading indicator
+    const loadingIndicator = canvas.parentElement.querySelector('.chart-loading');
+    if (loadingIndicator) loadingIndicator.style.display = 'none';
+    
+    const ctx = canvas.getContext('2d');
+    const topNPCs = hwqData.topNPCs || [];
+    
+    if (hwqNPCChart) hwqNPCChart.destroy();
+    
+    // Convert to object for chart
+    const npcData = {};
+    topNPCs.forEach(npc => {
+        npcData[npc.npc] = npc.count;
+    });
+    
+    // Calculate dynamic y-axis max
+    const maxValue = Math.max(...Object.values(npcData), 0);
+    const dynamicMax = Math.max(50, Math.ceil(maxValue * 1.2 / 5) * 5); // Round up to nearest 5
+    
+    hwqNPCChart = createBarChart(ctx, npcData, {
+        labelTransform: v => v,
+        colors: [
+            '#FF9999', '#FFD27A', '#FFF066', '#A6F29A', '#6EEEDD',
+            '#8FCBFF', '#B89CFF', '#F78CD2', '#8CE6C0', '#FFDB66'
+        ],
+        yMax: dynamicMax
+    });
+}
+
+// Function: Render top completers leaderboard with detailed stats
+function renderHWQTopCompleters(hwqData) {
+    const completersDiv = document.getElementById('hwq-top-completers');
+    if (!completersDiv) return;
+    
+    const topCompleters = hwqData.topCompleters || [];
+    
+    if (topCompleters.length === 0) {
+        completersDiv.innerHTML = '<p style="text-align: center; color: #aaa;">No completion data available</p>';
+        return;
+    }
+    
+    completersDiv.innerHTML = `
+        <div class="stats-table-section">
+            <h4 class="stats-section-header"><i class="fas fa-trophy"></i> Leaderboard</h4>
+            <div class="stats-table-container">
+                <!-- Main Leaderboard -->
+                <table class="stats-table" style="max-width: 500px;">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>User</th>
+                            <th>Quests Completed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${topCompleters.map((completer, index) => {
+                            const medals = ['🥇', '🥈', '🥉'];
+                            const medal = index < 3 ? medals[index] : '';
+                            return `
+                                <tr${index < 3 ? ' style="background: rgba(255, 215, 0, 0.08);"' : ''}>
+                                    <td style="text-align: center; font-weight: 600; font-size: 1.1rem;">${medal} ${index + 1}</td>
+                                    <td><i class="fas fa-user"></i> ${completer.nickname || completer.username}</td>
+                                    <td style="text-align: center; font-weight: 700; color: var(--accent-color); font-size: 1.1rem;">${completer.count}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+                
+                <!-- Favorite Quest Types -->
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th colspan="3">Favorite Quest Types</th>
+                        </tr>
+                        <tr>
+                            <th>User</th>
+                            <th>Type</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${topCompleters.slice(0, 5).map((completer) => {
+                            const favoriteTypeIcon = completer.favoriteType 
+                                ? getQuestTypeIconForStats(completer.favoriteType)
+                                : '';
+                            const favoriteTypeDisplay = completer.favoriteType
+                                ? `${favoriteTypeIcon} ${completer.favoriteType.charAt(0).toUpperCase() + completer.favoriteType.slice(1)}`
+                                : '—';
+                            
+                            // Get count for favorite type
+                            const favoriteTypeCount = completer.favoriteType && completer.byType 
+                                ? completer.byType[completer.favoriteType] || 0
+                                : 0;
+                            
+                            return `
+                                <tr>
+                                    <td><i class="fas fa-user"></i> ${completer.nickname || completer.username}</td>
+                                    <td style="text-align: center;">${favoriteTypeDisplay}</td>
+                                    <td style="text-align: center; font-weight: 600; color: var(--accent-color);">${favoriteTypeCount}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+                
+                <!-- Most Active Characters -->
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th colspan="3">Most Active Characters</th>
+                        </tr>
+                        <tr>
+                            <th>User</th>
+                            <th>Character</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${topCompleters.slice(0, 5).map((completer) => {
+                            const topCharDisplay = completer.topCharacter
+                                ? `<i class="fas fa-user-circle"></i> ${completer.topCharacter.name}${completer.topCharacter.job ? ` (${completer.topCharacter.job})` : ''}`
+                                : '—';
+                            
+                            // Get count for top character - find max count in byCharacter
+                            let topCharCount = 0;
+                            if (completer.byCharacter && Object.keys(completer.byCharacter).length > 0) {
+                                topCharCount = Math.max(...Object.values(completer.byCharacter));
+                            }
+                            
+                            return `
+                                <tr>
+                                    <td><i class="fas fa-user"></i> ${completer.nickname || completer.username}</td>
+                                    <td>${topCharDisplay}</td>
+                                    <td style="text-align: center; font-weight: 600; color: var(--accent-color);">${topCharCount}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+// Helper: Get quest type icon for stats display
+function getQuestTypeIconForStats(type) {
+    const icons = {
+        'item': '📦',
+        'monster': '🐉',
+        'escort': '🚶',
+        'crafting': '🔨',
+        'art': '🎨',
+        'writing': '✍️'
+    };
+    return icons[type] || '📋';
 }
 
 // ============================================================================

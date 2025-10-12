@@ -92,6 +92,22 @@
     background: linear-gradient(90deg, #9c27b0, #6a1b9a);
 }
 
+.quest-card.type-item::before {
+    background: linear-gradient(90deg, #00bcd4, #00acc1);
+}
+
+.quest-card.type-monster::before {
+    background: linear-gradient(90deg, #f44336, #e53935);
+}
+
+.quest-card.type-escort::before {
+    background: linear-gradient(90deg, #673ab7, #7e57c2);
+}
+
+.quest-card.type-crafting::before {
+    background: linear-gradient(90deg, #ffc107, #ffa000);
+}
+
 /* ============================================================================ */
 /* ------------------- Quest Header ------------------- */
 /* ============================================================================ */
@@ -152,6 +168,13 @@
     backdrop-filter: blur(10px);
 }
 
+.quest-status-badge.status-expired {
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.15), rgba(255, 152, 0, 0.05));
+    color: #e65100;
+    border: 1px solid rgba(255, 152, 0, 0.3);
+    backdrop-filter: blur(10px);
+}
+
 .quest-type-badge {
     display: inline-flex;
     align-items: center;
@@ -193,6 +216,30 @@
     background: linear-gradient(135deg, rgba(156, 39, 176, 0.15), rgba(156, 39, 176, 0.05));
     color: #6a1b9a;
     border: 1px solid rgba(156, 39, 176, 0.2);
+}
+
+.quest-type-badge.type-item {
+    background: linear-gradient(135deg, rgba(0, 188, 212, 0.2), rgba(0, 188, 212, 0.08));
+    color: #00acc1;
+    border: 1px solid rgba(0, 188, 212, 0.3);
+}
+
+.quest-type-badge.type-monster {
+    background: linear-gradient(135deg, rgba(244, 67, 54, 0.2), rgba(244, 67, 54, 0.08));
+    color: #e53935;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.quest-type-badge.type-escort {
+    background: linear-gradient(135deg, rgba(103, 58, 183, 0.2), rgba(103, 58, 183, 0.08));
+    color: #7e57c2;
+    border: 1px solid rgba(103, 58, 183, 0.3);
+}
+
+.quest-type-badge.type-crafting {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.2), rgba(255, 193, 7, 0.08));
+    color: #ffa000;
+    border: 1px solid rgba(255, 193, 7, 0.3);
 }
 
 .quest-meta {

@@ -11,12 +11,10 @@ const memberLoreModule = (function() {
 
   // Initialize the module
   function init() {
-    console.log('Member Lore module initializing...');
     bindElements();
     bindEvents();
     updateCharCount();
     createModal();
-    console.log('Member Lore module initialized successfully');
   }
 
   // Bind DOM elements
@@ -26,11 +24,6 @@ const memberLoreModule = (function() {
     loreSuccess = document.getElementById('lore-success');
     loreError = document.getElementById('lore-error');
     
-    console.log('DOM elements bound:');
-    console.log('- loreForm:', loreForm);
-    console.log('- charCount:', charCount);
-    console.log('- loreSuccess:', loreSuccess);
-    console.log('- loreError:', loreError);
   }
 
   // Bind event listeners
@@ -173,20 +166,15 @@ const memberLoreModule = (function() {
   // Handle form submission
   async function handleSubmit(event) {
     event.preventDefault();
-    console.log('Lore form submission started...');
     
     // Check authentication status first
-    console.log('Checking authentication...');
     const authStatus = await checkAuthenticationStatus();
-    console.log('Auth status result:', authStatus);
     
     if (!authStatus.authenticated) {
-      console.log('User not authenticated, showing error');
       showError('You must be logged in with Discord to submit lore. Please log in first.', true);
       return;
     }
     
-    console.log('User authenticated, proceeding with submission...');
     
     const formData = new FormData(loreForm);
     const loreData = {
@@ -197,7 +185,6 @@ const memberLoreModule = (function() {
       userId: authStatus.user?.id || null
     };
 
-    console.log('Form data collected:', loreData);
 
     // Show loading state
     const submitBtn = loreForm.querySelector('.submit-lore-btn');
@@ -206,11 +193,9 @@ const memberLoreModule = (function() {
     submitBtn.disabled = true;
 
     try {
-      console.log('Submitting lore:', loreData);
       
       // Submit lore (this would connect to your backend)
       const result = await submitLore(loreData);
-      console.log('Lore submitted successfully:', result);
       
       // Show modal instead of success message
       showModal();
@@ -259,12 +244,6 @@ const memberLoreModule = (function() {
   async function submitLore(loreData) {
     try {
       // Make actual API call to server
-      console.log('🌐 Sending request to server:', {
-        url: '/api/member-lore',
-        method: 'POST',
-        data: loreData
-      });
-      
       const response = await fetch('/api/member-lore', {
         method: 'POST',
         headers: {
@@ -272,12 +251,6 @@ const memberLoreModule = (function() {
         },
         credentials: 'include',
         body: JSON.stringify(loreData)
-      });
-      
-      console.log('🌐 Server response received:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
       });
 
       if (!response.ok) {
@@ -296,7 +269,6 @@ const memberLoreModule = (function() {
   // Check if user is authenticated
   async function checkAuthenticationStatus() {
     try {
-      console.log('Checking authentication status...');
       const response = await fetch('/api/user', {
         method: 'GET',
         headers: {
@@ -304,15 +276,12 @@ const memberLoreModule = (function() {
         },
         credentials: 'include'
       });
-      console.log('Auth response status:', response.status);
       
       if (!response.ok) {
-        console.log('Auth response not OK:', response.status, response.statusText);
         return { authenticated: false, isGuildMember: false };
       }
       
       const userData = await response.json();
-      console.log('Auth user data:', userData);
       
       return {
         authenticated: userData.isAuthenticated,
@@ -327,27 +296,20 @@ const memberLoreModule = (function() {
 
   // Show success message
   function showSuccess(message = 'Thank You!') {
-    console.log('showSuccess called with message:', message);
-    console.log('loreSuccess element:', loreSuccess);
     
     hideMessages();
     if (loreSuccess) {
-      console.log('Success element found, updating content...');
       
       // Update the success message text
       const successTitle = loreSuccess.querySelector('h3');
       const successText = loreSuccess.querySelector('p');
       
-      console.log('Title element:', successTitle);
-      console.log('Text element:', successText);
       
       if (successTitle) {
         successTitle.textContent = message;
-        console.log('Title updated to:', message);
       }
       if (successText) {
         successText.textContent = 'Your lore submission has been sent for review! We\'ll review it and respond in the server.';
-        console.log('Text updated');
       }
       
       // Show success message
@@ -356,7 +318,6 @@ const memberLoreModule = (function() {
       
       // Auto-hide after 8 seconds
       setTimeout(() => {
-        console.log('Auto-hiding success message');
         hideMessages();
       }, 8000);
     } else {
@@ -366,8 +327,6 @@ const memberLoreModule = (function() {
 
   // Show error message
   function showError(message = 'There was an error submitting your lore. Please try again.', showLoginButton = false) {
-    console.log('showError called with message:', message);
-    console.log('loreError element:', loreError);
     
     // Hide success modal but not error modal
     if (loreSuccess) {
@@ -402,13 +361,10 @@ const memberLoreModule = (function() {
       }
       
       // Show modal with proper styling
-      console.log('Adding show class to loreError');
       loreError.classList.add('show');
       loreError.style.display = 'flex';
       document.body.style.overflow = 'hidden';
       
-      console.log('loreError classes after show:', loreError.className);
-      console.log('loreError display style:', loreError.style.display);
       
       // Focus the OK button for accessibility
       setTimeout(() => {
@@ -622,7 +578,6 @@ const memberLoreModule = (function() {
 
   // Test function to show error modal
   function testErrorModal() {
-    console.log('Testing error modal...');
     showError('This is a test error message');
   }
 

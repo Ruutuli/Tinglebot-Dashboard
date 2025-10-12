@@ -11,12 +11,10 @@ const suggestionsModule = (function() {
 
   // Initialize the module
   function init() {
-    console.log('Suggestions module initializing...');
     bindElements();
     bindEvents();
     updateCharCount();
     createModal();
-    console.log('Suggestions module initialized successfully');
   }
 
   // Bind DOM elements
@@ -26,11 +24,6 @@ const suggestionsModule = (function() {
     suggestionSuccess = document.getElementById('suggestion-success');
     suggestionError = document.getElementById('suggestion-error');
     
-    console.log('DOM elements bound:');
-    console.log('- suggestionForm:', suggestionForm);
-    console.log('- charCount:', charCount);
-    console.log('- suggestionSuccess:', suggestionSuccess);
-    console.log('- suggestionError:', suggestionError);
   }
 
   // Bind event listeners
@@ -159,20 +152,15 @@ const suggestionsModule = (function() {
   // Handle form submission
   async function handleSubmit(event) {
     event.preventDefault();
-    console.log('Form submission started...');
     
     // Check authentication status first
-    console.log('Checking authentication...');
     const authStatus = await checkAuthenticationStatus();
-    console.log('Auth status result:', authStatus);
     
     if (!authStatus.authenticated) {
-      console.log('User not authenticated, showing error');
       showError('You must be logged in with Discord to submit suggestions. Please log in first.', true);
       return;
     }
     
-    console.log('User authenticated, proceeding with submission...');
     
     const formData = new FormData(suggestionForm);
     const suggestionData = {
@@ -183,7 +171,6 @@ const suggestionsModule = (function() {
       userId: authStatus.user?.id || null
     };
 
-    console.log('Form data collected:', suggestionData);
 
     // Show loading state
     const submitBtn = suggestionForm.querySelector('.submit-suggestion-btn');
@@ -192,11 +179,9 @@ const suggestionsModule = (function() {
     submitBtn.disabled = true;
 
     try {
-      console.log('Submitting suggestion:', suggestionData);
       
       // Submit suggestion (this would connect to your backend)
       const result = await submitSuggestion(suggestionData);
-      console.log('Suggestion submitted successfully:', result);
       
       // Show modal instead of success message
       showModal();
@@ -247,12 +232,6 @@ const suggestionsModule = (function() {
       // Note: Client-side validation removed to ensure server-side logging captures all attempts
 
       // Make actual API call to server
-      console.log('🌐 Sending request to server:', {
-        url: '/api/suggestions',
-        method: 'POST',
-        data: suggestionData
-      });
-      
       const response = await fetch('/api/suggestions', {
         method: 'POST',
         headers: {
@@ -260,12 +239,6 @@ const suggestionsModule = (function() {
         },
         credentials: 'include',
         body: JSON.stringify(suggestionData)
-      });
-      
-      console.log('🌐 Server response received:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
       });
 
       if (!response.ok) {
@@ -284,7 +257,6 @@ const suggestionsModule = (function() {
   // Check if user is authenticated
   async function checkAuthenticationStatus() {
     try {
-      console.log('Checking authentication status...');
       const response = await fetch('/api/user', {
         method: 'GET',
         headers: {
@@ -292,15 +264,12 @@ const suggestionsModule = (function() {
         },
         credentials: 'include'
       });
-      console.log('Auth response status:', response.status);
       
       if (!response.ok) {
-        console.log('Auth response not OK:', response.status, response.statusText);
         return { authenticated: false, isGuildMember: false };
       }
       
       const userData = await response.json();
-      console.log('Auth user data:', userData);
       
       return {
         authenticated: userData.isAuthenticated,
@@ -328,27 +297,20 @@ const suggestionsModule = (function() {
 
   // Show success message
   function showSuccess(message = 'Thank You!') {
-    console.log('showSuccess called with message:', message);
-    console.log('suggestionSuccess element:', suggestionSuccess);
     
     hideMessages();
     if (suggestionSuccess) {
-      console.log('Success element found, updating content...');
       
       // Update the success message text
       const successTitle = suggestionSuccess.querySelector('h3');
       const successText = suggestionSuccess.querySelector('p');
       
-      console.log('Title element:', successTitle);
-      console.log('Text element:', successText);
       
       if (successTitle) {
         successTitle.textContent = message;
-        console.log('Title updated to:', message);
       }
       if (successText) {
         successText.textContent = 'Your anonymous suggestion has been submitted successfully! We\'ll review it and respond in the server.';
-        console.log('Text updated');
       }
       
       // Show success message
@@ -357,7 +319,6 @@ const suggestionsModule = (function() {
       
       // Auto-hide after 8 seconds
       setTimeout(() => {
-        console.log('Auto-hiding success message');
         hideMessages();
       }, 8000);
     } else {

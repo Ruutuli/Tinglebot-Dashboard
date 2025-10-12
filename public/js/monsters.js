@@ -67,7 +67,6 @@ function renderMonsterCards(monsters, page = 1, totalMonsters = null) {
   grid.innerHTML = monstersToRender.map(monster => {
     // Format locations properly
     const locations = Array.isArray(monster.locations) ? monster.locations : [];
-    console.log(`🔍 Monster ${monster.name} - Raw locations:`, locations);
     
     // First, combine "Central" and "Hyrule" into "Central Hyrule" if they appear together
     let processedLocations = [...locations];
@@ -82,18 +81,15 @@ function renderMonsterCards(monsters, page = 1, totalMonsters = null) {
     
     const formattedLocations = processedLocations.filter(loc => loc && loc.trim()).map(loc => {
       // Handle multi-word locations like "Central Hyrule" properly
-      console.log(`🔍 Processing location: "${loc}"`);
       // Don't split multi-word locations - keep them as single units
       // Handle hyphens properly by splitting on spaces and hyphens, then rejoining
       const result = loc.trim()
         .split(/[\s-]+/) // Split on spaces and hyphens
         .map(word => capitalize(word))
         .join(' '); // Rejoin with spaces
-      console.log(`🔍 Final result: "${result}"`);
       return result;
     }).filter(loc => loc.length > 0);
     
-    console.log(`🔍 Final formatted locations for ${monster.name}:`, formattedLocations);
 
     // Format jobs properly
     const jobs = Array.isArray(monster.job) ? monster.job : [];
@@ -801,13 +797,11 @@ function getTypeFromName(name) {
 // ------------------- Function: renderMonsterLocationTags -------------------
 // Renders location tags with color classes for monster cards
 function renderMonsterLocationTags(locations) {
-  console.log(`🎨 renderMonsterLocationTags called with:`, locations);
   if (!Array.isArray(locations)) return '';
   return locations.filter(Boolean).map(location => {
     // Use the full location string as the key, not individual words
     const key = location.trim().toLowerCase();
     const colorClass = MONSTER_LOCATION_COLORS[key] || '';
-    console.log(`🎨 Location: "${location}" -> Key: "${key}" -> Color class: "${colorClass}"`);
     return `<span class="monster-location-tag ${colorClass}">${location.trim()}</span>`;
   }).join('');
 }
@@ -829,8 +823,6 @@ const MONSTER_LOCATION_COLORS = {
   'vhintl': 'location-vhintl'
 };
 
-// Log the location colors mapping for debugging
-console.log('🗺️ MONSTER_LOCATION_COLORS mapping:', MONSTER_LOCATION_COLORS);
 
 // ------------------- Function: setupMonsterFilters -------------------
 async function setupMonsterFilters(monsters) {

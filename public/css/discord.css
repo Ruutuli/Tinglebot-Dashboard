@@ -853,3 +853,936 @@
     animation: none !important;
   }
 }
+
+/* ============================================================================ */
+/* NEW DISCORD PAGE SECTIONS                                                   */
+/* ============================================================================ */
+
+/* Common Section Header */
+.discord-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--glass-border);
+}
+
+.discord-section-header h3 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.discord-section-header h3 i {
+  color: var(--totk-light-green);
+}
+
+/* Live Server Activity Section */
+.discord-activity-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--frost-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.activity-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.activity-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(73, 213, 156, 0.05);
+  border: 1px solid rgba(73, 213, 156, 0.1);
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.activity-stat-card:hover {
+  background: rgba(73, 213, 156, 0.1);
+  border-color: rgba(73, 213, 156, 0.2);
+  transform: translateY(-2px);
+}
+
+.activity-stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.activity-stat-icon.online {
+  background: rgba(67, 181, 129, 0.2);
+  color: #43b581;
+}
+
+.activity-stat-icon.voice {
+  background: rgba(114, 137, 218, 0.2);
+  color: #7289da;
+}
+
+.activity-stat-icon.messages {
+  background: rgba(250, 166, 26, 0.2);
+  color: #faa61a;
+}
+
+.activity-stat-icon.boost {
+  background: rgba(255, 115, 250, 0.2);
+  color: #ff73fa;
+}
+
+.activity-stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.activity-stat-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.activity-stat-value {
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+/* Online Members Section */
+.discord-online-members-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--frost-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.online-filter-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.online-filter-tab {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  border-radius: 0.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.online-filter-tab:hover {
+  background: rgba(73, 213, 156, 0.1);
+  border-color: var(--totk-light-green);
+  color: var(--totk-light-green);
+}
+
+.online-filter-tab.active {
+  background: var(--totk-light-green);
+  border-color: var(--totk-light-green);
+  color: #000;
+}
+
+.online-members-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.online-member-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(73, 213, 156, 0.03);
+  border: 1px solid rgba(73, 213, 156, 0.1);
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.online-member-card:hover {
+  background: rgba(73, 213, 156, 0.08);
+  border-color: rgba(73, 213, 156, 0.2);
+  transform: translateX(4px);
+}
+
+.online-member-avatar-container {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.online-member-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--glass-border);
+}
+
+.online-member-status-indicator {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-primary);
+}
+
+.online-member-status-indicator.online {
+  background: #43b581;
+  box-shadow: 0 0 8px rgba(67, 181, 129, 0.5);
+}
+
+.online-member-status-indicator.idle {
+  background: #faa61a;
+  box-shadow: 0 0 8px rgba(250, 166, 26, 0.5);
+}
+
+.online-member-status-indicator.dnd {
+  background: #f04747;
+  box-shadow: 0 0 8px rgba(240, 71, 71, 0.5);
+}
+
+.online-member-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.online-member-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0 0 0.25rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.online-member-activity {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Server Stats Section */
+.discord-stats-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--frost-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.server-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.server-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: rgba(73, 213, 156, 0.03);
+  border: 1px solid rgba(73, 213, 156, 0.1);
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.server-stat-item:hover {
+  background: rgba(73, 213, 156, 0.08);
+  border-color: rgba(73, 213, 156, 0.2);
+  transform: translateY(-2px);
+}
+
+.server-stat-item > i {
+  font-size: 1.75rem;
+  color: var(--totk-light-green);
+  width: 40px;
+  text-align: center;
+}
+
+.server-stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.server-stat-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.server-stat-value {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* Role Distribution Section */
+.discord-roles-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--frost-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.roles-chart-container {
+  width: 100%;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(73, 213, 156, 0.05) 0%, rgba(73, 213, 156, 0.02) 100%);
+  border: 1px solid rgba(73, 213, 156, 0.15);
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+  min-height: 650px; /* Ensure enough space for the taller chart */
+  min-width: 900px; /* Ensure minimum width for better chart readability */
+}
+
+@media (max-width: 1200px) {
+  .roles-chart-container {
+    min-width: 700px;
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .roles-chart-container {
+    min-width: 100%;
+    padding: 1rem;
+    overflow-x: auto;
+  }
+}
+
+.roles-chart-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--totk-light-green), var(--totk-green), var(--totk-light-green));
+  opacity: 0.5;
+}
+
+#roles-chart {
+  max-width: 100%;
+  height: auto !important;
+  cursor: crosshair;
+}
+
+/* Roles Legend Header */
+.roles-legend-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.roles-legend-header h4 {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.roles-legend-header h4 i {
+  color: #49d59c;
+}
+
+.legend-total {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: rgba(73, 213, 156, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(73, 213, 156, 0.2);
+}
+
+/* Roles Legend Grid */
+.roles-legend {
+  margin-top: 0;
+}
+
+.roles-legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.role-legend-item {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(73, 213, 156, 0.03);
+  border: 1px solid rgba(73, 213, 156, 0.1);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.role-legend-item:hover {
+  background: rgba(73, 213, 156, 0.08);
+  border-color: rgba(73, 213, 156, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(73, 213, 156, 0.15);
+}
+
+.role-legend-item[data-rank="1"] {
+  border-color: rgba(255, 215, 0, 0.3);
+  background: rgba(255, 215, 0, 0.05);
+}
+
+.role-legend-item[data-rank="2"] {
+  border-color: rgba(192, 192, 192, 0.3);
+  background: rgba(192, 192, 192, 0.05);
+}
+
+.role-legend-item[data-rank="3"] {
+  border-color: rgba(205, 127, 50, 0.3);
+  background: rgba(205, 127, 50, 0.05);
+}
+
+.role-rank {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  min-width: 2rem;
+  text-align: center;
+}
+
+.role-color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.role-legend-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.role-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.25rem;
+}
+
+.role-count {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.role-percentage {
+  color: #49d59c;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: rgba(73, 213, 156, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(73, 213, 156, 0.2);
+  min-width: 3rem;
+  text-align: center;
+}
+
+/* Discord Events Section */
+.discord-events-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--frost-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.event-card {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(73, 213, 156, 0.03);
+  border: 1px solid rgba(73, 213, 156, 0.1);
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.event-card:hover {
+  background: rgba(73, 213, 156, 0.08);
+  border-color: rgba(73, 213, 156, 0.2);
+  transform: translateY(-2px);
+}
+
+.event-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  background: rgba(73, 213, 156, 0.15);
+  color: var(--totk-light-green);
+  flex-shrink: 0;
+}
+
+.event-details {
+  flex: 1;
+}
+
+.event-name {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.event-time {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.event-time i {
+  color: var(--totk-light-green);
+}
+
+.event-description {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.5;
+}
+
+.event-participants {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.event-participants i {
+  color: var(--totk-light-green);
+}
+
+.no-events-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.no-events-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.no-events-state p {
+  margin: 0;
+  font-style: italic;
+  font-size: 1rem;
+}
+
+/* Announcements Section */
+.discord-announcements-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--frost-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.announcements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.announcement-card {
+  padding: 1.5rem;
+  background: rgba(73, 213, 156, 0.03);
+  border-left: 4px solid var(--totk-light-green);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.announcement-card.clickable::after {
+  content: 'Click to read more';
+  position: absolute;
+  bottom: 0.75rem;
+  right: 1rem;
+  font-size: 0.75rem;
+  color: var(--totk-light-green);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.announcement-card.clickable:hover::after {
+  opacity: 1;
+}
+
+.announcement-card:hover {
+  background: rgba(73, 213, 156, 0.08);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(73, 213, 156, 0.15);
+}
+
+.announcement-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.announcement-author {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.announcement-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--glass-border);
+}
+
+.announcement-author-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.announcement-time {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.announcement-content {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+/* Announcement Modal */
+.announcement-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.announcement-modal.active {
+  display: flex;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.announcement-modal-content {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--frost-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  max-width: 700px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 2rem;
+  position: relative;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.announcement-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--glass-border);
+}
+
+.announcement-modal-author {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.announcement-modal-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--totk-light-green);
+}
+
+.announcement-modal-author-info h3 {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+}
+
+.announcement-modal-time {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.announcement-modal-close {
+  background: rgba(73, 213, 156, 0.1);
+  border: 1px solid rgba(73, 213, 156, 0.3);
+  border-radius: 50%;
+  color: var(--totk-light-green);
+  cursor: pointer;
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.announcement-modal-close:hover {
+  background: rgba(73, 213, 156, 0.2);
+  border-color: var(--totk-light-green);
+  transform: rotate(90deg);
+}
+
+.announcement-modal-body {
+  color: var(--text-primary);
+  font-size: 1rem;
+  line-height: 1.8;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.announcement-modal-body p {
+  margin-bottom: 1rem;
+}
+
+/* Scrollbar styling for modal */
+.announcement-modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.announcement-modal-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.announcement-modal-content::-webkit-scrollbar-thumb {
+  background: var(--totk-light-green);
+  border-radius: 10px;
+}
+
+.announcement-modal-content::-webkit-scrollbar-thumb:hover {
+  background: var(--totk-green);
+}
+
+/* Quick Links Section */
+.discord-links-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--frost-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.quick-links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.quick-link-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: rgba(73, 213, 156, 0.03);
+  border: 1px solid rgba(73, 213, 156, 0.1);
+  border-radius: 0.75rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.quick-link-card:hover {
+  background: rgba(73, 213, 156, 0.1);
+  border-color: var(--totk-light-green);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(73, 213, 156, 0.2);
+}
+
+.quick-link-card i {
+  font-size: 2rem;
+  color: var(--totk-light-green);
+}
+
+.quick-link-card span {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Loading and Empty States */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.loading-state i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--totk-light-green);
+}
+
+.loading-state p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .activity-stats-grid,
+  .server-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+  
+  .online-members-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .quick-links-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+  
+  .discord-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .online-filter-tabs {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .online-filter-tab {
+    flex: 1;
+    text-align: center;
+  }
+}

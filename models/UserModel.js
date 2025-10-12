@@ -3,6 +3,11 @@ const mongoose = require('mongoose');
 // ------------------- Define the user schema -------------------
 const userSchema = new mongoose.Schema({
   discordId: { type: String, required: true, unique: true }, // Unique Discord ID of the user
+  username: { type: String, default: '' }, // Discord username
+  nickname: { type: String, default: '' }, // User's custom display name
+  email: { type: String, default: '' }, // Discord email
+  avatar: { type: String, default: '' }, // Discord avatar hash
+  discriminator: { type: String, default: '' }, // Discord discriminator
   googleSheetsUrl: { type: String, default: '' }, // URL to user's Google Sheets (if applicable)
   timezone: { type: String, default: 'UTC' }, // User's timezone (default to UTC)
   tokens: { type: Number, default: 0 }, // Number of tokens the user has

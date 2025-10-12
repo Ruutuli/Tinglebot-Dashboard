@@ -122,6 +122,12 @@ function updateProfileDisplay(userData) {
   // Update user info
   profileName.textContent = userData.username || 'User';
   
+  // Update nickname display
+  const nicknameValue = document.getElementById('profile-nickname-value');
+  if (nicknameValue) {
+    nicknameValue.textContent = userData.nickname || 'Not set';
+  }
+  
   // Update stats
   profileTokens.textContent = userData.tokens || 0;
   profileSlots.textContent = userData.characterSlot !== undefined ? userData.characterSlot : 2;
@@ -1616,6 +1622,23 @@ function setupProfileEventListeners() {
     exportAllBtn.addEventListener('click', handleExportAllUserData);
   }
   
+  // Nickname editing buttons
+  const editNicknameBtn = document.getElementById('edit-nickname-btn');
+  const saveNicknameBtn = document.getElementById('save-nickname-btn');
+  const cancelNicknameBtn = document.getElementById('cancel-nickname-btn');
+  
+  if (editNicknameBtn) {
+    editNicknameBtn.addEventListener('click', handleEditNickname);
+  }
+  
+  if (saveNicknameBtn) {
+    saveNicknameBtn.addEventListener('click', handleSaveNickname);
+  }
+  
+  if (cancelNicknameBtn) {
+    cancelNicknameBtn.addEventListener('click', handleCancelNickname);
+  }
+  
   // Listen for custom navigation events
   document.addEventListener('navigateToSection', (event) => {
     if (event.detail.section === 'profile-section') {
@@ -1883,6 +1906,118 @@ function showProfileMessage(message, type = 'info') {
 // Shows an error message on the profile page
 function showProfileError(message) {
   showProfileMessage(message, 'error');
+}
+
+// ============================================================================
+// ------------------- Section: Nickname Editing -------------------
+// Handles nickname editing functionality
+// ============================================================================
+
+// ------------------- Function: handleEditNickname -------------------
+// Shows the nickname editing form
+function handleEditNickname() {
+  const nicknameDisplay = document.getElementById('profile-nickname-display');
+  const nicknameEdit = document.getElementById('profile-nickname-edit');
+  const nicknameInput = document.getElementById('profile-nickname-input');
+  
+  if (nicknameDisplay && nicknameEdit && nicknameInput) {
+    // Set current nickname value in input
+    nicknameInput.value = currentUser?.nickname || '';
+    
+    // Toggle display
+    nicknameDisplay.style.display = 'none';
+    nicknameEdit.style.display = 'flex';
+    
+    // Focus the input
+    nicknameInput.focus();
+  }
+}
+
+// ------------------- Function: handleCancelNickname -------------------
+// Cancels nickname editing
+function handleCancelNickname() {
+  const nicknameDisplay = document.getElementById('profile-nickname-display');
+  const nicknameEdit = document.getElementById('profile-nickname-edit');
+  const nicknameInput = document.getElementById('profile-nickname-input');
+  
+  if (nicknameDisplay && nicknameEdit && nicknameInput) {
+    // Reset input
+    nicknameInput.value = currentUser?.nickname || '';
+    
+    // Toggle display
+    nicknameDisplay.style.display = 'flex';
+    nicknameEdit.style.display = 'none';
+  }
+}
+
+// ------------------- Function: handleSaveNickname -------------------
+// Saves the nickname to the database
+async function handleSaveNickname() {
+  const nicknameInput = document.getElementById('profile-nickname-input');
+  const saveBtn = document.getElementById('save-nickname-btn');
+  
+  if (!nicknameInput || !saveBtn) return;
+  
+  const nickname = nicknameInput.value.trim();
+  
+  try {
+    // Disable button
+    const originalHTML = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    
+    // Send update request
+    const response = await fetch('/api/user/nickname', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify({ nickname })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update nickname');
+    }
+    
+    const result = await response.json();
+    
+    // Update current user object
+    if (currentUser) {
+      currentUser.nickname = nickname;
+    }
+    
+    // Update display
+    const nicknameValue = document.getElementById('profile-nickname-value');
+    if (nicknameValue) {
+      nicknameValue.textContent = nickname || 'Not set';
+    }
+    
+    // Update header display name if it exists
+    const headerUsername = document.querySelector('.user-dropdown .user-info .user-name');
+    if (headerUsername) {
+      headerUsername.textContent = nickname || currentUser?.username || 'User';
+    }
+    
+    // Hide edit form
+    handleCancelNickname();
+    
+    // Show success message
+    showProfileMessage('Display name updated successfully!', 'success');
+    
+    // Reset button
+    saveBtn.innerHTML = originalHTML;
+    saveBtn.disabled = false;
+    
+  } catch (error) {
+    console.error('[profile.js]: Error saving nickname:', error);
+    showProfileMessage(error.message || 'Failed to update display name', 'error');
+    
+    // Reset button
+    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+    saveBtn.disabled = false;
+  }
 }
 
 // ============================================================================

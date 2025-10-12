@@ -19,7 +19,6 @@ const levelsModule = {
    * Initialize the levels module
    */
   init() {
-    console.log('[levels.js]: Initializing levels module');
     this.setupEventListeners();
     this.checkAuthAndLoad();
   },
@@ -204,10 +203,10 @@ const levelsModule = {
             ${medal || `<span class="rank-number">#${entry.rank}</span>`}
           </div>
           <div class="leaderboard-avatar">
-            <img src="${avatarUrl}" alt="${entry.username}" onerror="this.src='/images/ankleicon.png'">
+            <img src="${avatarUrl}" alt="${entry.nickname || entry.username}" onerror="this.src='/images/ankleicon.png'">
           </div>
           <div class="leaderboard-info">
-            <div class="leaderboard-username">${entry.username}</div>
+            <div class="leaderboard-username">${entry.nickname || entry.username}</div>
             <div class="leaderboard-stats">
               <span class="level-badge">Level ${entry.level}</span>
               <span class="xp-text">${entry.xp.toLocaleString()} XP</span>
@@ -372,7 +371,7 @@ const levelsModule = {
         : '/images/ankleicon.png';
       
       document.getElementById('user-details-avatar').src = avatarUrl;
-      document.getElementById('user-details-username').textContent = data.username;
+      document.getElementById('user-details-username').textContent = data.nickname || data.username;
       document.getElementById('user-details-level-header').textContent = `Level ${data.level}`;
       
       // Update rank badge
@@ -482,27 +481,19 @@ const levelsModule = {
 
 // Check if we're on the levels section and initialize
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('[levels.js]: Module loaded, setting up initialization');
-  
   // Initialize when navigating to levels section
   const levelsLink = document.querySelector('a[href="#levels"]');
   if (levelsLink) {
-    console.log('[levels.js]: Found levels navigation link, adding click listener');
     levelsLink.addEventListener('click', () => {
-      console.log('[levels.js]: Levels link clicked, initializing module');
       setTimeout(() => {
         levelsModule.init();
       }, 100);
     });
-  } else {
-    console.warn('[levels.js]: Could not find levels navigation link');
   }
   
   // Also check if we're already on the levels section
   const hash = window.location.hash;
-  console.log('[levels.js]: Current hash:', hash);
   if (hash === '#levels' || hash === '#levels-section') {
-    console.log('[levels.js]: Already on levels section, initializing now');
     setTimeout(() => {
       levelsModule.init();
     }, 100);
@@ -511,9 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Listen for hash changes
   window.addEventListener('hashchange', () => {
     const newHash = window.location.hash;
-    console.log('[levels.js]: Hash changed to:', newHash);
     if (newHash === '#levels' || newHash === '#levels-section') {
-      console.log('[levels.js]: Navigated to levels section, initializing');
       levelsModule.init();
     }
   });

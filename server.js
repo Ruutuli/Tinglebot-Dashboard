@@ -18,6 +18,8 @@ const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
 const { MongoClient } = require('mongodb');
 const helmet = require('helmet');
+const { getDiscordGateway } = require('./utils/discordGateway');
+const MessageTracking = require('./models/MessageTrackingModel');
 const compression = require('compression');
 const multer = require('multer');
 const fs = require('fs').promises;
@@ -63,6 +65,9 @@ const BlightRollHistory = require('./models/BlightRollHistoryModel');
 
 // Import calendar module
 const calendarModule = require('./calendarModule');
+
+// Import pretty logger utility
+const logger = require('./utils/logger');
 
 // ------------------- Section: App Configuration -------------------
 const app = express();
@@ -251,31 +256,35 @@ const initializeCacheCleanup = () => {
 // Establishes connections to all required databases using db.js methods
 async function initializeDatabases() {
   try {
+    logger.divider('DATABASE INITIALIZATION');
     
     // Connect to Tinglebot database using db.js method
     await connectToTinglebot();
-    console.log('[server.js]: Connected to Tinglebot database');
+    logger.database('Connected to Tinglebot database');
     
     // Connect to Inventories database using db.js method
     try {
       inventoriesConnection = await connectToInventories();
-      console.log('[server.js]: Connected to Inventories database');
+      logger.database('Connected to Inventories database');
     } catch (inventoryError) {
-              console.error('[server.js]: Failed to connect to Inventories database:', inventoryError.message);
+      logger.warn('Failed to connect to Inventories database: ' + inventoryError.message);
       // Continue without inventories connection - spirit orb counting will fail gracefully
     }
     
     // Connect to Vending database using db.js method
     try {
       vendingConnection = await connectToVending();
-      console.log('[server.js]: Connected to Vending database');
+      logger.database('Connected to Vending database');
     } catch (vendingError) {
-              console.error('[server.js]: Failed to connect to Vending database:', vendingError.message);
+      logger.warn('Failed to connect to Vending database: ' + vendingError.message);
       // Continue without vending connection
     }
     
+    logger.success('All databases connected successfully!');
+    logger.divider();
+    
   } catch (error) {   
-    console.error('[server.js]: ❌ Database initialization error:', error);
+    logger.error('Database initialization failed', error);
     throw error;
   }
 }
@@ -443,12 +452,7 @@ app.get('/auth/discord/callback',
     failureFlash: true 
   }), 
   (req, res) => {
-
-    console.log('[server.js]: �� Authenticated user:', {
-      username: req.user?.username,
-      discordId: req.user?.discordId,
-      id: req.user?._id
-    });
+    logger.success(`User authenticated: ${req.user?.username} (${req.user?.discordId})`);
     
     // Successful authentication
     res.redirect('/?login=success');
@@ -460,9 +464,10 @@ app.get('/auth/discord/callback',
 app.get('/auth/logout', (req, res) => {
   req.logout((err) => {
     if (err) {
-      console.error('[server.js]: Logout error:', err);
+      logger.error('Logout error', err);
       return res.redirect('/login');
     }
+    logger.info('User logged out successfully');
     res.redirect('/login');
   });
 });
@@ -678,6 +683,7 @@ app.get('/api/users/search', async (req, res) => {
 // Get all users with pagination
 app.get('/api/users', async (req, res) => {
   try {
+    const allItems = req.query.all === 'true';
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
@@ -700,6 +706,31 @@ app.get('/api/users', async (req, res) => {
         $sort: { createdAt: -1, _id: 1 }
       }
     ]);
+
+    // If all=true, return all users without pagination
+    if (allItems) {
+      const usersWithCharacters = await Promise.all(
+        allUsers.map(async (user) => {
+          const characterCount = await Character.countDocuments({ 
+            userId: user._id,
+            name: { $nin: ['Tingle', 'Tingle test', 'John'] }
+          });
+          return {
+            discordId: user._id,
+            username: user.username,
+            discriminator: user.discriminator,
+            avatar: user.avatar,
+            tokens: user.tokens,
+            characterSlot: user.characterSlot,
+            status: user.status,
+            createdAt: user.createdAt,
+            characterCount
+          };
+        })
+      );
+
+      return res.json({ users: usersWithCharacters });
+    }
 
     // Apply pagination
     const totalUsers = allUsers.length;
@@ -1186,6 +1217,198 @@ app.get('/api/stats/characters', async (req, res) => {
   }
 });
 
+// ------------------- Function: getHWQStats -------------------
+// Returns comprehensive Help Wanted Quest statistics
+app.get('/api/stats/hwqs', async (req, res) => {
+  try {
+    // Fetch all HWQs
+    const allHWQs = await HelpWantedQuest.find({}).lean();
+    
+    const totalQuests = allHWQs.length;
+    const completedQuests = allHWQs.filter(q => q.completed).length;
+    const activeQuests = totalQuests - completedQuests;
+    const completionRate = totalQuests > 0 ? ((completedQuests / totalQuests) * 100).toFixed(1) : 0;
+    
+    // Count unique users who have completed quests
+    const uniqueCompleters = new Set();
+    allHWQs.forEach(q => {
+      if (q.completed && q.completedBy && q.completedBy.userId) {
+        uniqueCompleters.add(q.completedBy.userId);
+      }
+    });
+    const uniqueCompleterCount = uniqueCompleters.size;
+    
+    // Quests per village
+    const questsPerVillage = { Rudania: 0, Inariko: 0, Vhintl: 0 };
+    allHWQs.forEach(q => {
+      if (q.village) {
+        questsPerVillage[q.village] = (questsPerVillage[q.village] || 0) + 1;
+      }
+    });
+    
+    // Quests per type
+    const questsPerType = {};
+    allHWQs.forEach(q => {
+      if (q.type) {
+        questsPerType[q.type] = (questsPerType[q.type] || 0) + 1;
+      }
+    });
+    
+    // Quests per NPC
+    const questsPerNPC = {};
+    allHWQs.forEach(q => {
+      if (q.npcName) {
+        questsPerNPC[q.npcName] = (questsPerNPC[q.npcName] || 0) + 1;
+      }
+    });
+    
+    // Top NPCs who requested the most quests
+    const topNPCs = Object.entries(questsPerNPC)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([npc, count]) => ({ npc, count }));
+    
+    // Completion stats per user with detailed breakdown
+    const completionsPerUser = {};
+    const userQuestDetails = {};
+    
+    allHWQs.forEach(q => {
+      if (q.completed && q.completedBy && q.completedBy.userId) {
+        const userId = q.completedBy.userId;
+        const characterId = q.completedBy.characterId;
+        
+        // Count total completions
+        completionsPerUser[userId] = (completionsPerUser[userId] || 0) + 1;
+        
+        // Track detailed quest info per user
+        if (!userQuestDetails[userId]) {
+          userQuestDetails[userId] = {
+            byType: {},
+            byVillage: {},
+            byCharacter: {},
+            characters: new Set()
+          };
+        }
+        
+        // Count by type
+        userQuestDetails[userId].byType[q.type] = (userQuestDetails[userId].byType[q.type] || 0) + 1;
+        
+        // Count by village
+        userQuestDetails[userId].byVillage[q.village] = (userQuestDetails[userId].byVillage[q.village] || 0) + 1;
+        
+        // Count by character
+        if (characterId) {
+          userQuestDetails[userId].byCharacter[characterId] = (userQuestDetails[userId].byCharacter[characterId] || 0) + 1;
+          userQuestDetails[userId].characters.add(characterId);
+        }
+      }
+    });
+    
+    // Top completers
+    const topCompleters = Object.entries(completionsPerUser)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([userId, count]) => ({ userId, count }));
+    
+    // Fetch usernames for top completers
+    const topCompleterUserIds = topCompleters.map(t => t.userId);
+    const users = await User.find({ discordId: { $in: topCompleterUserIds } })
+      .select('discordId username')
+      .lean();
+    
+    const userMap = {};
+    users.forEach(u => {
+      userMap[u.discordId] = u.username || u.discordId;
+    });
+    
+    // Get all unique character IDs from top completers
+    const allCharacterIds = new Set();
+    topCompleterUserIds.forEach(userId => {
+      if (userQuestDetails[userId]) {
+        userQuestDetails[userId].characters.forEach(charId => allCharacterIds.add(charId));
+      }
+    });
+    
+    // Fetch character names
+    const characters = await Character.find({ _id: { $in: Array.from(allCharacterIds) } })
+      .select('_id name job')
+      .lean();
+    
+    const characterMap = {};
+    characters.forEach(c => {
+      characterMap[c._id.toString()] = { name: c.name, job: c.job };
+    });
+    
+    const topCompletersWithDetails = topCompleters.map(t => {
+      const details = userQuestDetails[t.userId] || {};
+      
+      // Find favorite quest type
+      const typeEntries = Object.entries(details.byType || {});
+      const favoriteType = typeEntries.length > 0 
+        ? typeEntries.sort(([,a], [,b]) => b - a)[0][0]
+        : null;
+      
+      // Find most used character
+      const charEntries = Object.entries(details.byCharacter || {});
+      const topCharacterId = charEntries.length > 0
+        ? charEntries.sort(([,a], [,b]) => b - a)[0][0]
+        : null;
+      const topCharacter = topCharacterId ? characterMap[topCharacterId] : null;
+      
+      return {
+        userId: t.userId,
+        username: userMap[t.userId] || 'Unknown User',
+        count: t.count,
+        favoriteType: favoriteType,
+        topCharacter: topCharacter,
+        topCharacterId: topCharacterId,
+        uniqueCharacters: details.characters ? details.characters.size : 0,
+        byVillage: details.byVillage || {},
+        byType: details.byType || {},
+        byCharacter: details.byCharacter || {}
+      };
+    });
+    
+    // Completion rate by village
+    const completionRateByVillage = {};
+    ['Rudania', 'Inariko', 'Vhintl'].forEach(village => {
+      const villageQuests = allHWQs.filter(q => q.village === village);
+      const villageCompleted = villageQuests.filter(q => q.completed).length;
+      completionRateByVillage[village] = villageQuests.length > 0 
+        ? ((villageCompleted / villageQuests.length) * 100).toFixed(1)
+        : 0;
+    });
+    
+    // Completion rate by type
+    const completionRateByType = {};
+    Object.keys(questsPerType).forEach(type => {
+      const typeQuests = allHWQs.filter(q => q.type === type);
+      const typeCompleted = typeQuests.filter(q => q.completed).length;
+      completionRateByType[type] = typeQuests.length > 0
+        ? ((typeCompleted / typeQuests.length) * 100).toFixed(1)
+        : 0;
+    });
+    
+    res.json({
+      totalQuests,
+      completedQuests,
+      activeQuests,
+      completionRate,
+      uniqueCompleterCount,
+      questsPerVillage,
+      questsPerType,
+      topNPCs,
+      topCompleters: topCompletersWithDetails,
+      completionRateByVillage,
+      completionRateByType,
+      timestamp: Date.now()
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching HWQ stats:', error);
+    res.status(500).json({ error: 'Failed to fetch HWQ stats' });
+  }
+});
+
 
 
 // ------------------- Function: getCalendarData -------------------
@@ -1444,6 +1667,10 @@ app.get('/api/models/:modelType', async (req, res) => {
         break;
       case 'quest':
         Model = Quest;
+        break;
+      case 'helpwantedquest':
+      case 'HelpWantedQuest':
+        Model = HelpWantedQuest;
         break;
       case 'inventory':
         // Create inventory model dynamically for the inventories connection
@@ -2914,23 +3141,23 @@ app.get('/api/characters', async (req, res) => {
 // ------------------- Function: setupWeeklyCharacterRotation -------------------
 // Sets up the weekly character rotation scheduler and initializes on server start
 const setupWeeklyCharacterRotation = async () => {
-  console.log('[server.js]: 🔄 Setting up weekly character rotation scheduler');
+  logger.schedule('Setting up weekly character rotation scheduler');
   
   // Check if there's already an active character of the week
   const existingCharacter = await CharacterOfWeek.findOne({ isActive: true });
   
   if (existingCharacter) {
-    console.log(`[server.js]: 📅 Found existing character of the week: ${existingCharacter.characterName}`);
+    logger.character(`Current character of the week: ${existingCharacter.characterName}`);
     
     // Check if the existing character should be rotated based on Sunday midnight schedule
     const shouldRotate = checkIfShouldRotate(existingCharacter.startDate);
     
     if (shouldRotate) {
-      console.log('[server.js]: Rotating character of the week');
+      logger.event('Rotating character of the week...');
       await rotateCharacterOfWeek();
     }
   } else {
-    console.log('[server.js]: No active character of the week found, creating first one');
+    logger.info('No active character found, creating first character of the week');
     await rotateCharacterOfWeek();
   }
   
@@ -2984,18 +3211,193 @@ const scheduleNextSundayMidnightRotation = () => {
   
   setTimeout(async () => {
     try {
-      console.log('[server.js]: Executing scheduled character rotation');
+      logger.event('Executing scheduled character rotation');
       await rotateCharacterOfWeek();
       
       // Schedule the next rotation
       scheduleNextSundayMidnightRotation();
       
     } catch (error) {
-      console.error('[server.js]: Error in scheduled weekly character rotation:', error);
+      logger.error('Error in scheduled weekly character rotation', error);
       // Schedule next rotation even if this one failed
       scheduleNextSundayMidnightRotation();
     }
   }, timeUntilNextRotation);
+};
+
+// ============================================================================
+// ------------------- Section: Daily Reset Reminder Scheduler -------------------
+// Sends daily reset reminders at 8am EST every day
+// ============================================================================
+
+// ------------------- Function: getNext8amEST -------------------
+// Gets the next 8am EST from current time
+const getNext8amEST = (fromDate) => {
+  const date = new Date(fromDate);
+  
+  // 8 AM EST = 1 PM UTC (during standard time) or 12 PM UTC (during daylight saving)
+  // We'll use 1 PM UTC = 8 AM EST for consistency
+  const next8am = new Date(date);
+  next8am.setUTCHours(13, 0, 0, 0); // 1 PM UTC = 8 AM EST
+  
+  // If we've already passed 8am today, schedule for tomorrow
+  if (date >= next8am) {
+    next8am.setUTCDate(next8am.getUTCDate() + 1);
+  }
+  
+  return next8am;
+};
+
+// ------------------- Function: scheduleNext8amReminder -------------------
+// Schedules the next daily reset reminder for 8am EST
+const scheduleNext8amReminder = () => {
+  const now = new Date();
+  const next8am = getNext8amEST(now);
+  
+  const timeUntilNext8am = next8am.getTime() - now.getTime();
+  
+  const hours = Math.floor(timeUntilNext8am / (1000 * 60 * 60));
+  const minutes = Math.floor((timeUntilNext8am % (1000 * 60 * 60)) / (1000 * 60));
+  logger.schedule(`Next daily reset reminder: ${next8am.toLocaleString('en-US', { timeZone: 'America/New_York' })} (${hours}h ${minutes}m)`);
+  
+  setTimeout(async () => {
+    try {
+      logger.event('Executing scheduled daily reset reminder');
+      await notificationService.sendDailyResetReminders();
+      
+      // Schedule the next reminder
+      scheduleNext8amReminder();
+      
+    } catch (error) {
+      logger.error('Error in scheduled daily reset reminder', error);
+      // Schedule next reminder even if this one failed
+      scheduleNext8amReminder();
+    }
+  }, timeUntilNext8am);
+};
+
+// ------------------- Function: setupDailyResetReminders -------------------
+// Sets up the daily reset reminder scheduler
+const setupDailyResetReminders = () => {
+  logger.schedule('Setting up daily reset reminder scheduler (8am EST)');
+  scheduleNext8amReminder();
+};
+
+// ============================================================================
+// ------------------- Section: Blood Moon Alert Scheduler -------------------
+// Sends blood moon alerts at midnight the day before blood moon starts
+// ============================================================================
+
+// ------------------- Function: getNextMidnightEST -------------------
+// Gets the next midnight EST from current time
+const getNextMidnightEST = (fromDate) => {
+  const date = new Date(fromDate);
+  
+  // Midnight EST = 5 AM UTC (during standard time) or 4 AM UTC (during daylight saving)
+  // We'll use 5 AM UTC = Midnight EST for consistency
+  const nextMidnight = new Date(date);
+  nextMidnight.setUTCHours(5, 0, 0, 0); // 5 AM UTC = Midnight EST
+  
+  // If we've already passed midnight today, schedule for tomorrow
+  if (date >= nextMidnight) {
+    nextMidnight.setUTCDate(nextMidnight.getUTCDate() + 1);
+  }
+  
+  return nextMidnight;
+};
+
+// ------------------- Function: checkIfTodayIsBeforeBloodMoon -------------------
+// Checks if today is the day before a blood moon event
+const checkIfTodayIsBeforeBloodMoon = () => {
+  const { bloodmoonDates } = require('./modules/calendarModule');
+  
+  const now = new Date();
+  const estTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const today = new Date(estTime.getFullYear(), estTime.getMonth(), estTime.getDate());
+  
+  if (!bloodmoonDates || !Array.isArray(bloodmoonDates)) {
+    return false;
+  }
+  
+  for (const { realDate } of bloodmoonDates) {
+    const [month, day] = realDate.split('-').map(Number);
+    const bloodMoonDate = new Date(today.getFullYear(), month - 1, day);
+    const dayBefore = new Date(bloodMoonDate);
+    dayBefore.setDate(bloodMoonDate.getDate() - 1);
+    
+    if (today.getTime() === dayBefore.getTime()) {
+      return true;
+    }
+  }
+  
+  return false;
+};
+
+// ------------------- Function: scheduleNextMidnightBloodMoonCheck -------------------
+// Schedules the next blood moon check at midnight EST
+const scheduleNextMidnightBloodMoonCheck = () => {
+  const now = new Date();
+  const nextMidnight = getNextMidnightEST(now);
+  
+  const timeUntilMidnight = nextMidnight.getTime() - now.getTime();
+  
+  const hours = Math.floor(timeUntilMidnight / (1000 * 60 * 60));
+  const minutes = Math.floor((timeUntilMidnight % (1000 * 60 * 60)) / (1000 * 60));
+  logger.schedule(`Next blood moon check: ${nextMidnight.toLocaleString('en-US', { timeZone: 'America/New_York' })} (${hours}h ${minutes}m)`);
+  
+  setTimeout(async () => {
+    try {
+      logger.event('Executing blood moon check at midnight');
+      
+      // Check if today is the day before blood moon
+      if (checkIfTodayIsBeforeBloodMoon()) {
+        logger.custom('🌑', 'Today is the day before Blood Moon! Sending alerts...', '\x1b[35m');
+        
+        const bloodMoonData = {
+          description: '⚠️ **Beware!** Tonight the Blood Moon starts at **8 PM EST**!',
+          fields: [
+            {
+              name: '🌙 Blood Moon Event',
+              value: 'The ominous red glow will appear in the sky starting at 8 PM EST tonight. Prepare yourself!',
+              inline: false
+            },
+            {
+              name: '⏰ Start Time',
+              value: '8:00 PM EST',
+              inline: true
+            },
+            {
+              name: '📅 Duration',
+              value: 'Until 8:00 AM EST',
+              inline: true
+            },
+            {
+              name: '💀 Warning',
+              value: 'Monsters will be more dangerous during this period. Stay safe!',
+              inline: false
+            }
+          ]
+        };
+        
+        await notificationService.sendBloodMoonAlerts(bloodMoonData);
+      }
+      
+      // Schedule the next check
+      scheduleNextMidnightBloodMoonCheck();
+      
+    } catch (error) {
+      logger.error('Error in scheduled blood moon check', error);
+      // Schedule next check even if this one failed
+      scheduleNextMidnightBloodMoonCheck();
+    }
+  }, timeUntilMidnight);
+};
+
+// ------------------- Function: setupBloodMoonAlerts -------------------
+// Sets up the blood moon alert scheduler
+const setupBloodMoonAlerts = () => {
+  logger.schedule('Setting up blood moon alert scheduler (midnight EST)');
+  scheduleNextMidnightBloodMoonCheck();
 };
 
 // ------------------- Function: rotateCharacterOfWeek -------------------
@@ -3391,6 +3793,349 @@ app.post('/api/guild/join', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to generate guild invite link' });
+  }
+});
+
+// ------------------- Function: getServerActivity -------------------
+// Returns server activity statistics
+app.get('/api/guild/activity', async (req, res) => {
+  try {
+    const guildId = process.env.PROD_GUILD_ID;
+    
+    if (!guildId) {
+      return res.status(500).json({ error: 'Guild ID not configured' });
+    }
+    
+    // Fetch guild data
+    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}?with_counts=true`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Discord API error: ${response.status}`);
+    }
+    
+    const guildData = await response.json();
+    
+    // Get real-time data from Gateway
+    const gateway = getDiscordGateway();
+    const presences = await gateway.getGuildPresences(guildId);
+    const voiceCount = await gateway.getVoiceChannelMembers(guildId);
+    
+    // Get message count for today
+    const messagesToday = await MessageTracking.getTodayMessageCount(guildId);
+    
+    res.json({
+      onlineCount: presences ? (presences.online + presences.idle + presences.dnd) : (guildData.approximate_presence_count || 0),
+      voiceCount: voiceCount,
+      messagesToday: messagesToday,
+      boostCount: guildData.premium_subscription_count || 0
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching server activity:', error);
+    res.status(500).json({ error: 'Failed to fetch server activity' });
+  }
+});
+
+// ------------------- Function: getOnlineMembers -------------------
+// Returns list of online members
+app.get('/api/guild/online-members', async (req, res) => {
+  try {
+    const guildId = process.env.PROD_GUILD_ID;
+    
+    if (!guildId) {
+      return res.status(500).json({ error: 'Guild ID not configured' });
+    }
+    
+    // Fetch guild members
+    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Discord API error: ${response.status}`);
+    }
+    
+    const members = await response.json();
+    
+    // Format member data (limited to first 50)
+    const formattedMembers = members.slice(0, 50).map(member => ({
+      id: member.user.id,
+      username: member.user.username,
+      discriminator: member.user.discriminator,
+      avatar: member.user.avatar 
+        ? `https://cdn.discordapp.com/avatars/${member.user.id}/${member.user.avatar}.png`
+        : null,
+      status: 'online',
+      activity: null
+    }));
+    
+    res.json({
+      members: formattedMembers
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching online members:', error);
+    res.status(500).json({ error: 'Failed to fetch online members' });
+  }
+});
+
+// ------------------- Function: getServerStats -------------------
+// Returns server statistics
+app.get('/api/guild/stats', async (req, res) => {
+  try {
+    const guildId = process.env.PROD_GUILD_ID;
+    
+    if (!guildId) {
+      return res.status(500).json({ error: 'Guild ID not configured' });
+    }
+    
+    // Fetch guild data
+    const guildResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}?with_counts=true`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`
+      }
+    });
+    
+    if (!guildResponse.ok) {
+      throw new Error(`Discord API error: ${guildResponse.status}`);
+    }
+    
+    const guildData = await guildResponse.json();
+    
+    // Fetch channels
+    const channelsResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`
+      }
+    });
+    
+    let textChannels = 0;
+    let voiceChannels = 0;
+    
+    if (channelsResponse.ok) {
+      const channels = await channelsResponse.json();
+      textChannels = channels.filter(c => c.type === 0).length;
+      voiceChannels = channels.filter(c => c.type === 2).length;
+    }
+    
+    // Fetch members for latest member
+    const membersResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`
+      }
+    });
+    
+    let latestMember = 'N/A';
+    if (membersResponse.ok) {
+      const members = await membersResponse.json();
+      if (members.length > 0) {
+        latestMember = members[members.length - 1].user.username;
+      }
+    }
+    
+    // Calculate server age
+    const createdTimestamp = Number(BigInt(guildData.id) >> BigInt(22)) + 1420070400000;
+    const serverAge = calculateServerAge(createdTimestamp);
+    
+    // Get owner info
+    const ownerResponse = await fetch(`https://discord.com/api/v10/users/${guildData.owner_id}`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`
+      }
+    });
+    
+    let serverOwner = 'N/A';
+    if (ownerResponse.ok) {
+      const owner = await ownerResponse.json();
+      serverOwner = owner.username;
+    }
+    
+    res.json({
+      textChannels,
+      voiceChannels,
+      rolesCount: guildData.roles?.length || 0,
+      serverAge,
+      latestMember,
+      serverOwner
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching server stats:', error);
+    res.status(500).json({ error: 'Failed to fetch server stats' });
+  }
+});
+
+// Helper function to calculate server age
+function calculateServerAge(timestamp) {
+  const now = Date.now();
+  const diff = now - timestamp;
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const years = Math.floor(days / 365);
+  const remainingDays = days % 365;
+  
+  if (years > 0) {
+    return `${years} year${years !== 1 ? 's' : ''}, ${remainingDays} day${remainingDays !== 1 ? 's' : ''}`;
+  }
+  return `${days} day${days !== 1 ? 's' : ''}`;
+}
+
+// ------------------- Function: getRoleDistribution -------------------
+// Returns role distribution data
+app.get('/api/guild/roles', async (req, res) => {
+  try {
+    const guildId = process.env.PROD_GUILD_ID;
+    
+    if (!guildId) {
+      return res.status(500).json({ error: 'Guild ID not configured' });
+    }
+    
+    // Fetch guild with roles
+    const guildResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`
+      }
+    });
+    
+    if (!guildResponse.ok) {
+      throw new Error(`Discord API error: ${guildResponse.status}`);
+    }
+    
+    const guildData = await guildResponse.json();
+    
+    // Fetch members to count role assignments
+    const membersResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`
+      }
+    });
+    
+    if (!membersResponse.ok) {
+      throw new Error(`Discord API error: ${membersResponse.status}`);
+    }
+    
+    const members = await membersResponse.json();
+    
+    // Count unique members per role
+    const roleCounts = {};
+    members.forEach(member => {
+      member.roles.forEach(roleId => {
+        roleCounts[roleId] = (roleCounts[roleId] || 0) + 1;
+      });
+    });
+    
+    // Format role data
+    const roles = guildData.roles
+      .filter(role => role.name !== '@everyone')
+      .map(role => ({
+        id: role.id,
+        name: role.name,
+        color: role.color ? `#${role.color.toString(16).padStart(6, '0')}` : '#99aab5',
+        memberCount: roleCounts[role.id] || 0,
+        position: role.position
+      }))
+      .filter(role => role.memberCount > 0);
+    
+    res.json({ roles });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching role distribution:', error);
+    res.status(500).json({ error: 'Failed to fetch role distribution' });
+  }
+});
+
+// ------------------- Function: getDiscordEvents -------------------
+// Returns upcoming Discord events
+app.get('/api/guild/events', async (req, res) => {
+  try {
+    const guildId = process.env.PROD_GUILD_ID;
+    
+    if (!guildId) {
+      return res.status(500).json({ error: 'Guild ID not configured' });
+    }
+    
+    // Fetch scheduled events
+    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/scheduled-events?with_user_count=true`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`
+      }
+    });
+    
+    if (!response.ok) {
+      return res.json({ events: [] });
+    }
+    
+    const eventsData = await response.json();
+    
+    // Format event data
+    const events = eventsData
+      .filter(event => event.status !== 3)
+      .map(event => ({
+        id: event.id,
+        name: event.name,
+        description: event.description,
+        startTime: event.scheduled_start_time,
+        endTime: event.scheduled_end_time,
+        location: event.entity_metadata?.location || 'Discord',
+        interestedCount: event.user_count || 0,
+        status: event.status
+      }));
+    
+    res.json({ events });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching Discord events:', error);
+    res.json({ events: [] });
+  }
+});
+
+// ------------------- Function: getAnnouncements -------------------
+// Returns recent announcements from announcement channels
+app.get('/api/guild/announcements', async (req, res) => {
+  try {
+    const guildId = process.env.PROD_GUILD_ID;
+    
+    if (!guildId) {
+      return res.status(500).json({ error: 'Guild ID not configured' });
+    }
+    
+    // Get announcement channel ID
+    const announcementChannelId = process.env.ANNOUNCEMENT_CHANNEL_ID || '606004354419392513';
+    
+    if (!announcementChannelId) {
+      return res.json({ announcements: [] });
+    }
+    
+    // Fetch recent messages from announcement channel
+    const response = await fetch(`https://discord.com/api/v10/channels/${announcementChannelId}/messages?limit=5`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`
+      }
+    });
+    
+    if (!response.ok) {
+      return res.json({ announcements: [] });
+    }
+    
+    const messages = await response.json();
+    
+    // Format announcement data
+    const announcements = messages.map(msg => ({
+      id: msg.id,
+      content: msg.content,
+      contentPreview: msg.content.substring(0, 200) + (msg.content.length > 200 ? '...' : ''),
+      isTruncated: msg.content.length > 200,
+      authorName: msg.author.username,
+      authorAvatar: msg.author.avatar 
+        ? `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png`
+        : null,
+      timestamp: msg.timestamp
+    }));
+    
+    res.json({ announcements });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching announcements:', error);
+    res.json({ announcements: [] });
   }
 });
 
@@ -6107,11 +6852,11 @@ app.put('/api/user/settings', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    console.log(`[server.js]: ✅ Updated settings for user ${req.user.username}`);
+    logger.success(`Updated settings for user ${user.username || user.discordId}`);
     
     // Send confirmation DMs for newly enabled notifications (don't await - send in background)
     if (notificationsEnabled.length > 0) {
-      console.log(`[server.js]: Sending confirmation DMs for enabled notifications: ${notificationsEnabled.join(', ')}`);
+      logger.info(`Sending confirmation DMs for: ${notificationsEnabled.join(', ')}`);
       
       // Send DMs in the background (don't wait for completion)
       notificationsEnabled.forEach(notificationType => {
@@ -6130,6 +6875,47 @@ app.put('/api/user/settings', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('[server.js]: Error updating user settings:', error);
     res.status(500).json({ error: 'Failed to update user settings' });
+  }
+});
+
+// Update user nickname
+app.patch('/api/user/nickname', requireAuth, async (req, res) => {
+  try {
+    const { nickname } = req.body;
+    
+    // Validate nickname (optional field, can be empty)
+    if (nickname !== undefined && nickname !== null) {
+      // If provided, must be a string and not too long
+      if (typeof nickname !== 'string') {
+        return res.status(400).json({ error: 'Nickname must be a string' });
+      }
+      
+      if (nickname.length > 50) {
+        return res.status(400).json({ error: 'Nickname must be 50 characters or less' });
+      }
+    }
+    
+    // Update user nickname in database
+    const user = await User.findOneAndUpdate(
+      { discordId: req.user.discordId },
+      { $set: { nickname: nickname || '' } },
+      { new: true, runValidators: true }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    logger.success(`Updated nickname for user ${user.username || user.discordId} to "${nickname || '(empty)'}"`);
+    
+    res.json({ 
+      success: true,
+      message: 'Nickname updated successfully',
+      nickname: user.nickname
+    });
+  } catch (error) {
+    console.error('[server.js]: Error updating user nickname:', error);
+    res.status(500).json({ error: 'Failed to update nickname' });
   }
 });
 
@@ -7234,6 +8020,12 @@ app.use((req, res, next) => {
 // Initializes the server and starts listening on the specified port
 const startServer = async () => {
   try {
+    // Clear console for clean startup (optional - comment out if you prefer to keep history)
+    // console.clear();
+    
+    // Display startup banner
+    logger.banner('TINGLEBOT DASHBOARD', 'Initializing server components...');
+    
     // Initialize cache cleanup
     initializeCacheCleanup();
     
@@ -7243,12 +8035,35 @@ const startServer = async () => {
     // Setup weekly character rotation
     await setupWeeklyCharacterRotation();
     
+    // Setup daily reset reminders
+    setupDailyResetReminders();
+    
+    // Setup blood moon alerts
+    setupBloodMoonAlerts();
+    
+    logger.divider('SCHEDULERS INITIALIZED');
+    
+    // Initialize Discord Gateway
+    const gateway = getDiscordGateway();
+    const gatewayConnected = await gateway.connect();
+    if (gatewayConnected) {
+      logger.info('Discord Gateway connected successfully');
+    } else {
+      logger.warn('Discord Gateway failed to connect - some features will be limited');
+    }
+    
     // Start server
     app.listen(PORT, () => {
-      console.log(`[server.js]: Server running on port ${PORT}`);
+      const env = process.env.NODE_ENV || 'development';
+      logger.ready(PORT, env);
+      
+      // Show nodemon watching message
+      if (process.env.NODE_ENV !== 'production') {
+        logger.info('👀 Watching for file changes... (type "rs" to restart)');
+      }
     });
   } catch (error) {
-    console.error('[server.js]: Failed to start server:', error);
+    logger.error('Failed to start server', error);
     process.exit(1);
   }
 };
@@ -7368,6 +8183,65 @@ app.get('/api/test-sunday-midnight', async (req, res) => {
       },
       currentDayOfWeek: now.getUTCDay(),
       isSunday: now.getUTCDay() === 0
+    };
+    
+    res.json(result);
+  } catch (error) {
+    console.error('[server.js]: ❌ Error in test endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: testDailyResetSchedule -------------------
+// Test endpoint to verify next 8am reminder schedule (for debugging)
+app.get('/api/test-daily-reset', async (req, res) => {
+  try {
+    const now = new Date();
+    const next8am = getNext8amEST(now);
+    const timeUntilNext = next8am.getTime() - now.getTime();
+    
+    const result = {
+      currentTime: now.toISOString(),
+      currentTimeEST: now.toLocaleString('en-US', { timeZone: 'America/New_York' }),
+      next8amEST: next8am.toISOString(),
+      next8amESTLocal: next8am.toLocaleString('en-US', { timeZone: 'America/New_York' }),
+      timeUntilNext: {
+        milliseconds: timeUntilNext,
+        hours: Math.floor(timeUntilNext / (1000 * 60 * 60)),
+        minutes: Math.floor((timeUntilNext % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((timeUntilNext % (1000 * 60)) / 1000)
+      }
+    };
+    
+    res.json(result);
+  } catch (error) {
+    console.error('[server.js]: ❌ Error in test endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: testBloodMoonSchedule -------------------
+// Test endpoint to verify blood moon alert schedule (for debugging)
+app.get('/api/test-blood-moon', async (req, res) => {
+  try {
+    const now = new Date();
+    const nextMidnight = getNextMidnightEST(now);
+    const timeUntilNext = nextMidnight.getTime() - now.getTime();
+    const isTodayBeforeBloodMoon = checkIfTodayIsBeforeBloodMoon();
+    
+    const result = {
+      currentTime: now.toISOString(),
+      currentTimeEST: now.toLocaleString('en-US', { timeZone: 'America/New_York' }),
+      nextMidnightEST: nextMidnight.toISOString(),
+      nextMidnightESTLocal: nextMidnight.toLocaleString('en-US', { timeZone: 'America/New_York' }),
+      isTodayDayBeforeBloodMoon: isTodayBeforeBloodMoon,
+      willAlertAtNextMidnight: isTodayBeforeBloodMoon,
+      timeUntilNext: {
+        milliseconds: timeUntilNext,
+        hours: Math.floor(timeUntilNext / (1000 * 60 * 60)),
+        minutes: Math.floor((timeUntilNext % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((timeUntilNext % (1000 * 60)) / 1000)
+      }
     };
     
     res.json(result);

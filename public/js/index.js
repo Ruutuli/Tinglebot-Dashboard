@@ -64,7 +64,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check for login success and refresh suggestion box if needed
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('login') === 'success') {
-      console.log('✅ Login successful, refreshing suggestion box auth status');
       // Small delay to ensure auth state is fully updated
       setTimeout(() => {
         if (typeof suggestionsModule !== 'undefined' && suggestionsModule.refreshAuthStatus) {
@@ -83,20 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.sidebar-overlay');
   
-  console.log('🔄 Page load - resetting sidebar state');
-  console.log('🔍 Sidebar before reset:', sidebar?.className);
-  
   if (sidebar) {
     sidebar.classList.remove('mobile-open', 'mobile-closing');
-    console.log('✅ Removed mobile classes from sidebar');
-    console.log('🔍 Sidebar after reset:', sidebar.className);
   }
   if (overlay) {
     overlay.classList.remove('active');
-    console.log('✅ Removed active class from overlay');
   }
   document.body.style.overflow = '';
-  console.log('✅ Reset body overflow');
 });
 
 // ------------------- Function: setupModelCards -------------------
@@ -182,6 +174,8 @@ function setupModelCards() {
         let fetchUrl = `/api/models/${modelName}`;
         if (modelName === 'starterGear') {
           fetchUrl = '/api/models/item?all=true';
+        } else if (modelName === 'helpwantedquest') {
+          fetchUrl = '/api/models/helpwantedquest?all=true';
         }
    
         const response = await fetch(fetchUrl);
@@ -277,6 +271,19 @@ function setupModelCards() {
           case 'quest':
             await quests.initializeQuestPage(data, pagination.page, contentDiv);
             break;
+          case 'helpwantedquest':
+            title.textContent = 'Help Wanted Quests';
+            // Show loading state while fetching user/character data
+            contentDiv.innerHTML = `
+              <div class="quest-loading" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; min-height: 400px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 1.5rem;"></i>
+                <p style="font-size: 1.1rem; color: var(--text-primary); font-weight: 600;">Loading Help Wanted Quests...</p>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem;">Fetching quest and user data</p>
+              </div>
+            `;
+            // Render async with proper delay to ensure loading shows
+            await renderHelpWantedQuests(data, contentDiv);
+            break;
           default:
             console.error(`Unknown model type: ${modelName}`);
             contentDiv.innerHTML = `
@@ -316,6 +323,11 @@ function setupModelCards() {
 
           // Skip pagination for quests as it uses its own efficient system
           if (modelName === 'quest') {
+            return;
+          }
+
+          // Skip pagination for help wanted quests as it uses its own efficient system
+          if (modelName === 'helpwantedquest') {
             return;
           }
 
@@ -477,13 +489,6 @@ async function loadModelData(modelName, page = 1) {
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const result = await response.json();
   
-  console.log('🔍 DEBUG - loadModelData:', {
-    modelName,
-    url,
-    dataLength: result.data?.length,
-    pagination: result.pagination
-  });
-  
   return result;
 }
 
@@ -601,8 +606,6 @@ async function loadStatsData() {
 // Switches between sections using nav links
 // ============================================================================
 function showSection(sectionId) {
-  console.log('🔍 showSection called with:', sectionId);
-  
   // Hide all main content sections including dashboard
   const mainContent = document.querySelector('.main-content');
   const allSections = mainContent.querySelectorAll('section, #model-details-page');
@@ -610,10 +613,8 @@ function showSection(sectionId) {
   allSections.forEach(section => {
     if (section.id === sectionId) {
       section.style.display = 'block';
-      console.log('🔍 Showing section:', section.id);
     } else {
       section.style.display = 'none';
-      console.log('🔍 Hiding section:', section.id);
     }
   });
 }
@@ -660,9 +661,14 @@ function setupSidebarNavigation() {
         showAdminAreaSection();
       } else if (sectionId === 'settings-section') {
         showSettingsSection();
+      } else if (sectionId === 'levels-section') {
+        showLevelsSection();
+      } else if (sectionId === 'suggestion-box-section') {
+        showSuggestionBoxSection();
+      } else if (sectionId === 'member-lore-section') {
+        showMemberLoreSection();
       } else {
         // For other sections, use the existing showSection function
-        console.log('🔍 Using generic showSection for:', sectionId);
         showSection(sectionId);
       }
     });
@@ -707,6 +713,12 @@ function setupSidebarNavigation() {
         }
       } else if (section === 'settings-section') {
         showSettingsSection();
+      } else if (section === 'levels-section') {
+        showLevelsSection();
+      } else if (section === 'suggestion-box-section') {
+        showSuggestionBoxSection();
+      } else if (section === 'member-lore-section') {
+        showMemberLoreSection();
       } else {
         showSection(section);
       }
@@ -754,6 +766,12 @@ function setupSidebarNavigation() {
       showAdminAreaSection();
     } else if (hashValue === 'settings-section') {
       showSettingsSection();
+    } else if (hashValue === 'levels-section') {
+      showLevelsSection();
+    } else if (hashValue === 'suggestion-box-section') {
+      showSuggestionBoxSection();
+    } else if (hashValue === 'member-lore-section') {
+      showMemberLoreSection();
     } else {
       showSection(hashValue);
     }
@@ -792,7 +810,6 @@ function setupMobileSidebar() {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('🖱️ Sidebar toggle clicked, mobile view:', isMobileView());
     
     if (isMobileView()) {
       toggleMobileSidebar();
@@ -828,7 +845,6 @@ function setupMobileSidebar() {
 
 function isMobileView() {
   const isMobile = window.innerWidth <= 768;
-  console.log('📱 Mobile view check:', isMobile, 'window width:', window.innerWidth);
   return isMobile;
 }
 
@@ -845,10 +861,6 @@ function toggleMobileSidebar() {
   sidebar.classList.remove('mobile-open', 'mobile-closing');
   
   // Debug: Log the actual sidebar element and its classes after cleanup
-  console.log('🔍 Sidebar element:', sidebar);
-  console.log('🔍 Sidebar classes after cleanup:', sidebar.className);
-  console.log('🔍 Has mobile-open:', sidebar.classList.contains('mobile-open'));
-  console.log('🔍 Has mobile-closing:', sidebar.classList.contains('mobile-closing'));
   
   // Now check if sidebar should be considered "open" based on transform
   const computedStyle = window.getComputedStyle(sidebar);
@@ -871,14 +883,10 @@ function toggleMobileSidebar() {
     }
   }
   
-  console.log('🔍 Computed transform:', transform);
-  console.log('🔍 Is currently visible:', isCurrentlyVisible);
   
   if (isCurrentlyVisible) {
-    console.log('🔄 Sidebar appears to be visible, closing it');
     closeMobileSidebar();
   } else {
-    console.log('🔄 Sidebar appears to be hidden, opening it');
     openMobileSidebar();
   }
 }
@@ -887,19 +895,14 @@ function openMobileSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.sidebar-overlay');
   
-  console.log('📱 Opening mobile sidebar');
-  
   if (sidebar) {
     // Ensure clean state first
     sidebar.classList.remove('mobile-closing');
     sidebar.classList.add('mobile-open');
-    console.log('✅ Sidebar classes updated - added mobile-open');
-    console.log('🔍 Final sidebar classes:', sidebar.className);
   }
   
   if (overlay) {
     overlay.classList.add('active');
-    console.log('✅ Overlay activated');
   }
   
   // Prevent body scroll when sidebar is open
@@ -910,25 +913,19 @@ function closeMobileSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.sidebar-overlay');
   
-  console.log('📱 Closing mobile sidebar');
-  
   if (sidebar) {
     // Ensure clean state first
     sidebar.classList.remove('mobile-open');
     sidebar.classList.add('mobile-closing');
-    console.log('✅ Sidebar classes updated - added mobile-closing');
-    console.log('🔍 Final sidebar classes:', sidebar.className);
     
     // Remove closing class after animation
     setTimeout(() => {
       sidebar.classList.remove('mobile-closing');
-      console.log('✅ Sidebar closing animation complete');
     }, 300);
   }
   
   if (overlay) {
     overlay.classList.remove('active');
-    console.log('✅ Overlay deactivated');
   }
   
   // Restore body scroll
@@ -957,26 +954,19 @@ function handleWindowResize() {
   const mainWrapper = document.querySelector('.main-wrapper');
   const overlay = document.querySelector('.sidebar-overlay');
 
-  console.log('🔄 Window resize - resetting sidebar state');
-  console.log('🔍 Sidebar before reset:', sidebar?.className);
-
   // Always reset sidebar and overlay state
   if (sidebar) {
     sidebar.classList.remove('collapsed');
     sidebar.classList.remove('mobile-open');
     sidebar.classList.remove('mobile-closing');
-    console.log('✅ Removed all mobile classes from sidebar');
-    console.log('🔍 Sidebar after reset:', sidebar.className);
   }
   if (mainWrapper) {
     mainWrapper.classList.remove('sidebar-collapsed');
   }
   if (overlay) {
     overlay.classList.remove('active');
-    console.log('✅ Removed active class from overlay');
   }
   document.body.style.overflow = '';
-  console.log('✅ Reset body overflow');
 }
 
 // ============================================================================
@@ -1408,7 +1398,6 @@ function showSettingsSection() {
   
   // Check authentication - redirect to login if not authenticated
   if (!auth.isAuthenticated || !auth.currentUser) {
-    console.log('🔒 Settings requires authentication, redirecting to login');
     window.location.href = '/login';
     return;
   }
@@ -1452,6 +1441,150 @@ function showSettingsSection() {
   const breadcrumb = document.querySelector('.breadcrumb');
   if (breadcrumb) {
     breadcrumb.textContent = 'Settings';
+  }
+}
+
+// ============================================================================
+// ------------------- Suggestion Box Navigation -------------------
+// Handles suggestion box page navigation specifically
+// ============================================================================
+function showSuggestionBoxSection() {
+  
+  // Hide all main content sections
+  const mainContent = document.querySelector('.main-content');
+  const sections = mainContent.querySelectorAll('section, #model-details-page');
+  
+  sections.forEach(section => {
+    section.style.display = 'none';
+  });
+  
+  // Show the suggestion box section
+  const suggestionBoxSection = document.getElementById('suggestion-box-section');
+  if (suggestionBoxSection) {
+    suggestionBoxSection.style.display = 'block';
+    
+    // Initialize suggestions module if available
+    if (window.suggestionsModule && typeof window.suggestionsModule.init === 'function') {
+      window.suggestionsModule.init();
+    }
+  } else {
+    console.error('❌ Suggestion box section not found');
+  }
+  
+  // Update active state in sidebar
+  const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+  sidebarLinks.forEach(link => {
+    const linkSection = link.getAttribute('data-section');
+    const listItem = link.closest('li');
+    if (listItem) {
+      if (linkSection === 'suggestion-box-section') {
+        listItem.classList.add('active');
+      } else {
+        listItem.classList.remove('active');
+      }
+    }
+  });
+  
+  // Update breadcrumb
+  const breadcrumb = document.querySelector('.breadcrumb');
+  if (breadcrumb) {
+    breadcrumb.textContent = 'Suggestion Box';
+  }
+}
+
+// ============================================================================
+// ------------------- Member Lore Navigation -------------------
+// Handles member lore page navigation specifically
+// ============================================================================
+function showMemberLoreSection() {
+  
+  // Hide all main content sections
+  const mainContent = document.querySelector('.main-content');
+  const sections = mainContent.querySelectorAll('section, #model-details-page');
+  
+  sections.forEach(section => {
+    section.style.display = 'none';
+  });
+  
+  // Show the member lore section
+  const memberLoreSection = document.getElementById('member-lore-section');
+  if (memberLoreSection) {
+    memberLoreSection.style.display = 'block';
+    
+    // Initialize member lore module if available
+    if (window.memberLoreModule && typeof window.memberLoreModule.init === 'function') {
+      window.memberLoreModule.init();
+    }
+  } else {
+    console.error('❌ Member lore section not found');
+  }
+  
+  // Update active state in sidebar
+  const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+  sidebarLinks.forEach(link => {
+    const linkSection = link.getAttribute('data-section');
+    const listItem = link.closest('li');
+    if (listItem) {
+      if (linkSection === 'member-lore-section') {
+        listItem.classList.add('active');
+      } else {
+        listItem.classList.remove('active');
+      }
+    }
+  });
+  
+  // Update breadcrumb
+  const breadcrumb = document.querySelector('.breadcrumb');
+  if (breadcrumb) {
+    breadcrumb.textContent = 'Member Lore';
+  }
+}
+
+// ============================================================================
+// ------------------- Levels Navigation -------------------
+// Handles levels page navigation specifically
+// ============================================================================
+function showLevelsSection() {
+  
+  // Hide all main content sections
+  const mainContent = document.querySelector('.main-content');
+  const sections = mainContent.querySelectorAll('section, #model-details-page');
+  
+  sections.forEach(section => {
+    section.style.display = 'none';
+  });
+  
+  // Show the levels section
+  const levelsSection = document.getElementById('levels-section');
+  if (levelsSection) {
+    levelsSection.style.display = 'block';
+    
+    // Initialize levels module if available
+    if (window.levelsModule && typeof window.levelsModule.init === 'function') {
+      window.levelsModule.init();
+    }
+  } else {
+    console.error('❌ Levels section not found');
+  }
+  
+  // Update active state in sidebar
+  const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+  sidebarLinks.forEach(link => {
+    const linkSection = link.getAttribute('data-section');
+    const listItem = link.closest('li');
+    if (listItem) {
+      if (linkSection === 'levels-section') {
+        listItem.classList.add('active');
+      } else {
+        listItem.classList.remove('active');
+      }
+    }
+  });
+  
+  // Update breadcrumb
+  const breadcrumb = document.querySelector('.breadcrumb');
+  if (breadcrumb) {
+    breadcrumb.textContent = 'Levels';
   }
 }
 
@@ -1506,11 +1639,9 @@ function showAdminAreaSection() {
 // Sets up admin area functionality and event handlers
 // ============================================================================
 function initializeAdminArea() {
-  console.log('[index.js]: 🔧 Initializing admin area...');
   
   // Admin area now contains only the database editor
   // All admin tool buttons have been removed
-  console.log('[index.js]: ✅ Admin area initialized - database editor only');
 }
 
 // ============================================================================
@@ -2102,6 +2233,747 @@ function getParticipationRequirements(quest) {
   return requirements;
 }
 
+// ------------------- Function: renderHelpWantedQuests -------------------
+// Renders Help Wanted Quest data with search, filter, and pagination
+async function renderHelpWantedQuests(data, contentDiv) {
+  // Allow loading state to render
+  await new Promise(resolve => setTimeout(resolve, 50));
+  
+  if (!data || data.length === 0) {
+    contentDiv.innerHTML = `
+      <div class="error-state">
+        <i class="fas fa-inbox"></i>
+        <p>No Help Wanted Quests found</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Store all quests in global variable for filtering
+  window.allHWQs = data;
+  window.hwqCurrentPage = 1;
+  window.hwqItemsPerPage = 12;
+
+  // Create the initial UI with filters
+  createHWQInterface(contentDiv);
+  
+  // Populate NPC dropdown with unique NPCs
+  populateHWQNPCFilter(data);
+  
+  // Apply initial filter and render
+  await filterAndRenderHWQs();
+}
+
+// ------------------- Function: createHWQInterface -------------------
+// Creates the HWQ interface with filters and containers
+function createHWQInterface(contentDiv) {
+  contentDiv.innerHTML = `
+    <!-- HWQ Info Message -->
+    <div class="hwq-info-message" style="
+      padding: 1rem 1.5rem;
+      background: linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(33, 150, 243, 0.08));
+      border: 1px solid rgba(33, 150, 243, 0.3);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    ">
+      <i class="fas fa-info-circle" style="font-size: 1.5rem; color: #2196f3;"></i>
+      <div>
+        <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem;">
+          Security Notice
+        </strong>
+        <span style="color: var(--text-secondary); font-size: 0.9rem;">
+          Active quests are hidden to prevent early completion. Only completed and expired quests are shown.
+        </span>
+      </div>
+    </div>
+
+    <!-- HWQ Filter Bar -->
+    <div class="hwq-filter-bar">
+      <div class="hwq-filter-control search-input">
+        <label for="hwq-search-input">Search</label>
+        <i class="fas fa-search hwq-search-icon"></i>
+        <input 
+          type="text" 
+          id="hwq-search-input" 
+          placeholder="Search by NPC, requirements, or Quest ID..."
+          aria-label="Search Help Wanted Quests"
+        />
+      </div>
+      
+      <div class="hwq-filter-control">
+        <label for="hwq-village-filter">Village</label>
+        <select id="hwq-village-filter" aria-label="Filter by village">
+          <option value="">All Villages</option>
+          <option value="Rudania">Rudania</option>
+          <option value="Inariko">Inariko</option>
+          <option value="Vhintl">Vhintl</option>
+        </select>
+      </div>
+      
+      <div class="hwq-filter-control">
+        <label for="hwq-type-filter">Quest Type</label>
+        <select id="hwq-type-filter" aria-label="Filter by quest type">
+          <option value="">All Types</option>
+          <option value="item">Item</option>
+          <option value="monster">Monster</option>
+          <option value="escort">Escort</option>
+          <option value="crafting">Crafting</option>
+          <option value="art">Art</option>
+          <option value="writing">Writing</option>
+        </select>
+      </div>
+      
+      <div class="hwq-filter-control">
+        <label for="hwq-npc-filter">NPC</label>
+        <select id="hwq-npc-filter" aria-label="Filter by NPC">
+          <option value="">All NPCs</option>
+        </select>
+      </div>
+      
+      <div class="hwq-filter-control">
+        <label for="hwq-status-filter">Status</label>
+        <select id="hwq-status-filter" aria-label="Filter by status">
+          <option value="">All</option>
+          <option value="completed">Completed</option>
+          <option value="expired">Expired</option>
+        </select>
+      </div>
+
+      <div class="hwq-filter-control">
+        <label for="hwq-sort-select">Sort By</label>
+        <select id="hwq-sort-select" aria-label="Sort quests">
+          <option value="date-desc">Newest First</option>
+          <option value="date-asc">Oldest First</option>
+          <option value="village">Village</option>
+          <option value="type">Type</option>
+          <option value="npc">NPC Name</option>
+        </select>
+      </div>
+      
+      <button class="hwq-clear-filters-btn" id="hwq-clear-filters" aria-label="Clear all filters">
+        <i class="fas fa-times"></i> Clear Filters
+      </button>
+    </div>
+
+    <!-- HWQ Stats Grid -->
+    <div class="hwq-stats-grid" id="hwq-stats-grid"></div>
+
+    <!-- HWQ Results Info -->
+    <div class="hwq-results-info" id="hwq-results-info"></div>
+
+    <!-- HWQ Quest Cards Grid -->
+    <div class="quest-details-grid" id="hwq-quests-grid"></div>
+
+    <!-- HWQ Pagination -->
+    <div class="hwq-pagination" id="hwq-pagination" style="display: none;"></div>
+  `;
+
+  // Setup event listeners
+  setupHWQEventListeners();
+}
+
+// ------------------- Function: populateHWQNPCFilter -------------------
+// Populates the NPC filter dropdown with unique NPCs
+function populateHWQNPCFilter(quests) {
+  const npcFilter = document.getElementById('hwq-npc-filter');
+  if (!npcFilter) return;
+
+  // Get unique NPCs and sort them
+  const uniqueNPCs = [...new Set(quests.map(q => q.npcName))].sort();
+  
+  // Keep the "All NPCs" option and add the rest
+  npcFilter.innerHTML = '<option value="">All NPCs</option>';
+  uniqueNPCs.forEach(npc => {
+    const option = document.createElement('option');
+    option.value = npc;
+    option.textContent = npc;
+    npcFilter.appendChild(option);
+  });
+}
+
+// ------------------- Function: setupHWQEventListeners -------------------
+// Sets up all event listeners for HWQ filters and pagination
+function setupHWQEventListeners() {
+  const searchInput = document.getElementById('hwq-search-input');
+  const villageFilter = document.getElementById('hwq-village-filter');
+  const typeFilter = document.getElementById('hwq-type-filter');
+  const npcFilter = document.getElementById('hwq-npc-filter');
+  const statusFilter = document.getElementById('hwq-status-filter');
+  const sortSelect = document.getElementById('hwq-sort-select');
+  const clearBtn = document.getElementById('hwq-clear-filters');
+
+  if (searchInput) {
+    searchInput.addEventListener('input', async () => {
+      window.hwqCurrentPage = 1;
+      await filterAndRenderHWQs();
+    });
+  }
+
+  if (villageFilter) {
+    villageFilter.addEventListener('change', async () => {
+      window.hwqCurrentPage = 1;
+      await filterAndRenderHWQs();
+    });
+  }
+
+  if (typeFilter) {
+    typeFilter.addEventListener('change', async () => {
+      window.hwqCurrentPage = 1;
+      await filterAndRenderHWQs();
+    });
+  }
+
+  if (npcFilter) {
+    npcFilter.addEventListener('change', async () => {
+      window.hwqCurrentPage = 1;
+      await filterAndRenderHWQs();
+    });
+  }
+
+  if (statusFilter) {
+    statusFilter.addEventListener('change', async () => {
+      window.hwqCurrentPage = 1;
+      await filterAndRenderHWQs();
+    });
+  }
+
+  if (sortSelect) {
+    sortSelect.addEventListener('change', async () => {
+      await filterAndRenderHWQs();
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', async () => {
+      if (searchInput) searchInput.value = '';
+      if (villageFilter) villageFilter.value = '';
+      if (typeFilter) typeFilter.value = '';
+      if (npcFilter) npcFilter.value = '';
+      if (statusFilter) statusFilter.value = '';
+      if (sortSelect) sortSelect.value = 'date-desc';
+      window.hwqCurrentPage = 1;
+      await filterAndRenderHWQs();
+    });
+  }
+}
+
+// ------------------- Function: filterAndRenderHWQs -------------------
+// Filters and renders HWQs based on current filter settings
+async function filterAndRenderHWQs() {
+  if (!window.allHWQs) return;
+
+  const searchInput = document.getElementById('hwq-search-input');
+  const villageFilter = document.getElementById('hwq-village-filter');
+  const typeFilter = document.getElementById('hwq-type-filter');
+  const npcFilter = document.getElementById('hwq-npc-filter');
+  const statusFilter = document.getElementById('hwq-status-filter');
+  const sortSelect = document.getElementById('hwq-sort-select');
+
+  const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+  const villageValue = villageFilter ? villageFilter.value : '';
+  const typeValue = typeFilter ? typeFilter.value : '';
+  const npcValue = npcFilter ? npcFilter.value : '';
+  const statusValue = statusFilter ? statusFilter.value : '';
+  const sortValue = sortSelect ? sortSelect.value : 'date-desc';
+
+  const now = new Date();
+
+  // Filter quests
+  let filteredQuests = window.allHWQs.filter(quest => {
+    // Determine if quest is expired (not completed and past its date + 24 hours)
+    const questDate = new Date(quest.date);
+    const expirationTime = new Date(questDate.getTime() + 24 * 60 * 60 * 1000); // 24 hours after quest date
+    const isExpired = !quest.completed && now > expirationTime;
+    
+    // SECURITY: Hide active quests (not completed and not expired yet) to prevent sniping
+    if (!quest.completed && !isExpired) {
+      return false;
+    }
+
+    // Search filter
+    if (searchTerm) {
+      const searchable = [
+        quest.questId,
+        quest.npcName,
+        quest.village,
+        quest.type,
+        JSON.stringify(quest.requirements)
+      ].join(' ').toLowerCase();
+      
+      if (!searchable.includes(searchTerm)) return false;
+    }
+
+    // Village filter
+    if (villageValue && quest.village !== villageValue) return false;
+
+    // Type filter
+    if (typeValue && quest.type !== typeValue) return false;
+
+    // NPC filter
+    if (npcValue && quest.npcName !== npcValue) return false;
+
+    // Status filter
+    if (statusValue === 'completed' && !quest.completed) return false;
+    if (statusValue === 'expired' && (quest.completed || !isExpired)) return false;
+
+    return true;
+  });
+
+  // Sort quests
+  filteredQuests.sort((a, b) => {
+    switch (sortValue) {
+      case 'date-desc':
+        return new Date(b.date) - new Date(a.date);
+      case 'date-asc':
+        return new Date(a.date) - new Date(b.date);
+      case 'village':
+        return a.village.localeCompare(b.village);
+      case 'type':
+        return a.type.localeCompare(b.type);
+      case 'npc':
+        return a.npcName.localeCompare(b.npcName);
+      default:
+        return 0;
+    }
+  });
+
+  // Calculate stats for ALL quests (not just filtered)
+  renderHWQStats(window.allHWQs);
+
+  // Update results info
+  updateHWQResultsInfo(filteredQuests.length, window.allHWQs.length);
+
+  // Paginate and render
+  const totalPages = Math.ceil(filteredQuests.length / window.hwqItemsPerPage);
+  const startIndex = (window.hwqCurrentPage - 1) * window.hwqItemsPerPage;
+  const endIndex = startIndex + window.hwqItemsPerPage;
+  const paginatedQuests = filteredQuests.slice(startIndex, endIndex);
+
+  // Render quest cards (async)
+  await renderHWQCards(paginatedQuests);
+  
+  // Render pagination after cards are rendered
+  renderHWQPagination(window.hwqCurrentPage, totalPages);
+}
+
+// ------------------- Function: renderHWQStats -------------------
+// Renders the stats cards for HWQs (only for visible quests)
+function renderHWQStats(quests) {
+  const statsGrid = document.getElementById('hwq-stats-grid');
+  if (!statsGrid) return;
+
+  const now = new Date();
+  
+  // Filter to only show completed and expired quests (hide active ones)
+  const visibleQuests = quests.filter(quest => {
+    const questDate = new Date(quest.date);
+    const expirationTime = new Date(questDate.getTime() + 24 * 60 * 60 * 1000);
+    const isExpired = !quest.completed && now > expirationTime;
+    return quest.completed || isExpired;
+  });
+
+  const totalQuests = visibleQuests.length;
+  const completedQuests = visibleQuests.filter(q => q.completed).length;
+  const expiredQuests = visibleQuests.filter(q => {
+    const questDate = new Date(q.date);
+    const expirationTime = new Date(questDate.getTime() + 24 * 60 * 60 * 1000);
+    return !q.completed && now > expirationTime;
+  }).length;
+  const completionRate = totalQuests > 0 ? ((completedQuests / totalQuests) * 100).toFixed(1) : 0;
+
+  statsGrid.innerHTML = `
+    <div class="hwq-stat-card completed">
+      <div class="hwq-stat-icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="hwq-stat-content">
+        <h3>${completedQuests}</h3>
+        <p>Completed</p>
+      </div>
+    </div>
+    
+    <div class="hwq-stat-card expired">
+      <div class="hwq-stat-icon">
+        <i class="fas fa-times-circle"></i>
+      </div>
+      <div class="hwq-stat-content">
+        <h3>${expiredQuests}</h3>
+        <p>Expired</p>
+      </div>
+    </div>
+    
+    <div class="hwq-stat-card total">
+      <div class="hwq-stat-icon">
+        <i class="fas fa-list-check"></i>
+      </div>
+      <div class="hwq-stat-content">
+        <h3>${totalQuests}</h3>
+        <p>Total Visible</p>
+      </div>
+    </div>
+    
+    <div class="hwq-stat-card completion-rate">
+      <div class="hwq-stat-icon">
+        <i class="fas fa-percentage"></i>
+      </div>
+      <div class="hwq-stat-content">
+        <h3>${completionRate}%</h3>
+        <p>Completion Rate</p>
+      </div>
+    </div>
+  `;
+}
+
+// ------------------- Function: updateHWQResultsInfo -------------------
+// Updates the results information text
+function updateHWQResultsInfo(filteredCount, totalCount) {
+  const resultsInfo = document.getElementById('hwq-results-info');
+  if (!resultsInfo) return;
+
+  if (filteredCount === totalCount) {
+    resultsInfo.innerHTML = `<p>Showing <strong>${totalCount}</strong> quest${totalCount !== 1 ? 's' : ''}</p>`;
+  } else {
+    resultsInfo.innerHTML = `<p>Showing <strong>${filteredCount}</strong> of <strong>${totalCount}</strong> quests</p>`;
+  }
+}
+
+// ------------------- Function: renderHWQCards -------------------
+// Renders the quest cards
+async function renderHWQCards(quests) {
+  const questsGrid = document.getElementById('hwq-quests-grid');
+  if (!questsGrid) return;
+
+  if (quests.length === 0) {
+    questsGrid.innerHTML = `
+      <div class="error-state" style="grid-column: 1 / -1;">
+        <i class="fas fa-search"></i>
+        <p>No quests match your filters</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Fetch user and character data upfront
+  const [usersData, charactersData] = await Promise.all([
+    fetchHWQUsers(),
+    fetchHWQCharacters()
+  ]);
+
+  const questCardsHTML = quests.map(quest => {
+    // Determine if quest is expired
+    const now = new Date();
+    const questDate = new Date(quest.date);
+    const expirationTime = new Date(questDate.getTime() + 24 * 60 * 60 * 1000);
+    const isExpired = !quest.completed && now > expirationTime;
+    
+    const statusClass = quest.completed ? 'status-completed' : 'status-expired';
+    const statusText = quest.completed ? 'Completed' : 'Expired';
+    const typeClass = `type-${quest.type}`;
+    
+    // Format requirements
+    let requirementsText = 'N/A';
+    if (quest.requirements) {
+      if (typeof quest.requirements === 'string') {
+        requirementsText = quest.requirements;
+      } else if (typeof quest.requirements === 'object') {
+        const reqs = [];
+        
+        // Item quests
+        if (quest.requirements.item) {
+          reqs.push(`${quest.requirements.amount || 1}x ${quest.requirements.item}`);
+        }
+        
+        // Monster quests
+        if (quest.requirements.monster) {
+          const monsterCount = quest.requirements.amount || quest.requirements.count || 1;
+          reqs.push(`Defeat ${monsterCount}x ${quest.requirements.monster}`);
+        }
+        
+        // Writing quests
+        if (quest.requirements.prompt) {
+          reqs.push(`Write: "${quest.requirements.prompt}"`);
+          if (quest.requirements.requirement) {
+            reqs.push(`(${quest.requirements.requirement})`);
+          }
+          if (quest.requirements.context) {
+            reqs.push(`Context: ${quest.requirements.context}`);
+          }
+        }
+        
+        // Art quests
+        if (quest.requirements.theme) {
+          reqs.push(`Art Theme: "${quest.requirements.theme}"`);
+          if (quest.requirements.requirement) {
+            reqs.push(`(${quest.requirements.requirement})`);
+          }
+        }
+        
+        // Escort quests
+        if (quest.requirements.location) {
+          reqs.push(`Escort to: ${quest.requirements.location}`);
+        }
+        
+        // Generic description
+        if (quest.requirements.description && !quest.requirements.prompt && !quest.requirements.theme) {
+          reqs.push(quest.requirements.description);
+        }
+        
+        requirementsText = reqs.length > 0 ? reqs.join(' • ') : JSON.stringify(quest.requirements);
+      }
+    }
+    
+    // Format post time to EST
+    let postTimeFormatted = 'N/A';
+    if (quest.scheduledPostTime) {
+      try {
+        // Parse cron format (e.g., "0 5 * * *" means 5:00 AM UTC daily)
+        const cronParts = quest.scheduledPostTime.split(' ');
+        if (cronParts.length >= 2) {
+          const minute = cronParts[0];
+          const hour = cronParts[1];
+          
+          // Convert UTC to EST (EST is UTC-5)
+          let hourNum = parseInt(hour);
+          let minuteNum = parseInt(minute);
+          
+          if (!isNaN(hourNum) && !isNaN(minuteNum)) {
+            // Convert to EST
+            hourNum = hourNum - 5;
+            if (hourNum < 0) hourNum += 24;
+            
+            const period = hourNum >= 12 ? 'PM' : 'AM';
+            const hour12 = hourNum === 0 ? 12 : hourNum > 12 ? hourNum - 12 : hourNum;
+            postTimeFormatted = `${hour12}:${minuteNum.toString().padStart(2, '0')} ${period} EST`;
+          }
+        }
+      } catch (e) {
+        postTimeFormatted = quest.scheduledPostTime;
+      }
+    }
+
+    // Format completion info
+    let completionHTML = '';
+    if (quest.completed && quest.completedBy) {
+      const completedDate = quest.completedBy.timestamp ? new Date(quest.completedBy.timestamp).toLocaleDateString() : 'Unknown';
+      const userId = quest.completedBy.userId || 'Unknown';
+      const characterId = quest.completedBy.characterId || null;
+      
+      // Lookup user name (use nickname if available)
+      const user = usersData.find(u => u.discordId === userId);
+      const userName = user ? `<i class="fas fa-user"></i> ${user.nickname || user.username}` : `<i class="fas fa-user"></i> Unknown User`;
+      
+      // Lookup character name
+      let characterName = '';
+      if (characterId) {
+        const character = charactersData.find(c => c._id === characterId || c.discordId === characterId);
+        characterName = character 
+          ? `<i class="fas fa-user-circle"></i> ${character.name}${character.job ? ` (${character.job})` : ''}`
+          : `<i class="fas fa-user-circle"></i> Unknown Character`;
+      }
+      
+      completionHTML = `
+        <div class="quest-detail-row">
+          <strong>Completed By:</strong>
+          <span style="color: var(--text-primary);">
+            ${userName}
+          </span>
+        </div>
+        ${characterId ? `
+        <div class="quest-detail-row">
+          <strong>Character:</strong>
+          <span style="color: var(--text-primary);">
+            ${characterName}
+          </span>
+        </div>
+        ` : ''}
+        <div class="quest-detail-row">
+          <strong>Completion Date:</strong>
+          <span>${completedDate}</span>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="quest-card ${typeClass}" data-quest-id="${quest.questId}">
+        <div class="quest-card-inner">
+          <div class="quest-header">
+            <div class="quest-title-row">
+              <h3 class="quest-title">${quest.npcName}'s Request</h3>
+              <span class="quest-status-badge ${statusClass}">
+                <i class="fas fa-${quest.completed ? 'check-circle' : 'clock'}"></i>
+                ${statusText}
+              </span>
+            </div>
+            <div class="quest-meta">
+              <div class="quest-date">
+                <i class="fas fa-calendar"></i>
+                <span>${new Date(quest.date).toLocaleDateString()}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="quest-content">
+            <div class="quest-type-badge ${typeClass}">
+              <i class="fas fa-${getQuestTypeIcon(quest.type)}"></i>
+              ${quest.type.charAt(0).toUpperCase() + quest.type.slice(1)}
+            </div>
+
+            <div class="quest-details">
+              <div class="quest-detail-row">
+                <strong>Quest ID:</strong>
+                <span>${quest.questId}</span>
+              </div>
+              <div class="quest-detail-row">
+                <strong>Village:</strong>
+                <span>${quest.village}</span>
+              </div>
+              <div class="quest-detail-row">
+                <strong>NPC:</strong>
+                <span>${quest.npcName}</span>
+              </div>
+              <div class="quest-detail-row">
+                <strong>Post Time:</strong>
+                <span>${postTimeFormatted}</span>
+              </div>
+              ${quest.channelId ? `
+              <div class="quest-detail-row">
+                <strong>Channel:</strong>
+                <span>${getChannelName(quest.channelId)}</span>
+              </div>
+              ` : ''}
+              ${completionHTML}
+              <div class="quest-detail-row" style="border-top: 1px solid rgba(255, 255, 255, 0.1); margin-top: 0.5rem; padding-top: 0.75rem;">
+                <strong>Requirements:</strong>
+                <span style="white-space: normal; word-break: break-word;">${requirementsText}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  questsGrid.innerHTML = questCardsHTML;
+}
+
+// ------------------- Function: getChannelName -------------------
+// Maps channel IDs to village town hall names
+function getChannelName(channelId) {
+  const channelMap = {
+    '629028823001858060': '🏛️ Rudania Town Hall',
+    '629028490179510308': '🏛️ Inariko Town Hall',
+    '629030018965700668': '🏛️ Vhintl Town Hall'
+  };
+  return channelMap[channelId] || 'Unknown Channel';
+}
+
+// ------------------- Function: fetchHWQUsers -------------------
+// Fetches all users for lookup
+async function fetchHWQUsers() {
+  try {
+    const response = await fetch(`/api/users?all=true`);
+    if (!response.ok) {
+      console.warn('Failed to fetch users, returning empty array');
+      return [];
+    }
+    const result = await response.json();
+    // Handle different response formats
+    return result.users || result.data || result || [];
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return [];
+  }
+}
+
+// ------------------- Function: fetchHWQCharacters -------------------
+// Fetches all characters for lookup
+async function fetchHWQCharacters() {
+  try {
+    const response = await fetch(`/api/models/character?all=true`);
+    if (!response.ok) throw new Error('Failed to fetch characters');
+    const { data: characters } = await response.json();
+    return characters;
+  } catch (error) {
+    console.error('Error fetching characters:', error);
+    return [];
+  }
+}
+
+// ------------------- Function: renderHWQPagination -------------------
+// Renders pagination controls
+function renderHWQPagination(currentPage, totalPages) {
+  const paginationDiv = document.getElementById('hwq-pagination');
+  if (!paginationDiv) return;
+
+  if (totalPages <= 1) {
+    paginationDiv.style.display = 'none';
+    return;
+  }
+
+  paginationDiv.style.display = 'flex';
+  paginationDiv.innerHTML = `
+    <button 
+      class="hwq-pagination-button" 
+      id="hwq-prev-btn" 
+      ${currentPage === 1 ? 'disabled' : ''}
+      aria-label="Previous page"
+    >
+      <i class="fas fa-chevron-left"></i> Previous
+    </button>
+    <span class="hwq-page-info">Page ${currentPage} of ${totalPages}</span>
+    <button 
+      class="hwq-pagination-button" 
+      id="hwq-next-btn" 
+      ${currentPage === totalPages ? 'disabled' : ''}
+      aria-label="Next page"
+    >
+      Next <i class="fas fa-chevron-right"></i>
+    </button>
+  `;
+
+  // Setup pagination event listeners
+  const prevBtn = document.getElementById('hwq-prev-btn');
+  const nextBtn = document.getElementById('hwq-next-btn');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', async () => {
+      if (window.hwqCurrentPage > 1) {
+        window.hwqCurrentPage--;
+        await filterAndRenderHWQs();
+        // Scroll to top of quest grid
+        document.getElementById('hwq-stats-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', async () => {
+      if (window.hwqCurrentPage < totalPages) {
+        window.hwqCurrentPage++;
+        await filterAndRenderHWQs();
+        // Scroll to top of quest grid
+        document.getElementById('hwq-stats-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
+}
+
+// Helper function to get quest type icon
+function getQuestTypeIcon(type) {
+  const icons = {
+    'item': 'box',
+    'monster': 'dragon',
+    'escort': 'walking',
+    'crafting': 'hammer',
+    'art': 'palette',
+    'writing': 'pen'
+  };
+  return icons[type] || 'clipboard';
+}
+
 // Load recent quests when the page loads
 document.addEventListener('DOMContentLoaded', () => {
   loadRecentQuests();
@@ -2129,5 +3001,8 @@ export {
   showCalendarSection,
   showUsersSection,
   showSettingsSection,
+  showSuggestionBoxSection,
+  showMemberLoreSection,
+  showLevelsSection,
   showAdminAreaSection
 };

@@ -72,6 +72,7 @@
   <link rel="stylesheet" href="css/relationships.css" />
   <link rel="stylesheet" href="css/settings.css" />
   <link rel="stylesheet" href="css/quests.css" />
+  <link rel="stylesheet" href="css/hwqs.css" />
   <link rel="stylesheet" href="css/levels.css" />
   
   <!-- External Scripts with Integrity -->
@@ -376,8 +377,8 @@
             </div>
           </div>
           <div id="recent-quests-container" class="recent-quests-grid">
-            <div class="loading-spinner">
-              <i class="fas fa-spinner fa-spin"></i>
+            <div class="loading-state">
+              <div class="loading-spinner"></div>
               <p>Loading recent quests...</p>
             </div>
           </div>
@@ -423,6 +424,9 @@
           </button>
           <button type="button" class="model-card" data-model="quest">
             <i class="fas fa-scroll" aria-hidden="true"></i><span>Quests</span>
+          </button>
+          <button type="button" class="model-card" data-model="helpwantedquest">
+            <i class="fas fa-clipboard-list" aria-hidden="true"></i><span>Help Wanted Quests</span>
           </button>
           <button type="button" class="model-card" data-model="inventory">
             <i class="fas fa-shopping-bag" aria-hidden="true"></i><span>Inventories</span>
@@ -527,7 +531,10 @@
         </div>
         <div class="stats-card-wide">
           <h3>Character Stats</h3>
-          <p id="stats-total-characters">Loading...</p>
+          <div id="stats-total-characters" style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 2rem;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--accent-color);"></i>
+            <p style="margin: 0; color: var(--text-secondary); font-size: 1rem;">Loading character statistics...</p>
+          </div>
         </div>
         <div class="stats-card-wide">
           <h3>Characters per Village</h3>
@@ -545,6 +552,44 @@
           <h3>Characters per Job</h3>
           <div class="chart-container">
             <canvas id="jobDistributionChart"></canvas>
+          </div>
+        </div>
+
+        <!-- HWQ Stats Section -->
+        <div class="stats-card-wide hwq-stats-section">
+          <h3><i class="fas fa-clipboard-list"></i> Help Wanted Quest Statistics</h3>
+          <div id="hwq-stats-overview"></div>
+        </div>
+
+        <div class="stats-card-wide">
+          <h3>Help Wanted Quests per Type</h3>
+          <div class="chart-container" style="position: relative; min-height: 300px; display: flex; align-items: center; justify-content: center;">
+            <div class="chart-loading" style="position: absolute; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+              <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
+              <p style="color: var(--text-secondary); margin: 0;">Loading chart...</p>
+            </div>
+            <canvas id="hwqTypeChart"></canvas>
+          </div>
+        </div>
+
+        <div class="stats-card-wide">
+          <h3>Top Help Wanted Quest Requesters (NPCs)</h3>
+          <div class="chart-container" style="position: relative; min-height: 300px; display: flex; align-items: center; justify-content: center;">
+            <div class="chart-loading" style="position: absolute; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+              <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
+              <p style="color: var(--text-secondary); margin: 0;">Loading chart...</p>
+            </div>
+            <canvas id="hwqNPCChart"></canvas>
+          </div>
+        </div>
+
+        <div class="stats-card-wide">
+          <h3><i class="fas fa-trophy"></i> Top Help Wanted Quest Completers</h3>
+          <div id="hwq-top-completers" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+              <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
+              <p style="color: var(--text-secondary); margin: 0;">Loading leaderboard...</p>
+            </div>
           </div>
         </div>
       </section>
@@ -585,6 +630,80 @@
               </div>
               <div class="profile-info">
                 <h2 class="profile-name" id="profile-name">Loading...</h2>
+                <div class="profile-nickname-section" style="margin-top: 0.75rem;">
+                  <div class="profile-nickname-display" id="profile-nickname-display" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="profile-nickname-label" style="color: var(--text-secondary); font-size: 0.9rem;">Display Name:</span>
+                    <span class="profile-nickname-value" id="profile-nickname-value" style="color: var(--text-color); font-weight: 500;">Not set</span>
+                    <button id="edit-nickname-btn" class="edit-nickname-btn" style="
+                      padding: 0.25rem 0.5rem;
+                      background: var(--primary-color);
+                      color: white;
+                      border: none;
+                      border-radius: 0.25rem;
+                      cursor: pointer;
+                      font-size: 0.8rem;
+                      display: flex;
+                      align-items: center;
+                      gap: 0.25rem;
+                      transition: background 0.2s;
+                    " title="Edit display name">
+                      <i class="fas fa-edit"></i>
+                      Edit
+                    </button>
+                  </div>
+                  <div class="profile-nickname-edit" id="profile-nickname-edit" style="display: none; gap: 0.5rem; align-items: center;">
+                    <input 
+                      type="text" 
+                      id="profile-nickname-input" 
+                      placeholder="Enter your display name"
+                      maxlength="50"
+                      style="
+                        padding: 0.5rem;
+                        border: 1px solid var(--border-color);
+                        border-radius: 0.25rem;
+                        background: var(--input-bg);
+                        color: var(--text-color);
+                        font-size: 0.9rem;
+                        flex: 1;
+                      "
+                    />
+                    <button id="save-nickname-btn" class="save-nickname-btn" style="
+                      padding: 0.5rem 0.75rem;
+                      background: #4CAF50;
+                      color: white;
+                      border: none;
+                      border-radius: 0.25rem;
+                      cursor: pointer;
+                      font-size: 0.9rem;
+                      display: flex;
+                      align-items: center;
+                      gap: 0.25rem;
+                      transition: background 0.2s;
+                    ">
+                      <i class="fas fa-save"></i>
+                      Save
+                    </button>
+                    <button id="cancel-nickname-btn" class="cancel-nickname-btn" style="
+                      padding: 0.5rem 0.75rem;
+                      background: var(--card-bg);
+                      color: var(--text-color);
+                      border: 1px solid var(--border-color);
+                      border-radius: 0.25rem;
+                      cursor: pointer;
+                      font-size: 0.9rem;
+                      display: flex;
+                      align-items: center;
+                      gap: 0.25rem;
+                      transition: background 0.2s;
+                    ">
+                      <i class="fas fa-times"></i>
+                      Cancel
+                    </button>
+                  </div>
+                  <small style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.25rem; display: block;">
+                    Your display name will be shown instead of your username across the dashboard
+                  </small>
+                </div>
               </div>
             </div>
             <div class="profile-stats">
@@ -827,18 +946,154 @@
             </div>
           </div>
           
-          <!-- Discord Content Section -->
-          <div class="discord-content-section">
-            <div class="discord-content-header">
-              <h3>Discord Content</h3>
-              <p>Content coming soon...</p>
+          <!-- Live Server Activity Section -->
+          <div class="discord-activity-section">
+            <div class="discord-section-header">
+              <h3><i class="fas fa-chart-line"></i> Live Server Activity</h3>
             </div>
-            <div class="discord-content-placeholder">
-              <!-- Future content will be added here -->
+            <div class="activity-stats-grid">
+              <div class="activity-stat-card">
+                <div class="activity-stat-icon online">
+                  <i class="fas fa-circle"></i>
+                </div>
+                <div class="activity-stat-info">
+                  <span class="activity-stat-label">Online Now</span>
+                  <span class="activity-stat-value" id="online-count">--</span>
+                </div>
+              </div>
+              <div class="activity-stat-card">
+                <div class="activity-stat-icon voice">
+                  <i class="fas fa-microphone"></i>
+                </div>
+                <div class="activity-stat-info">
+                  <span class="activity-stat-label">In Voice</span>
+                  <span class="activity-stat-value" id="voice-count">--</span>
+                </div>
+              </div>
+              <div class="activity-stat-card">
+                <div class="activity-stat-icon messages">
+                  <i class="fas fa-comment"></i>
+                </div>
+                <div class="activity-stat-info">
+                  <span class="activity-stat-label">Messages Today</span>
+                  <span class="activity-stat-value" id="messages-today">--</span>
+                </div>
+              </div>
+              <div class="activity-stat-card">
+                <div class="activity-stat-icon boost">
+                  <i class="fas fa-rocket"></i>
+                </div>
+                <div class="activity-stat-info">
+                  <span class="activity-stat-label">Server Boosts</span>
+                  <span class="activity-stat-value" id="boost-count">--</span>
+                </div>
+              </div>
             </div>
           </div>
+
+          <!-- Server Stats Section -->
+          <div class="discord-stats-section">
+            <div class="discord-section-header">
+              <h3><i class="fas fa-info-circle"></i> Server Information</h3>
+            </div>
+            <div class="server-stats-grid">
+              <div class="server-stat-item">
+                <i class="fas fa-hashtag"></i>
+                <div class="server-stat-content">
+                  <span class="server-stat-label">Text Channels</span>
+                  <span class="server-stat-value" id="text-channels-count">--</span>
+                </div>
+              </div>
+              <div class="server-stat-item">
+                <i class="fas fa-volume-up"></i>
+                <div class="server-stat-content">
+                  <span class="server-stat-label">Voice Channels</span>
+                  <span class="server-stat-value" id="voice-channels-count">--</span>
+                </div>
+              </div>
+              <div class="server-stat-item">
+                <i class="fas fa-shield-alt"></i>
+                <div class="server-stat-content">
+                  <span class="server-stat-label">Roles</span>
+                  <span class="server-stat-value" id="roles-count">--</span>
+                </div>
+              </div>
+              <div class="server-stat-item">
+                <i class="fas fa-calendar-plus"></i>
+                <div class="server-stat-content">
+                  <span class="server-stat-label">Server Age</span>
+                  <span class="server-stat-value" id="server-age">--</span>
+                </div>
+              </div>
+              <div class="server-stat-item">
+                <i class="fas fa-user-plus"></i>
+                <div class="server-stat-content">
+                  <span class="server-stat-label">Latest Member</span>
+                  <span class="server-stat-value" id="latest-member">--</span>
+                </div>
+              </div>
+              <div class="server-stat-item">
+                <i class="fas fa-crown"></i>
+                <div class="server-stat-content">
+                  <span class="server-stat-label">Server Owner</span>
+                  <span class="server-stat-value" id="server-owner">--</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Role Distribution Section -->
+          <div class="discord-roles-section">
+            <div class="discord-section-header">
+              <h3><i class="fas fa-users-cog"></i> Role Distribution</h3>
+            </div>
+            <div class="roles-chart-container">
+              <canvas id="roles-chart" width="800" height="600"></canvas>
+            </div>
+            <div id="roles-list" class="roles-legend">
+              <div class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading role distribution...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Announcements Section -->
+          <div class="discord-announcements-section">
+            <div class="discord-section-header">
+              <h3><i class="fas fa-bullhorn"></i> Recent Announcements</h3>
+            </div>
+            <div class="announcements-list" id="announcements-list">
+              <div class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading announcements...</p>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
+
+      <!-- Announcement Modal -->
+      <div class="announcement-modal" id="announcement-modal">
+        <div class="announcement-modal-content">
+          <div class="announcement-modal-header">
+            <div class="announcement-modal-author">
+              <img src="/images/tingleicon.png" alt="Author" class="announcement-modal-avatar" id="modal-author-avatar">
+              <div class="announcement-modal-author-info">
+                <h3 id="modal-author-name">Author</h3>
+                <p class="announcement-modal-time" id="modal-timestamp">Just now</p>
+              </div>
+            </div>
+            <button class="announcement-modal-close" id="close-announcement-modal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="announcement-modal-body" id="modal-announcement-content">
+            <!-- Full announcement content will be inserted here -->
+          </div>
+        </div>
+      </div>
 
       <!-- Users Section -->
       <section id="users-section" style="display:none;">
@@ -2183,7 +2438,7 @@
                   <input type="checkbox" id="blood-moon-alerts" class="toggle-input">
                   <span class="toggle-slider"></span>
                 </div>
-                <small>Get notified about upcoming Blood Moon events</small>
+                <small>Get notified at midnight the day before Blood Moon starts at 8pm</small>
               </div>
               <div class="setting-item">
                 <label for="daily-reset-reminders">Daily Reset Reminders</label>
@@ -2191,7 +2446,7 @@
                   <input type="checkbox" id="daily-reset-reminders" class="toggle-input">
                   <span class="toggle-slider"></span>
                 </div>
-                <small>Remind me about daily resets and stamina recovery</small>
+                <small>Get notified at 8am EST when daily stamina resets</small>
               </div>
               <div class="setting-item">
                 <label for="weather-notifications">Weather Notifications</label>
@@ -2210,73 +2465,18 @@
                 <small>Get notified when Character of the Week changes</small>
               </div>
             </div>
-          </div>
-
-          <!-- Data Export -->
-          <div class="settings-category">
-            <div class="settings-category-header">
-              <h2><i class="fas fa-download"></i> Data Export</h2>
-              <p>Export your character and game data</p>
-            </div>
-            <div class="settings-grid">
-              <div class="setting-item full-width">
-                <label>Export Your Data</label>
-                <div class="export-buttons">
-                  <button id="export-characters" class="export-btn">
-                    <i class="fas fa-users"></i>
-                    Export Characters
-                  </button>
-                  <button id="export-inventory" class="export-btn">
-                    <i class="fas fa-box"></i>
-                    Export Inventory
-                  </button>
-                  <button id="export-relationships" class="export-btn">
-                    <i class="fas fa-heart"></i>
-                    Export Relationships
-                  </button>
-                  <button id="export-all-data" class="export-btn primary">
-                    <i class="fas fa-database"></i>
-                    Export All Data
-                  </button>
-                </div>
-                <small>Download your character data in various formats (JSON, CSV)</small>
-              </div>
-            </div>
-          </div>
-
-          <!-- Privacy & Security -->
-          <div class="settings-category">
-            <div class="settings-category-header">
-              <h2><i class="fas fa-shield-alt"></i> Privacy & Security</h2>
-              <p>Control your data and privacy settings</p>
-            </div>
-            <div class="settings-grid">
-              <div class="setting-item">
-                <label for="activity-logging">Activity Logging</label>
-                <div class="toggle-switch">
-                  <input type="checkbox" id="activity-logging" class="toggle-input" checked>
-                  <span class="toggle-slider"></span>
-                </div>
-                <small>Allow the system to track your activity for analytics</small>
-              </div>
-              <div class="setting-item">
-                <label for="data-retention">Data Retention</label>
-                <select id="data-retention" class="setting-input">
-                  <option value="30">30 days</option>
-                  <option value="90" selected>90 days</option>
-                  <option value="365">1 year</option>
-                  <option value="forever">Forever</option>
-                </select>
-                <small>How long to keep your activity data</small>
-              </div>
-              <div class="setting-item">
-                <label for="profile-visibility">Profile Visibility</label>
-                <select id="profile-visibility" class="setting-input">
-                  <option value="public">Public</option>
-                  <option value="friends" selected>Friends Only</option>
-                  <option value="private">Private</option>
-                </select>
-                <small>Control who can see your profile information</small>
+            <div class="notification-dm-warning">
+              <i class="fas fa-info-circle"></i>
+              <div>
+                <strong>Important:</strong> Discord DMs must be enabled to receive notifications. 
+                If you don't receive a confirmation message when enabling these settings, the bot cannot send you DMs. 
+                This usually happens if:
+                <ul>
+                  <li>You have DMs disabled in your Discord privacy settings</li>
+                  <li>You've blocked DMs from this server</li>
+                  <li>You're not in the Roots of the Wild server</li>
+                </ul>
+                To fix: Go to Server Settings → Privacy Settings → Enable "Allow direct messages from server members"
               </div>
             </div>
           </div>
@@ -2290,14 +2490,6 @@
             <button id="reset-settings" class="settings-btn secondary">
               <i class="fas fa-undo"></i>
               Reset to Defaults
-            </button>
-            <button id="export-settings" class="settings-btn secondary">
-              <i class="fas fa-download"></i>
-              Export Settings
-            </button>
-            <button id="import-settings" class="settings-btn secondary">
-              <i class="fas fa-upload"></i>
-              Import Settings
             </button>
           </div>
         </div>

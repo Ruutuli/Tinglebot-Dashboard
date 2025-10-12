@@ -254,7 +254,7 @@ class UserLookup {
         <div class="user-avatar-container">
           <img 
             src="${this.getUserAvatar(user)}" 
-            alt="${user.username || 'User'}" 
+            alt="${user.nickname || user.username || 'User'}" 
             class="user-avatar"
             onerror="this.src='/images/ankleicon.png'"
           />
@@ -263,7 +263,7 @@ class UserLookup {
           </div>
         </div>
         <div class="user-info">
-          <h4 class="user-name">${user.username || 'Unknown User'}</h4>
+          <h4 class="user-name">${user.nickname || user.username || 'Unknown User'}</h4>
         </div>
       </div>
       
@@ -346,12 +346,12 @@ class UserLookup {
         <div class="user-details-user-info">
           <img 
             src="${avatarUrl}" 
-            alt="${data.user.username || 'User'}" 
+            alt="${data.user.nickname || data.user.username || 'User'}" 
             class="user-details-avatar"
             onerror="this.src='/images/ankleicon.png'"
           />
           <div class="user-details-info">
-            <h2 class="user-details-name">${data.user.username || 'Unknown User'}</h2>
+            <h2 class="user-details-name">${data.user.nickname || data.user.username || 'Unknown User'}</h2>
             <div class="user-details-status ${data.user.status}">
               <span class="status-dot"></span>
               <span>${data.user.status === 'active' ? 'Active' : 'Inactive'}</span>
