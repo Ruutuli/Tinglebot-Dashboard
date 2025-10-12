@@ -86,16 +86,31 @@ if (isProduction) {
 
 
 
+// Create session store with error handling
+let sessionStore;
+try {
+  sessionStore = MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/tinglebot',
+    collectionName: 'sessions',
+    ttl: 24 * 60 * 60, // 24 hours in seconds
+    autoRemove: 'native',
+    touchAfter: 24 * 3600 // lazy session update
+  });
+  
+  sessionStore.on('error', (error) => {
+    console.error('Session store error:', error);
+  });
+} catch (error) {
+  console.error('Failed to create session store:', error);
+  // Fallback to memory store (not recommended for production but allows server to start)
+  sessionStore = null;
+}
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/tinglebot',
-    collectionName: 'sessions',
-    ttl: 24 * 60 * 60, // 24 hours in seconds
-    autoRemove: 'native'
-  }),
+  store: sessionStore,
   cookie: {
     secure: isProduction, // Set to true in production with HTTPS
     httpOnly: true,
@@ -8100,60 +8115,62 @@ app.use((req, res, next) => {
 // ------------------- Function: startServer -------------------
 // Initializes the server and starts listening on the specified port
 const startServer = async () => {
+  // Display startup banner
+  logger.banner('TINGLEBOT DASHBOARD', 'Initializing server components...');
+  
+  // Initialize cache cleanup (safe operation)
   try {
-    // Clear console for clean startup (optional - comment out if you prefer to keep history)
-    // console.clear();
-    
-    // Display startup banner
-    logger.banner('TINGLEBOT DASHBOARD', 'Initializing server components...');
-    
-    // Initialize cache cleanup
     initializeCacheCleanup();
-    
-    // Start server FIRST so health checks pass immediately
-    // Bind to 0.0.0.0 for Railway/Docker deployments
+  } catch (err) {
+    logger.warn('Cache cleanup initialization failed', err);
+  }
+  
+  // Start server FIRST so health checks pass immediately
+  // Bind to 0.0.0.0 for Railway/Docker deployments
+  // This MUST succeed or we exit
+  try {
     app.listen(PORT, '0.0.0.0', () => {
       const env = process.env.NODE_ENV || 'development';
       logger.ready(PORT, env);
+      logger.info(`Server is listening on 0.0.0.0:${PORT}`);
       
       // Show nodemon watching message
       if (process.env.NODE_ENV !== 'production') {
         logger.info('👀 Watching for file changes... (type "rs" to restart)');
       }
     });
-    
-    // Initialize databases in background (non-blocking)
-    initializeDatabases().catch(err => {
-      logger.error('Database initialization failed - some features will be limited', err);
-    });
-    
-    // Initialize background tasks (non-blocking)
-    // These run after server is listening so health checks pass
-    Promise.all([
-      setupWeeklyCharacterRotation(),
-      Promise.resolve(setupDailyResetReminders()),
-      Promise.resolve(setupBloodMoonAlerts())
-    ]).then(() => {
-      logger.divider('SCHEDULERS INITIALIZED');
-    }).catch(err => {
-      logger.error('Error initializing schedulers', err);
-    });
-    
-    // Initialize Discord Gateway (non-blocking)
-    const gateway = getDiscordGateway();
-    gateway.connect().then(gatewayConnected => {
-      if (gatewayConnected) {
-        logger.info('Discord Gateway connected successfully');
-      } else {
-        logger.warn('Discord Gateway failed to connect - some features will be limited');
-      }
-    }).catch(err => {
-      logger.warn('Discord Gateway connection error - some features will be limited', err);
-    });
   } catch (error) {
-    logger.error('Failed to start server', error);
+    logger.error('CRITICAL: Failed to start HTTP server', error);
     process.exit(1);
   }
+  
+  // Initialize databases in background (non-blocking, failures are non-fatal)
+  initializeDatabases().catch(err => {
+    logger.error('Database initialization failed - some features will be limited', err);
+  });
+  
+  // Initialize background tasks (non-blocking, failures are non-fatal)
+  Promise.all([
+    setupWeeklyCharacterRotation(),
+    Promise.resolve(setupDailyResetReminders()),
+    Promise.resolve(setupBloodMoonAlerts())
+  ]).then(() => {
+    logger.divider('SCHEDULERS INITIALIZED');
+  }).catch(err => {
+    logger.error('Error initializing schedulers', err);
+  });
+  
+  // Initialize Discord Gateway (non-blocking, failures are non-fatal)
+  const gateway = getDiscordGateway();
+  gateway.connect().then(gatewayConnected => {
+    if (gatewayConnected) {
+      logger.info('Discord Gateway connected successfully');
+    } else {
+      logger.warn('Discord Gateway failed to connect - some features will be limited');
+    }
+  }).catch(err => {
+    logger.warn('Discord Gateway connection error - some features will be limited', err);
+  });
 };
 
 // ------------------- Section: Graceful Shutdown -------------------
