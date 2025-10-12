@@ -1,5 +1,5 @@
 const { Storage } = require('@google-cloud/storage');
-const { handleError } = require('./utils/globalErrorHandler');
+const { handleError } = require('../utils/globalErrorHandler');
 const path = require('path');
 const dotenv = require('dotenv');
 const env = process.env.NODE_ENV || 'development';

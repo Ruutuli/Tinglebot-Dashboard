@@ -4,7 +4,7 @@
 ============================================================================ */
 
 // Import UI functions
-import { setupBackToTopButton } from './ui.js';
+import { setupBackToTopButton, scrollToTop } from './ui.js';
 import { showError } from './error.js';
 
 // Commands page functionality
@@ -27,6 +27,9 @@ function loadCommandsCSS() {
 
 export function showCommandsSection() {
   loadCommandsCSS();
+  
+  // Scroll to top when showing commands section
+  scrollToTop();
   
   try {
     // Hide all sections

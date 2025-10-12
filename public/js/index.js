@@ -53,6 +53,9 @@ export {
 // ============================================================================
 document.addEventListener('DOMContentLoaded', async () => {
   try {
+    // Scroll to top on page load
+    scrollToTop();
+    
     await auth.checkUserAuthStatus();
     
     const backToTopButton = document.getElementById('backToTop');
@@ -110,6 +113,9 @@ function setupModelCards() {
       if (window.reinitializeBlupee) {
         window.reinitializeBlupee();
       }
+      
+      // Scroll to top when viewing a model
+      scrollToTop();
 
       // Reset filters when switching between models
       if (window.itemFiltersInitialized) {
@@ -161,6 +167,9 @@ function setupModelCards() {
           if (window.reinitializeBlupee) {
             window.reinitializeBlupee();
           }
+          
+          // Scroll to top when going back to dashboard
+          scrollToTop();
           
           modelDetailsPage.style.display = 'none';
           dashboardSection.style.display = 'block';
@@ -616,6 +625,9 @@ async function loadStatsData() {
 // Switches between sections using nav links
 // ============================================================================
 function showSection(sectionId) {
+  // Scroll to top when showing a new section
+  scrollToTop();
+  
   // Hide all main content sections including dashboard
   const mainContent = document.querySelector('.main-content');
   const allSections = mainContent.querySelectorAll('section, #model-details-page');
@@ -655,6 +667,9 @@ function setupSidebarNavigation() {
         window.reinitializeBlupee();
       }
       
+      // Scroll to top when navigating to a new section
+      scrollToTop();
+      
       // Handle different sections
       if (sectionId === 'stats-section') {
         showStatsSection();
@@ -691,6 +706,9 @@ function setupSidebarNavigation() {
   
   // Handle browser back/forward buttons
   window.addEventListener('popstate', (event) => {
+    // Scroll to top when using browser navigation
+    scrollToTop();
+    
     // Check if it's a model or a section
     if (event.state?.model) {
       // It's a model (characters, mounts, etc.)
@@ -1059,6 +1077,8 @@ function hideModelDetails() {
 // Handles stats page navigation specifically
 // ============================================================================
 function showStatsSection() {
+  // Scroll to top when showing stats section
+  scrollToTop();
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -1105,6 +1125,8 @@ function showStatsSection() {
 }
 
 function showDashboardSection() { 
+  // Scroll to top when showing dashboard section
+  scrollToTop();
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -1216,6 +1238,8 @@ function showDashboardSection() {
 // Handles profile page navigation specifically
 // ============================================================================
 function showProfileSection() {
+  // Scroll to top when showing profile section
+  scrollToTop();
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -1266,6 +1290,8 @@ function showProfileSection() {
 // Handles guild page navigation specifically
 // ============================================================================
 function showGuildSection() {
+  // Scroll to top when showing guild section
+  scrollToTop();
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -1312,6 +1338,8 @@ function showGuildSection() {
 // Handles calendar page navigation specifically
 // ============================================================================
 function showCalendarSection() {
+  // Scroll to top when showing calendar section
+  scrollToTop();
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -1361,6 +1389,8 @@ function showCalendarSection() {
 // Handles users page navigation specifically
 // ============================================================================
 function showUsersSection() {
+  // Scroll to top when showing users section
+  scrollToTop();
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -1415,6 +1445,8 @@ function showUsersSection() {
 // Handles settings page navigation specifically
 // ============================================================================
 function showSettingsSection() {
+  // Scroll to top when showing settings section
+  scrollToTop();
   
   // Check authentication - redirect to login if not authenticated
   if (!auth.isAuthenticated || !auth.currentUser) {
@@ -1469,6 +1501,8 @@ function showSettingsSection() {
 // Handles suggestion box page navigation specifically
 // ============================================================================
 function showSuggestionBoxSection() {
+  // Scroll to top when showing suggestion box section
+  scrollToTop();
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -1517,6 +1551,8 @@ function showSuggestionBoxSection() {
 // Handles member lore page navigation specifically
 // ============================================================================
 function showMemberLoreSection() {
+  // Scroll to top when showing member lore section
+  scrollToTop();
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -1565,6 +1601,8 @@ function showMemberLoreSection() {
 // Handles levels page navigation specifically
 // ============================================================================
 function showLevelsSection() {
+  // Scroll to top when showing levels section
+  scrollToTop();
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
@@ -1613,6 +1651,8 @@ function showLevelsSection() {
 // Handles admin area page navigation specifically
 // ============================================================================
 function showAdminAreaSection() {
+  // Scroll to top when showing admin area section
+  scrollToTop();
   
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');

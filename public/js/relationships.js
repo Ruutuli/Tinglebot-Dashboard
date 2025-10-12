@@ -210,6 +210,9 @@ function setupEventListeners() {
 async function showRelationshipsSection() {
   console.log('💕 Showing Relationships Section');
   
+  // Scroll to top when showing relationships section
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
   // Hide all main content sections
   const mainContent = document.querySelector('.main-content');
   console.log('🔍 Main content element:', mainContent);

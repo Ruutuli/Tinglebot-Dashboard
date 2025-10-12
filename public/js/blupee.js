@@ -3,6 +3,8 @@
    Purpose: Handles random blupee spawning on dashboard pages and rewards
    users with tokens when they click it. Gamification feature to encourage
    dashboard usage.
+   
+   Cooldown: 5 minutes between catches (enforced server-side)
 ============================================================================ */
 
 // ============================================================================
@@ -14,6 +16,7 @@ const BLUPEE_CONFIG = {
   minSpawnDelay: 1000, // 1 second minimum before first spawn (instant!)
   maxSpawnDelay: 3000, // 3 seconds maximum before first spawn
   spawnChance: 0.3, // 30% chance to spawn on page load
+  cooldownMinutes: 5, // 5 minutes cooldown between catches (server-enforced)
   
   // Display settings
   displayDuration: 10000, // 10 seconds visible before disappearing
@@ -125,8 +128,13 @@ async function checkBlupeeStatus() {
     
     const status = await response.json();
     
-    // No cooldown - always try to spawn if authenticated!
-    scheduleBlupeeSpawn();
+    // Check if user can claim (5-minute cooldown)
+    if (status.canClaim) {
+      console.log('[blupee.js]: User can catch blupees - attempting spawn');
+      scheduleBlupeeSpawn();
+    } else {
+      console.log(`[blupee.js]: Blupee on cooldown - ${Math.floor(status.cooldownRemaining / 60)}m ${status.cooldownRemaining % 60}s remaining`);
+    }
   } catch (error) {
     console.error('[blupee.js]: Error checking blupee status:', error);
   }
@@ -368,8 +376,12 @@ async function handleBlupeeClick(event) {
       
       console.log(`[blupee.js]: ✨ Reward claimed! +${data.tokensAwarded} tokens (Total: ${data.newTokenBalance})`);
     } else {
-      // Show error (likely already claimed)
-      showErrorNotification(data.message || 'Could not claim blupee reward');
+      // Show error (cooldown or other issue)
+      if (response.status === 429) {
+        showErrorNotification(data.message || 'Blupee on cooldown! Please wait before catching another.');
+      } else {
+        showErrorNotification(data.message || 'Could not claim blupee reward');
+      }
       console.log('[blupee.js]: Could not claim reward:', data.message);
     }
   } catch (error) {

@@ -1,5 +1,5 @@
 const { google } = require('googleapis');
-const { handleError } = require('./utils/globalErrorHandler');
+const { handleError } = require('../utils/globalErrorHandler');
 const path = require('path');
 
 async function authorize() {

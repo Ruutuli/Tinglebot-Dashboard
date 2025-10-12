@@ -69,6 +69,9 @@ const calendarModule = require('./calendarModule');
 // Import pretty logger utility
 const logger = require('./utils/logger');
 
+// Import Google Sheets utilities
+const googleSheets = require('./googleSheetsUtils');
+
 // ------------------- Section: App Configuration -------------------
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -6956,7 +6959,26 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
     
     const now = new Date();
     
-    // Award tokens - no cooldown, catch as many as you want!
+    // Check for 5-minute cooldown
+    const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const lastClaimed = user.blupeeHunt.lastClaimed;
+    
+    if (lastClaimed) {
+      const timeSinceLastClaim = now - new Date(lastClaimed);
+      if (timeSinceLastClaim < COOLDOWN_MS) {
+        const cooldownRemaining = Math.ceil((COOLDOWN_MS - timeSinceLastClaim) / 1000);
+        const minutesRemaining = Math.floor(cooldownRemaining / 60);
+        const secondsRemaining = cooldownRemaining % 60;
+        return res.status(429).json({ 
+          success: false,
+          error: 'Blupee on cooldown',
+          message: `Please wait ${minutesRemaining}m ${secondsRemaining}s before catching another blupee!`,
+          cooldownRemaining
+        });
+      }
+    }
+    
+    // Award tokens
     const tokensAwarded = 100;
     user.tokens = (user.tokens || 0) + tokensAwarded;
     
@@ -6971,6 +6993,45 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
     await user.save();
     
     logger.success(`User ${user.username || user.discordId} claimed a blupee! (+${tokensAwarded} tokens, Total: ${user.blupeeHunt.totalClaimed})`);
+    
+    // Log to Google Sheets if user has a token tracker
+    if (user.tokenTracker && googleSheets.isValidGoogleSheetsUrl(user.tokenTracker)) {
+      try {
+        const newRow = [
+          'Dashboard - Blupee Catch',
+          '',
+          'Other',
+          'earned',
+          `${tokensAwarded}`
+        ];
+        await googleSheets.safeAppendDataToSheet(
+          user.tokenTracker,
+          user,
+          'loggedTracker!B7:F',
+          [newRow],
+          null,
+          { skipValidation: false }
+        );
+        logger.success(`Blupee catch logged to Google Sheets for user ${user.username || user.discordId}`);
+      } catch (sheetError) {
+        // Don't fail the entire request if Google Sheets logging fails
+        const errorMessage = sheetError?.message || sheetError?.toString() || 'Unknown error';
+        
+        console.log('[server.js]: 🔍 Caught error while logging to Google Sheets:', errorMessage);
+        
+        // Only log as error if it's not a credential issue (which is expected in local dev)
+        if (errorMessage.includes('credentials') || 
+            errorMessage.includes('No key or keyFile') || 
+            errorMessage.includes('authentication failed') ||
+            errorMessage.includes('functionality disabled')) {
+          // Silently skip - this is expected in local dev without credentials
+          console.log('[server.js]: ℹ️ Google Sheets logging skipped (not configured in this environment)');
+        } else {
+          console.error('[server.js]: ❌ Unexpected error logging blupee to Google Sheets:', errorMessage);
+          logger.error(`Failed to log blupee catch to Google Sheets for user ${user.username || user.discordId}: ${errorMessage}`);
+        }
+      }
+    }
     
     res.json({
       success: true,
@@ -6999,15 +7060,32 @@ app.get('/api/blupee/status', requireAuth, async (req, res) => {
       return res.json({
         canClaim: true,
         totalClaimed: 0,
-        lastClaimed: null
+        lastClaimed: null,
+        cooldownRemaining: 0
       });
     }
     
-    // Always allow claiming - no cooldown!
+    // Check for 5-minute cooldown
+    const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const now = new Date();
+    const lastClaimed = user.blupeeHunt.lastClaimed;
+    
+    let canClaim = true;
+    let cooldownRemaining = 0;
+    
+    if (lastClaimed) {
+      const timeSinceLastClaim = now - new Date(lastClaimed);
+      if (timeSinceLastClaim < COOLDOWN_MS) {
+        canClaim = false;
+        cooldownRemaining = Math.ceil((COOLDOWN_MS - timeSinceLastClaim) / 1000); // seconds remaining
+      }
+    }
+    
     res.json({
-      canClaim: true,
+      canClaim,
       totalClaimed: user.blupeeHunt.totalClaimed || 0,
-      lastClaimed: user.blupeeHunt.lastClaimed
+      lastClaimed: user.blupeeHunt.lastClaimed,
+      cooldownRemaining
     });
   } catch (error) {
     console.error('[server.js]: Error checking blupee status:', error);
