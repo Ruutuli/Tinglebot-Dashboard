@@ -7482,6 +7482,41 @@ app.get('/api/levels/leaderboard', async (req, res) => {
   }
 });
 
+// ------------------- Endpoint: Blupee Leaderboard -------------------
+app.get('/api/levels/blupee-leaderboard', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const limitCapped = Math.min(Math.max(limit, 5), 50); // Between 5 and 50
+    
+    const topBlupeeHunters = await User.find({ 'blupeeHunt.totalClaimed': { $gt: 0 } })
+      .sort({ 'blupeeHunt.totalClaimed': -1 })
+      .limit(limitCapped)
+      .select('discordId username discriminator avatar nickname blupeeHunt')
+      .lean();
+    
+    // Format the response
+    const leaderboard = topBlupeeHunters.map((user, index) => ({
+      rank: index + 1,
+      discordId: user.discordId,
+      username: user.username || 'Unknown',
+      discriminator: user.discriminator || '0000',
+      nickname: user.nickname,
+      avatar: user.avatar,
+      totalBlupeesCaught: user.blupeeHunt?.totalClaimed || 0,
+      lastClaimed: user.blupeeHunt?.lastClaimed || null
+    }));
+    
+    res.json({
+      success: true,
+      leaderboard: leaderboard,
+      total: leaderboard.length
+    });
+  } catch (error) {
+    console.error('[server.js]: Error fetching blupee leaderboard:', error);
+    res.status(500).json({ error: 'Failed to fetch blupee leaderboard' });
+  }
+});
+
 // Get individual user level details
 app.get('/api/levels/user/:discordId', async (req, res) => {
   try {

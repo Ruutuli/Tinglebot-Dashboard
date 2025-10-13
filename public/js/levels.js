@@ -11,6 +11,7 @@
 const levelsModule = {
   currentTab: 'rank',
   leaderboardLimit: 10,
+  blupeeLeaderboardLimit: 10,
   userData: null,
   isAuthenticated: false,
 
@@ -95,6 +96,8 @@ const levelsModule = {
         await this.loadRankData();
       } else if (this.currentTab === 'leaderboard') {
         await this.loadLeaderboard();
+      } else if (this.currentTab === 'blupee-leaderboard') {
+        await this.loadBlupeeLeaderboard();
       } else if (this.currentTab === 'exchange') {
         await this.loadExchangeData();
       }
@@ -215,6 +218,91 @@ const levelsModule = {
           <div class="leaderboard-messages">
             <i class="fas fa-comment"></i>
             <span>${entry.totalMessages.toLocaleString()}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  /**
+   * ------------------- Function: loadBlupeeLeaderboard -------------------
+   * Load and display the blupee leaderboard
+   */
+  async loadBlupeeLeaderboard() {
+    try {
+      const response = await fetch(`/api/levels/blupee-leaderboard?limit=${this.blupeeLeaderboardLimit}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch blupee leaderboard');
+      }
+      
+      const data = await response.json();
+      this.displayBlupeeLeaderboard(data.leaderboard);
+      
+    } catch (error) {
+      console.error('[levels.js]: Error loading blupee leaderboard:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * ------------------- Function: displayBlupeeLeaderboard -------------------
+   * Display blupee leaderboard entries
+   */
+  displayBlupeeLeaderboard(leaderboard) {
+    const container = document.getElementById('blupee-leaderboard-list');
+    
+    if (!leaderboard || leaderboard.length === 0) {
+      container.innerHTML = `
+        <div class="no-data">
+          <i class="fas fa-rabbit"></i>
+          <p>No blupee hunters yet. Start catching blupees to appear on the leaderboard!</p>
+        </div>
+      `;
+      return;
+    }
+    
+    const medals = ['🥇', '🥈', '🥉'];
+    
+    container.innerHTML = leaderboard.map((entry, index) => {
+      const medal = index < 3 ? medals[index] : '';
+      const avatarUrl = entry.avatar 
+        ? `https://cdn.discordapp.com/avatars/${entry.discordId}/${entry.avatar}.png`
+        : '/images/ankleicon.png';
+      
+      // Calculate time since last claim if available
+      let lastClaimedText = 'Never';
+      if (entry.lastClaimed) {
+        const timeDiff = Date.now() - new Date(entry.lastClaimed).getTime();
+        const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+        const days = Math.floor(hours / 24);
+        
+        if (days > 0) {
+          lastClaimedText = `${days}d ago`;
+        } else if (hours > 0) {
+          lastClaimedText = `${hours}h ago`;
+        } else {
+          lastClaimedText = 'Recently';
+        }
+      }
+      
+      return `
+        <div class="leaderboard-entry ${index < 3 ? 'top-three' : ''}">
+          <div class="leaderboard-rank">
+            ${medal || `<span class="rank-number">#${entry.rank}</span>`}
+          </div>
+          <div class="leaderboard-avatar">
+            <img src="${avatarUrl}" alt="${entry.nickname || entry.username}" onerror="this.src='/images/ankleicon.png'">
+          </div>
+          <div class="leaderboard-info">
+            <div class="leaderboard-username">${entry.nickname || entry.username}</div>
+            <div class="leaderboard-stats">
+              <span class="level-badge">🐰 ${entry.totalBlupeesCaught} Blupees</span>
+              <span class="xp-text">Last: ${lastClaimedText}</span>
+            </div>
+          </div>
+          <div class="leaderboard-messages">
+            <i class="fas fa-rabbit"></i>
+            <span>${entry.totalBlupeesCaught}</span>
           </div>
         </div>
       `;
@@ -441,6 +529,15 @@ const levelsModule = {
   changeLeaderboardLimit(limit) {
     this.leaderboardLimit = parseInt(limit);
     this.loadLeaderboard();
+  },
+
+  /**
+   * ------------------- Function: changeBlupeeLeaderboardLimit -------------------
+   * Change blupee leaderboard display limit
+   */
+  changeBlupeeLeaderboardLimit(limit) {
+    this.blupeeLeaderboardLimit = parseInt(limit);
+    this.loadBlupeeLeaderboard();
   },
 
   /**
