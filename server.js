@@ -6963,8 +6963,8 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
     
     const now = new Date();
     
-    // Check for 5-minute cooldown
-    const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
+    // Check for 30-minute cooldown
+    const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
     const lastClaimed = user.blupeeHunt.lastClaimed;
     
     if (lastClaimed) {
@@ -7069,8 +7069,8 @@ app.get('/api/blupee/status', requireAuth, async (req, res) => {
       });
     }
     
-    // Check for 5-minute cooldown
-    const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
+    // Check for 30-minute cooldown
+    const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
     const now = new Date();
     const lastClaimed = user.blupeeHunt.lastClaimed;
     
