@@ -499,6 +499,7 @@ app.get('/api/auth/status', (req, res) => {
       user: {
         discordId: req.user.discordId,
         username: req.user.username,
+        nickname: req.user.nickname,
         email: req.user.email,
         avatar: req.user.avatar,
         discriminator: req.user.discriminator,
@@ -600,7 +601,7 @@ app.get('/api/user', async (req, res) => {
       // Fetch full user data from database to get leveling, birthday, helpWanted, etc.
       try {
         const dbUser = await User.findOne({ discordId: req.user.discordId })
-          .select('discordId username email avatar discriminator tokens characterSlot status leveling birthday helpWanted createdAt')
+          .select('discordId username email avatar discriminator tokens characterSlot status leveling birthday helpWanted createdAt nickname')
           .lean();
         
         if (dbUser) {
@@ -672,7 +673,7 @@ app.get('/api/users/search', async (req, res) => {
         { discordId: searchRegex }
       ]
     })
-    .select('discordId username discriminator avatar tokens characterSlot status createdAt')
+    .select('discordId username discriminator avatar tokens characterSlot status createdAt nickname')
     .sort({ createdAt: -1, discordId: 1 })
     .limit(50)
     .lean();
@@ -713,6 +714,7 @@ app.get('/api/users', async (req, res) => {
         $group: {
           _id: '$discordId',
           username: { $first: '$username' },
+          nickname: { $first: '$nickname' },
           discriminator: { $first: '$discriminator' },
           avatar: { $first: '$avatar' },
           tokens: { $first: '$tokens' },
@@ -737,6 +739,7 @@ app.get('/api/users', async (req, res) => {
           return {
             discordId: user._id,
             username: user.username,
+            nickname: user.nickname,
             discriminator: user.discriminator,
             avatar: user.avatar,
             tokens: user.tokens,
@@ -765,6 +768,7 @@ app.get('/api/users', async (req, res) => {
         return {
           discordId: user._id,
           username: user.username,
+          nickname: user.nickname,
           discriminator: user.discriminator,
           avatar: user.avatar,
           tokens: user.tokens,
@@ -801,7 +805,7 @@ app.get('/api/users/:discordId', async (req, res) => {
     const { discordId } = req.params;
 
     const user = await User.findOne({ discordId })
-      .select('discordId username discriminator avatar tokens characterSlot status createdAt')
+      .select('discordId username discriminator avatar tokens characterSlot status createdAt nickname')
       .lean();
 
     if (!user) {
@@ -1331,12 +1335,12 @@ app.get('/api/stats/hwqs', async (req, res) => {
     // Fetch usernames for top completers
     const topCompleterUserIds = topCompleters.map(t => t.userId);
     const users = await User.find({ discordId: { $in: topCompleterUserIds } })
-      .select('discordId username')
+      .select('discordId username nickname')
       .lean();
     
     const userMap = {};
     users.forEach(u => {
-      userMap[u.discordId] = u.username || u.discordId;
+      userMap[u.discordId] = u.nickname || u.username || u.discordId;
     });
     
     // Get all unique character IDs from top completers
@@ -7456,7 +7460,7 @@ app.get('/api/levels/leaderboard', async (req, res) => {
     const topUsers = await User.find({})
       .sort({ 'leveling.level': -1, 'leveling.xp': -1 })
       .limit(limitCapped)
-      .select('discordId username discriminator avatar leveling')
+      .select('discordId username discriminator avatar leveling nickname')
       .lean();
     
     // Format the response
@@ -7464,6 +7468,7 @@ app.get('/api/levels/leaderboard', async (req, res) => {
       rank: index + 1,
       discordId: user.discordId,
       username: user.username || 'Unknown',
+      nickname: user.nickname || '',
       discriminator: user.discriminator || '0000',
       avatar: user.avatar,
       level: user.leveling?.level || 1,
@@ -7523,7 +7528,7 @@ app.get('/api/levels/user/:discordId', async (req, res) => {
     const { discordId } = req.params;
     
     const user = await User.findOne({ discordId: discordId })
-      .select('discordId username discriminator avatar leveling')
+      .select('discordId username discriminator avatar leveling nickname')
       .lean();
     
     if (!user) {
@@ -7577,6 +7582,7 @@ app.get('/api/levels/user/:discordId', async (req, res) => {
       success: true,
       discordId: user.discordId,
       username: user.username || 'Unknown',
+      nickname: user.nickname || '',
       discriminator: user.discriminator || '0000',
       avatar: user.avatar,
       level: leveling.level,

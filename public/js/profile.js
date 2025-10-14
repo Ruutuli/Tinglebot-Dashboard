@@ -120,7 +120,7 @@ function updateProfileDisplay(userData) {
   profileAvatar.src = avatarUrl;
   
   // Update user info
-  profileName.textContent = userData.username || 'User';
+  profileName.textContent = userData.nickname || userData.username || 'User';
   
   // Update nickname display
   const nicknameValue = document.getElementById('profile-nickname-value');
