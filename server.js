@@ -6979,7 +6979,7 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
     }
     
     // Award tokens
-    const tokensAwarded = 100;
+    const tokensAwarded = 10;
     user.tokens = (user.tokens || 0) + tokensAwarded;
     
     // Update blupee hunt tracking
