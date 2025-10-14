@@ -4,7 +4,7 @@
    users with tokens when they click it. Gamification feature to encourage
    dashboard usage.
    
-   Cooldown: 5 minutes between catches (enforced server-side)
+   Cooldown: 30 minutes between catches (enforced server-side)
 ============================================================================ */
 
 // ============================================================================
@@ -16,7 +16,7 @@ const BLUPEE_CONFIG = {
   minSpawnDelay: 1000, // 1 second minimum before first spawn (instant!)
   maxSpawnDelay: 3000, // 3 seconds maximum before first spawn
   spawnChance: 0.3, // 30% chance to spawn on page load
-  cooldownMinutes: 5, // 5 minutes cooldown between catches (server-enforced)
+  cooldownMinutes: 30, // 30 minutes cooldown between catches (server-enforced)
   
   // Display settings
   displayDuration: 10000, // 10 seconds visible before disappearing
@@ -35,7 +35,7 @@ const BLUPEE_CONFIG = {
   size: 80, // Size of blupee image (pixels)
   
   // Reward
-  tokenReward: 100
+  tokenReward: 10
 };
 
 // ============================================================================
@@ -128,7 +128,7 @@ async function checkBlupeeStatus() {
     
     const status = await response.json();
     
-    // Check if user can claim (5-minute cooldown)
+    // Check if user can claim (30-minute cooldown)
     if (status.canClaim) {
       console.log('[blupee.js]: User can catch blupees - attempting spawn');
       scheduleBlupeeSpawn();
@@ -347,10 +347,11 @@ async function handleBlupeeClick(event) {
   blupeeElement.style.top = currentTop;
   blupeeElement.style.transform = 'translateY(0)';
   
-  // Add clicked animation after freezing position
-  setTimeout(() => {
-    blupeeElement.classList.add('blupee-clicked');
-  }, 10);
+  // Force reflow to ensure transition removal takes effect
+  void blupeeElement.offsetHeight;
+  
+  // Add clicked animation immediately
+  blupeeElement.classList.add('blupee-clicked');
   
   try {
     // Claim reward from server
