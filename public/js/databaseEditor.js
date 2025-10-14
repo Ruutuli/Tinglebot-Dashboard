@@ -1111,7 +1111,7 @@ const MODEL_STRUCTURES = {
       },
       {
         title: '⚔️ Gear and Stats',
-        fields: ['gearArmor', 'gearWeapon', 'gearShield', 'attack', 'defense']
+        fields: ['gearWeapon', 'gearShield', 'gearArmor.head', 'gearArmor.chest', 'gearArmor.legs', 'attack', 'defense']
       },
       {
         title: '🎒 Inventory and Links',
@@ -1429,7 +1429,7 @@ const MODEL_STRUCTURES = {
       },
       {
         title: '⚔️ Gear and Stats',
-        fields: ['gearArmor', 'gearWeapon', 'gearShield', 'attack', 'defense']
+        fields: ['gearWeapon', 'gearShield', 'gearArmor.head', 'gearArmor.chest', 'gearArmor.legs', 'attack', 'defense']
       },
       {
         title: '🎒 Inventory and Links',
@@ -2057,7 +2057,18 @@ function createSectionHeader(title) {
 async function createFieldGroup(fieldInfo, record) {
   const fieldName = fieldInfo.name;
   const fieldNameLower = fieldName.toLowerCase();
-  const fieldValue = record[fieldName];
+  
+  // Handle nested field access (e.g., gearArmor.head)
+  let fieldValue;
+  if (fieldName.includes('.')) {
+    const parts = fieldName.split('.');
+    fieldValue = record;
+    for (const part of parts) {
+      fieldValue = fieldValue?.[part];
+    }
+  } else {
+    fieldValue = record[fieldName];
+  }
   
   const fieldGroup = document.createElement('div');
   fieldGroup.className = 'form-field-group';
@@ -2837,6 +2848,16 @@ function createObjectTextarea(fieldName, value, type) {
     return createGearEditor(fieldName, value);
   }
   
+  // Special handling for debuff object (active boolean + endDate)
+  if (fieldNameLower === 'debuff') {
+    return createDebuffEditor(fieldName, value);
+  }
+  
+  // Special handling for buff object (active, type, effects)
+  if (fieldNameLower === 'buff') {
+    return createBuffEditor(fieldName, value);
+  }
+  
   // For Mixed type, use simple textarea since it can be anything
   if (type === 'Mixed' && typeof value !== 'object') {
     const textarea = document.createElement('textarea');
@@ -3139,6 +3160,282 @@ function createGearEditor(fieldName, value) {
   container.appendChild(nameSection);
   container.appendChild(statsSection);
   container.appendChild(helperDiv);
+  
+  return container;
+}
+
+// ------------------- createDebuffEditor -------------------
+// Create user-friendly editor for debuff object (active + endDate)
+//
+function createDebuffEditor(fieldName, value) {
+  const container = document.createElement('div');
+  container.className = 'debuff-editor';
+  container.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(220, 53, 69, 0.05);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    border-radius: 8px;
+  `;
+  
+  // Hidden textarea to store the actual JSON object
+  const hiddenInput = document.createElement('textarea');
+  hiddenInput.style.display = 'none';
+  hiddenInput.name = fieldName;
+  hiddenInput.id = `field-${fieldName}`;
+  
+  // Initialize debuff object
+  let debuffData = {
+    active: false,
+    endDate: null
+  };
+  
+  if (value !== undefined && value !== null && typeof value === 'object') {
+    debuffData.active = value.active || false;
+    debuffData.endDate = value.endDate || null;
+  }
+  
+  // Update hidden input
+  const updateHiddenInput = () => {
+    hiddenInput.value = JSON.stringify(debuffData);
+  };
+  updateHiddenInput();
+  
+  // Active checkbox section
+  const activeSection = document.createElement('div');
+  activeSection.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  `;
+  
+  const activeCheckbox = document.createElement('input');
+  activeCheckbox.type = 'checkbox';
+  activeCheckbox.checked = debuffData.active;
+  activeCheckbox.style.cssText = `
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+  `;
+  
+  activeCheckbox.addEventListener('change', (e) => {
+    debuffData.active = e.target.checked;
+    updateHiddenInput();
+  });
+  
+  const activeLabel = document.createElement('label');
+  activeLabel.textContent = 'Debuff Active';
+  activeLabel.style.cssText = `
+    font-weight: 600;
+    color: #dc3545;
+    font-size: 1rem;
+  `;
+  
+  activeSection.appendChild(activeCheckbox);
+  activeSection.appendChild(activeLabel);
+  
+  // End date section
+  const endDateSection = document.createElement('div');
+  endDateSection.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  `;
+  
+  const endDateLabel = document.createElement('label');
+  endDateLabel.textContent = 'End Date';
+  endDateLabel.style.cssText = `
+    font-weight: 600;
+    color: #dc3545;
+    font-size: 0.9rem;
+  `;
+  
+  const endDateInput = document.createElement('input');
+  endDateInput.type = 'datetime-local';
+  if (debuffData.endDate) {
+    const date = new Date(debuffData.endDate);
+    endDateInput.value = date.toISOString().slice(0, 16);
+  }
+  endDateInput.style.cssText = `
+    padding: 10px 12px;
+    background: rgba(203, 182, 135, 0.05);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    border-radius: 6px;
+    color: #cbb687;
+    font-weight: 600;
+  `;
+  
+  endDateInput.addEventListener('change', (e) => {
+    debuffData.endDate = e.target.value ? new Date(e.target.value).toISOString() : null;
+    updateHiddenInput();
+  });
+  
+  endDateSection.appendChild(endDateLabel);
+  endDateSection.appendChild(endDateInput);
+  
+  // Assemble
+  container.appendChild(hiddenInput);
+  container.appendChild(activeSection);
+  container.appendChild(endDateSection);
+  
+  return container;
+}
+
+// ------------------- createBuffEditor -------------------
+// Create user-friendly editor for buff object (active, type, effects)
+//
+function createBuffEditor(fieldName, value) {
+  const container = document.createElement('div');
+  container.className = 'buff-editor';
+  container.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(73, 213, 156, 0.05);
+    border: 1px solid rgba(73, 213, 156, 0.3);
+    border-radius: 8px;
+  `;
+  
+  // Hidden textarea to store the actual JSON object
+  const hiddenInput = document.createElement('textarea');
+  hiddenInput.style.display = 'none';
+  hiddenInput.name = fieldName;
+  hiddenInput.id = `field-${fieldName}`;
+  
+  // Initialize buff object
+  let buffData = {
+    active: false,
+    type: null,
+    effects: {
+      blightResistance: 0,
+      electricResistance: 0,
+      staminaBoost: 0,
+      staminaRecovery: 0,
+      fireResistance: 0,
+      speedBoost: 0,
+      extraHearts: 0,
+      attackBoost: 0,
+      stealthBoost: 0,
+      coldResistance: 0,
+      defenseBoost: 0
+    }
+  };
+  
+  if (value !== undefined && value !== null && typeof value === 'object') {
+    buffData.active = value.active || false;
+    buffData.type = value.type || null;
+    if (value.effects && typeof value.effects === 'object') {
+      buffData.effects = { ...buffData.effects, ...value.effects };
+    }
+  }
+  
+  // Update hidden input
+  const updateHiddenInput = () => {
+    hiddenInput.value = JSON.stringify(buffData);
+  };
+  updateHiddenInput();
+  
+  // Active checkbox section
+  const activeSection = document.createElement('div');
+  activeSection.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  `;
+  
+  const activeCheckbox = document.createElement('input');
+  activeCheckbox.type = 'checkbox';
+  activeCheckbox.checked = buffData.active;
+  activeCheckbox.style.cssText = `
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+  `;
+  
+  activeCheckbox.addEventListener('change', (e) => {
+    buffData.active = e.target.checked;
+    updateHiddenInput();
+  });
+  
+  const activeLabel = document.createElement('label');
+  activeLabel.textContent = 'Buff Active';
+  activeLabel.style.cssText = `
+    font-weight: 600;
+    color: #49D59C;
+    font-size: 1rem;
+  `;
+  
+  activeSection.appendChild(activeCheckbox);
+  activeSection.appendChild(activeLabel);
+  
+  // Buff type dropdown
+  const typeSection = document.createElement('div');
+  typeSection.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  `;
+  
+  const typeLabel = document.createElement('label');
+  typeLabel.textContent = 'Buff Type';
+  typeLabel.style.cssText = `
+    font-weight: 600;
+    color: #49D59C;
+    font-size: 0.9rem;
+  `;
+  
+  const typeSelect = document.createElement('select');
+  typeSelect.innerHTML = `
+    <option value="">-- Select Buff Type --</option>
+    <option value="chilly" ${buffData.type === 'chilly' ? 'selected' : ''}>Chilly (Blight Resistance)</option>
+    <option value="electro" ${buffData.type === 'electro' ? 'selected' : ''}>Electro (Electric Resistance)</option>
+    <option value="enduring" ${buffData.type === 'enduring' ? 'selected' : ''}>Enduring (Stamina Boost)</option>
+    <option value="energizing" ${buffData.type === 'energizing' ? 'selected' : ''}>Energizing (Stamina Recovery)</option>
+    <option value="fireproof" ${buffData.type === 'fireproof' ? 'selected' : ''}>Fireproof (Fire Resistance)</option>
+    <option value="hasty" ${buffData.type === 'hasty' ? 'selected' : ''}>Hasty (Speed Boost)</option>
+    <option value="hearty" ${buffData.type === 'hearty' ? 'selected' : ''}>Hearty (Extra Hearts)</option>
+    <option value="mighty" ${buffData.type === 'mighty' ? 'selected' : ''}>Mighty (Attack Boost)</option>
+    <option value="sneaky" ${buffData.type === 'sneaky' ? 'selected' : ''}>Sneaky (Stealth Boost)</option>
+    <option value="spicy" ${buffData.type === 'spicy' ? 'selected' : ''}>Spicy (Cold Resistance)</option>
+    <option value="tough" ${buffData.type === 'tough' ? 'selected' : ''}>Tough (Defense Boost)</option>
+  `;
+  typeSelect.style.cssText = `
+    padding: 10px 12px;
+    background: rgba(203, 182, 135, 0.05);
+    border: 1px solid rgba(73, 213, 156, 0.3);
+    border-radius: 6px;
+    color: #cbb687;
+    font-weight: 600;
+  `;
+  
+  typeSelect.addEventListener('change', (e) => {
+    buffData.type = e.target.value || null;
+    updateHiddenInput();
+  });
+  
+  typeSection.appendChild(typeLabel);
+  typeSection.appendChild(typeSelect);
+  
+  // Effects note
+  const effectsNote = document.createElement('div');
+  effectsNote.style.cssText = `
+    padding: 8px 12px;
+    background: rgba(73, 213, 156, 0.1);
+    border-left: 3px solid #49D59C;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: rgba(203, 182, 135, 0.9);
+  `;
+  effectsNote.innerHTML = `<strong>💡 Note:</strong> Buff effects are stored in the effects object. Use the simple map input below if you need to modify individual effect values.`;
+  
+  // Assemble
+  container.appendChild(hiddenInput);
+  container.appendChild(activeSection);
+  container.appendChild(typeSection);
+  container.appendChild(effectsNote);
   
   return container;
 }
@@ -5174,7 +5471,22 @@ async function handleSaveRecord() {
     const fieldInfo = currentSchema[key];
     if (!fieldInfo) continue;
     
-    recordData[key] = validateAndSanitizeField(key, value, fieldInfo.type);
+    const sanitizedValue = validateAndSanitizeField(key, value, fieldInfo.type);
+    
+    // Handle nested fields (e.g., gearArmor.head)
+    if (key.includes('.')) {
+      const parts = key.split('.');
+      let current = recordData;
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (!current[parts[i]]) {
+          current[parts[i]] = {};
+        }
+        current = current[parts[i]];
+      }
+      current[parts[parts.length - 1]] = sanitizedValue;
+    } else {
+      recordData[key] = sanitizedValue;
+    }
   }
   
   if (recordData.hasOwnProperty('locations')) {
@@ -5508,9 +5820,14 @@ function getFieldDescription(fieldName, modelName) {
     'gearWeapon': 'Equipped weapon with name and stats (e.g., attack, durability)',
     'gearShield': 'Equipped shield with name and stats (e.g., defense, durability)',
     'gearArmor': 'Equipped armor pieces (head, chest, legs) with stats for each',
+    'gearArmor.head': 'Head armor piece with name and stats (e.g., defense, special effects)',
+    'gearArmor.chest': 'Chest armor piece with name and stats (e.g., defense, special effects)',
+    'gearArmor.legs': 'Leg armor piece with name and stats (e.g., defense, special effects)',
     'head': 'Head armor piece with name and stats',
     'chest': 'Chest armor piece with name and stats',
     'legs': 'Leg armor piece with name and stats',
+    'debuff': 'Character debuff status - includes active flag and end date for when the debuff expires',
+    'buff': 'Character buff status - includes active flag, buff type, and effect values',
     'jobVoucher': 'Whether this character has a job change voucher',
     'jobVoucherJob': 'The job this voucher can be used to change to (select from all available jobs)',
     'entries': 'Table roll entries with weight, item, quantity, flavor text, and optional thumbnail image',
@@ -5565,9 +5882,14 @@ function getFieldDisplayName(fieldName) {
     'gearWeapon': 'Weapon',
     'gearShield': 'Shield',
     'gearArmor': 'Armor Set',
+    'gearArmor.head': 'Head Armor',
+    'gearArmor.chest': 'Chest Armor',
+    'gearArmor.legs': 'Leg Armor',
     'head': 'Head Armor',
     'chest': 'Chest Armor',
     'legs': 'Leg Armor',
+    'debuff': 'Debuff Status',
+    'buff': 'Buff Status',
     'jobVoucher': 'Job Voucher',
     'jobVoucherJob': 'Job Voucher Job',
     'totalWeight': 'Total Weight',
