@@ -6957,14 +6957,41 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
       user.blupeeHunt = {
         lastClaimed: null,
         totalClaimed: 0,
-        claimHistory: []
+        claimHistory: [],
+        dailyCount: 0,
+        dailyResetDate: null
       };
     }
     
     const now = new Date();
+    const DAILY_LIMIT = 5;
+    const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
+    
+    // Check if we need to reset daily count (24 hours since last reset)
+    const dailyResetDate = user.blupeeHunt.dailyResetDate ? new Date(user.blupeeHunt.dailyResetDate) : null;
+    if (!dailyResetDate || (now - dailyResetDate) >= 24 * 60 * 60 * 1000) {
+      user.blupeeHunt.dailyCount = 0;
+      user.blupeeHunt.dailyResetDate = now;
+    }
+    
+    // Check daily limit (5 per day)
+    if (user.blupeeHunt.dailyCount >= DAILY_LIMIT) {
+      const timeUntilReset = (24 * 60 * 60 * 1000) - (now - new Date(user.blupeeHunt.dailyResetDate));
+      const hoursRemaining = Math.floor(timeUntilReset / (60 * 60 * 1000));
+      const minutesRemaining = Math.floor((timeUntilReset % (60 * 60 * 1000)) / (60 * 1000));
+      
+      return res.status(429).json({ 
+        success: false,
+        error: 'Daily limit reached',
+        message: `You've reached your daily limit of ${DAILY_LIMIT} blupees! Resets in ${hoursRemaining}h ${minutesRemaining}m`,
+        dailyLimitReached: true,
+        dailyCount: user.blupeeHunt.dailyCount,
+        dailyLimit: DAILY_LIMIT,
+        resetIn: timeUntilReset
+      });
+    }
     
     // Check for 30-minute cooldown
-    const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
     const lastClaimed = user.blupeeHunt.lastClaimed;
     
     if (lastClaimed) {
@@ -6977,7 +7004,9 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
           success: false,
           error: 'Blupee on cooldown',
           message: `Please wait ${minutesRemaining}m ${secondsRemaining}s before catching another blupee!`,
-          cooldownRemaining
+          cooldownRemaining,
+          dailyCount: user.blupeeHunt.dailyCount,
+          dailyLimit: DAILY_LIMIT
         });
       }
     }
@@ -6989,6 +7018,7 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
     // Update blupee hunt tracking
     user.blupeeHunt.lastClaimed = now;
     user.blupeeHunt.totalClaimed = (user.blupeeHunt.totalClaimed || 0) + 1;
+    user.blupeeHunt.dailyCount = (user.blupeeHunt.dailyCount || 0) + 1;
     user.blupeeHunt.claimHistory.push({
       tokensReceived: tokensAwarded,
       timestamp: now
@@ -6996,7 +7026,7 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
     
     await user.save();
     
-    logger.success(`User ${user.username || user.discordId} claimed a blupee! (+${tokensAwarded} tokens, Total: ${user.blupeeHunt.totalClaimed})`);
+    logger.success(`User ${user.username || user.discordId} claimed a blupee! (+${tokensAwarded} tokens, Daily: ${user.blupeeHunt.dailyCount}/${DAILY_LIMIT}, Total: ${user.blupeeHunt.totalClaimed})`);
     
     // Log to Google Sheets if user has a token tracker
     if (user.tokenTracker && googleSheets.isValidGoogleSheetsUrl(user.tokenTracker)) {
@@ -7042,7 +7072,10 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
       message: `You found a blupee! +${tokensAwarded} tokens!`,
       tokensAwarded,
       newTokenBalance: user.tokens,
-      totalBlupeesFound: user.blupeeHunt.totalClaimed
+      totalBlupeesFound: user.blupeeHunt.totalClaimed,
+      dailyCount: user.blupeeHunt.dailyCount,
+      dailyLimit: DAILY_LIMIT,
+      dailyRemaining: DAILY_LIMIT - user.blupeeHunt.dailyCount
     });
   } catch (error) {
     console.error('[server.js]: Error claiming blupee:', error);
@@ -7059,25 +7092,49 @@ app.get('/api/blupee/status', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     
+    const DAILY_LIMIT = 5;
+    const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
+    const now = new Date();
+    
     // Initialize blupeeHunt if it doesn't exist
     if (!user.blupeeHunt) {
       return res.json({
         canClaim: true,
         totalClaimed: 0,
         lastClaimed: null,
-        cooldownRemaining: 0
+        cooldownRemaining: 0,
+        dailyCount: 0,
+        dailyLimit: DAILY_LIMIT,
+        dailyRemaining: DAILY_LIMIT,
+        dailyLimitReached: false
       });
     }
     
-    // Check for 30-minute cooldown
-    const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
-    const now = new Date();
-    const lastClaimed = user.blupeeHunt.lastClaimed;
+    // Check if we need to reset daily count (24 hours since last reset)
+    const dailyResetDate = user.blupeeHunt.dailyResetDate ? new Date(user.blupeeHunt.dailyResetDate) : null;
+    if (!dailyResetDate || (now - dailyResetDate) >= 24 * 60 * 60 * 1000) {
+      user.blupeeHunt.dailyCount = 0;
+      user.blupeeHunt.dailyResetDate = now;
+      await user.save();
+    }
+    
+    const dailyCount = user.blupeeHunt.dailyCount || 0;
+    const dailyLimitReached = dailyCount >= DAILY_LIMIT;
     
     let canClaim = true;
     let cooldownRemaining = 0;
+    let resetIn = 0;
     
-    if (lastClaimed) {
+    // Check daily limit first
+    if (dailyLimitReached) {
+      canClaim = false;
+      resetIn = (24 * 60 * 60 * 1000) - (now - new Date(user.blupeeHunt.dailyResetDate));
+    }
+    
+    // Check for 30-minute cooldown
+    const lastClaimed = user.blupeeHunt.lastClaimed;
+    
+    if (lastClaimed && !dailyLimitReached) {
       const timeSinceLastClaim = now - new Date(lastClaimed);
       if (timeSinceLastClaim < COOLDOWN_MS) {
         canClaim = false;
@@ -7089,7 +7146,12 @@ app.get('/api/blupee/status', requireAuth, async (req, res) => {
       canClaim,
       totalClaimed: user.blupeeHunt.totalClaimed || 0,
       lastClaimed: user.blupeeHunt.lastClaimed,
-      cooldownRemaining
+      cooldownRemaining,
+      dailyCount,
+      dailyLimit: DAILY_LIMIT,
+      dailyRemaining: Math.max(0, DAILY_LIMIT - dailyCount),
+      dailyLimitReached,
+      resetIn
     });
   } catch (error) {
     console.error('[server.js]: Error checking blupee status:', error);

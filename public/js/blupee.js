@@ -4,7 +4,7 @@
    users with tokens when they click it. Gamification feature to encourage
    dashboard usage.
    
-   Cooldown: 30 minutes between catches (enforced server-side)
+   Limits: 5 blupees per day with 30-minute cooldown between catches (server-enforced)
 ============================================================================ */
 
 // ============================================================================
@@ -16,6 +16,7 @@ const BLUPEE_CONFIG = {
   minSpawnDelay: 1000, // 1 second minimum before first spawn (instant!)
   maxSpawnDelay: 3000, // 3 seconds maximum before first spawn
   spawnChance: 0.3, // 30% chance to spawn on page load
+  dailyLimit: 5, // Maximum 5 catches per day (server-enforced)
   cooldownMinutes: 30, // 30 minutes cooldown between catches (server-enforced)
   
   // Display settings
@@ -128,10 +129,14 @@ async function checkBlupeeStatus() {
     
     const status = await response.json();
     
-    // Check if user can claim (30-minute cooldown)
+    // Check if user can claim (daily limit and cooldown)
     if (status.canClaim) {
-      console.log('[blupee.js]: User can catch blupees - attempting spawn');
+      console.log(`[blupee.js]: User can catch blupees - Daily: ${status.dailyCount}/${status.dailyLimit} - attempting spawn`);
       scheduleBlupeeSpawn();
+    } else if (status.dailyLimitReached) {
+      const hoursRemaining = Math.floor(status.resetIn / (60 * 60 * 1000));
+      const minutesRemaining = Math.floor((status.resetIn % (60 * 60 * 1000)) / (60 * 1000));
+      console.log(`[blupee.js]: Daily limit reached (${status.dailyCount}/${status.dailyLimit}) - Resets in ${hoursRemaining}h ${minutesRemaining}m`);
     } else {
       console.log(`[blupee.js]: Blupee on cooldown - ${Math.floor(status.cooldownRemaining / 60)}m ${status.cooldownRemaining % 60}s remaining`);
     }
@@ -375,11 +380,15 @@ async function handleBlupeeClick(event) {
       // Sparkle burst effect
       createSparkBurst(event.clientX, event.clientY);
       
-      console.log(`[blupee.js]: ✨ Reward claimed! +${data.tokensAwarded} tokens (Total: ${data.newTokenBalance})`);
+      console.log(`[blupee.js]: ✨ Reward claimed! +${data.tokensAwarded} tokens (Daily: ${data.dailyCount}/${data.dailyLimit}, Total: ${data.newTokenBalance})`);
     } else {
-      // Show error (cooldown or other issue)
+      // Show error (cooldown, daily limit, or other issue)
       if (response.status === 429) {
-        showErrorNotification(data.message || 'Blupee on cooldown! Please wait before catching another.');
+        if (data.dailyLimitReached) {
+          showErrorNotification(data.message || 'Daily limit reached! No more blupees today.');
+        } else {
+          showErrorNotification(data.message || 'Blupee on cooldown! Please wait before catching another.');
+        }
       } else {
         showErrorNotification(data.message || 'Could not claim blupee reward');
       }
@@ -408,12 +417,18 @@ async function handleBlupeeClick(event) {
 function showRewardNotification(data) {
   const notification = document.createElement('div');
   notification.className = 'blupee-notification blupee-notification-success';
+  
+  const dailyRemaining = data.dailyRemaining || 0;
+  const dailyText = dailyRemaining > 0 
+    ? `${dailyRemaining} remaining today` 
+    : 'Daily limit reached!';
+  
   notification.innerHTML = `
     <div class="blupee-notification-icon">🐰✨</div>
     <div class="blupee-notification-content">
       <div class="blupee-notification-title">Blupee Found!</div>
       <div class="blupee-notification-message">+${data.tokensAwarded} Tokens</div>
-      <div class="blupee-notification-subtitle">Total Found: ${data.totalBlupeesFound}</div>
+      <div class="blupee-notification-subtitle">${dailyText} • Total: ${data.totalBlupeesFound}</div>
     </div>
   `;
   
