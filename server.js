@@ -6970,8 +6970,10 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
     // Check if we need to reset daily count (24 hours since last reset)
     const dailyResetDate = user.blupeeHunt.dailyResetDate ? new Date(user.blupeeHunt.dailyResetDate) : null;
     if (!dailyResetDate || (now - dailyResetDate) >= 24 * 60 * 60 * 1000) {
+      console.log(`[server.js]: Resetting daily count for user ${user.username || user.discordId} - was ${user.blupeeHunt.dailyCount}, reset date was ${dailyResetDate}`);
       user.blupeeHunt.dailyCount = 0;
       user.blupeeHunt.dailyResetDate = now;
+      await user.save(); // Save the reset immediately
     }
     
     // Check daily limit (5 per day)
@@ -7027,6 +7029,7 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
     await user.save();
     
     logger.success(`User ${user.username || user.discordId} claimed a blupee! (+${tokensAwarded} tokens, Daily: ${user.blupeeHunt.dailyCount}/${DAILY_LIMIT}, Total: ${user.blupeeHunt.totalClaimed})`);
+    console.log(`[server.js]: Daily count after claim: ${user.blupeeHunt.dailyCount}, reset date: ${user.blupeeHunt.dailyResetDate}`);
     
     // Log to Google Sheets if user has a token tracker
     if (user.tokenTracker && googleSheets.isValidGoogleSheetsUrl(user.tokenTracker)) {
@@ -7113,6 +7116,7 @@ app.get('/api/blupee/status', requireAuth, async (req, res) => {
     // Check if we need to reset daily count (24 hours since last reset)
     const dailyResetDate = user.blupeeHunt.dailyResetDate ? new Date(user.blupeeHunt.dailyResetDate) : null;
     if (!dailyResetDate || (now - dailyResetDate) >= 24 * 60 * 60 * 1000) {
+      console.log(`[server.js]: STATUS - Resetting daily count for user ${user.username || user.discordId} - was ${user.blupeeHunt.dailyCount}, reset date was ${dailyResetDate}`);
       user.blupeeHunt.dailyCount = 0;
       user.blupeeHunt.dailyResetDate = now;
       await user.save();
