@@ -6967,9 +6967,16 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
     const DAILY_LIMIT = 5;
     const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
     
+    // Initialize daily tracking if not exists
+    if (user.blupeeHunt.dailyCount === undefined) {
+      user.blupeeHunt.dailyCount = 0;
+      user.blupeeHunt.dailyResetDate = now;
+      await user.save();
+    }
+    
     // Check if we need to reset daily count (24 hours since last reset)
     const dailyResetDate = user.blupeeHunt.dailyResetDate ? new Date(user.blupeeHunt.dailyResetDate) : null;
-    if (!dailyResetDate || (now - dailyResetDate) >= 24 * 60 * 60 * 1000) {
+    if (dailyResetDate && (now - dailyResetDate) >= 24 * 60 * 60 * 1000) {
       console.log(`[server.js]: Resetting daily count for user ${user.username || user.discordId} - was ${user.blupeeHunt.dailyCount}, reset date was ${dailyResetDate}`);
       user.blupeeHunt.dailyCount = 0;
       user.blupeeHunt.dailyResetDate = now;
@@ -7113,9 +7120,16 @@ app.get('/api/blupee/status', requireAuth, async (req, res) => {
       });
     }
     
+    // Initialize daily tracking if not exists
+    if (user.blupeeHunt.dailyCount === undefined) {
+      user.blupeeHunt.dailyCount = 0;
+      user.blupeeHunt.dailyResetDate = now;
+      await user.save();
+    }
+    
     // Check if we need to reset daily count (24 hours since last reset)
     const dailyResetDate = user.blupeeHunt.dailyResetDate ? new Date(user.blupeeHunt.dailyResetDate) : null;
-    if (!dailyResetDate || (now - dailyResetDate) >= 24 * 60 * 60 * 1000) {
+    if (dailyResetDate && (now - dailyResetDate) >= 24 * 60 * 60 * 1000) {
       console.log(`[server.js]: STATUS - Resetting daily count for user ${user.username || user.discordId} - was ${user.blupeeHunt.dailyCount}, reset date was ${dailyResetDate}`);
       user.blupeeHunt.dailyCount = 0;
       user.blupeeHunt.dailyResetDate = now;
