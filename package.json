@@ -8,7 +8,9 @@
     "dev": "nodemon server.js",
     "check:headers": "curl -I http://localhost:5001 | grep -E \"strict-transport|x-frame-options|x-content-type|referrer-policy|permissions-policy|content-security-policy\"",
     "test:security": "node test-security-headers.js",
-    "extract:keywords": "node extractDatabaseKeywords.js"
+    "extract:keywords": "node extractDatabaseKeywords.js",
+    "cut:maps": "node scripts/cut-map-squares.js",
+    "test:map-cutting": "node scripts/test-map-cutting.js"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.16.0",
@@ -30,6 +32,7 @@
     "node-fetch": "^2.7.0",
     "passport": "^0.6.0",
     "passport-discord": "^0.1.4",
+    "sharp": "^0.33.5",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

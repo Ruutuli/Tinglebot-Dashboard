@@ -98,7 +98,19 @@ const userSchema = new mongoose.Schema({
       tokensReceived: { type: Number },
       timestamp: { type: Date, default: Date.now }
     }]
-  }
+  },
+
+  // ------------------- Map Pins System -------------------
+  mapPins: [{
+    id: { type: String, required: true },
+    title: { type: String, required: true, maxlength: 100 },
+    description: { type: String, maxlength: 500, default: '' },
+    lat: { type: Number, required: true, min: -90, max: 90 },
+    lng: { type: Number, required: true, min: -180, max: 180 },
+    icon: { type: String, default: 'fas fa-thumbtack' },
+    color: { type: String, default: '#FFD700' },
+    createdAt: { type: Date, default: Date.now }
+  }]
 });
 
 // ------------------- Static methods for leveling -------------------
@@ -652,6 +664,74 @@ userSchema.methods.giveBoostRewards = async function() {
     newTokenBalance: this.tokens,
     month: currentMonth
   };
+};
+
+// ------------------- Map Pin Methods -------------------
+userSchema.methods.addMapPin = async function(pinData) {
+  // Initialize mapPins array if it doesn't exist
+  if (!this.mapPins) {
+    this.mapPins = [];
+  }
+  
+  // Generate unique ID for the pin
+  const pinId = `pin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  const newPin = {
+    id: pinId,
+    title: pinData.title,
+    description: pinData.description || '',
+    lat: pinData.lat,
+    lng: pinData.lng,
+    icon: pinData.icon || 'fas fa-thumbtack',
+    color: pinData.color || '#FFD700',
+    createdAt: new Date()
+  };
+  
+  this.mapPins.push(newPin);
+  
+  // Keep only last 50 pins to prevent database bloat
+  if (this.mapPins.length > 50) {
+    this.mapPins = this.mapPins.slice(-50);
+  }
+  
+  await this.save();
+  
+  return {
+    success: true,
+    pin: newPin,
+    message: 'Pin added successfully!'
+  };
+};
+
+userSchema.methods.removeMapPin = async function(pinId) {
+  if (!this.mapPins) {
+    return {
+      success: false,
+      message: 'No pins found'
+    };
+  }
+  
+  const pinIndex = this.mapPins.findIndex(pin => pin.id === pinId);
+  
+  if (pinIndex === -1) {
+    return {
+      success: false,
+      message: 'Pin not found'
+    };
+  }
+  
+  const removedPin = this.mapPins.splice(pinIndex, 1)[0];
+  await this.save();
+  
+  return {
+    success: true,
+    pin: removedPin,
+    message: 'Pin removed successfully!'
+  };
+};
+
+userSchema.methods.getMapPins = function() {
+  return this.mapPins || [];
 };
 
 // ------------------- Export the User model -------------------

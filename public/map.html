@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tinglebot - Zelda Realm Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/map.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="map-loading-overlay" id="map-loading-overlay">
+        <div style="text-align: center; position: relative; z-index: 1;">
+            <div class="map-loading-spinner"></div>
+            <div class="map-loading-text">Loading Zelda Realm</div>
+            <div class="map-loading-subtitle">Preparing the map grid...</div>
+            <div class="loading-progress-container">
+                <div class="loading-progress-bar">
+                    <div class="loading-progress-fill"></div>
+                </div>
+                <div class="loading-progress-text">0%</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Map Container -->
+    <div id="map"></div>
+    
+    <!-- Performance Metrics Display -->
+    <div class="performance-metrics" id="performance-metrics">
+        <div>
+            <span class="metric-label">Load Time:</span>
+            <span class="metric-value" id="load-time">0ms</span>
+        </div>
+        <div>
+            <span class="metric-label">Render Time:</span>
+            <span class="metric-value" id="render-time">0ms</span>
+        </div>
+        <div>
+            <span class="metric-label">Loaded Squares:</span>
+            <span class="metric-value" id="loaded-squares">0</span>
+        </div>
+        <div>
+            <span class="metric-label">Cache Size:</span>
+            <span class="metric-value" id="cache-size">0</span>
+        </div>
+        <div>
+            <span class="metric-label">Images Loaded:</span>
+            <span class="metric-value" id="images-loaded">0</span>
+        </div>
+        <div>
+            <span class="metric-label">Image Load Time:</span>
+            <span class="metric-value" id="image-load-time">0ms</span>
+        </div>
+        <div id="memory-usage" style="display: none;">
+            <span class="metric-label">Memory:</span>
+            <span class="metric-value" id="memory-value">0MB</span>
+        </div>
+    </div>
+    
+    <!-- Simple Sidebar -->
+    <div class="side-ui">
+        <div class="ui-content">
+            <div class="ui-header">
+                <h2><i class="fas fa-map-marked-alt"></i> Zelda Realm Map</h2>
+                <p>Square Grid System</p>
+                <button class="close-btn" onclick="window.location.href='/'">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div style="margin-top: 30px;">
+                <h3>Realm Information</h3>
+                <p><strong>Total Squares:</strong> 120</p>
+                <p><strong>Columns:</strong> A-J (10)</p>
+                <p><strong>Rows:</strong> 1-12 (12)</p>
+                <p><strong>Each Square:</strong> 2400×1666 pixels</p>
+                <p><strong>Realm Size:</strong> 24000×20000 pixels</p>
+                <p><strong>Layout:</strong> Seamless (no gaps)</p>
+                
+                <div style="margin-top: 20px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; border: 1px solid var(--glass-border);">
+                    <h4 style="margin: 0 0 10px 0; color: var(--botw-blue);">Current View</h4>
+                    <p style="margin: 5px 0;"><strong>Zoom Level:</strong> <span id="zoom-level">9</span></p>
+                    <p style="margin: 5px 0;"><strong>View Status:</strong> <span id="view-status">Maximum Detail</span></p>
+                    <p style="margin: 5px 0; font-size: 0.9em; color: var(--text-secondary);" id="zoom-description">All labels visible (A1-J12, Q1-Q4)</p>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; border: 1px solid var(--glass-border);">
+                    <h4 style="margin: 0 0 10px 0; color: var(--botw-blue);">Map Features</h4>
+                    <p style="margin: 5px 0; font-size: 0.9em; color: var(--text-secondary);">
+                        <i class="fas fa-map" style="color: var(--botw-blue);"></i> Base map with terrain
+                    </p>
+                    <p style="margin: 5px 0; font-size: 0.9em; color: var(--text-secondary);">
+                        <i class="fas fa-eye-slash" style="color: #D4AF37;"></i> Hidden areas overlay
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- UI Toggle Button -->
+        <button class="ui-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/map-ui.js"></script>
+</body>
+</html>

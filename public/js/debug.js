@@ -17,7 +17,15 @@ checkFileExists('css/styles.css');
 // Monitor network requests
 const originalFetch = window.fetch;
 window.fetch = function(...args) {
-    return originalFetch.apply(this, args);
+    return originalFetch.apply(this, args).catch(error => {
+        // Filter out expected 401 errors from user settings endpoint
+        if (error.message && error.message.includes('401') && args[0] && args[0].includes('/api/user/settings')) {
+            // This is an expected 401 for unauthenticated users, don't log it
+            return Promise.reject(error);
+        }
+        console.error('Network error:', error);
+        return Promise.reject(error);
+    });
 };
 
 // Log any errors

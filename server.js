@@ -54,6 +54,7 @@ const Mount = require('./models/MountModel');
 const VillageShops = require('./models/VillageShopsModel');
 const Weather = require('./models/WeatherModel');
 const { VendingRequest } = require('./models/VendingModel');
+const Square = require('./models/mapModel');
 const { Village } = require('./models/VillageModel');
 const Party = require('./models/PartyModel');
 const Relic = require('./models/RelicModel');
@@ -314,11 +315,11 @@ app.use(helmet({
     useDefaults: true,
     directives: {
       "default-src": ["'self'"],
-      "script-src": ["'self'", "https://kit.fontawesome.com", "https://cdn.jsdelivr.net"],
-      "style-src": ["'self'", "'unsafe-inline'", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com"],
-      "img-src": ["'self'", "data:", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://cdn.discordapp.com", "https://storage.googleapis.com", "https://static.wixstatic.com"],
-      "font-src": ["'self'", "data:", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://cdn.jsdelivr.net"],
-      "connect-src": ["'self'", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://discord.com", "https://storage.googleapis.com", "https://cdn.jsdelivr.net"],
+      "script-src": ["'self'", "https://kit.fontawesome.com", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+      "style-src": ["'self'", "'unsafe-inline'", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://cdnjs.cloudflare.com", "https://unpkg.com"],
+      "img-src": ["'self'", "data:", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://cdn.discordapp.com", "https://storage.googleapis.com", "https://static.wixstatic.com", "https://cdnjs.cloudflare.com", "https://unpkg.com"],
+      "font-src": ["'self'", "data:", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://unpkg.com"],
+      "connect-src": ["'self'", "https://kit.fontawesome.com", "https://ka-f.fontawesome.com", "https://use.fontawesome.com", "https://discord.com", "https://storage.googleapis.com", "https://cdn.jsdelivr.net", "https://unpkg.com"],
       "frame-ancestors": ["'none'"],
       "upgrade-insecure-requests": [],
       "script-src-attr": ["'unsafe-inline'"]
@@ -418,6 +419,16 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// ------------------- Function: serveMapPage -------------------
+// Serves the fullscreen interactive map page
+app.get('/map', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'map.html'));
+});
+
+app.get('/map.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'map.html'));
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
@@ -427,9 +438,351 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Check if marker image is empty
+app.get('/api/check-marker/:markerType/:squareId', async (req, res) => {
+  try {
+    const { markerType, squareId } = req.params;
+    
+    // Map marker types to their folder names
+    const markerFolders = {
+      'rudania': 'MAP_0001s_0000_Rudania-Marker',
+      'inariko': 'MAP_0001s_0001_Inariko-Marker', 
+      'vhintl': 'MAP_0001s_0002_Vhintl-Marker'
+    };
+    
+    const folder = markerFolders[markerType];
+    if (!folder) {
+      return res.status(400).json({ 
+        error: 'Invalid marker type', 
+        validTypes: Object.keys(markerFolders) 
+      });
+    }
+    
+    const markerUrl = `https://storage.googleapis.com/tinglebot/maps/squares/${folder}/${folder}_${squareId}.png`;
+    
+    // Make HEAD request to check if image exists and get size
+    const response = await fetch(markerUrl, { method: 'HEAD' });
+    
+    if (!response.ok) {
+      return res.json({ 
+        markerType,
+        squareId, 
+        exists: false, 
+        isEmpty: true,
+        reason: 'Image not found or inaccessible'
+      });
+    }
+    
+    const contentLength = response.headers.get('content-length');
+    const contentType = response.headers.get('content-type');
+    
+    // If it's a PNG but very small (likely empty), mark as empty
+    // Use 80,000+ bytes threshold for substantial marker content
+    if (contentType === 'image/png' && contentLength && parseInt(contentLength) < 80000) {
+      return res.json({ 
+        markerType,
+        squareId, 
+        exists: true, 
+        isEmpty: true,
+        size: contentLength,
+        reason: 'Image too small (less than 80KB - likely empty)'
+      });
+    }
+    
+    res.json({ 
+      markerType,
+      squareId, 
+      exists: true, 
+      isEmpty: false,
+      size: contentLength,
+      contentType: contentType
+    });
+    
+  } catch (error) {
+    console.error(`Error checking marker for ${req.params.squareId}:`, error);
+    res.json({ 
+      squareId: req.params.squareId, 
+      exists: false, 
+      isEmpty: true,
+      reason: 'Error checking image',
+      error: error.message
+    });
+  }
+});
+
+// Village bounds endpoint - check if village bounds image exists and has content
+app.get('/api/check-village-bounds/:village/:color/:squareId', async (req, res) => {
+  try {
+    const { village, color, squareId } = req.params;
+    
+    // Map village and color to their folder names
+    const villageBoundsFolders = {
+      'inariko': {
+        'cyan': 'MAP_0002s_0000s_0000_CIRCLE-INARIKO-CYAN',
+        'pink': 'MAP_0002s_0000s_0001_CIRCLE-INARIKO-PINK'
+      },
+      'vhintl': {
+        'cyan': 'MAP_0002s_0001s_0000_CIRCLE-VHINTL-CYAN',
+        'pink': 'MAP_0002s_0001s_0001_CIRCLE-VHINTL-PINK'
+      },
+      'rudania': {
+        'cyan': 'MAP_0002s_0002s_0000_CIRCLE-RUDANIA-CYAN',
+        'pink': 'MAP_0002s_0002s_0001_CIRCLE-RUDANIA-PINK'
+      }
+    };
+    
+    const folder = villageBoundsFolders[village]?.[color];
+    if (!folder) {
+      return res.status(400).json({ 
+        error: 'Invalid village or color', 
+        validVillages: Object.keys(villageBoundsFolders),
+        validColors: ['cyan', 'pink']
+      });
+    }
+    
+    const boundsUrl = `https://storage.googleapis.com/tinglebot/maps/squares/${folder}/${folder}_${squareId}.png`;
+    
+    // Make HEAD request to check if image exists and get size
+    const response = await fetch(boundsUrl, { method: 'HEAD' });
+    
+    if (!response.ok) {
+      return res.json({ 
+        village,
+        color,
+        squareId, 
+        exists: false, 
+        isEmpty: true,
+        reason: 'Image not found or inaccessible'
+      });
+    }
+    
+    const contentLength = response.headers.get('content-length');
+    const contentType = response.headers.get('content-type');
+    
+    // If it's a PNG but very small (likely empty), mark as empty
+    // Use 25,000+ bytes threshold for substantial village bounds content
+    if (contentType === 'image/png' && contentLength && parseInt(contentLength) < 25000) {
+      return res.json({ 
+        village,
+        color,
+        squareId, 
+        exists: true, 
+        isEmpty: true,
+        size: contentLength,
+        reason: 'Image too small (less than 25KB - likely empty)'
+      });
+    }
+    
+    res.json({ 
+      village,
+      color,
+      squareId, 
+      exists: true, 
+      isEmpty: false,
+      size: contentLength,
+      contentType: contentType
+    });
+    
+  } catch (error) {
+    console.error(`Error checking village bounds for ${req.params.squareId}:`, error);
+    res.json({ 
+      squareId: req.params.squareId, 
+      exists: false, 
+      isEmpty: true,
+      reason: 'Error checking image',
+      error: error.message
+    });
+  }
+});
+
+// Regions names endpoint - check if regions names image exists and has content
+app.get('/api/check-regions-names/:squareId', async (req, res) => {
+  try {
+    const { squareId } = req.params;
+    
+    const regionsUrl = `https://storage.googleapis.com/tinglebot/maps/squares/MAP_0001s_0004_REGIONS-NAMES/MAP_0001s_0004_REGIONS-NAMES_${squareId}.png`;
+    
+    // Make HEAD request to check if image exists and get size
+    const response = await fetch(regionsUrl, { method: 'HEAD' });
+    
+    if (!response.ok) {
+      return res.json({ 
+        squareId, 
+        exists: false, 
+        isEmpty: true,
+        reason: 'Image not found or inaccessible'
+      });
+    }
+    
+    const contentLength = response.headers.get('content-length');
+    const contentType = response.headers.get('content-type');
+    
+    // If it's a PNG but very small (likely empty), mark as empty
+    // Use 25,000+ bytes threshold for substantial regions names content
+    if (contentType === 'image/png' && contentLength && parseInt(contentLength) < 25000) {
+      return res.json({ 
+        squareId, 
+        exists: true, 
+        isEmpty: true,
+        size: contentLength,
+        reason: 'Image too small (less than 25KB - likely empty)'
+      });
+    }
+    
+    res.json({ 
+      squareId, 
+      exists: true, 
+      isEmpty: false,
+      size: contentLength,
+      contentType: contentType
+    });
+    
+  } catch (error) {
+    console.error(`Error checking regions names for ${req.params.squareId}:`, error);
+    res.json({ 
+      squareId: req.params.squareId, 
+      exists: false, 
+      isEmpty: true,
+      reason: 'Error checking image',
+      error: error.message
+    });
+  }
+});
+
+// Region borders endpoint - check if region borders image exists and has content
+app.get('/api/check-region-borders/:squareId', async (req, res) => {
+  try {
+    const { squareId } = req.params;
+    
+    const bordersUrl = `https://storage.googleapis.com/tinglebot/maps/squares/MAP_0001s_0003_Region-Borders/MAP_0001s_0003_Region-Borders_${squareId}.png`;
+    
+    // Make HEAD request to check if image exists and get size
+    const response = await fetch(bordersUrl, { method: 'HEAD' });
+    
+    if (!response.ok) {
+      return res.json({ 
+        squareId, 
+        exists: false, 
+        isEmpty: true,
+        reason: 'Image not found or inaccessible'
+      });
+    }
+    
+    const contentLength = response.headers.get('content-length');
+    const contentType = response.headers.get('content-type');
+    
+    // If it's a PNG but very small (likely empty), mark as empty
+    // Use 25,000+ bytes threshold for substantial region borders content
+    if (contentType === 'image/png' && contentLength && parseInt(contentLength) < 25000) {
+      return res.json({ 
+        squareId, 
+        exists: true, 
+        isEmpty: true,
+        size: contentLength,
+        reason: 'Image too small (less than 25KB - likely empty)'
+      });
+    }
+    
+    res.json({ 
+      squareId, 
+      exists: true, 
+      isEmpty: false,
+      size: contentLength,
+      contentType: contentType
+    });
+    
+  } catch (error) {
+    console.error(`Error checking region borders for ${req.params.squareId}:`, error);
+    res.json({ 
+      squareId: req.params.squareId, 
+      exists: false, 
+      isEmpty: true,
+      reason: 'Error checking image',
+      error: error.message
+    });
+  }
+});
+
+// Paths/roads endpoint - check if paths/roads image exists and has content
+app.get('/api/check-paths-roads/:pathType/:squareId', async (req, res) => {
+  try {
+    const { pathType, squareId } = req.params;
+    
+    // Map path types to their folder names
+    const pathFolders = {
+      'psl': 'MAP_0003s_0000_PSL',
+      'ldw': 'MAP_0003s_0001_LDW',
+      'otherPaths': 'MAP_0003s_0002_Other-Paths'
+    };
+    
+    const folder = pathFolders[pathType];
+    if (!folder) {
+      return res.status(400).json({ 
+        error: 'Invalid path type', 
+        validTypes: Object.keys(pathFolders) 
+      });
+    }
+    
+    const pathUrl = `https://storage.googleapis.com/tinglebot/maps/squares/${folder}/${folder}_${squareId}.png`;
+    
+    // Make HEAD request to check if image exists and get size
+    const response = await fetch(pathUrl, { method: 'HEAD' });
+    
+    if (!response.ok) {
+      return res.json({ 
+        pathType,
+        squareId, 
+        exists: false, 
+        isEmpty: true,
+        reason: 'Image not found or inaccessible'
+      });
+    }
+    
+    const contentLength = response.headers.get('content-length');
+    const contentType = response.headers.get('content-type');
+    
+    // If it's a PNG but very small (likely empty), mark as empty
+    // Use 25,000+ bytes threshold for substantial paths/roads content
+    if (contentType === 'image/png' && contentLength && parseInt(contentLength) < 25000) {
+      return res.json({ 
+        pathType,
+        squareId, 
+        exists: true, 
+        isEmpty: true,
+        size: contentLength,
+        reason: 'Image too small (less than 25KB - likely empty)'
+      });
+    }
+    
+    res.json({ 
+      pathType,
+      squareId, 
+      exists: true, 
+      isEmpty: false,
+      size: contentLength,
+      contentType: contentType
+    });
+    
+  } catch (error) {
+    console.error(`Error checking paths/roads for ${req.params.squareId}:`, error);
+    res.json({ 
+      squareId: req.params.squareId, 
+      exists: false, 
+      isEmpty: true,
+      reason: 'Error checking image',
+      error: error.message
+    });
+  }
+});
+
 // Test API page
 app.get('/test-api', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test-api.html'));
+});
+
+// Marker test page
+app.get('/test-markers', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'test-markers.html'));
 });
 
 // Privacy page
@@ -3246,6 +3599,334 @@ const scheduleNextSundayMidnightRotation = () => {
     }
   }, timeUntilNextRotation);
 };
+
+// ============================================================================
+// ------------------- Section: Map System API Routes -------------------
+
+// Serve local map files
+app.use('/map-files', express.static('2025 Map Stuff'));
+
+// Get map layers (using mapModel data)
+app.get('/api/map/layers', async (req, res) => {
+  try {
+    // Get basic layers plus exploration squares
+    const squares = await Square.getVisibleSquares();
+    
+    // Generate placeholder squares if none exist in database
+    let squaresData = squares;
+    if (squares.length === 0) {
+      squaresData = generatePlaceholderSquares();
+    }
+    
+    const layers = [
+      { 
+        id: 'base', 
+        name: 'Base Map', 
+        type: 'tile', 
+        visible: true, 
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' 
+      },
+      { 
+        id: 'exploration', 
+        name: 'Exploration Squares', 
+        type: 'overlay', 
+        visible: true,
+        squares: squaresData.map(square => ({
+          id: square.squareId || square.id,
+          region: square.region || 'Unknown',
+          status: square.status || 'unexplored',
+          center: square.mapCoordinates?.center || square.center,
+          bounds: square.mapCoordinates?.bounds || square.bounds,
+          image: square.image || '/images/placeholder-square.png',
+          progress: square.getExplorationProgress ? square.getExplorationProgress() : { explored: 0, total: 4, percentage: 0 }
+        }))
+      },
+      { id: 'villages', name: 'Villages', type: 'marker', visible: false },
+      { id: 'quests', name: 'Quests', type: 'marker', visible: false },
+      { id: 'weather', name: 'Weather', type: 'overlay', visible: false }
+    ];
+    
+    res.set({
+      'Cache-Control': 'public, max-age=300', // 5 minutes cache
+      'ETag': `"map-layers-${Date.now()}"`
+    });
+    
+    res.json(layers);
+  } catch (error) {
+    console.error('[server.js]: Error fetching map layers:', error);
+    res.status(500).json({ error: 'Failed to fetch map layers' });
+  }
+});
+
+
+// Get map markers (using mapModel and other data)
+app.get('/api/map/markers', (req, res) => {
+  try {
+    // Return empty array - client will generate grid
+    res.json([]);
+  } catch (error) {
+    console.error('[server.js]: Error fetching map markers:', error);
+    res.status(500).json({ error: 'Failed to fetch map markers' });
+  }
+});
+
+// Get exploration square details
+app.get('/api/map/squares/:squareId', async (req, res) => {
+  try {
+    const { squareId } = req.params;
+    let square = await Square.findOne({ squareId: squareId });
+    
+    // If not found in database, check if it's a valid placeholder square
+    if (!square) {
+      const placeholderSquares = generatePlaceholderSquares();
+      square = placeholderSquares.find(s => s.squareId === squareId);
+      
+      if (!square) {
+        return res.status(404).json({ error: 'Square not found' });
+      }
+    }
+    
+    res.json({
+      squareId: square.squareId,
+      region: square.region,
+      status: square.status,
+      quadrants: square.quadrants,
+      image: square.image,
+      mapCoordinates: square.mapCoordinates,
+      progress: square.getExplorationProgress ? square.getExplorationProgress() : { explored: 0, total: 4, percentage: 0 },
+      totalDiscoveries: square.getTotalDiscoveries ? square.getTotalDiscoveries() : 0
+    });
+  } catch (error) {
+    console.error('[server.js]: Error fetching square details:', error);
+    res.status(500).json({ error: 'Failed to fetch square details' });
+  }
+});
+
+// Get user's pins
+app.get('/api/map/user-pins', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.discordId;
+    
+    const user = await User.findOne({ discordId: userId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const pins = user.getMapPins();
+    res.json(pins);
+  } catch (error) {
+    console.error('[server.js]: Error fetching user pins:', error);
+    res.status(500).json({ error: 'Failed to fetch user pins' });
+  }
+});
+
+// Create a new user pin
+app.post('/api/map/user-pins', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.discordId;
+    
+    const user = await User.findOne({ discordId: userId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const { title, description, lat, lng, icon, color } = req.body;
+    
+    // Validate required fields
+    if (!title || lat === undefined || lng === undefined) {
+      return res.status(400).json({ error: 'Title and coordinates (lat, lng) are required' });
+    }
+    
+    const pinData = {
+      title,
+      description: description || '',
+      lat: parseFloat(lat),
+      lng: parseFloat(lng),
+      icon: icon || 'fas fa-thumbtack',
+      color: color || '#FFD700'
+    };
+    
+    const result = await user.addMapPin(pinData);
+    
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('[server.js]: Error creating user pin:', error);
+    res.status(500).json({ error: 'Failed to create user pin' });
+  }
+});
+
+// Delete a user pin
+app.delete('/api/map/user-pins/:pinId', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.discordId;
+    const { pinId } = req.params;
+    
+    const user = await User.findOne({ discordId: userId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const result = await user.removeMapPin(pinId);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(404).json(result);
+    }
+  } catch (error) {
+    console.error('[server.js]: Error deleting user pin:', error);
+    res.status(500).json({ error: 'Failed to delete user pin' });
+  }
+});
+
+// ============================================================================
+// ------------------- Section: Admin Map Management API Routes -------------------
+
+// Create a new map marker (admin only)
+app.post('/api/admin/map/markers', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin (you may want to implement proper admin check)
+    if (!req.user || !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const markerData = req.body;
+    
+    // Validate required fields
+    if (!markerData.markerId || !markerData.name || !markerData.coords) {
+      return res.status(400).json({ error: 'markerId, name, and coords are required' });
+    }
+    
+    const newMarker = new MapMarker(markerData);
+    await newMarker.save();
+    
+    res.status(201).json(newMarker);
+  } catch (error) {
+    console.error('[server.js]: Error creating map marker:', error);
+    res.status(500).json({ error: 'Failed to create map marker' });
+  }
+});
+
+// Update a map marker (admin only)
+app.put('/api/admin/map/markers/:markerId', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (!req.user || !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { markerId } = req.params;
+    const updateData = req.body;
+    
+    const marker = await MapMarker.findOne({ markerId });
+    if (!marker) {
+      return res.status(404).json({ error: 'Marker not found' });
+    }
+    
+    Object.assign(marker, updateData);
+    await marker.save();
+    
+    res.json(marker);
+  } catch (error) {
+    console.error('[server.js]: Error updating map marker:', error);
+    res.status(500).json({ error: 'Failed to update map marker' });
+  }
+});
+
+// Delete a map marker (admin only)
+app.delete('/api/admin/map/markers/:markerId', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (!req.user || !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { markerId } = req.params;
+    
+    const result = await MapMarker.deleteOne({ markerId });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Marker not found' });
+    }
+    
+    res.json({ message: 'Marker deleted successfully' });
+  } catch (error) {
+    console.error('[server.js]: Error deleting map marker:', error);
+    res.status(500).json({ error: 'Failed to delete map marker' });
+  }
+});
+
+// Create a new map layer (admin only)
+app.post('/api/admin/map/layers', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (!req.user || !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const layerData = req.body;
+    
+    // Validate required fields
+    if (!layerData.layerId || !layerData.name || !layerData.filePath) {
+      return res.status(400).json({ error: 'layerId, name, and filePath are required' });
+    }
+    
+    const newLayer = new MapLayer(layerData);
+    await newLayer.save();
+    
+    res.status(201).json(newLayer);
+  } catch (error) {
+    console.error('[server.js]: Error creating map layer:', error);
+    res.status(500).json({ error: 'Failed to create map layer' });
+  }
+});
+
+// Update a map layer (admin only)
+app.put('/api/admin/map/layers/:layerId', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (!req.user || !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { layerId } = req.params;
+    const updateData = req.body;
+    
+    const layer = await MapLayer.findOne({ layerId });
+    if (!layer) {
+      return res.status(404).json({ error: 'Layer not found' });
+    }
+    
+    Object.assign(layer, updateData);
+    await layer.save();
+    
+    res.json(layer);
+  } catch (error) {
+    console.error('[server.js]: Error updating map layer:', error);
+    res.status(500).json({ error: 'Failed to update map layer' });
+  }
+});
+
+// Delete a map layer (admin only)
+app.delete('/api/admin/map/layers/:layerId', requireAuth, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (!req.user || !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { layerId } = req.params;
+    
+    const result = await MapLayer.deleteOne({ layerId });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Layer not found' });
+    }
+    
+    res.json({ message: 'Layer deleted successfully' });
+  } catch (error) {
+    console.error('[server.js]: Error deleting map layer:', error);
+    res.status(500).json({ error: 'Failed to delete map layer' });
+  }
+});
 
 // ============================================================================
 // ------------------- Section: Daily Reset Reminder Scheduler -------------------
@@ -6970,22 +7651,25 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
     // Initialize daily tracking if not exists
     if (user.blupeeHunt.dailyCount === undefined) {
       user.blupeeHunt.dailyCount = 0;
-      user.blupeeHunt.dailyResetDate = now;
+      user.blupeeHunt.dailyResetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       await user.save();
     }
     
-    // Check if we need to reset daily count (24 hours since last reset)
+    // Check if we need to reset daily count (new day since last reset)
     const dailyResetDate = user.blupeeHunt.dailyResetDate ? new Date(user.blupeeHunt.dailyResetDate) : null;
-    if (dailyResetDate && (now - dailyResetDate) >= 24 * 60 * 60 * 1000) {
-      console.log(`[server.js]: Resetting daily count for user ${user.username || user.discordId} - was ${user.blupeeHunt.dailyCount}, reset date was ${dailyResetDate}`);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    if (!dailyResetDate || dailyResetDate.getTime() !== today.getTime()) {
+      console.log(`[server.js]: Resetting daily count for user ${user.username || user.discordId} - was ${user.blupeeHunt.dailyCount}, reset date was ${dailyResetDate}, new date is ${today}`);
       user.blupeeHunt.dailyCount = 0;
-      user.blupeeHunt.dailyResetDate = now;
+      user.blupeeHunt.dailyResetDate = today;
       await user.save(); // Save the reset immediately
     }
     
     // Check daily limit (5 per day)
     if (user.blupeeHunt.dailyCount >= DAILY_LIMIT) {
-      const timeUntilReset = (24 * 60 * 60 * 1000) - (now - new Date(user.blupeeHunt.dailyResetDate));
+      const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+      const timeUntilReset = tomorrow.getTime() - now.getTime();
       const hoursRemaining = Math.floor(timeUntilReset / (60 * 60 * 1000));
       const minutesRemaining = Math.floor((timeUntilReset % (60 * 60 * 1000)) / (60 * 1000));
       
@@ -7123,16 +7807,18 @@ app.get('/api/blupee/status', requireAuth, async (req, res) => {
     // Initialize daily tracking if not exists
     if (user.blupeeHunt.dailyCount === undefined) {
       user.blupeeHunt.dailyCount = 0;
-      user.blupeeHunt.dailyResetDate = now;
+      user.blupeeHunt.dailyResetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       await user.save();
     }
     
-    // Check if we need to reset daily count (24 hours since last reset)
+    // Check if we need to reset daily count (new day since last reset)
     const dailyResetDate = user.blupeeHunt.dailyResetDate ? new Date(user.blupeeHunt.dailyResetDate) : null;
-    if (dailyResetDate && (now - dailyResetDate) >= 24 * 60 * 60 * 1000) {
-      console.log(`[server.js]: STATUS - Resetting daily count for user ${user.username || user.discordId} - was ${user.blupeeHunt.dailyCount}, reset date was ${dailyResetDate}`);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    if (!dailyResetDate || dailyResetDate.getTime() !== today.getTime()) {
+      console.log(`[server.js]: STATUS - Resetting daily count for user ${user.username || user.discordId} - was ${user.blupeeHunt.dailyCount}, reset date was ${dailyResetDate}, new date is ${today}`);
       user.blupeeHunt.dailyCount = 0;
-      user.blupeeHunt.dailyResetDate = now;
+      user.blupeeHunt.dailyResetDate = today;
       await user.save();
     }
     
@@ -7146,7 +7832,8 @@ app.get('/api/blupee/status', requireAuth, async (req, res) => {
     // Check daily limit first
     if (dailyLimitReached) {
       canClaim = false;
-      resetIn = (24 * 60 * 60 * 1000) - (now - new Date(user.blupeeHunt.dailyResetDate));
+      const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+      resetIn = tomorrow.getTime() - now.getTime();
     }
     
     // Check for 30-minute cooldown

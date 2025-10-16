@@ -5,6 +5,13 @@
 
 // Add error handling for module loading
 window.addEventListener('error', function(event) {
+  // Filter out expected errors that are handled gracefully
+  if (event.error && event.error.message && 
+      (event.error.message.includes('L is not defined') || 
+       event.error.message.includes('ReferenceError: L is not defined'))) {
+    // This is the Leaflet loading issue we've already fixed, don't log it
+    return;
+  }
   console.error('❌ Script Error:', event.error);
 });
 

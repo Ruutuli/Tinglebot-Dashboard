@@ -69,4 +69,8 @@ Thumbs.db
 # Google API credentials and tokens
 config/credentials.json
 config/service_account.json
-config/token.json 
+config/token.json
+
+# Documentation files
+README.md
+*.md 

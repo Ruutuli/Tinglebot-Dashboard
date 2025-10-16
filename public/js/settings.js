@@ -95,6 +95,7 @@ class SettingsManager {
           return true;
         }
       } else if (response.status === 401) {
+        // User not authenticated - this is expected, don't log as error
         return false;
       } else {
         console.warn('[settings.js]: Failed to load settings from server');

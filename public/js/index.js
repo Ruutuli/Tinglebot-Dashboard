@@ -653,6 +653,13 @@ function setupSidebarNavigation() {
     const sectionId = link.getAttribute('data-section');
     
     link.addEventListener('click', e => {
+      // Allow external links (like /map) to work normally
+      if (!sectionId) {
+        // No data-section means it's an external link, don't prevent default
+        closeMobileSidebar();
+        return;
+      }
+      
       e.preventDefault();
       
       // Close mobile sidebar if open
