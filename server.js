@@ -122,9 +122,12 @@ try {
   });
   
   console.log('Session store created successfully');
+  console.log('Session store type:', typeof sessionStore);
+  console.log('Session store is null:', sessionStore === null);
 } catch (error) {
   console.error('Failed to create session store:', error);
   // Fallback to memory store (not recommended for production but allows server to start)
+  console.log('Using memory store as fallback for development');
   sessionStore = null;
 }
 
@@ -134,14 +137,23 @@ app.use(session({
   saveUninitialized: true, // Allow saving uninitialized sessions
   store: sessionStore,
   cookie: {
-    secure: isProduction, // Set to true in production with HTTPS
+    secure: false, // Always false for localhost development
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: 'lax',
-    domain: isLocalhost ? undefined : domain
+    domain: undefined // No domain restriction for localhost
   },
   name: 'tinglebot.sid'
 }));
+
+// Add minimal session logging for debugging
+app.use((req, res, next) => {
+  // Only log session issues, not every request
+  if (req.path.includes('/auth/') && !req.session) {
+    console.log('[server.js]: ⚠️ No session found for auth request:', req.path);
+  }
+  next();
+});
 
 // Initialize Passport and restore authentication state from session
 app.use(passport.initialize());
@@ -981,12 +993,19 @@ app.get('/api/debug/session', (req, res) => {
 // ------------------- Function: testSession -------------------
 // Simple endpoint to test session persistence
 app.get('/api/test/session', (req, res) => {
+  console.log('[server.js]: Session test endpoint called');
+  console.log('  - Session ID:', req.sessionID);
+  console.log('  - Session exists:', !!req.session);
+  console.log('  - Session store:', sessionStore ? 'MongoDB' : 'Memory');
+  
   if (req.query.test) {
     req.session.testValue = req.query.test;
     req.session.save((err) => {
       if (err) {
+        console.error('[server.js]: Session save error:', err);
         res.json({ error: 'Failed to save session', details: err.message });
       } else {
+        console.log('[server.js]: Session saved successfully');
         res.json({ 
           success: true, 
           message: 'Test value saved', 
@@ -1032,6 +1051,11 @@ app.get('/api/health', (req, res) => {
 // ------------------- User Authentication Status -------------------
 app.get('/api/user', async (req, res) => {
   try {
+    // Only log authentication issues
+    if (!req.isAuthenticated() && req.session?.passport) {
+      console.log('[server.js]: ⚠️ Session exists but user not authenticated');
+    }
+    
     let isAdmin = false;
     
     if (req.isAuthenticated() && req.user) {
@@ -8929,6 +8953,281 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ============================================================================
+// ------------------- Section: Pin Management API -------------------
+// Handles user-created map pins with authentication and permissions
+// ============================================================================
+
+// Import Pin model
+const Pin = require('./models/PinModel');
+
+// ------------------- Function: checkUserAccess -------------------
+// Helper function to check if user has access to pin operations
+async function checkUserAccess(req) {
+  if (!req.isAuthenticated() || !req.user) {
+    return { hasAccess: false, error: 'Authentication required' };
+  }
+  
+  const guildId = process.env.PROD_GUILD_ID;
+  if (!guildId) {
+    return { hasAccess: false, error: 'Server configuration error' };
+  }
+  
+  try {
+    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { hasAccess: false, error: 'You must be a member of the Discord server to use pins.' };
+      }
+      throw new Error(`Discord API error: ${response.status}`);
+    }
+    
+    return { hasAccess: true };
+  } catch (error) {
+    console.error('[server.js]: ❌ Error checking user access for pins:', error);
+    return { hasAccess: false, error: 'Failed to verify server membership' };
+  }
+}
+
+// ------------------- GET /api/pins -------------------
+// Get all pins (public + user's private pins)
+app.get('/api/pins', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const pins = await Pin.getUserPins(req.user.discordId, true);
+    res.json({ success: true, pins });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching pins:', error);
+    res.status(500).json({ error: 'Failed to fetch pins' });
+  }
+});
+
+// ------------------- GET /api/pins/user -------------------
+// Get only user's own pins
+app.get('/api/pins/user', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const pins = await Pin.getUserPins(req.user.discordId, false);
+    res.json({ success: true, pins });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching user pins:', error);
+    res.status(500).json({ error: 'Failed to fetch user pins' });
+  }
+});
+
+// ------------------- POST /api/pins -------------------
+// Create a new pin
+app.post('/api/pins', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const { name, description, coordinates, icon, color, category, isPublic } = req.body;
+    
+    // Validate required fields
+    if (!name || !coordinates || !coordinates.lat || !coordinates.lng) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: name and coordinates are required' 
+      });
+    }
+    
+    // Validate coordinates (map uses custom coordinate system: 0-20000 for lat, 0-24000 for lng)
+    if (coordinates.lat < 0 || coordinates.lat > 20000 || 
+        coordinates.lng < 0 || coordinates.lng > 24000) {
+      return res.status(400).json({ 
+        error: 'Invalid coordinates' 
+      });
+    }
+    
+    // Create new pin
+    const pin = new Pin({
+      name: name.trim(),
+      description: description ? description.trim() : '',
+      coordinates: {
+        lat: coordinates.lat,
+        lng: coordinates.lng
+      },
+      icon: icon || 'fas fa-home',
+      color: color || '#00A3DA',
+      category: category || 'homes',
+      isPublic: isPublic !== false, // Default to true
+      createdBy: req.user._id,
+      discordId: req.user.discordId
+    });
+    
+    // Manually calculate and set gridLocation as backup
+    if (pin.coordinates && pin.coordinates.lat !== undefined && pin.coordinates.lng !== undefined) {
+      const { lat, lng } = pin.coordinates;
+      const colIndex = Math.floor(lng / 2400); // 0-9 for A-J
+      const rowIndex = Math.floor(lat / 1666); // 0-11 for 1-12
+      const clampedColIndex = Math.max(0, Math.min(9, colIndex));
+      const clampedRowIndex = Math.max(0, Math.min(11, rowIndex));
+      const col = String.fromCharCode(65 + clampedColIndex); // A-J
+      const row = clampedRowIndex + 1; // 1-12
+      pin.gridLocation = col + row;
+    }
+    
+    await pin.save();
+    
+    // Populate creator info
+    await pin.populate('creator', 'username avatar discriminator');
+    
+    res.status(201).json({ 
+      success: true, 
+      pin,
+      message: 'Pin created successfully' 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error creating pin:', error);
+    res.status(500).json({ error: 'Failed to create pin' });
+  }
+});
+
+// ------------------- PUT /api/pins/:id -------------------
+// Update a pin (only by owner)
+app.put('/api/pins/:id', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const pinId = req.params.id;
+    const pin = await Pin.findById(pinId);
+    
+    if (!pin) {
+      return res.status(404).json({ error: 'Pin not found' });
+    }
+    
+    // Check if user can modify this pin
+    if (!pin.canUserModify(req.user.discordId)) {
+      return res.status(403).json({ error: 'You can only edit your own pins' });
+    }
+    
+    const { name, description, icon, color, category, isPublic } = req.body;
+    
+    // Update fields if provided
+    if (name !== undefined) pin.name = name.trim();
+    if (description !== undefined) pin.description = description.trim();
+    if (icon !== undefined) pin.icon = icon;
+    if (color !== undefined) pin.color = color;
+    if (category !== undefined) pin.category = category;
+    if (isPublic !== undefined) pin.isPublic = isPublic;
+    
+    pin.updatedAt = new Date();
+    await pin.save();
+    
+    // Populate creator info
+    await pin.populate('creator', 'username avatar discriminator');
+    
+    res.json({ 
+      success: true, 
+      pin,
+      message: 'Pin updated successfully' 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error updating pin:', error);
+    res.status(500).json({ error: 'Failed to update pin' });
+  }
+});
+
+// ------------------- DELETE /api/pins/:id -------------------
+// Delete a pin (only by owner)
+app.delete('/api/pins/:id', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const pinId = req.params.id;
+    const pin = await Pin.findById(pinId);
+    
+    if (!pin) {
+      return res.status(404).json({ error: 'Pin not found' });
+    }
+    
+    // Check if user can modify this pin
+    if (!pin.canUserModify(req.user.discordId)) {
+      return res.status(403).json({ error: 'You can only delete your own pins' });
+    }
+    
+    await Pin.findByIdAndDelete(pinId);
+    
+    res.json({ 
+      success: true, 
+      message: 'Pin deleted successfully' 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error deleting pin:', error);
+    res.status(500).json({ error: 'Failed to delete pin' });
+  }
+});
+
+// ------------------- GET /api/pins/location/:gridLocation -------------------
+// Get pins by grid location
+app.get('/api/pins/location/:gridLocation', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const { gridLocation } = req.params;
+    
+    // Validate grid location format
+    if (!/^[A-J]([1-9]|1[0-2])$/.test(gridLocation)) {
+      return res.status(400).json({ error: 'Invalid grid location format' });
+    }
+    
+    const pins = await Pin.getPinsByLocation(gridLocation);
+    res.json({ success: true, pins });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching pins by location:', error);
+    res.status(500).json({ error: 'Failed to fetch pins by location' });
+  }
+});
+
+// ------------------- GET /api/pins/category/:category -------------------
+// Get pins by category
+app.get('/api/pins/category/:category', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const { category } = req.params;
+    const validCategories = ['homes', 'farms', 'shops', 'points-of-interest'];
+    
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+    
+    const pins = await Pin.getPinsByCategory(category, true);
+    res.json({ success: true, pins });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching pins by category:', error);
+    res.status(500).json({ error: 'Failed to fetch pins by category' });
+  }
+});
+
 // Handle 404s - only for API routes
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
@@ -9222,268 +9521,4 @@ async function checkAdminAccess(req) {
   
   return false;
 }
-
-// ============================================================================
-// ------------------- Section: Pin Management API -------------------
-// Handles user-created map pins with authentication and permissions
-// ============================================================================
-
-// Import Pin model
-const Pin = require('./models/PinModel');
-
-// ------------------- Function: checkUserAccess -------------------
-// Helper function to check if user has access to pin operations
-async function checkUserAccess(req) {
-  if (!req.isAuthenticated() || !req.user) {
-    return { hasAccess: false, error: 'Authentication required' };
-  }
-  
-  const guildId = process.env.PROD_GUILD_ID;
-  if (!guildId) {
-    return { hasAccess: false, error: 'Server configuration error' };
-  }
-  
-  try {
-    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
-      headers: {
-        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      if (response.status === 404) {
-        return { hasAccess: false, error: 'You must be a member of the Discord server to use pins.' };
-      }
-      throw new Error(`Discord API error: ${response.status}`);
-    }
-    
-    return { hasAccess: true };
-  } catch (error) {
-    console.error('[server.js]: ❌ Error checking user access for pins:', error);
-    return { hasAccess: false, error: 'Failed to verify server membership' };
-  }
-}
-
-// ------------------- GET /api/pins -------------------
-// Get all pins (public + user's private pins)
-app.get('/api/pins', async (req, res) => {
-  try {
-    const accessCheck = await checkUserAccess(req);
-    if (!accessCheck.hasAccess) {
-      return res.status(403).json({ error: accessCheck.error });
-    }
-    
-    const pins = await Pin.getUserPins(req.user.discordId, true);
-    res.json({ success: true, pins });
-  } catch (error) {
-    console.error('[server.js]: ❌ Error fetching pins:', error);
-    res.status(500).json({ error: 'Failed to fetch pins' });
-  }
-});
-
-// ------------------- GET /api/pins/user -------------------
-// Get only user's own pins
-app.get('/api/pins/user', async (req, res) => {
-  try {
-    const accessCheck = await checkUserAccess(req);
-    if (!accessCheck.hasAccess) {
-      return res.status(403).json({ error: accessCheck.error });
-    }
-    
-    const pins = await Pin.getUserPins(req.user.discordId, false);
-    res.json({ success: true, pins });
-  } catch (error) {
-    console.error('[server.js]: ❌ Error fetching user pins:', error);
-    res.status(500).json({ error: 'Failed to fetch user pins' });
-  }
-});
-
-// ------------------- POST /api/pins -------------------
-// Create a new pin
-app.post('/api/pins', async (req, res) => {
-  try {
-    const accessCheck = await checkUserAccess(req);
-    if (!accessCheck.hasAccess) {
-      return res.status(403).json({ error: accessCheck.error });
-    }
-    
-    const { name, description, coordinates, icon, color, category, isPublic } = req.body;
-    
-    // Validate required fields
-    if (!name || !coordinates || !coordinates.lat || !coordinates.lng) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: name and coordinates are required' 
-      });
-    }
-    
-    // Validate coordinates
-    if (coordinates.lat < -90 || coordinates.lat > 90 || 
-        coordinates.lng < -180 || coordinates.lng > 180) {
-      return res.status(400).json({ 
-        error: 'Invalid coordinates' 
-      });
-    }
-    
-    // Create new pin
-    const pin = new Pin({
-      name: name.trim(),
-      description: description ? description.trim() : '',
-      coordinates: {
-        lat: coordinates.lat,
-        lng: coordinates.lng
-      },
-      icon: icon || 'fas fa-map-marker-alt',
-      color: color || '#00A3DA',
-      category: category || 'custom',
-      isPublic: isPublic !== false, // Default to true
-      createdBy: req.user._id,
-      discordId: req.user.discordId
-    });
-    
-    await pin.save();
-    
-    // Populate creator info
-    await pin.populate('creator', 'username avatar discriminator');
-    
-    res.status(201).json({ 
-      success: true, 
-      pin,
-      message: 'Pin created successfully' 
-    });
-  } catch (error) {
-    console.error('[server.js]: ❌ Error creating pin:', error);
-    res.status(500).json({ error: 'Failed to create pin' });
-  }
-});
-
-// ------------------- PUT /api/pins/:id -------------------
-// Update a pin (only by owner)
-app.put('/api/pins/:id', async (req, res) => {
-  try {
-    const accessCheck = await checkUserAccess(req);
-    if (!accessCheck.hasAccess) {
-      return res.status(403).json({ error: accessCheck.error });
-    }
-    
-    const pinId = req.params.id;
-    const pin = await Pin.findById(pinId);
-    
-    if (!pin) {
-      return res.status(404).json({ error: 'Pin not found' });
-    }
-    
-    // Check if user can modify this pin
-    if (!pin.canUserModify(req.user.discordId)) {
-      return res.status(403).json({ error: 'You can only edit your own pins' });
-    }
-    
-    const { name, description, icon, color, category, isPublic } = req.body;
-    
-    // Update fields if provided
-    if (name !== undefined) pin.name = name.trim();
-    if (description !== undefined) pin.description = description.trim();
-    if (icon !== undefined) pin.icon = icon;
-    if (color !== undefined) pin.color = color;
-    if (category !== undefined) pin.category = category;
-    if (isPublic !== undefined) pin.isPublic = isPublic;
-    
-    pin.updatedAt = new Date();
-    await pin.save();
-    
-    // Populate creator info
-    await pin.populate('creator', 'username avatar discriminator');
-    
-    res.json({ 
-      success: true, 
-      pin,
-      message: 'Pin updated successfully' 
-    });
-  } catch (error) {
-    console.error('[server.js]: ❌ Error updating pin:', error);
-    res.status(500).json({ error: 'Failed to update pin' });
-  }
-});
-
-// ------------------- DELETE /api/pins/:id -------------------
-// Delete a pin (only by owner)
-app.delete('/api/pins/:id', async (req, res) => {
-  try {
-    const accessCheck = await checkUserAccess(req);
-    if (!accessCheck.hasAccess) {
-      return res.status(403).json({ error: accessCheck.error });
-    }
-    
-    const pinId = req.params.id;
-    const pin = await Pin.findById(pinId);
-    
-    if (!pin) {
-      return res.status(404).json({ error: 'Pin not found' });
-    }
-    
-    // Check if user can modify this pin
-    if (!pin.canUserModify(req.user.discordId)) {
-      return res.status(403).json({ error: 'You can only delete your own pins' });
-    }
-    
-    await Pin.findByIdAndDelete(pinId);
-    
-    res.json({ 
-      success: true, 
-      message: 'Pin deleted successfully' 
-    });
-  } catch (error) {
-    console.error('[server.js]: ❌ Error deleting pin:', error);
-    res.status(500).json({ error: 'Failed to delete pin' });
-  }
-});
-
-// ------------------- GET /api/pins/location/:gridLocation -------------------
-// Get pins by grid location
-app.get('/api/pins/location/:gridLocation', async (req, res) => {
-  try {
-    const accessCheck = await checkUserAccess(req);
-    if (!accessCheck.hasAccess) {
-      return res.status(403).json({ error: accessCheck.error });
-    }
-    
-    const { gridLocation } = req.params;
-    
-    // Validate grid location format
-    if (!/^[A-J]([1-9]|1[0-2])$/.test(gridLocation)) {
-      return res.status(400).json({ error: 'Invalid grid location format' });
-    }
-    
-    const pins = await Pin.getPinsByLocation(gridLocation);
-    res.json({ success: true, pins });
-  } catch (error) {
-    console.error('[server.js]: ❌ Error fetching pins by location:', error);
-    res.status(500).json({ error: 'Failed to fetch pins by location' });
-  }
-});
-
-// ------------------- GET /api/pins/category/:category -------------------
-// Get pins by category
-app.get('/api/pins/category/:category', async (req, res) => {
-  try {
-    const accessCheck = await checkUserAccess(req);
-    if (!accessCheck.hasAccess) {
-      return res.status(403).json({ error: accessCheck.error });
-    }
-    
-    const { category } = req.params;
-    const validCategories = ['home', 'work', 'farm', 'landmark', 'treasure', 'resource', 'custom'];
-    
-    if (!validCategories.includes(category)) {
-      return res.status(400).json({ error: 'Invalid category' });
-    }
-    
-    const pins = await Pin.getPinsByCategory(category, true);
-    res.json({ success: true, pins });
-  } catch (error) {
-    console.error('[server.js]: ❌ Error fetching pins by category:', error);
-    res.status(500).json({ error: 'Failed to fetch pins by category' });
-  }
-});
-
 

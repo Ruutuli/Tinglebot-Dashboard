@@ -26,14 +26,14 @@ const pinSchema = new mongoose.Schema({
     lat: {
       type: Number,
       required: true,
-      min: -90,
-      max: 90
+      min: 0,
+      max: 20000
     },
     lng: {
       type: Number,
       required: true,
-      min: -180,
-      max: 180
+      min: 0,
+      max: 24000
     }
   },
   
@@ -60,8 +60,8 @@ const pinSchema = new mongoose.Schema({
   
   category: {
     type: String,
-    enum: ['home', 'work', 'farm', 'landmark', 'treasure', 'resource', 'custom'],
-    default: 'custom'
+    enum: ['homes', 'farms', 'shops', 'points-of-interest'],
+    default: 'homes'
   },
   
   // User ownership and permissions
@@ -117,7 +117,8 @@ pinSchema.virtual('creator', {
 
 // Pre-save middleware to update grid location
 pinSchema.pre('save', function(next) {
-  if (this.isModified('coordinates')) {
+  // Always calculate grid location if coordinates exist
+  if (this.coordinates && this.coordinates.lat !== undefined && this.coordinates.lng !== undefined) {
     this.gridLocation = this.calculateGridLocation();
   }
   next();
@@ -127,10 +128,18 @@ pinSchema.pre('save', function(next) {
 pinSchema.methods.calculateGridLocation = function() {
   const { lat, lng } = this.coordinates;
   
-  // Convert lat/lng to grid coordinates (A1-J12 system)
-  // This is a simplified conversion - you may need to adjust based on your map's coordinate system
-  const col = String.fromCharCode(65 + Math.floor((lng + 180) / 36)); // A-J
-  const row = Math.floor((lat + 90) / 15) + 1; // 1-12
+  // Convert custom coordinates to grid coordinates (A1-J12 system)
+  // Canvas: 24000x20000, Grid: 10x12 squares (2400x1666 each)
+  const colIndex = Math.floor(lng / 2400); // 0-9 for A-J
+  const rowIndex = Math.floor(lat / 1666); // 0-11 for 1-12
+  
+  // Clamp to valid ranges
+  const clampedColIndex = Math.max(0, Math.min(9, colIndex));
+  const clampedRowIndex = Math.max(0, Math.min(11, rowIndex));
+  
+  // Convert to grid notation
+  const col = String.fromCharCode(65 + clampedColIndex); // A-J
+  const row = clampedRowIndex + 1; // 1-12
   
   return col + row;
 };
