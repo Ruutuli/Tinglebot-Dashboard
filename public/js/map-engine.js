@@ -3,6 +3,7 @@
  * Coordinates all other modules and handles Leaflet setup
  */
 
+
 class MapEngine {
     constructor(config) {
         this.config = config;
@@ -599,3 +600,4 @@ class MapEngine {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = MapEngine;
 }
+

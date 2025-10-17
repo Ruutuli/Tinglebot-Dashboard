@@ -15,6 +15,24 @@ async function initializeMap() {
         updateLoadingProgress(10, 'Initializing map system...', 1);
         await new Promise(resolve => setTimeout(resolve, 500));
         
+        // Check if MapEngine is available
+        if (typeof MapEngine === 'undefined') {
+            console.error('[map] MapEngine class not found. Available classes:', {
+                MapGeometry: typeof MapGeometry,
+                MapManifest: typeof MapManifest,
+                MapLayers: typeof MapLayers,
+                MapLoader: typeof MapLoader,
+                MapToggles: typeof MapToggles,
+                MapEngine: typeof MapEngine
+            });
+            throw new Error('MapEngine class is not defined. Please check that map-engine.js is loaded.');
+        }
+        
+        // Check if MAP_CONFIG is available
+        if (typeof MAP_CONFIG === 'undefined') {
+            throw new Error('MAP_CONFIG is not defined. Please check that map-constants.js is loaded.');
+        }
+        
         // Step 2: Create map engine with config
         updateLoadingProgress(25, 'Creating map engine...', 2);
         mapEngine = new MapEngine(MAP_CONFIG);
@@ -69,6 +87,20 @@ function setupGlobalEventListeners() {
             event.preventDefault();
         }
     });
+    
+    // Add observer to track sidebar class changes
+    const sidebar = document.querySelector('.side-ui');
+    if (sidebar) {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    console.log('Sidebar class changed:', sidebar.className);
+                    console.log('Collapsed state:', sidebar.classList.contains('collapsed'));
+                }
+            });
+        });
+        observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+    }
     
     // Global event listeners setup
 }
@@ -184,7 +216,10 @@ function showError(message) {
 function toggleSidebar() {
     const sidebar = document.querySelector('.side-ui');
     if (sidebar) {
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        console.log('toggleSidebar: Current collapsed state:', isCollapsed);
         sidebar.classList.toggle('collapsed');
+        console.log('toggleSidebar: New collapsed state:', sidebar.classList.contains('collapsed'));
     }
 }
 
@@ -194,7 +229,9 @@ function toggleSidebar() {
 function showSidebar() {
     const sidebar = document.querySelector('.side-ui');
     if (sidebar) {
+        console.log('showSidebar: Removing collapsed class');
         sidebar.classList.remove('collapsed');
+        console.log('showSidebar: Sidebar collapsed state after:', sidebar.classList.contains('collapsed'));
     }
 }
 
@@ -202,9 +239,12 @@ function showSidebar() {
  * Hide sidebar
  */
 function hideSidebar() {
+    console.log('hideSidebar called from:', new Error().stack);
     const sidebar = document.querySelector('.side-ui');
     if (sidebar) {
+        console.log('hideSidebar: Adding collapsed class');
         sidebar.classList.add('collapsed');
+        console.log('hideSidebar: Sidebar collapsed state after:', sidebar.classList.contains('collapsed'));
     }
 }
 
@@ -453,6 +493,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Show initial loading progress
         updateLoadingProgress(0, 'Starting ROTW Map...', 1);
         
+        // Wait a bit to ensure all scripts are loaded
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Initialize map with enhanced progress tracking
         await initializeMap();
         
@@ -463,6 +506,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // Add map click handler
             mapEngine.addEventListener('click', handleMapClick);
+            
+            // Initialize pins system
+            initializePinsWhenReady();
             
             // Map system ready
         } else {
@@ -561,11 +607,70 @@ if (typeof module !== 'undefined' && module.exports) {
 let pinManager = {
     pins: [],
     addPinMode: false,
-    selectedPin: null
+    selectedPin: null,
+    currentUser: null,
+    isAuthenticated: false
 };
 
-// Toggle add pin mode
+// Initialize pin manager with authentication
+async function initializePinManager() {
+    try {
+        // Check authentication status
+        const response = await fetch('/api/user', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const userData = await response.json();
+            pinManager.isAuthenticated = userData.isAuthenticated;
+            pinManager.currentUser = userData.user;
+            
+            if (pinManager.isAuthenticated) {
+                await loadPins();
+                updatePinUI();
+            } else {
+                showPinAuthRequired();
+            }
+        } else {
+            showPinAuthRequired();
+        }
+    } catch (error) {
+        console.error('[map.js]: Error initializing pin manager:', error);
+        showPinAuthRequired();
+    }
+}
+
+// Load pins from server
+async function loadPins() {
+    try {
+        const response = await fetch('/api/pins', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            pinManager.pins = data.pins || [];
+            updatePinsList();
+            addPinsToMap();
+        } else {
+            console.error('[map.js]: Failed to load pins:', response.statusText);
+        }
+    } catch (error) {
+        console.error('[map.js]: Error loading pins:', error);
+    }
+}
+
+// Toggle add pin mode (with authentication check)
 function toggleAddPinMode() {
+    if (!pinManager.isAuthenticated) {
+        showPinAuthRequired();
+        return;
+    }
+    
     pinManager.addPinMode = !pinManager.addPinMode;
     const addBtn = document.querySelector('.add-pin-btn');
     
@@ -576,8 +681,8 @@ function toggleAddPinMode() {
         addBtn.innerHTML = '<i class="fas fa-times"></i><span>Cancel</span>';
         
         // Add click listener to map for pin placement
-        if (window.map) {
-            window.map.on('click', handleMapClickForPin);
+        if (mapEngine && mapEngine.getMap()) {
+            mapEngine.getMap().on('click', handleMapClickForPin);
         }
         
         console.log('Add pin mode enabled - click on the map to place a pin');
@@ -588,45 +693,145 @@ function toggleAddPinMode() {
         addBtn.innerHTML = '<i class="fas fa-plus"></i><span>Add Pin</span>';
         
         // Remove click listener
-        if (window.map) {
-            window.map.off('click', handleMapClickForPin);
+        if (mapEngine && mapEngine.getMap()) {
+            mapEngine.getMap().off('click', handleMapClickForPin);
         }
     }
 }
 
 // Handle map click for pin placement
-function handleMapClickForPin(e) {
-    if (!pinManager.addPinMode) return;
+async function handleMapClickForPin(e) {
+    if (!pinManager.addPinMode || !pinManager.isAuthenticated) return;
     
     const lat = e.latlng.lat;
     const lng = e.latlng.lng;
     
-    // Create new pin
-    const newPin = {
-        id: 'pin_' + Date.now(),
-        name: 'New Pin',
-        location: getGridCoordinates(lat, lng),
-        lat: lat,
-        lng: lng,
-        category: 'custom',
-        icon: 'fas fa-map-marker-alt',
-        color: '#00A3DA',
-        description: ''
-    };
-    
-    // Add pin to map
-    addPinToMap(newPin);
-    
-    // Add to manager
-    pinManager.pins.push(newPin);
-    
-    // Update UI
-    updatePinsList();
+    // Show pin creation modal
+    showPinCreationModal(lat, lng);
     
     // Exit add mode
     toggleAddPinMode();
+}
+
+// Show pin creation modal
+function showPinCreationModal(lat, lng) {
+    const modal = document.createElement('div');
+    modal.className = 'pin-creation-modal';
+    modal.innerHTML = `
+        <div class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Create New Pin</h3>
+                    <button class="modal-close" onclick="closePinModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="pin-creation-form">
+                        <div class="form-group">
+                            <label for="pin-name">Pin Name *</label>
+                            <input type="text" id="pin-name" name="name" required maxlength="100" placeholder="Enter pin name">
+                        </div>
+                        <div class="form-group">
+                            <label for="pin-description">Description</label>
+                            <textarea id="pin-description" name="description" maxlength="500" placeholder="Enter description (optional)"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="pin-category">Category</label>
+                            <select id="pin-category" name="category">
+                                <option value="home">🏠 Home</option>
+                                <option value="work">💼 Work</option>
+                                <option value="farm">🚜 Farm</option>
+                                <option value="landmark">🏛️ Landmark</option>
+                                <option value="treasure">💰 Treasure</option>
+                                <option value="resource">⛏️ Resource</option>
+                                <option value="custom">📍 Custom</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="pin-icon">Icon</label>
+                            <select id="pin-icon" name="icon">
+                                <option value="fas fa-map-marker-alt">📍 Map Marker</option>
+                                <option value="fas fa-home">🏠 Home</option>
+                                <option value="fas fa-briefcase">💼 Work</option>
+                                <option value="fas fa-seedling">🌱 Farm</option>
+                                <option value="fas fa-gem">💎 Treasure</option>
+                                <option value="fas fa-mountain">⛰️ Landmark</option>
+                                <option value="fas fa-tools">🔧 Resource</option>
+                                <option value="fas fa-star">⭐ Custom</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="pin-color">Color</label>
+                            <input type="color" id="pin-color" name="color" value="#00A3DA">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="pin-public" name="isPublic" checked>
+                                Make pin visible to other users
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" onclick="closePinModal()" class="btn-cancel">Cancel</button>
+                            <button type="submit" class="btn-create">Create Pin</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
     
-    console.log('Pin added at:', newPin.location);
+    document.body.appendChild(modal);
+    
+    // Handle form submission
+    document.getElementById('pin-creation-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await createPinFromForm(lat, lng);
+    });
+}
+
+// Create pin from form data
+async function createPinFromForm(lat, lng) {
+    try {
+        const formData = new FormData(document.getElementById('pin-creation-form'));
+        const pinData = {
+            name: formData.get('name'),
+            description: formData.get('description'),
+            coordinates: { lat, lng },
+            category: formData.get('category'),
+            icon: formData.get('icon'),
+            color: formData.get('color'),
+            isPublic: formData.get('isPublic') === 'on'
+        };
+        
+        const response = await fetch('/api/pins', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(pinData)
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            pinManager.pins.push(data.pin);
+            addPinToMap(data.pin);
+            updatePinsList();
+            closePinModal();
+            console.log('Pin created successfully:', data.pin);
+        } else {
+            const error = await response.json();
+            alert('Failed to create pin: ' + error.error);
+        }
+    } catch (error) {
+        console.error('[map.js]: Error creating pin:', error);
+        alert('Failed to create pin. Please try again.');
+    }
+}
+
+// Close pin modal
+function closePinModal() {
+    const modal = document.querySelector('.pin-creation-modal');
+    if (modal) {
+        modal.remove();
+    }
 }
 
 // Get grid coordinates from lat/lng
@@ -640,9 +845,10 @@ function getGridCoordinates(lat, lng) {
 
 // Add pin to map
 function addPinToMap(pin) {
-    if (!window.map) return;
+    if (!mapEngine || !mapEngine.getMap()) return;
     
-    const marker = L.marker([pin.lat, pin.lng], {
+    const map = mapEngine.getMap();
+    const marker = L.marker([pin.coordinates.lat, pin.coordinates.lng], {
         icon: L.divIcon({
             className: 'custom-pin',
             html: `<div style="color: ${pin.color}; font-size: 20px;"><i class="${pin.icon}"></i></div>`,
@@ -651,20 +857,44 @@ function addPinToMap(pin) {
         })
     });
     
-    marker.bindPopup(`
+    // Create popup content with proper permissions
+    const canEdit = pinManager.isAuthenticated && pin.discordId === pinManager.currentUser?.discordId;
+    const popupContent = `
         <div style="min-width: 200px;">
             <h4 style="margin: 0 0 8px 0; color: #00A3DA;">${pin.name}</h4>
-            <p style="margin: 0 0 8px 0; color: #666;">Location: ${pin.location}</p>
+            <p style="margin: 0 0 8px 0; color: #666;">Location: ${pin.gridLocation}</p>
             ${pin.description ? `<p style="margin: 0; color: #888;">${pin.description}</p>` : ''}
+            <p style="margin: 4px 0; color: #999; font-size: 12px;">Created by: ${pin.creator?.username || 'Unknown'}</p>
+            ${canEdit ? `
             <div style="margin-top: 10px;">
-                <button onclick="editPin('${pin.id}')" style="margin-right: 5px; padding: 4px 8px; background: #00A3DA; color: white; border: none; border-radius: 4px; cursor: pointer;">Edit</button>
-                <button onclick="deletePin('${pin.id}')" style="padding: 4px 8px; background: #EF4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
+                    <button onclick="editPin('${pin._id}')" style="margin-right: 5px; padding: 4px 8px; background: #00A3DA; color: white; border: none; border-radius: 4px; cursor: pointer;">Edit</button>
+                    <button onclick="deletePin('${pin._id}')" style="padding: 4px 8px; background: #EF4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
             </div>
+            ` : ''}
         </div>
-    `);
+    `;
     
-    marker.addTo(window.map);
-    marker.pinId = pin.id;
+    marker.bindPopup(popupContent);
+    marker.addTo(map);
+    marker.pinId = pin._id;
+}
+
+// Add all pins to map
+function addPinsToMap() {
+    if (!mapEngine || !mapEngine.getMap()) return;
+    
+    // Clear existing pins
+    const map = mapEngine.getMap();
+    map.eachLayer(layer => {
+        if (layer.pinId) {
+            map.removeLayer(layer);
+        }
+    });
+    
+    // Add all pins
+    pinManager.pins.forEach(pin => {
+        addPinToMap(pin);
+    });
 }
 
 // Update pins list in UI
@@ -674,7 +904,19 @@ function updatePinsList() {
     
     pinsList.innerHTML = '';
     
+    if (pinManager.pins.length === 0) {
+        pinsList.innerHTML = `
+            <div class="no-pins-message">
+                <i class="fas fa-map-marker-alt"></i>
+                <p>No pins found</p>
+                <small>Click "Add Pin" to create your first pin</small>
+            </div>
+        `;
+        return;
+    }
+    
     pinManager.pins.forEach(pin => {
+        const canEdit = pinManager.isAuthenticated && pin.discordId === pinManager.currentUser?.discordId;
         const pinItem = document.createElement('div');
         pinItem.className = 'pin-item';
         pinItem.innerHTML = `
@@ -683,18 +925,21 @@ function updatePinsList() {
             </div>
             <div class="pin-info">
                 <span class="pin-name">${pin.name}</span>
-                <span class="pin-location">${pin.location}</span>
+                <span class="pin-location">${pin.gridLocation}</span>
+                <span class="pin-creator">by ${pin.creator?.username || 'Unknown'}</span>
             </div>
             <div class="pin-actions">
-                <button class="pin-action-btn" onclick="viewPin('${pin.id}')" title="View Details">
+                <button class="pin-action-btn" onclick="viewPin('${pin._id}')" title="View Details">
                     <i class="fas fa-eye"></i>
                 </button>
-                <button class="pin-action-btn" onclick="editPin('${pin.id}')" title="Edit Pin">
+                ${canEdit ? `
+                    <button class="pin-action-btn" onclick="editPin('${pin._id}')" title="Edit Pin">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="pin-action-btn delete" onclick="deletePin('${pin.id}')" title="Delete Pin">
+                    <button class="pin-action-btn delete" onclick="deletePin('${pin._id}')" title="Delete Pin">
                     <i class="fas fa-trash"></i>
                 </button>
+                ` : ''}
             </div>
         `;
         pinsList.appendChild(pinItem);
@@ -703,54 +948,206 @@ function updatePinsList() {
 
 // View pin details
 function viewPin(pinId) {
-    const pin = pinManager.pins.find(p => p.id === pinId);
+    const pin = pinManager.pins.find(p => p._id === pinId);
     if (!pin) return;
     
     // Center map on pin
-    if (window.map) {
-        window.map.setView([pin.lat, pin.lng], Math.max(window.map.getZoom(), 10));
+    if (mapEngine && mapEngine.getMap()) {
+        mapEngine.getMap().setView([pin.coordinates.lat, pin.coordinates.lng], Math.max(mapEngine.getMap().getZoom(), 10));
     }
     
     console.log('Viewing pin:', pin);
 }
 
 // Edit pin
-function editPin(pinId) {
-    const pin = pinManager.pins.find(p => p.id === pinId);
+async function editPin(pinId) {
+    if (!pinManager.isAuthenticated) {
+        showPinAuthRequired();
+        return;
+    }
+    
+    const pin = pinManager.pins.find(p => p._id === pinId);
     if (!pin) return;
     
-    // Simple prompt for now - you could create a modal for better UX
-    const newName = prompt('Enter pin name:', pin.name);
-    if (newName && newName.trim()) {
-        pin.name = newName.trim();
+    // Check if user can edit this pin
+    if (pin.discordId !== pinManager.currentUser?.discordId) {
+        alert('You can only edit your own pins.');
+        return;
+    }
+    
+    // Show edit modal (reuse creation modal with pre-filled data)
+    showPinEditModal(pin);
+}
+
+// Show pin edit modal
+function showPinEditModal(pin) {
+    const modal = document.createElement('div');
+    modal.className = 'pin-creation-modal';
+    modal.innerHTML = `
+        <div class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Edit Pin</h3>
+                    <button class="modal-close" onclick="closePinModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="pin-edit-form">
+                        <div class="form-group">
+                            <label for="pin-name">Pin Name *</label>
+                            <input type="text" id="pin-name" name="name" required maxlength="100" value="${pin.name}">
+                        </div>
+                        <div class="form-group">
+                            <label for="pin-description">Description</label>
+                            <textarea id="pin-description" name="description" maxlength="500">${pin.description || ''}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="pin-category">Category</label>
+                            <select id="pin-category" name="category">
+                                <option value="home" ${pin.category === 'home' ? 'selected' : ''}>🏠 Home</option>
+                                <option value="work" ${pin.category === 'work' ? 'selected' : ''}>💼 Work</option>
+                                <option value="farm" ${pin.category === 'farm' ? 'selected' : ''}>🚜 Farm</option>
+                                <option value="landmark" ${pin.category === 'landmark' ? 'selected' : ''}>🏛️ Landmark</option>
+                                <option value="treasure" ${pin.category === 'treasure' ? 'selected' : ''}>💰 Treasure</option>
+                                <option value="resource" ${pin.category === 'resource' ? 'selected' : ''}>⛏️ Resource</option>
+                                <option value="custom" ${pin.category === 'custom' ? 'selected' : ''}>📍 Custom</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="pin-icon">Icon</label>
+                            <select id="pin-icon" name="icon">
+                                <option value="fas fa-map-marker-alt" ${pin.icon === 'fas fa-map-marker-alt' ? 'selected' : ''}>📍 Map Marker</option>
+                                <option value="fas fa-home" ${pin.icon === 'fas fa-home' ? 'selected' : ''}>🏠 Home</option>
+                                <option value="fas fa-briefcase" ${pin.icon === 'fas fa-briefcase' ? 'selected' : ''}>💼 Work</option>
+                                <option value="fas fa-seedling" ${pin.icon === 'fas fa-seedling' ? 'selected' : ''}>🌱 Farm</option>
+                                <option value="fas fa-gem" ${pin.icon === 'fas fa-gem' ? 'selected' : ''}>💎 Treasure</option>
+                                <option value="fas fa-mountain" ${pin.icon === 'fas fa-mountain' ? 'selected' : ''}>⛰️ Landmark</option>
+                                <option value="fas fa-tools" ${pin.icon === 'fas fa-tools' ? 'selected' : ''}>🔧 Resource</option>
+                                <option value="fas fa-star" ${pin.icon === 'fas fa-star' ? 'selected' : ''}>⭐ Custom</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="pin-color">Color</label>
+                            <input type="color" id="pin-color" name="color" value="${pin.color}">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="pin-public" name="isPublic" ${pin.isPublic ? 'checked' : ''}>
+                                Make pin visible to other users
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" onclick="closePinModal()" class="btn-cancel">Cancel</button>
+                            <button type="submit" class="btn-create">Update Pin</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Handle form submission
+    document.getElementById('pin-edit-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await updatePinFromForm(pin._id);
+    });
+}
+
+// Update pin from form data
+async function updatePinFromForm(pinId) {
+    try {
+        const formData = new FormData(document.getElementById('pin-edit-form'));
+        const pinData = {
+            name: formData.get('name'),
+            description: formData.get('description'),
+            category: formData.get('category'),
+            icon: formData.get('icon'),
+            color: formData.get('color'),
+            isPublic: formData.get('isPublic') === 'on'
+        };
+        
+        const response = await fetch(`/api/pins/${pinId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(pinData)
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Update pin in local array
+            const pinIndex = pinManager.pins.findIndex(p => p._id === pinId);
+            if (pinIndex !== -1) {
+                pinManager.pins[pinIndex] = data.pin;
+            }
+            addPinsToMap();
         updatePinsList();
-        console.log('Pin updated:', pin);
+            closePinModal();
+            console.log('Pin updated successfully:', data.pin);
+        } else {
+            const error = await response.json();
+            alert('Failed to update pin: ' + error.error);
+        }
+    } catch (error) {
+        console.error('[map.js]: Error updating pin:', error);
+        alert('Failed to update pin. Please try again.');
     }
 }
 
 // Delete pin
-function deletePin(pinId) {
+async function deletePin(pinId) {
+    if (!pinManager.isAuthenticated) {
+        showPinAuthRequired();
+        return;
+    }
+    
+    const pin = pinManager.pins.find(p => p._id === pinId);
+    if (!pin) return;
+    
+    // Check if user can delete this pin
+    if (pin.discordId !== pinManager.currentUser?.discordId) {
+        alert('You can only delete your own pins.');
+        return;
+    }
+    
     if (!confirm('Are you sure you want to delete this pin?')) return;
     
-    const pinIndex = pinManager.pins.findIndex(p => p.id === pinId);
-    if (pinIndex === -1) return;
+    try {
+        const response = await fetch(`/api/pins/${pinId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            // Remove from local array
+            const pinIndex = pinManager.pins.findIndex(p => p._id === pinId);
+            if (pinIndex !== -1) {
+                pinManager.pins.splice(pinIndex, 1);
+            }
     
     // Remove from map
-    if (window.map) {
-        window.map.eachLayer(layer => {
+            if (mapEngine && mapEngine.getMap()) {
+                const map = mapEngine.getMap();
+                map.eachLayer(layer => {
             if (layer.pinId === pinId) {
-                window.map.removeLayer(layer);
+                        map.removeLayer(layer);
             }
         });
     }
     
-    // Remove from manager
-    pinManager.pins.splice(pinIndex, 1);
-    
     // Update UI
     updatePinsList();
-    
-    console.log('Pin deleted:', pinId);
+            console.log('Pin deleted successfully:', pinId);
+        } else {
+            const error = await response.json();
+            alert('Failed to delete pin: ' + error.error);
+        }
+    } catch (error) {
+        console.error('[map.js]: Error deleting pin:', error);
+        alert('Failed to delete pin. Please try again.');
+    }
 }
 
 // Toggle pin manager
@@ -759,45 +1156,71 @@ function togglePinManager() {
     // This could open a modal or expand the pins section
 }
 
-// Initialize pins on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Add some sample pins
-    pinManager.pins = [
-        {
-            id: 'pin1',
-            name: 'Treasure Chest',
-            location: 'C7',
-            lat: 0,
-            lng: 0,
-            category: 'treasure',
-            icon: 'fas fa-map-marker-alt',
-            color: '#FF6B6B',
-            description: 'A hidden treasure chest'
-        },
-        {
-            id: 'pin2',
-            name: 'Camp Site',
-            location: 'E5',
-            lat: 0,
-            lng: 0,
-            category: 'landmarks',
-            icon: 'fas fa-campfire',
-            color: '#FF8C00',
-            description: 'Safe camping spot'
-        },
-        {
-            id: 'pin3',
-            name: 'Rare Ore',
-            location: 'G9',
-            lat: 0,
-            lng: 0,
-            category: 'resources',
-            icon: 'fas fa-gem',
-            color: '#9370DB',
-            description: 'Valuable mining location'
-        }
-    ];
+// Show authentication required message
+function showPinAuthRequired() {
+    const pinsList = document.getElementById('pins-list');
+    if (pinsList) {
+        pinsList.innerHTML = `
+            <div class="auth-required-message">
+                <i class="fas fa-lock"></i>
+                <h4>Authentication Required</h4>
+                <p>You must be logged in with Discord and be a verified member of our server to use pins.</p>
+                <button onclick="redirectToMapLogin()" class="btn-login">
+                    <i class="fab fa-discord"></i>
+                    Login with Discord
+                </button>
+            </div>
+        `;
+    }
     
-    // Update pins list
-    updatePinsList();
-});
+    // Disable pin buttons
+    const addBtn = document.querySelector('.add-pin-btn');
+    const manageBtn = document.querySelector('.manage-pins-btn');
+    
+    if (addBtn) {
+        addBtn.style.opacity = '0.5';
+        addBtn.style.cursor = 'not-allowed';
+    }
+    if (manageBtn) {
+        manageBtn.style.opacity = '0.5';
+        manageBtn.style.cursor = 'not-allowed';
+    }
+}
+
+// Redirect to Discord auth with map return URL
+function redirectToMapLogin() {
+    const currentPath = window.location.pathname + window.location.hash;
+    window.location.href = `/auth/discord?returnTo=${encodeURIComponent(currentPath)}`;
+}
+
+// Update pin UI based on authentication state
+function updatePinUI() {
+    if (!pinManager.isAuthenticated) {
+        showPinAuthRequired();
+        return;
+    }
+    
+    // Enable pin buttons
+    const addBtn = document.querySelector('.add-pin-btn');
+    const manageBtn = document.querySelector('.manage-pins-btn');
+    
+    if (addBtn) {
+        addBtn.style.opacity = '1';
+        addBtn.style.cursor = 'pointer';
+    }
+    if (manageBtn) {
+        manageBtn.style.opacity = '1';
+        manageBtn.style.cursor = 'pointer';
+    }
+}
+
+// Initialize pins when map is ready
+async function initializePinsWhenReady() {
+    // Wait for map engine to be ready
+    if (mapEngine && mapEngine.isInitialized) {
+        await initializePinManager();
+    } else {
+        // Wait a bit and try again
+        setTimeout(initializePinsWhenReady, 1000);
+    }
+}

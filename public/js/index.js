@@ -53,6 +53,16 @@ export {
 // ============================================================================
 document.addEventListener('DOMContentLoaded', async () => {
   try {
+    // Reset body overflow to ensure scrollbar is visible
+    document.body.style.overflow = '';
+    document.body.style.overflowY = '';
+    document.body.style.overflowX = '';
+    
+    // Also reset html overflow just in case
+    document.documentElement.style.overflow = '';
+    document.documentElement.style.overflowY = '';
+    document.documentElement.style.overflowX = '';
+    
     // Scroll to top on page load
     scrollToTop();
     

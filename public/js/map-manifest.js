@@ -3,6 +3,7 @@
  * Single source of truth for square metadata and available layers
  */
 
+
 class MapManifest {
     constructor(config, geometry) {
         this.config = config;
@@ -272,3 +273,4 @@ class MapManifest {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = MapManifest;
 }
+

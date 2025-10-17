@@ -3,6 +3,7 @@
  * Handles fast-first (preview→full) loading from Google Cloud Storage
  */
 
+
 class MapLoader {
     constructor(config, geometry, manifest, layers) {
         this.config = config;
@@ -690,3 +691,4 @@ class MapLoader {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = MapLoader;
 }
+

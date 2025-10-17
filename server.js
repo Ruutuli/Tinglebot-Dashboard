@@ -82,6 +82,18 @@ const PORT = process.env.PORT || 5001;
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'true';
 const domain = process.env.DOMAIN || (isProduction ? 'tinglebot.xyz' : 'localhost');
 
+// Force localhost for development if running on localhost
+const isLocalhost = process.env.FORCE_LOCALHOST === 'true' || 
+                   process.env.NODE_ENV === 'development' ||
+                   process.env.USE_LOCALHOST === 'true';
+
+console.log('[server.js]: Environment Detection:');
+console.log('  - NODE_ENV:', process.env.NODE_ENV);
+console.log('  - RAILWAY_ENVIRONMENT:', process.env.RAILWAY_ENVIRONMENT);
+console.log('  - FORCE_LOCALHOST:', process.env.FORCE_LOCALHOST);
+console.log('  - isProduction:', isProduction);
+console.log('  - isLocalhost:', isLocalhost);
+
 // Trust proxy for production environments (Railway, etc.)
 if (isProduction) {
   app.set('trust proxy', 1);
@@ -104,6 +116,12 @@ try {
   sessionStore.on('error', (error) => {
     console.error('Session store error:', error);
   });
+  
+  sessionStore.on('connected', () => {
+    console.log('Session store connected to MongoDB');
+  });
+  
+  console.log('Session store created successfully');
 } catch (error) {
   console.error('Failed to create session store:', error);
   // Fallback to memory store (not recommended for production but allows server to start)
@@ -113,13 +131,14 @@ try {
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true, // Allow saving uninitialized sessions
   store: sessionStore,
   cookie: {
     secure: isProduction, // Set to true in production with HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax'
+    sameSite: 'lax',
+    domain: isLocalhost ? undefined : domain
   },
   name: 'tinglebot.sid'
 }));
@@ -144,10 +163,16 @@ passport.deserializeUser(async (discordId, done) => {
   }
 });
 
-// Discord OAuth Strategy
-const callbackURL = isProduction 
+// Discord OAuth Strategy - Force localhost for development
+const callbackURL = (isProduction && !isLocalhost)
   ? `https://${domain}/auth/discord/callback`
-  : (process.env.DISCORD_CALLBACK_URL || `http://${domain}:5001/auth/discord/callback`);
+  : `http://localhost:5001/auth/discord/callback`;
+
+console.log('[server.js]: Discord OAuth Configuration:');
+console.log('  - isProduction:', isProduction);
+console.log('  - domain:', domain);
+console.log('  - callbackURL:', callbackURL);
+console.log('  - DISCORD_CALLBACK_URL env:', process.env.DISCORD_CALLBACK_URL);
 
 
 
@@ -352,8 +377,13 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files (excluding /map route which needs authentication)
+app.use((req, res, next) => {
+  if (req.path === '/map' || req.path === '/map.html') {
+    return next(); // Skip static serving for map routes
+  }
+  express.static(path.join(__dirname, 'public'))(req, res, next);
+});
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // Multer configuration for icon uploads
@@ -420,7 +450,7 @@ app.get('/', (req, res) => {
 });
 
 // ------------------- Function: serveMapPage -------------------
-// Serves the fullscreen interactive map page
+// Serves the fullscreen interactive map page (public access)
 app.get('/map', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'map.html'));
 });
@@ -809,10 +839,43 @@ app.get('/dashboard', (req, res) => {
 
 // ------------------- Section: Discord OAuth Routes -------------------
 
+// Debug endpoint to check OAuth configuration
+app.get('/auth/debug', (req, res) => {
+  res.json({
+    isProduction,
+    domain,
+    callbackURL,
+    discordCallbackUrl: process.env.DISCORD_CALLBACK_URL,
+    nodeEnv: process.env.NODE_ENV,
+    port: process.env.PORT || 5001
+  });
+});
+
 // ------------------- Function: initiateDiscordAuth -------------------
 // Initiates Discord OAuth flow
 app.get('/auth/discord', (req, res, next) => {
-  passport.authenticate('discord')(req, res, next);
+  // Store the return URL in session if provided
+  if (req.query.returnTo) {
+    req.session.returnTo = req.query.returnTo;
+    console.log('[server.js]: Storing returnTo in session:', req.query.returnTo);
+    console.log('[server.js]: Session ID:', req.session.id);
+    
+    // Save session explicitly and wait for it to complete
+    req.session.save((err) => {
+      if (err) {
+        console.error('[server.js]: Error saving session:', err);
+        return next(err);
+      }
+      console.log('[server.js]: Session saved successfully');
+      
+      // Now proceed with Discord authentication
+      console.log('[server.js]: Initiating Discord auth with callback URL:', callbackURL);
+      passport.authenticate('discord')(req, res, next);
+    });
+  } else {
+    console.log('[server.js]: Initiating Discord auth with callback URL:', callbackURL);
+    passport.authenticate('discord')(req, res, next);
+  }
 });
 
 // ------------------- Function: handleDiscordCallback -------------------
@@ -825,8 +888,29 @@ app.get('/auth/discord/callback',
   (req, res) => {
     logger.success(`User authenticated: ${req.user?.username} (${req.user?.discordId})`);
     
-    // Successful authentication
-    res.redirect('/?login=success');
+    // Check if there's a returnTo parameter in the session or query
+    const returnTo = req.session.returnTo || req.query.returnTo;
+    
+    console.log('[server.js]: Discord callback redirect:');
+    console.log('  - returnTo from session:', req.session.returnTo);
+    console.log('  - returnTo from query:', req.query.returnTo);
+    console.log('  - final returnTo:', returnTo);
+    console.log('  - session ID:', req.session.id);
+    console.log('  - passport user:', req.session.passport?.user);
+    console.log('  - session exists:', !!req.session);
+    console.log('  - session keys:', Object.keys(req.session || {}));
+    
+    if (returnTo) {
+      // Clear the returnTo from session
+      delete req.session.returnTo;
+      // Redirect to the original page
+      console.log('  - Redirecting to:', returnTo + '?login=success');
+      res.redirect(returnTo + '?login=success');
+    } else {
+      // Default redirect to dashboard
+      console.log('  - Redirecting to default: /?login=success');
+      res.redirect('/?login=success');
+    }
   }
 );
 
@@ -872,7 +956,8 @@ app.get('/api/debug/session', (req, res) => {
     session: req.session ? {
       id: req.session.id,
       passport: req.session.passport,
-      cookie: req.session.cookie
+      cookie: req.session.cookie,
+      returnTo: req.session.returnTo
     } : null,
     isAuthenticated: req.isAuthenticated(),
     user: req.user ? {
@@ -888,8 +973,35 @@ app.get('/api/debug/session', (req, res) => {
       NODE_ENV: process.env.NODE_ENV,
       RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
       DOMAIN: process.env.DOMAIN
-    }
+    },
+    sessionStore: sessionStore ? 'initialized' : 'null'
   });
+});
+
+// ------------------- Function: testSession -------------------
+// Simple endpoint to test session persistence
+app.get('/api/test/session', (req, res) => {
+  if (req.query.test) {
+    req.session.testValue = req.query.test;
+    req.session.save((err) => {
+      if (err) {
+        res.json({ error: 'Failed to save session', details: err.message });
+      } else {
+        res.json({ 
+          success: true, 
+          message: 'Test value saved', 
+          sessionId: req.session.id,
+          testValue: req.session.testValue
+        });
+      }
+    });
+  } else {
+    res.json({ 
+      sessionId: req.session.id,
+      testValue: req.session.testValue,
+      message: 'No test value provided. Use ?test=something to test session saving.'
+    });
+  }
 });
 
 // ------------------- Section: API Routes -------------------
@@ -9110,5 +9222,268 @@ async function checkAdminAccess(req) {
   
   return false;
 }
+
+// ============================================================================
+// ------------------- Section: Pin Management API -------------------
+// Handles user-created map pins with authentication and permissions
+// ============================================================================
+
+// Import Pin model
+const Pin = require('./models/PinModel');
+
+// ------------------- Function: checkUserAccess -------------------
+// Helper function to check if user has access to pin operations
+async function checkUserAccess(req) {
+  if (!req.isAuthenticated() || !req.user) {
+    return { hasAccess: false, error: 'Authentication required' };
+  }
+  
+  const guildId = process.env.PROD_GUILD_ID;
+  if (!guildId) {
+    return { hasAccess: false, error: 'Server configuration error' };
+  }
+  
+  try {
+    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.user.discordId}`, {
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { hasAccess: false, error: 'You must be a member of the Discord server to use pins.' };
+      }
+      throw new Error(`Discord API error: ${response.status}`);
+    }
+    
+    return { hasAccess: true };
+  } catch (error) {
+    console.error('[server.js]: ❌ Error checking user access for pins:', error);
+    return { hasAccess: false, error: 'Failed to verify server membership' };
+  }
+}
+
+// ------------------- GET /api/pins -------------------
+// Get all pins (public + user's private pins)
+app.get('/api/pins', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const pins = await Pin.getUserPins(req.user.discordId, true);
+    res.json({ success: true, pins });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching pins:', error);
+    res.status(500).json({ error: 'Failed to fetch pins' });
+  }
+});
+
+// ------------------- GET /api/pins/user -------------------
+// Get only user's own pins
+app.get('/api/pins/user', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const pins = await Pin.getUserPins(req.user.discordId, false);
+    res.json({ success: true, pins });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching user pins:', error);
+    res.status(500).json({ error: 'Failed to fetch user pins' });
+  }
+});
+
+// ------------------- POST /api/pins -------------------
+// Create a new pin
+app.post('/api/pins', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const { name, description, coordinates, icon, color, category, isPublic } = req.body;
+    
+    // Validate required fields
+    if (!name || !coordinates || !coordinates.lat || !coordinates.lng) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: name and coordinates are required' 
+      });
+    }
+    
+    // Validate coordinates
+    if (coordinates.lat < -90 || coordinates.lat > 90 || 
+        coordinates.lng < -180 || coordinates.lng > 180) {
+      return res.status(400).json({ 
+        error: 'Invalid coordinates' 
+      });
+    }
+    
+    // Create new pin
+    const pin = new Pin({
+      name: name.trim(),
+      description: description ? description.trim() : '',
+      coordinates: {
+        lat: coordinates.lat,
+        lng: coordinates.lng
+      },
+      icon: icon || 'fas fa-map-marker-alt',
+      color: color || '#00A3DA',
+      category: category || 'custom',
+      isPublic: isPublic !== false, // Default to true
+      createdBy: req.user._id,
+      discordId: req.user.discordId
+    });
+    
+    await pin.save();
+    
+    // Populate creator info
+    await pin.populate('creator', 'username avatar discriminator');
+    
+    res.status(201).json({ 
+      success: true, 
+      pin,
+      message: 'Pin created successfully' 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error creating pin:', error);
+    res.status(500).json({ error: 'Failed to create pin' });
+  }
+});
+
+// ------------------- PUT /api/pins/:id -------------------
+// Update a pin (only by owner)
+app.put('/api/pins/:id', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const pinId = req.params.id;
+    const pin = await Pin.findById(pinId);
+    
+    if (!pin) {
+      return res.status(404).json({ error: 'Pin not found' });
+    }
+    
+    // Check if user can modify this pin
+    if (!pin.canUserModify(req.user.discordId)) {
+      return res.status(403).json({ error: 'You can only edit your own pins' });
+    }
+    
+    const { name, description, icon, color, category, isPublic } = req.body;
+    
+    // Update fields if provided
+    if (name !== undefined) pin.name = name.trim();
+    if (description !== undefined) pin.description = description.trim();
+    if (icon !== undefined) pin.icon = icon;
+    if (color !== undefined) pin.color = color;
+    if (category !== undefined) pin.category = category;
+    if (isPublic !== undefined) pin.isPublic = isPublic;
+    
+    pin.updatedAt = new Date();
+    await pin.save();
+    
+    // Populate creator info
+    await pin.populate('creator', 'username avatar discriminator');
+    
+    res.json({ 
+      success: true, 
+      pin,
+      message: 'Pin updated successfully' 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error updating pin:', error);
+    res.status(500).json({ error: 'Failed to update pin' });
+  }
+});
+
+// ------------------- DELETE /api/pins/:id -------------------
+// Delete a pin (only by owner)
+app.delete('/api/pins/:id', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const pinId = req.params.id;
+    const pin = await Pin.findById(pinId);
+    
+    if (!pin) {
+      return res.status(404).json({ error: 'Pin not found' });
+    }
+    
+    // Check if user can modify this pin
+    if (!pin.canUserModify(req.user.discordId)) {
+      return res.status(403).json({ error: 'You can only delete your own pins' });
+    }
+    
+    await Pin.findByIdAndDelete(pinId);
+    
+    res.json({ 
+      success: true, 
+      message: 'Pin deleted successfully' 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error deleting pin:', error);
+    res.status(500).json({ error: 'Failed to delete pin' });
+  }
+});
+
+// ------------------- GET /api/pins/location/:gridLocation -------------------
+// Get pins by grid location
+app.get('/api/pins/location/:gridLocation', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const { gridLocation } = req.params;
+    
+    // Validate grid location format
+    if (!/^[A-J]([1-9]|1[0-2])$/.test(gridLocation)) {
+      return res.status(400).json({ error: 'Invalid grid location format' });
+    }
+    
+    const pins = await Pin.getPinsByLocation(gridLocation);
+    res.json({ success: true, pins });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching pins by location:', error);
+    res.status(500).json({ error: 'Failed to fetch pins by location' });
+  }
+});
+
+// ------------------- GET /api/pins/category/:category -------------------
+// Get pins by category
+app.get('/api/pins/category/:category', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const { category } = req.params;
+    const validCategories = ['home', 'work', 'farm', 'landmark', 'treasure', 'resource', 'custom'];
+    
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+    
+    const pins = await Pin.getPinsByCategory(category, true);
+    res.json({ success: true, pins });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching pins by category:', error);
+    res.status(500).json({ error: 'Failed to fetch pins by category' });
+  }
+});
 
 

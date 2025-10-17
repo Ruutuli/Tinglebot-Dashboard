@@ -3,6 +3,7 @@
  * Handles layer toggles, grid visibility, and label controls
  */
 
+
 class MapToggles {
     constructor(config, layers) {
         this.config = config;
@@ -448,3 +449,4 @@ class MapToggles {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = MapToggles;
 }
+

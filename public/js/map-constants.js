@@ -3,6 +3,7 @@
  * Single source of truth for all configurable values
  */
 
+
 const MAP_CONFIG = {
     // Canvas and Grid Dimensions
     SQUARE_W: 2400,
@@ -129,3 +130,4 @@ MAP_CONFIG.getFallbackManifestURL = function() {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = MAP_CONFIG;
 }
+

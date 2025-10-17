@@ -3,6 +3,7 @@
  * Handles ID/index/bounds math, quadrant centers, and hit-testing
  */
 
+
 class MapGeometry {
     constructor(config) {
         this.config = config;
@@ -189,7 +190,7 @@ class MapGeometry {
         }
         
         const colIndex = Math.floor(x / this.config.SQUARE_W);
-        const rowIndex = Math.floor(y / this.config.CANVAS_H);
+        const rowIndex = Math.floor(y / this.config.SQUARE_H);
         
         // Validate indices
         if (colIndex < 0 || colIndex >= this.config.GRID_COLS.length ||
@@ -301,3 +302,4 @@ class MapGeometry {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = MapGeometry;
 }
+

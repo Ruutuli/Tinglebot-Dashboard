@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/map.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
+<body class="map-page">
     <!-- Loading Overlay -->
     <div class="map-loading-overlay" id="map-loading-overlay">
         <div class="loading-container">
@@ -64,10 +64,6 @@
                         <button class="action-btn dashboard-btn" onclick="window.location.href='/'" title="Back to Dashboard">
                             <i class="fas fa-home"></i>
                             <span>Dashboard</span>
-                        </button>
-                        <button class="action-btn close-btn" onclick="toggleSidebar()" title="Close Sidebar">
-                            <i class="fas fa-times"></i>
-                            <span>Close</span>
                         </button>
                     </div>
                 </div>
@@ -140,68 +136,7 @@
                         </div>
                         
                         <div class="pins-list" id="pins-list">
-                            <div class="pin-item">
-                                <div class="pin-icon">
-                                    <i class="fas fa-map-marker-alt" style="color: #FF6B6B;"></i>
-                                </div>
-                                <div class="pin-info">
-                                    <span class="pin-name">Treasure Chest</span>
-                                    <span class="pin-location">C7</span>
-                                </div>
-                                <div class="pin-actions">
-                                    <button class="pin-action-btn" onclick="viewPin('pin1')" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="pin-action-btn" onclick="editPin('pin1')" title="Edit Pin">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="pin-action-btn delete" onclick="deletePin('pin1')" title="Delete Pin">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="pin-item">
-                                <div class="pin-icon">
-                                    <i class="fas fa-campfire" style="color: #FF8C00;"></i>
-                                </div>
-                                <div class="pin-info">
-                                    <span class="pin-name">Camp Site</span>
-                                    <span class="pin-location">E5</span>
-                                </div>
-                                <div class="pin-actions">
-                                    <button class="pin-action-btn" onclick="viewPin('pin2')" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="pin-action-btn" onclick="editPin('pin2')" title="Edit Pin">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="pin-action-btn delete" onclick="deletePin('pin2')" title="Delete Pin">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="pin-item">
-                                <div class="pin-icon">
-                                    <i class="fas fa-gem" style="color: #9370DB;"></i>
-                                </div>
-                                <div class="pin-info">
-                                    <span class="pin-name">Rare Ore</span>
-                                    <span class="pin-location">G9</span>
-                                </div>
-                                <div class="pin-actions">
-                                    <button class="pin-action-btn" onclick="viewPin('pin3')" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="pin-action-btn" onclick="editPin('pin3')" title="Edit Pin">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="pin-action-btn delete" onclick="deletePin('pin3')" title="Delete Pin">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
+                            <!-- Pins will be loaded dynamically -->
                         </div>
                         
                         <div class="pin-categories">
@@ -263,12 +198,12 @@
             </div>
             
         </div>
-        
-        <!-- UI Toggle Button -->
-        <button class="ui-toggle" onclick="toggleSidebar()">
-            <i class="fas fa-chevron-right"></i>
-        </button>
     </div>
+    
+    <!-- UI Toggle Button -->
+    <button class="ui-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-chevron-right"></i>
+    </button>
 
     <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

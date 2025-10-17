@@ -3,6 +3,7 @@
  * Handles grid vectors, labels, and raster overlays with proper z-ordering
  */
 
+
 class MapLayers {
     constructor(config, geometry) {
         this.config = config;
@@ -1020,3 +1021,4 @@ class MapLayers {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = MapLayers;
 }
+

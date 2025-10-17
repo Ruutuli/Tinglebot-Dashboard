@@ -68,14 +68,22 @@ async function initUserAuth() {
 // ------------------- Function: redirectToLogin -------------------
 // Redirects to login page while preserving current location
 window.redirectToLogin = function() {
-  // Save current hash/page so we can return after login
-  const currentHash = window.location.hash;
-  if (currentHash && currentHash !== '#' && currentHash !== '#dashboard-section') {
-    sessionStorage.setItem('returnTo', currentHash);
-  }
+  // Get current page path
+  const currentPath = window.location.pathname + window.location.hash;
   
-  // Redirect to login page
-  window.location.href = '/login';
+  // If we're on the map page, redirect directly to Discord auth with return URL
+  if (currentPath.includes('/map')) {
+    window.location.href = `/auth/discord?returnTo=${encodeURIComponent(currentPath)}`;
+  } else {
+    // For other pages, save to session storage and go to login page
+    const currentHash = window.location.hash;
+    if (currentHash && currentHash !== '#' && currentHash !== '#dashboard-section') {
+      sessionStorage.setItem('returnTo', currentHash);
+    }
+    
+    // Redirect to login page
+    window.location.href = '/login';
+  }
 };
 
 // ============================================================================
