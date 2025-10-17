@@ -3612,12 +3612,6 @@ app.get('/api/map/layers', async (req, res) => {
     // Get basic layers plus exploration squares
     const squares = await Square.getVisibleSquares();
     
-    // Generate placeholder squares if none exist in database
-    let squaresData = squares;
-    if (squares.length === 0) {
-      squaresData = generatePlaceholderSquares();
-    }
-    
     const layers = [
       { 
         id: 'base', 
@@ -3631,7 +3625,7 @@ app.get('/api/map/layers', async (req, res) => {
         name: 'Exploration Squares', 
         type: 'overlay', 
         visible: true,
-        squares: squaresData.map(square => ({
+        squares: squares.map(square => ({
           id: square.squareId || square.id,
           region: square.region || 'Unknown',
           status: square.status || 'unexplored',
@@ -3659,31 +3653,14 @@ app.get('/api/map/layers', async (req, res) => {
 });
 
 
-// Get map markers (using mapModel and other data)
-app.get('/api/map/markers', (req, res) => {
-  try {
-    // Return empty array - client will generate grid
-    res.json([]);
-  } catch (error) {
-    console.error('[server.js]: Error fetching map markers:', error);
-    res.status(500).json({ error: 'Failed to fetch map markers' });
-  }
-});
-
 // Get exploration square details
 app.get('/api/map/squares/:squareId', async (req, res) => {
   try {
     const { squareId } = req.params;
-    let square = await Square.findOne({ squareId: squareId });
+    const square = await Square.findOne({ squareId: squareId });
     
-    // If not found in database, check if it's a valid placeholder square
     if (!square) {
-      const placeholderSquares = generatePlaceholderSquares();
-      square = placeholderSquares.find(s => s.squareId === squareId);
-      
-      if (!square) {
-        return res.status(404).json({ error: 'Square not found' });
-      }
+      return res.status(404).json({ error: 'Square not found' });
     }
     
     res.json({
@@ -3779,154 +3756,7 @@ app.delete('/api/map/user-pins/:pinId', requireAuth, async (req, res) => {
   }
 });
 
-// ============================================================================
-// ------------------- Section: Admin Map Management API Routes -------------------
 
-// Create a new map marker (admin only)
-app.post('/api/admin/map/markers', requireAuth, async (req, res) => {
-  try {
-    // Check if user is admin (you may want to implement proper admin check)
-    if (!req.user || !req.user.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    
-    const markerData = req.body;
-    
-    // Validate required fields
-    if (!markerData.markerId || !markerData.name || !markerData.coords) {
-      return res.status(400).json({ error: 'markerId, name, and coords are required' });
-    }
-    
-    const newMarker = new MapMarker(markerData);
-    await newMarker.save();
-    
-    res.status(201).json(newMarker);
-  } catch (error) {
-    console.error('[server.js]: Error creating map marker:', error);
-    res.status(500).json({ error: 'Failed to create map marker' });
-  }
-});
-
-// Update a map marker (admin only)
-app.put('/api/admin/map/markers/:markerId', requireAuth, async (req, res) => {
-  try {
-    // Check if user is admin
-    if (!req.user || !req.user.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    
-    const { markerId } = req.params;
-    const updateData = req.body;
-    
-    const marker = await MapMarker.findOne({ markerId });
-    if (!marker) {
-      return res.status(404).json({ error: 'Marker not found' });
-    }
-    
-    Object.assign(marker, updateData);
-    await marker.save();
-    
-    res.json(marker);
-  } catch (error) {
-    console.error('[server.js]: Error updating map marker:', error);
-    res.status(500).json({ error: 'Failed to update map marker' });
-  }
-});
-
-// Delete a map marker (admin only)
-app.delete('/api/admin/map/markers/:markerId', requireAuth, async (req, res) => {
-  try {
-    // Check if user is admin
-    if (!req.user || !req.user.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    
-    const { markerId } = req.params;
-    
-    const result = await MapMarker.deleteOne({ markerId });
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ error: 'Marker not found' });
-    }
-    
-    res.json({ message: 'Marker deleted successfully' });
-  } catch (error) {
-    console.error('[server.js]: Error deleting map marker:', error);
-    res.status(500).json({ error: 'Failed to delete map marker' });
-  }
-});
-
-// Create a new map layer (admin only)
-app.post('/api/admin/map/layers', requireAuth, async (req, res) => {
-  try {
-    // Check if user is admin
-    if (!req.user || !req.user.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    
-    const layerData = req.body;
-    
-    // Validate required fields
-    if (!layerData.layerId || !layerData.name || !layerData.filePath) {
-      return res.status(400).json({ error: 'layerId, name, and filePath are required' });
-    }
-    
-    const newLayer = new MapLayer(layerData);
-    await newLayer.save();
-    
-    res.status(201).json(newLayer);
-  } catch (error) {
-    console.error('[server.js]: Error creating map layer:', error);
-    res.status(500).json({ error: 'Failed to create map layer' });
-  }
-});
-
-// Update a map layer (admin only)
-app.put('/api/admin/map/layers/:layerId', requireAuth, async (req, res) => {
-  try {
-    // Check if user is admin
-    if (!req.user || !req.user.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    
-    const { layerId } = req.params;
-    const updateData = req.body;
-    
-    const layer = await MapLayer.findOne({ layerId });
-    if (!layer) {
-      return res.status(404).json({ error: 'Layer not found' });
-    }
-    
-    Object.assign(layer, updateData);
-    await layer.save();
-    
-    res.json(layer);
-  } catch (error) {
-    console.error('[server.js]: Error updating map layer:', error);
-    res.status(500).json({ error: 'Failed to update map layer' });
-  }
-});
-
-// Delete a map layer (admin only)
-app.delete('/api/admin/map/layers/:layerId', requireAuth, async (req, res) => {
-  try {
-    // Check if user is admin
-    if (!req.user || !req.user.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    
-    const { layerId } = req.params;
-    
-    const result = await MapLayer.deleteOne({ layerId });
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ error: 'Layer not found' });
-    }
-    
-    res.json({ message: 'Layer deleted successfully' });
-  } catch (error) {
-    console.error('[server.js]: Error deleting map layer:', error);
-    res.status(500).json({ error: 'Failed to delete map layer' });
-  }
-});
 
 // ============================================================================
 // ------------------- Section: Daily Reset Reminder Scheduler -------------------
