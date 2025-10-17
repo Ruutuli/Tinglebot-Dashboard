@@ -20,8 +20,9 @@ class MapLayers {
             'square-labels': 600,
             'grid-lines': 500,
             'region-names': 400,
-            'village-markers': 375,  // Above village borders
-            'village-borders': 350,
+            'village-markers': 380,  // Above village borders
+            'village-borders-inner': 360,  // Inner village borders (pink)
+            'village-borders-outer': 350,  // Outer village borders (cyan)
             'region-borders': 300,
             'paths': 250,
             'mask': 200,        // Fog/hidden areas - above blight
@@ -188,25 +189,51 @@ class MapLayers {
      */
     _createLayerGroups() {
         const rasterLayers = [
-            'region-names', 
-            'village-borders', 
-            'village-markers',  // Toggle group for all village markers
-            'region-borders', 
-            'paths', 
-            'mask', 
-            'blight',           // Blight areas layer
-            'base', 
+            // Base map layers
             'MAP_0002_Map-Base', 
             'MAP_0001_hidden-areas',
-            'MAP_0000_BLIGHT',  // Blight raster layer
-            'MAP_0001s_0003_Region-Borders',  // Region borders layer
-            // Individual village marker layers
+            'MAP_0000_BLIGHT',
+            'MAP_0001s_0003_Region-Borders',
+            'MAP_0001s_0004_REGIONS-NAMES',
+            
+            // Individual village marker layers (controlled by village-markers toggle)
             'MAP_0001s_0000_Rudania-Marker',
             'MAP_0001s_0001_Inariko-Marker', 
-            'MAP_0001s_0002_Vhintl-Marker'
+            'MAP_0001s_0002_Vhintl-Marker',
+            
+            // Village circle layers (handled separately - not as individual raster layers)
+            // 'MAP_0002s_0000s_0000_CIRCLE-INARIKO-CYAN',
+            // 'MAP_0002s_0000s_0001_CIRCLE-INARIKO-PINK',
+            // 'MAP_0002s_0001s_0000_CIRCLE-VHINTL-CYAN',
+            // 'MAP_0002s_0001s_0001_CIRCLE-VHINTL-PINK',
+            // 'MAP_0002s_0002s_0000_CIRCLE-RUDANIA-CYAN',
+            // 'MAP_0002s_0002s_0001_CIRCLE-RUDANIA-PINK',
+            
+            // Individual path layers (controlled by paths toggle)
+            'MAP_0003s_0000_PSL',  // Path of Scarlet Leaves
+            'MAP_0003s_0001_LDW',  // Leaf Dew Way
+            'MAP_0003s_0002_Other-Paths'  // Other Paths
         ];
         
         for (const layerName of rasterLayers) {
+            const layerGroup = L.layerGroup();
+            this.layerGroups.set(layerName, layerGroup);
+            
+            // Add layer group to map so it can be displayed
+            layerGroup.addTo(this.map);
+        }
+        
+        // Create layer groups for village border layers
+        const villageBorderLayers = [
+            'MAP_0002s_0000s_0000_CIRCLE-INARIKO-CYAN',
+            'MAP_0002s_0000s_0001_CIRCLE-INARIKO-PINK',
+            'MAP_0002s_0001s_0000_CIRCLE-VHINTL-CYAN',
+            'MAP_0002s_0001s_0001_CIRCLE-VHINTL-PINK',
+            'MAP_0002s_0002s_0000_CIRCLE-RUDANIA-CYAN',
+            'MAP_0002s_0002s_0001_CIRCLE-RUDANIA-PINK'
+        ];
+        
+        for (const layerName of villageBorderLayers) {
             const layerGroup = L.layerGroup();
             this.layerGroups.set(layerName, layerGroup);
             
@@ -236,24 +263,25 @@ class MapLayers {
             'MAP_0001_hidden-areas': 'mask',
             'MAP_0000_BLIGHT': 'blight',
             'MAP_0001s_0003_Region-Borders': 'region-borders',
-            'base': 'base',
             'paths': 'paths',
-            'region-borders': 'region-borders',
             'village-borders': 'village-borders',
             'region-names': 'region-names',
-            'mask': 'mask',
-            'blight': 'blight',
+            'MAP_0001s_0004_REGIONS-NAMES': 'region-names',
             // Village marker layers
             'MAP_0001s_0000_Rudania-Marker': 'village-markers',
             'MAP_0001s_0001_Inariko-Marker': 'village-markers',
             'MAP_0001s_0002_Vhintl-Marker': 'village-markers',
-            // Village circle layers (map to village-borders pane)
-            'MAP_0002s_0000s_0000_CIRCLE-INARIKO-CYAN': 'village-borders',
-            'MAP_0002s_0000s_0001_CIRCLE-INARIKO-PINK': 'village-borders',
-            'MAP_0002s_0001s_0000_CIRCLE-VHINTL-CYAN': 'village-borders',
-            'MAP_0002s_0001s_0001_CIRCLE-VHINTL-PINK': 'village-borders',
-            'MAP_0002s_0002s_0000_CIRCLE-RUDANIA-CYAN': 'village-borders',
-            'MAP_0002s_0002s_0001_CIRCLE-RUDANIA-PINK': 'village-borders'
+            // Village circle layers (map to separate inner/outer panes)
+            'MAP_0002s_0000s_0000_CIRCLE-INARIKO-CYAN': 'village-borders-outer',
+            'MAP_0002s_0000s_0001_CIRCLE-INARIKO-PINK': 'village-borders-inner',
+            'MAP_0002s_0001s_0000_CIRCLE-VHINTL-CYAN': 'village-borders-outer',
+            'MAP_0002s_0001s_0001_CIRCLE-VHINTL-PINK': 'village-borders-inner',
+            'MAP_0002s_0002s_0000_CIRCLE-RUDANIA-CYAN': 'village-borders-outer',
+            'MAP_0002s_0002s_0001_CIRCLE-RUDANIA-PINK': 'village-borders-inner',
+            // Path layers (map to paths pane)
+            'MAP_0003s_0000_PSL': 'paths',
+            'MAP_0003s_0001_LDW': 'paths',
+            'MAP_0003s_0002_Other-Paths': 'paths'
         };
         
         const paneName = paneMap[layerName] || 'base'; // Default to 'base' pane
@@ -592,6 +620,17 @@ class MapLayers {
             return;
         }
         
+        // Map generic toggle names to specific MAP_ layer names
+        const toggleToLayerMap = {
+            'base': 'MAP_0002_Map-Base',
+            'blight': 'MAP_0000_BLIGHT',
+            'region-borders': 'MAP_0001s_0003_Region-Borders',
+            'region-names': 'MAP_0001s_0004_REGIONS-NAMES',
+            'mask': 'MAP_0001_hidden-areas'
+        };
+        
+        const actualLayerName = toggleToLayerMap[layerName] || layerName;
+        
         // Handle village-markers toggle by controlling all individual marker layers
         if (layerName === 'village-markers') {
             const markerLayers = [
@@ -613,7 +652,83 @@ class MapLayers {
             return;
         }
         
-        const layerGroup = this.layerGroups.get(layerName);
+        // Handle village-borders-inner toggle by controlling pink circle layers
+        if (layerName === 'village-borders-inner') {
+            const innerCircleLayers = [
+                'MAP_0002s_0000s_0001_CIRCLE-INARIKO-PINK',
+                'MAP_0002s_0001s_0001_CIRCLE-VHINTL-PINK',
+                'MAP_0002s_0002s_0001_CIRCLE-RUDANIA-PINK'
+            ];
+            
+            innerCircleLayers.forEach(circleLayer => {
+                const layerGroup = this.layerGroups.get(circleLayer);
+                if (layerGroup) {
+                    if (visible) {
+                        this.map.addLayer(layerGroup);
+                    } else {
+                        this.map.removeLayer(layerGroup);
+                    }
+                }
+            });
+            return;
+        }
+        
+        // Handle village-borders-outer toggle by controlling cyan circle layers
+        if (layerName === 'village-borders-outer') {
+            const outerCircleLayers = [
+                'MAP_0002s_0000s_0000_CIRCLE-INARIKO-CYAN',
+                'MAP_0002s_0001s_0000_CIRCLE-VHINTL-CYAN',
+                'MAP_0002s_0002s_0000_CIRCLE-RUDANIA-CYAN'
+            ];
+            
+            outerCircleLayers.forEach(circleLayer => {
+                const layerGroup = this.layerGroups.get(circleLayer);
+                if (layerGroup) {
+                    if (visible) {
+                        this.map.addLayer(layerGroup);
+                    } else {
+                        this.map.removeLayer(layerGroup);
+                    }
+                }
+            });
+            return;
+        }
+        
+        // Handle paths toggle by controlling all path layers
+        if (layerName === 'paths') {
+            const pathLayers = [
+                'MAP_0003s_0000_PSL',  // Path of Scarlet Leaves
+                'MAP_0003s_0001_LDW',  // Leaf Dew Way
+                'MAP_0003s_0002_Other-Paths'  // Other Paths
+            ];
+            
+            pathLayers.forEach(pathLayer => {
+                const layerGroup = this.layerGroups.get(pathLayer);
+                if (layerGroup) {
+                    if (visible) {
+                        this.map.addLayer(layerGroup);
+                    } else {
+                        this.map.removeLayer(layerGroup);
+                    }
+                }
+            });
+            return;
+        }
+        
+        // Handle individual path layers
+        if (layerName === 'MAP_0003s_0000_PSL' || layerName === 'MAP_0003s_0001_LDW' || layerName === 'MAP_0003s_0002_Other-Paths') {
+            const layerGroup = this.layerGroups.get(layerName);
+            if (layerGroup) {
+                if (visible) {
+                    this.map.addLayer(layerGroup);
+                } else {
+                    this.map.removeLayer(layerGroup);
+                }
+            }
+            return;
+        }
+        
+        const layerGroup = this.layerGroups.get(actualLayerName);
         if (layerGroup) {
             if (visible) {
                 this.map.addLayer(layerGroup);
@@ -660,6 +775,40 @@ class MapLayers {
             }
         } else {
             this.map.removeLayer(this.quadrantCrossLayer);
+        }
+    }
+    
+    /**
+     * Set square labels visibility
+     * @param {boolean} visible - Visibility state
+     */
+    setSquareLabelsVisibility(visible) {
+        if (!this.map) {
+            console.warn('[layers] Map not initialized');
+            return;
+        }
+        
+        // Toggle square labels by controlling the square-labels pane
+        const pane = this.map.getPane('square-labels');
+        if (pane) {
+            pane.style.display = visible ? 'block' : 'none';
+        }
+    }
+    
+    /**
+     * Set quadrant labels visibility
+     * @param {boolean} visible - Visibility state
+     */
+    setQuadrantLabelsVisibility(visible) {
+        if (!this.map) {
+            console.warn('[layers] Map not initialized');
+            return;
+        }
+        
+        // Toggle quadrant labels by controlling the quadrant-labels pane
+        const pane = this.map.getPane('quadrant-labels');
+        if (pane) {
+            pane.style.display = visible ? 'block' : 'none';
         }
     }
     

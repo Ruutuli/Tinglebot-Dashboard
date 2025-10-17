@@ -4,12 +4,11 @@
  */
 
 class MapLoader {
-    constructor(config, geometry, manifest, layers, metrics) {
+    constructor(config, geometry, manifest, layers) {
         this.config = config;
         this.geometry = geometry;
         this.manifest = manifest;
         this.layers = layers;
-        this.metrics = metrics;
         
         // Loading state
         this.loadingQueue = [];
@@ -218,7 +217,6 @@ class MapLoader {
         try {
             await Promise.allSettled(promises);
             const batchTime = performance.now() - this.batchStartTime;
-            this.metrics.recordBatchTime(batchTime);
             
             // Process next batch if queue has more items
             if (this.loadingQueue.length > 0) {
@@ -262,7 +260,8 @@ class MapLoader {
             }
             
             // Add blight layer (above base layer)
-            if (layers.includes('MAP_0000_BLIGHT')) {
+            // Only load blight for squares that actually have blight images
+            if (this._shouldHaveBlight(squareId)) {
                 layersToLoad.push('MAP_0000_BLIGHT');
             }
             
@@ -280,6 +279,12 @@ class MapLoader {
                 layersToLoad.push('MAP_0001s_0003_Region-Borders');
             }
             
+        // Add region names layer (above base, below village markers)
+        // Only load region names for the specific squares that have region name images
+        if (this._shouldHaveRegionNames(squareId)) {
+            layersToLoad.push('MAP_0001s_0004_REGIONS-NAMES');
+        }
+            
             // Add village circle layers (above base, below village markers)
             // These get added to the 'village-borders' layer group
             const villageCircleLayers = layers.filter(layer => 
@@ -293,6 +298,10 @@ class MapLoader {
             );
             layersToLoad.push(...villageMarkerLayers);
             
+            // Add path layers (appear above base, below village markers)
+            // Only load paths for squares that actually have path images
+            const pathLayersForSquare = this._getPathLayersForSquare(squareId);
+            layersToLoad.push(...pathLayersForSquare);
             
             // Load layers with proper ordering to ensure fog loads before base
             await this._loadLayersInOrder(squareId, layersToLoad, usePreview);
@@ -309,16 +318,78 @@ class MapLoader {
             });
             
             const loadTime = performance.now() - loadStartTime;
-            this.metrics.recordSquareLoadTime(squareId, loadTime);
             
             // Square loaded
             
         } catch (error) {
             console.error('[loader] Failed to load square:', squareId, error);
-            this.metrics.recordLoadError(squareId, error);
         } finally {
             this.loadingSet.delete(squareId);
         }
+    }
+    
+    /**
+     * Check if a square should have region names based on the specific squares that have region name images
+     * @param {string} squareId - Square ID to check
+     * @returns {boolean} Whether the square should have region names
+     */
+    _shouldHaveRegionNames(squareId) {
+        // These are the specific squares that have region name images
+        const regionNameSquares = [
+            'B10', 'C3', 'E6', 'G10', 'G4', 'G7', 'G8', 'H4', 'H7', 'H8'
+        ];
+        return regionNameSquares.includes(squareId);
+    }
+    
+    /**
+     * Get the specific path layers that should be loaded for a square
+     * @param {string} squareId - Square ID to check
+     * @returns {Array<string>} Array of path layer names to load
+     */
+    _getPathLayersForSquare(squareId) {
+        const pathLayers = [];
+        
+        // PSL (Path of Scarlet Leaves) squares
+        const pslSquares = ['G6', 'H5', 'H6', 'H7', 'H8'];
+        if (pslSquares.includes(squareId)) {
+            pathLayers.push('MAP_0003s_0000_PSL');
+        }
+        
+        // LDW (Leaf Dew Way) squares
+        const ldwSquares = ['F10', 'F11', 'F9', 'G10', 'G11', 'G8', 'G9', 'H10', 'H11', 'H8', 'H9'];
+        if (ldwSquares.includes(squareId)) {
+            pathLayers.push('MAP_0003s_0001_LDW');
+        }
+        
+        // Other-Paths squares
+        const otherPathsSquares = ['H4', 'H5', 'H7', 'H8', 'I8'];
+        if (otherPathsSquares.includes(squareId)) {
+            pathLayers.push('MAP_0003s_0002_Other-Paths');
+        }
+        
+        return pathLayers;
+    }
+    
+    /**
+     * Check if a square should have blight based on the specific squares that have blight images
+     * @param {string} squareId - Square ID to check
+     * @returns {boolean} Whether the square should have blight
+     */
+    _shouldHaveBlight(squareId) {
+        // These are the specific squares that have blight images
+        const blightSquares = [
+            'A10', 'A11', 'A12', 'A8', 'A9',
+            'B10', 'B11', 'B12', 'B6', 'B7', 'B8', 'B9',
+            'C10', 'C11', 'C12', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9',
+            'D10', 'D11', 'D12', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9',
+            'E1', 'E10', 'E11', 'E12', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', 'E9',
+            'F1', 'F10', 'F11', 'F12', 'F2', 'F3', 'F5', 'F6', 'F7', 'F8', 'F9',
+            'G1', 'G11', 'G12', 'G2', 'G3', 'G6', 'G7', 'G8', 'G9',
+            'H1', 'H10', 'H11', 'H2', 'H3', 'H6', 'H7', 'H8', 'H9',
+            'I1', 'I10', 'I11', 'I12', 'I2', 'I3', 'I4', 'I5', 'I9',
+            'J1', 'J10', 'J2', 'J3', 'J4', 'J5', 'J9'
+        ];
+        return blightSquares.includes(squareId);
     }
     
     /**

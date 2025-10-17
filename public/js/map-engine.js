@@ -16,7 +16,6 @@ class MapEngine {
         this.layers = null;
         this.loader = null;
         this.toggles = null;
-        this.metrics = null;
         
         // Event handlers
         this.eventHandlers = new Map();
@@ -85,7 +84,6 @@ class MapEngine {
     _createModules() {
         this.geometry = new MapGeometry(this.config);
         this.manifest = new MapManifest(this.config, this.geometry);
-        this.metrics = new MapMetrics(this.config);
         
         // Modules created
     }
@@ -174,7 +172,7 @@ class MapEngine {
         this.toggles = new MapToggles(this.config, this.layers);
         
         // Create loader (needs all other modules)
-        this.loader = new MapLoader(this.config, this.geometry, this.manifest, this.layers, this.metrics);
+        this.loader = new MapLoader(this.config, this.geometry, this.manifest, this.layers);
         this.loader.initialize();
         
         // All modules initialized
@@ -227,7 +225,6 @@ class MapEngine {
         this.map.on('zoomend', () => {
             const zoom = this.map.getZoom();
             this.loader.onZoomChange(zoom);
-            this.metrics.updateZoomLevel(zoom);
             debouncedViewportChange();
         });
         
@@ -236,7 +233,6 @@ class MapEngine {
         this.eventHandlers.set('zoomend', () => {
             const zoom = this.map.getZoom();
             this.loader.onZoomChange(zoom);
-            this.metrics.updateZoomLevel(zoom);
             debouncedViewportChange();
         });
         
@@ -282,7 +278,6 @@ class MapEngine {
             layers: this.layers,
             loader: this.loader,
             toggles: this.toggles,
-            metrics: this.metrics
         };
     }
     
@@ -297,17 +292,6 @@ class MapEngine {
         };
     }
     
-    /**
-     * Get performance metrics
-     * @returns {Object} Performance metrics
-     */
-    getMetrics() {
-        if (!this.metrics) {
-            console.warn('[map-engine] Metrics not initialized');
-            return null;
-        }
-        return this.metrics.getReport();
-    }
     
     /**
      * Get toggle state
@@ -337,8 +321,9 @@ class MapEngine {
         }
         
         const bounds = this.geometry.getSquareBounds(squareId);
+        // Flip Y coordinate because our coordinate system has Y=0 at bottom, Leaflet has Y=0 at top
         const center = [
-            bounds.y0 + this.config.SQUARE_H / 2,
+            this.config.CANVAS_H - (bounds.y0 + this.config.SQUARE_H / 2),
             bounds.x0 + this.config.SQUARE_W / 2
         ];
         
@@ -385,18 +370,22 @@ class MapEngine {
     }
     
     /**
-     * Show/hide toggle UI
+     * Show/hide sidebar (now handled by global functions)
      * @param {boolean} visible - Visibility state
      */
     setToggleUIVisible(visible) {
-        this.toggles.setVisible(visible);
+        if (visible) {
+            showSidebar();
+        } else {
+            hideSidebar();
+        }
     }
     
     /**
-     * Toggle toggle UI visibility
+     * Toggle sidebar visibility (now handled by global functions)
      */
     toggleToggleUI() {
-        this.toggles.toggleVisible();
+        toggleSidebar();
     }
     
     /**
@@ -533,7 +522,6 @@ class MapEngine {
             center: this.getCenter(),
             loadedSquares: this.getLoadedSquares(),
             toggleState: this.getToggleState(),
-            metrics: this.getMetrics()
         };
     }
     
@@ -586,9 +574,6 @@ class MapEngine {
             this.toggles.cleanup();
         }
         
-        if (this.metrics) {
-            this.metrics.cleanup();
-        }
         
         // Remove map
         if (this.map) {
@@ -602,7 +587,6 @@ class MapEngine {
         this.layers = null;
         this.loader = null;
         this.toggles = null;
-        this.metrics = null;
         
         this.isInitialized = false;
         this.isDestroyed = true;

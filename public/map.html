@@ -11,15 +11,35 @@
 <body>
     <!-- Loading Overlay -->
     <div class="map-loading-overlay" id="map-loading-overlay">
-        <div style="text-align: center; position: relative; z-index: 1;">
-            <div class="map-loading-spinner"></div>
-            <div class="map-loading-text">Loading Zelda Realm</div>
-            <div class="map-loading-subtitle">Preparing the map grid...</div>
-            <div class="loading-progress-container">
-                <div class="loading-progress-bar">
-                    <div class="loading-progress-fill"></div>
+        <div class="loading-container">
+            <div class="loading-content">
+                <div class="map-loading-spinner"></div>
+                <div class="map-loading-text">Loading ROTW Map</div>
+                <div class="map-loading-subtitle" id="loading-subtitle">Initializing map system...</div>
+                <div class="loading-progress-container">
+                    <div class="loading-progress-bar">
+                        <div class="loading-progress-fill" id="loading-progress-fill"></div>
+                    </div>
+                    <div class="loading-progress-text" id="loading-progress-text">0%</div>
                 </div>
-                <div class="loading-progress-text">0%</div>
+                <div class="loading-steps" id="loading-steps">
+                    <div class="loading-step active" id="step-1">
+                        <i class="fas fa-cog fa-spin"></i>
+                        <span>Initializing system...</span>
+                    </div>
+                    <div class="loading-step" id="step-2">
+                        <i class="fas fa-map"></i>
+                        <span>Loading map data...</span>
+                    </div>
+                    <div class="loading-step" id="step-3">
+                        <i class="fas fa-layer-group"></i>
+                        <span>Preparing layers...</span>
+                    </div>
+                    <div class="loading-step" id="step-4">
+                        <i class="fas fa-check"></i>
+                        <span>Ready to explore!</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -27,75 +47,221 @@
     <!-- Map Container -->
     <div id="map"></div>
     
-    <!-- Performance Metrics Display -->
-    <div class="performance-metrics" id="performance-metrics">
-        <div>
-            <span class="metric-label">Load Time:</span>
-            <span class="metric-value" id="load-time">0ms</span>
-        </div>
-        <div>
-            <span class="metric-label">Render Time:</span>
-            <span class="metric-value" id="render-time">0ms</span>
-        </div>
-        <div>
-            <span class="metric-label">Loaded Squares:</span>
-            <span class="metric-value" id="loaded-squares">0</span>
-        </div>
-        <div>
-            <span class="metric-label">Cache Size:</span>
-            <span class="metric-value" id="cache-size">0</span>
-        </div>
-        <div>
-            <span class="metric-label">Images Loaded:</span>
-            <span class="metric-value" id="images-loaded">0</span>
-        </div>
-        <div>
-            <span class="metric-label">Image Load Time:</span>
-            <span class="metric-value" id="image-load-time">0ms</span>
-        </div>
-        <div id="memory-usage" style="display: none;">
-            <span class="metric-label">Memory:</span>
-            <span class="metric-value" id="memory-value">0MB</span>
-        </div>
-    </div>
     
-    <!-- Simple Sidebar -->
+    <!-- Permanent Sidebar -->
     <div class="side-ui">
         <div class="ui-content">
             <div class="ui-header">
-                <h2><i class="fas fa-map-marked-alt"></i> Zelda Realm Map</h2>
-                <p>Square Grid System</p>
-                <button class="close-btn" onclick="window.location.href='/'">
-                    <i class="fas fa-times"></i>
-                </button>
+                <div class="header-content">
+                    <div class="header-title">
+                        <div class="title-main">
+                            <i class="fas fa-seedling"></i>
+                            <h2>Roots of the Wild Map</h2>
+                        </div>
+                        <p class="title-subtitle">Interactive Realm Explorer</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-btn dashboard-btn" onclick="window.location.href='/'" title="Back to Dashboard">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </button>
+                        <button class="action-btn close-btn" onclick="toggleSidebar()" title="Close Sidebar">
+                            <i class="fas fa-times"></i>
+                            <span>Close</span>
+                        </button>
+                    </div>
+                </div>
             </div>
             
-            <div style="margin-top: 30px;">
-                <h3>Realm Information</h3>
-                <p><strong>Total Squares:</strong> 120</p>
-                <p><strong>Columns:</strong> A-J (10)</p>
-                <p><strong>Rows:</strong> 1-12 (12)</p>
-                <p><strong>Each Square:</strong> 2400×1666 pixels</p>
-                <p><strong>Realm Size:</strong> 24000×20000 pixels</p>
-                <p><strong>Layout:</strong> Seamless (no gaps)</p>
-                
-                <div style="margin-top: 20px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; border: 1px solid var(--glass-border);">
-                    <h4 style="margin: 0 0 10px 0; color: var(--botw-blue);">Current View</h4>
-                    <p style="margin: 5px 0;"><strong>Zoom Level:</strong> <span id="zoom-level">9</span></p>
-                    <p style="margin: 5px 0;"><strong>View Status:</strong> <span id="view-status">Maximum Detail</span></p>
-                    <p style="margin: 5px 0; font-size: 0.9em; color: var(--text-secondary);" id="zoom-description">All labels visible (A1-J12, Q1-Q4)</p>
-                </div>
-                
-                <div style="margin-top: 20px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; border: 1px solid var(--glass-border);">
-                    <h4 style="margin: 0 0 10px 0; color: var(--botw-blue);">Map Features</h4>
-                    <p style="margin: 5px 0; font-size: 0.9em; color: var(--text-secondary);">
-                        <i class="fas fa-map" style="color: var(--botw-blue);"></i> Base map with terrain
-                    </p>
-                    <p style="margin: 5px 0; font-size: 0.9em; color: var(--text-secondary);">
-                        <i class="fas fa-eye-slash" style="color: #D4AF37;"></i> Hidden areas overlay
-                    </p>
+
+            <!-- Zoom Controls -->
+            <div class="zoom-section collapsible-section">
+                <h3 class="section-header" onclick="toggleSection('zoom-section')">
+                    <i class="fas fa-search-plus"></i> Zoom Controls
+                    <i class="fas fa-chevron-down section-arrow"></i>
+                </h3>
+                <div class="section-content">
+                    <div class="zoom-buttons">
+                        <button class="zoom-btn zoom-in" onclick="zoomIn()" title="Zoom In">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="zoom-btn zoom-out" onclick="zoomOut()" title="Zoom Out">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button class="zoom-btn zoom-reset" onclick="resetZoom()" title="Reset Zoom">
+                            <i class="fas fa-home"></i>
+                        </button>
+                    </div>
+                    <div class="village-nav">
+                        <h4><i class="fas fa-map-marker-alt"></i> Quick Village Access</h4>
+                        <div class="village-buttons-horizontal">
+                            <button class="village-btn-compact fire-village" onclick="jumpToVillage('H5', 'Rudania')" title="Jump to Rudania (H5)">
+                                <span class="village-emoji">🔥</span>
+                            </button>
+                            <button class="village-btn-compact water-village" onclick="jumpToVillage('H8', 'Inariko')" title="Jump to Inariko (H8)">
+                                <span class="village-emoji">💧</span>
+                            </button>
+                            <button class="village-btn-compact leaf-village" onclick="jumpToVillage('F10', 'Vhintl')" title="Jump to Vhintl (F10)">
+                                <span class="village-emoji">🍃</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- Map Layer Controls -->
+            <div class="layer-controls-section collapsible-section">
+                <h3 class="section-header" onclick="toggleSection('layer-controls-section')">
+                    <i class="fas fa-layer-group"></i> Map Layers
+                    <i class="fas fa-chevron-down section-arrow"></i>
+                </h3>
+                <div class="section-content">
+                    <div id="map-layer-toggles"></div>
+                </div>
+            </div>
+
+            <!-- Pins Section -->
+            <div class="pins-section collapsible-section">
+                <h3 class="section-header" onclick="toggleSection('pins-section')">
+                    <i class="fas fa-map-pin"></i> Pins
+                    <i class="fas fa-chevron-down section-arrow"></i>
+                </h3>
+                <div class="section-content">
+                    <div class="pins-controls">
+                        <div class="pin-actions">
+                            <button class="pin-btn add-pin-btn" onclick="toggleAddPinMode()" title="Add New Pin">
+                                <i class="fas fa-plus"></i>
+                                <span>Add Pin</span>
+                            </button>
+                            <button class="pin-btn manage-pins-btn" onclick="togglePinManager()" title="Manage Pins">
+                                <i class="fas fa-cog"></i>
+                                <span>Manage</span>
+                            </button>
+                        </div>
+                        
+                        <div class="pins-list" id="pins-list">
+                            <div class="pin-item">
+                                <div class="pin-icon">
+                                    <i class="fas fa-map-marker-alt" style="color: #FF6B6B;"></i>
+                                </div>
+                                <div class="pin-info">
+                                    <span class="pin-name">Treasure Chest</span>
+                                    <span class="pin-location">C7</span>
+                                </div>
+                                <div class="pin-actions">
+                                    <button class="pin-action-btn" onclick="viewPin('pin1')" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="pin-action-btn" onclick="editPin('pin1')" title="Edit Pin">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="pin-action-btn delete" onclick="deletePin('pin1')" title="Delete Pin">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="pin-item">
+                                <div class="pin-icon">
+                                    <i class="fas fa-campfire" style="color: #FF8C00;"></i>
+                                </div>
+                                <div class="pin-info">
+                                    <span class="pin-name">Camp Site</span>
+                                    <span class="pin-location">E5</span>
+                                </div>
+                                <div class="pin-actions">
+                                    <button class="pin-action-btn" onclick="viewPin('pin2')" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="pin-action-btn" onclick="editPin('pin2')" title="Edit Pin">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="pin-action-btn delete" onclick="deletePin('pin2')" title="Delete Pin">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="pin-item">
+                                <div class="pin-icon">
+                                    <i class="fas fa-gem" style="color: #9370DB;"></i>
+                                </div>
+                                <div class="pin-info">
+                                    <span class="pin-name">Rare Ore</span>
+                                    <span class="pin-location">G9</span>
+                                </div>
+                                <div class="pin-actions">
+                                    <button class="pin-action-btn" onclick="viewPin('pin3')" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="pin-action-btn" onclick="editPin('pin3')" title="Edit Pin">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="pin-action-btn delete" onclick="deletePin('pin3')" title="Delete Pin">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="pin-categories">
+                            <h4><i class="fas fa-tags"></i> Pin Categories</h4>
+                            <div class="category-filters">
+                                <button class="category-filter active" data-category="all">All</button>
+                                <button class="category-filter" data-category="treasure">Treasure</button>
+                                <button class="category-filter" data-category="resources">Resources</button>
+                                <button class="category-filter" data-category="landmarks">Landmarks</button>
+                                <button class="category-filter" data-category="custom">Custom</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Features (Future) -->
+            <div class="user-features-section collapsible-section">
+                <h3 class="section-header" onclick="toggleSection('user-features-section')">
+                    <i class="fas fa-magic"></i> Explorer Tools
+                    <i class="fas fa-chevron-down section-arrow"></i>
+                </h3>
+                <div class="section-content">
+                    <div class="feature-placeholder">
+                        <div class="feature-item">
+                            <i class="fas fa-map-pin"></i>
+                            <div class="feature-content">
+                                <span>Personal Pins</span>
+                                <small>Mark your discoveries</small>
+                            </div>
+                            <div class="feature-status">Soon</div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-search-location"></i>
+                            <div class="feature-content">
+                                <span>Exploration Tracker</span>
+                                <small>Track visited areas</small>
+                            </div>
+                            <div class="feature-status">Soon</div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-bookmark"></i>
+                            <div class="feature-content">
+                                <span>Saved Locations</span>
+                                <small>Bookmark important places</small>
+                            </div>
+                            <div class="feature-status">Soon</div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-route"></i>
+                            <div class="feature-content">
+                                <span>Custom Routes</span>
+                                <small>Create your own paths</small>
+                            </div>
+                            <div class="feature-status">Soon</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
         </div>
         
         <!-- UI Toggle Button -->
@@ -114,7 +280,6 @@
     <script src="js/map-manifest.js"></script>
     <script src="js/map-layers.js"></script>
     <script src="js/map-loader.js"></script>
-    <script src="js/map-metrics.js"></script>
     <script src="js/map-toggles.js"></script>
     <script src="js/map-engine.js"></script>
     

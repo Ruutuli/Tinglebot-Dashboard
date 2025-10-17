@@ -38,7 +38,8 @@ const MAP_CONFIG = {
         'grid-lines',
         'region-names',
         'village-markers',  // Above village borders
-        'village-borders',
+        'village-borders-inner',  // Inner village borders (pink)
+        'village-borders-outer',  // Outer village borders (cyan)
         'region-borders',
         'paths',
         'mask',        // Fog/hidden areas - above blight
@@ -55,11 +56,14 @@ const MAP_CONFIG = {
         'quadrant-labels': true,
         'paths': true,
         'region-borders': true,
-        'village-borders': true,
+        'village-borders-inner': true,
+        'village-borders-outer': true,
         'village-markers': true,
         'region-names': true,
-        'mask': true,
-        'blight': true
+        'blight': true,
+        'MAP_0003s_0000_PSL': true,
+        'MAP_0003s_0001_LDW': true,
+        'MAP_0003s_0002_Other-Paths': true
     },
     
     // Google Cloud Storage Configuration

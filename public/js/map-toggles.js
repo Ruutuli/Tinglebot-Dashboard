@@ -32,44 +32,18 @@ class MapToggles {
     }
     
     /**
-     * Create toggle UI elements
+     * Create toggle UI elements in the permanent sidebar
      */
     _createToggleUI() {
-        // Create container
-        this.toggleContainer = document.createElement('div');
-        this.toggleContainer.id = 'map-toggles';
-        this.toggleContainer.style.cssText = `
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            z-index: 1000;
-            min-width: 200px;
-            font-family: 'Segoe UI', sans-serif;
-            font-size: 14px;
-        `;
-        
-        // Add title
-        const title = document.createElement('div');
-        title.textContent = 'Map Layers';
-        title.style.cssText = `
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #00A3DA;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            padding-bottom: 5px;
-        `;
-        this.toggleContainer.appendChild(title);
+        // Find the existing sidebar container
+        this.toggleContainer = document.getElementById('map-layer-toggles');
+        if (!this.toggleContainer) {
+            console.error('[toggles] Sidebar container not found');
+            return;
+        }
         
         // Create toggles for each layer
         this._createLayerToggles();
-        
-        // Add to document
-        document.body.appendChild(this.toggleContainer);
     }
     
     /**
@@ -89,35 +63,43 @@ class MapToggles {
             {
                 title: 'Map Layers',
                 layers: [
-                    { key: 'base', label: 'Base Terrain', icon: '🗺️' },
-                    { key: 'paths', label: 'Paths', icon: '🛤️' },
+                    { key: 'paths', label: 'All Paths', icon: '🛤️' },
                     { key: 'region-borders', label: 'Region Borders', icon: '🏞️' },
-                    { key: 'village-borders', label: 'Village Borders', icon: '🏘️' },
+                    { key: 'village-borders-inner', label: 'Village Borders (Inner)', icon: '🏘️' },
+                    { key: 'village-borders-outer', label: 'Village Borders (Outer)', icon: '🏘️' },
                     { key: 'village-markers', label: 'Village Markers', icon: '🏛️' },
                     { key: 'region-names', label: 'Region Names', icon: '🏷️' },
-                    { key: 'mask', label: 'Hidden Areas', icon: '👁️‍🗨️' }
+                    { key: 'blight', label: 'Blight Areas', icon: '💀' }
+                ]
+            },
+            {
+                title: 'Path Types',
+                layers: [
+                    { key: 'MAP_0003s_0000_PSL', label: 'Path of Scarlet Leaves', icon: '🍂' },
+                    { key: 'MAP_0003s_0001_LDW', label: 'Leaf Dew Way', icon: '🌿' },
+                    { key: 'MAP_0003s_0002_Other-Paths', label: 'Other Paths', icon: '🛣️' }
                 ]
             }
         ];
         
         layerGroups.forEach(group => {
+            // Group container
+            const groupContainer = document.createElement('div');
+            groupContainer.className = 'layer-toggle-group';
+            
             // Group title
             const groupTitle = document.createElement('div');
             groupTitle.textContent = group.title;
-            groupTitle.style.cssText = `
-                font-weight: bold;
-                margin: 15px 0 8px 0;
-                color: #D4AF37;
-                font-size: 12px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            `;
-            this.toggleContainer.appendChild(groupTitle);
+            groupTitle.className = 'layer-toggle-group-title';
+            groupContainer.appendChild(groupTitle);
             
             // Group layers
             group.layers.forEach(layer => {
-                this._createToggleElement(layer.key, layer.label, layer.icon);
+                const toggleElement = this._createToggleElement(layer.key, layer.label, layer.icon);
+                groupContainer.appendChild(toggleElement);
             });
+            
+            this.toggleContainer.appendChild(groupContainer);
         });
     }
     
@@ -129,47 +111,27 @@ class MapToggles {
      */
     _createToggleElement(key, label, icon) {
         const toggleDiv = document.createElement('div');
-        toggleDiv.style.cssText = `
-            display: flex;
-            align-items: center;
-            margin: 5px 0;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        `;
+        toggleDiv.className = 'layer-toggle';
         
         // Checkbox
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.id = `toggle-${key}`;
         checkbox.checked = this.state[key] || false;
-        checkbox.style.marginRight = '8px';
         
         // Label
         const labelElement = document.createElement('label');
         labelElement.htmlFor = `toggle-${key}`;
-        labelElement.style.cssText = `
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            flex: 1;
-            font-size: 13px;
-        `;
         
         // Icon
         const iconSpan = document.createElement('span');
         iconSpan.textContent = icon;
-        iconSpan.style.cssText = `
-            margin-right: 6px;
-            font-size: 14px;
-            width: 16px;
-            text-align: center;
-        `;
+        iconSpan.className = 'layer-icon';
         
         // Text
         const textSpan = document.createElement('span');
         textSpan.textContent = label;
+        textSpan.className = 'layer-text';
         
         labelElement.appendChild(iconSpan);
         labelElement.appendChild(textSpan);
@@ -186,15 +148,6 @@ class MapToggles {
         checkbox.addEventListener('change', handleToggle);
         toggleDiv.addEventListener('click', handleToggle);
         
-        // Hover effects
-        toggleDiv.addEventListener('mouseenter', () => {
-            toggleDiv.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-        });
-        
-        toggleDiv.addEventListener('mouseleave', () => {
-            toggleDiv.style.backgroundColor = 'transparent';
-        });
-        
         // Store reference
         this.toggleElements.set(key, {
             container: toggleDiv,
@@ -202,7 +155,7 @@ class MapToggles {
             label: labelElement
         });
         
-        this.toggleContainer.appendChild(toggleDiv);
+        return toggleDiv;
     }
     
     /**
@@ -252,21 +205,27 @@ class MapToggles {
                 break;
                 
             case 'square-labels':
+                this.layers.setSquareLabelsVisibility(visible);
+                break;
+                
             case 'quadrant-labels':
-                // These are handled by zoom level in the loader
+                this.layers.setQuadrantLabelsVisibility(visible);
                 break;
                 
             case 'quadrant-cross':
                 this.layers.setQuadrantCrossVisibility(visible);
                 break;
                 
-            case 'base':
             case 'paths':
             case 'region-borders':
-            case 'village-borders':
+            case 'village-borders-inner':
+            case 'village-borders-outer':
             case 'village-markers':
             case 'region-names':
-            case 'mask':
+            case 'blight':
+            case 'MAP_0003s_0000_PSL':
+            case 'MAP_0003s_0001_LDW':
+            case 'MAP_0003s_0002_Other-Paths':
                 this.layers.setLayerVisibility(key, visible);
                 break;
                 
@@ -378,22 +337,20 @@ class MapToggles {
     }
     
     /**
-     * Show/hide toggle UI
+     * Show/hide toggle UI (now handled by sidebar)
      * @param {boolean} visible - Visibility state
      */
     setVisible(visible) {
-        if (this.toggleContainer) {
-            this.toggleContainer.style.display = visible ? 'block' : 'none';
-        }
+        // Toggle visibility is now handled by the permanent sidebar
+        // This method is kept for compatibility but does nothing
     }
     
     /**
-     * Toggle UI visibility
+     * Toggle UI visibility (now handled by sidebar)
      */
     toggleVisible() {
-        const isVisible = this.toggleContainer && 
-                         this.toggleContainer.style.display !== 'none';
-        this.setVisible(!isVisible);
+        // Toggle visibility is now handled by the permanent sidebar
+        // This method is kept for compatibility but does nothing
     }
     
     /**
@@ -446,7 +403,10 @@ class MapToggles {
             'r': 'region-borders',
             'v': 'village-borders',
             'n': 'region-names',
-            'm': 'mask'
+            'm': 'mask',
+            '1': 'MAP_0003s_0000_PSL',
+            '2': 'MAP_0003s_0001_LDW',
+            '3': 'MAP_0003s_0002_Other-Paths'
         };
         
         document.addEventListener('keydown', (event) => {
@@ -471,10 +431,9 @@ class MapToggles {
      * Cleanup toggles (remove UI, listeners)
      */
     cleanup() {
-        // Remove UI
+        // Clear toggle elements from the sidebar
         if (this.toggleContainer) {
-            this.toggleContainer.remove();
-            this.toggleContainer = null;
+            this.toggleContainer.innerHTML = '';
         }
         
         // Clear references
