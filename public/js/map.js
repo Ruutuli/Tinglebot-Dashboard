@@ -536,16 +536,17 @@ function handleMapClick(event) {
     const hitTest = mapEngine.hitTest(lng, lat);
     
     if (hitTest.square) {
-        // Clicked square - show square information
-        showSquareInfo(hitTest.square, hitTest.quadrant);
+        // Clicked square - show square information (COMMENTED OUT FOR NOW)
+        // showSquareInfo(hitTest.square, hitTest.quadrant);
     }
 }
 
 /**
- * Show square information including region and status
+ * Show square information including region and status - COMMENTED OUT FOR NOW
  * @param {string} squareId - Square ID like "E4"
  * @param {number} quadrant - Quadrant number (1-4) if clicked on quadrant
  */
+/*
 function showSquareInfo(squareId, quadrant = null) {
     if (!mapEngine) return;
     
@@ -629,10 +630,12 @@ function showSquareInfo(squareId, quadrant = null) {
     
     console.log(`[map] Square ${squareId} clicked - Region: ${region}, Status: ${status}, Explorable: ${isExplorable}`);
 }
+*/
 
 /**
- * Close the current square info popup
+ * Close the current square info popup - COMMENTED OUT FOR NOW
  */
+/*
 function closeSquareInfo() {
     if (window.currentSquarePopup) {
         // Close the popup
@@ -646,6 +649,7 @@ function closeSquareInfo() {
         mapEngine.getMap().closePopup();
     }
 }
+*/
 
 /**
  * Initialize when DOM is ready
