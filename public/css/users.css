@@ -1064,21 +1064,6 @@
   background: linear-gradient(135deg, #f87171, #ef4444) !important;
 }
 
-.close-modal {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
-}
-
-.close-modal:hover {
-  background: var(--glass-bg);
-  color: var(--text-primary);
-}
 
 .user-details-modal-body {
   padding: 1.5rem;

@@ -232,15 +232,25 @@ function showError(message) {
     errorDiv.innerHTML = `
         <h3>Map Loading Error</h3>
         <p>${message}</p>
-        <button onclick="location.reload()" style="
-            background: white;
-            color: red;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-        ">Reload Page</button>
+        <div style="margin-top: 15px;">
+            <button onclick="location.reload()" style="
+                background: #ff4444;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-right: 10px;
+            ">Reload Page</button>
+            <button onclick="this.parentElement.parentElement.remove()" style="
+                background: #666;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+            ">Dismiss</button>
+        </div>
     `;
     
     document.body.appendChild(errorDiv);
@@ -1104,7 +1114,7 @@ function showPinCreationModal(lat, lng) {
 // Get default color for pin category
 function getDefaultColorForCategory(category) {
     const colorMap = {
-        'homes': '#09A98E',      // Cyan
+        'homes': '#C5FF00',      // Lime Green
         'farms': '#22C55E',      // Green
         'shops': '#FF8C00',      // Orange
         'points-of-interest': '#FF69B4'  // Pink
@@ -1449,7 +1459,11 @@ function setupPinFormInteractions() {
     const nameInput = document.getElementById('pin-name');
     const descInput = document.getElementById('pin-description');
     const previewIcon = document.getElementById('preview-icon');
+    
+    // Get the submit button (could be create-btn or update-btn)
     const createBtn = document.getElementById('create-btn');
+    const updateBtn = document.getElementById('update-btn');
+    const submitBtn = createBtn || updateBtn;
     
     // Character counters
     nameInput.addEventListener('input', () => {
@@ -1498,15 +1512,15 @@ function setupPinFormInteractions() {
         if (name.length === 0) {
             errorDiv.textContent = 'Pin name is required';
             nameInput.classList.add('error');
-            createBtn.disabled = true;
+            if (submitBtn) submitBtn.disabled = true;
         } else if (name.length < 2) {
             errorDiv.textContent = 'Pin name must be at least 2 characters';
             nameInput.classList.add('error');
-            createBtn.disabled = true;
+            if (submitBtn) submitBtn.disabled = true;
         } else {
             errorDiv.textContent = '';
             nameInput.classList.remove('error');
-            createBtn.disabled = false;
+            if (submitBtn) submitBtn.disabled = false;
         }
     }
     
@@ -1651,17 +1665,27 @@ function getGridCoordinates(lat, lng) {
 
 // Add pin to map
 function addPinToMap(pin) {
-    if (!mapEngine || !mapEngine.getMap()) return;
+    if (!mapEngine || !mapEngine.getMap()) {
+        console.warn('[map.js]: Map engine not available, skipping pin addition for:', pin.name);
+        return;
+    }
     
-    const map = mapEngine.getMap();
-    // Convert from our coordinate system (Y=0 at bottom) to Leaflet (Y=0 at top)
-    const leafletLat = mapEngine.config.CANVAS_H - pin.coordinates.lat;
-    const leafletLng = pin.coordinates.lng;
+    try {
+        const map = mapEngine.getMap();
+        // Convert from our coordinate system (Y=0 at bottom) to Leaflet (Y=0 at top)
+        const leafletLat = mapEngine.config.CANVAS_H - pin.coordinates.lat;
+        const leafletLng = pin.coordinates.lng;
+    
+    // Apply black outline only to house icons, white outline to others
+    const isHouseIcon = pin.category === 'homes';
+    const textShadow = isHouseIcon 
+        ? '-1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black, 0 0 3px black'
+        : '-1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 1px 1px 0 white, 0 0 3px white';
     
     const marker = L.marker([leafletLat, leafletLng], {
         icon: L.divIcon({
             className: 'custom-pin',
-            html: `<div style="color: ${pin.color}; font-size: 20px; text-shadow: -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 1px 1px 0 white, 0 0 3px white; z-index: 50000; position: relative;"><i class="${pin.icon}"></i></div>`,
+            html: `<div style="color: ${pin.color}; font-size: 20px; text-shadow: ${textShadow}; z-index: 50000; position: relative;"><i class="${pin.icon}"></i></div>`,
             iconSize: [20, 20],
             iconAnchor: [10, 20]
         })
@@ -1672,7 +1696,7 @@ function addPinToMap(pin) {
     
     // Get category display info
     const categoryInfo = {
-        'homes': { name: 'Homes', icon: '🏠', color: '#EDAF12' },
+        'homes': { name: 'Homes', icon: '🏠', color: '#C5FF00' },
         'farms': { name: 'Farms', icon: '🌱', color: '#22C55E' },
         'shops': { name: 'Shops', icon: '🏪', color: '#FF8C00' },
         'points-of-interest': { name: 'Points of Interest', icon: '⭐', color: '#FF69B4' }
@@ -1778,24 +1802,38 @@ function addPinToMap(pin) {
     
     marker.addTo(map);
     marker.pinId = pin._id;
+    } catch (error) {
+        console.error('[map.js]: Error adding pin to map:', error, 'Pin:', pin);
+        // Don't call showError here as it would cause a page refresh
+        // Just log the error and continue
+    }
 }
 
 // Add all pins to map
 function addPinsToMap() {
-    if (!mapEngine || !mapEngine.getMap()) return;
+    if (!mapEngine || !mapEngine.getMap()) {
+        console.warn('[map.js]: Map engine not available, skipping pin addition');
+        return;
+    }
     
-    // Clear existing pins
-    const map = mapEngine.getMap();
-    map.eachLayer(layer => {
-        if (layer.pinId) {
-            map.removeLayer(layer);
-        }
-    });
-    
-    // Add all pins
-    pinManager.pins.forEach(pin => {
-        addPinToMap(pin);
-    });
+    try {
+        // Clear existing pins
+        const map = mapEngine.getMap();
+        map.eachLayer(layer => {
+            if (layer.pinId) {
+                map.removeLayer(layer);
+            }
+        });
+        
+        // Add all pins
+        pinManager.pins.forEach(pin => {
+            addPinToMap(pin);
+        });
+    } catch (error) {
+        console.error('[map.js]: Error adding pins to map:', error);
+        // Don't call showError here as it would cause a page refresh
+        // Just log the error and continue
+    }
 }
 
 // Update pins list in UI
@@ -2034,10 +2072,20 @@ async function updatePinFromForm(pinId) {
             if (pinIndex !== -1) {
                 pinManager.pins[pinIndex] = data.pin;
             }
-            addPinsToMap();
-            updatePinsList();
-            closePinModal();
-            console.log('Pin updated successfully:', data.pin);
+            
+            // Safely update the map and UI
+            try {
+                addPinsToMap();
+                updatePinsList();
+                closePinModal();
+                console.log('Pin updated successfully:', data.pin);
+            } catch (mapError) {
+                console.error('[map.js]: Error updating map after pin update:', mapError);
+                // Still close the modal and update the list even if map update fails
+                updatePinsList();
+                closePinModal();
+                console.log('Pin updated successfully (map update failed):', data.pin);
+            }
         } else {
             const error = await response.json();
             alert('Failed to update pin: ' + error.error);
@@ -2290,7 +2338,7 @@ function updatePinsListDisplay(pins) {
         return `
             <div class="pin-item">
                 <div class="pin-icon">
-                    <i class="${pin.icon}" style="color: ${pin.color}; text-shadow: -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 1px 1px 0 white, 0 0 3px white;"></i>
+                    <i class="${pin.icon}" style="color: ${pin.color}; text-shadow: ${pin.category === 'homes' ? '-1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black, 0 0 3px black' : '-1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 1px 1px 0 white, 0 0 3px white'};"></i>
                 </div>
                 <div class="pin-info">
                     <span class="pin-name">${pin.name}</span>

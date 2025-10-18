@@ -7,7 +7,7 @@
    Map Container & Base Styles
    ============================================================================ */
 
-#map {
+   #map {
     width: 100%;
     height: 100vh;
     background: #1a1a1a;
@@ -52,9 +52,14 @@ body.map-page, html.map-page {
 }
 
 /* Label styling */
+/* Label markers - consolidated */
 .square-label-marker,
 .quadrant-label-marker {
     pointer-events: none !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 500 !important;
 }
 
 .square-label,
@@ -265,14 +270,9 @@ body.map-page, html.map-page {
    Labels & Markers
    ============================================================================ */
 
-.square-label-marker {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
 
 .square-label {
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-weight: bold;
     text-align: center;
     color: rgba(255, 255, 255, 0.9);
@@ -290,14 +290,9 @@ body.map-page, html.map-page {
     font-size: 32px; /* Default size for square labels (zoom level -2) */
 }
 
-.quadrant-label-marker {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
 
 .quadrant-label {
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-weight: bold;
     text-align: center;
     color: rgba(255, 255, 255, 0.7);
@@ -392,7 +387,7 @@ body.map-page, html.map-page {
 .ui-content {
     padding: 20px;
     color: white;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -698,11 +693,6 @@ body.map-page, html.map-page {
     letter-spacing: 0.5px;
 }
 
-.pin-actions {
-    display: flex;
-    gap: 4px;
-    flex-shrink: 0;
-}
 
 .pin-action-btn {
     display: flex;
@@ -2202,8 +2192,8 @@ body[data-theme="dark"] .leaflet-container {
 
 /* Category-specific selected states */
 .category-option[data-category="homes"].selected {
-    background: rgba(9, 169, 142, 0.15);
-    border-color: #EDAF12;
+    background: #c3ff001f;
+    border-color: #C5FF00;
     transform: translateY(-1px);
     box-shadow: 0 3px 8px rgba(9, 169, 142, 0.3);
 }
@@ -2248,7 +2238,7 @@ body[data-theme="dark"] .leaflet-container {
 
 /* Category-specific icon colors */
 .category-option[data-category="homes"].selected i {
-    color: #EDAF12;
+    color: #C5FF00;
     transform: scale(1.05);
 }
 
@@ -2284,7 +2274,7 @@ body[data-theme="dark"] .leaflet-container {
 
 /* Category-specific text colors */
 .category-option[data-category="homes"].selected span {
-    color: #EDAF12;
+    color: #C5FF00;
 }
 
 .category-option[data-category="farms"].selected span {
@@ -2307,7 +2297,7 @@ body[data-theme="dark"] .leaflet-container {
     right: 4px;
     width: 8px;
     height: 8px;
-    background: #EDAF12;
+    background: #C5FF00;
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.9);
     z-index: 2;
@@ -2610,7 +2600,7 @@ body[data-theme="dark"] .leaflet-container {
     position: fixed;
     top: 20px;
     left: 20px;
-    z-index: 10002;
+    z-index: 1002;
     opacity: 0;
     transform: translateX(-100%);
     transition: all 0.3s ease;
@@ -2699,7 +2689,7 @@ body[data-theme="dark"] .leaflet-container {
     position: fixed;
     top: 20px;
     right: 20px;
-    z-index: 10001;
+    z-index: 1001;
     max-width: 400px;
     opacity: 0;
     transform: translateX(100%);
@@ -2836,7 +2826,7 @@ body[data-theme="dark"] .leaflet-container {
     width: 90%;
     max-height: 80vh;
     overflow-y: auto;
-    z-index: 50000;
+    z-index: 1000;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(10px);
 }
@@ -3348,40 +3338,39 @@ body[data-theme="dark"] .leaflet-container {
 
 /* Pin styling - ensure pins appear on top of all other elements */
 .custom-pin {
-    z-index: 50000 !important;
+    z-index: 1000 !important;
     position: relative;
+    background: transparent !important;
+    border: none !important;
 }
 
 .custom-pin div {
-    z-index: 50000 !important;
+    z-index: 1000 !important;
     position: relative;
+    transition: all 0.2s ease;
+}
+
+.custom-pin:hover div {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+}
+
+/* House icons with black outline */
+.custom-pin div i.fa-home,
+.custom-pin div i.fas.fa-home {
+    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black, 0 0 3px black !important;
 }
 
 /* Ensure pin markers appear above all Leaflet layers */
 .leaflet-marker-pane {
-    z-index: 50000 !important;
-}
-
-.leaflet-marker-icon {
-    z-index: 50000 !important;
-}
-
-/* Override any existing z-index for labels to ensure pins are on top */
-.square-label-marker,
-.quadrant-label-marker {
     z-index: 1000 !important;
 }
 
-/* Ensure pins appear above all other map elements */
-.leaflet-marker-pane .custom-pin {
-    z-index: 50000 !important;
-    position: relative !important;
+.leaflet-marker-icon {
+    z-index: 1000 !important;
 }
 
-.leaflet-marker-pane .custom-pin div {
-    z-index: 50000 !important;
-    position: relative !important;
-}
+/* Override any existing z-index for labels to ensure pins are on top - consolidated above */
 
 /* ============================================================================
    PIN POPUP STYLING - ENHANCED
@@ -3694,7 +3683,7 @@ body[data-theme="dark"] .leaflet-container {
 .pin-popup .leaflet-popup-tip {
     background: linear-gradient(145deg, #1a202c 0%, #2d3748 100%) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    z-index: 60000 !important;
+    z-index: 1100 !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
@@ -3739,6 +3728,29 @@ body[data-theme="dark"] .leaflet-container {
     opacity: 1 !important;
 }
 
+/* Style the span inside the close button */
+.leaflet-popup-close-button span {
+    display: block !important;
+    line-height: 1 !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    pointer-events: none !important;
+}
+
+/* Ensure the close button link works properly */
+.leaflet-popup-close-button[role="button"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+    outline: none !important;
+}
+
+.leaflet-popup-close-button[role="button"]:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.8) !important;
+    outline-offset: 2px !important;
+}
+
 .leaflet-popup .pin-popup .leaflet-popup-close-button:active,
 .pin-popup .leaflet-popup-close-button:active,
 .leaflet-popup-close-button:active {
@@ -3748,16 +3760,18 @@ body[data-theme="dark"] .leaflet-container {
 
 /* Ensure popup container and pane have proper z-index */
 .leaflet-popup {
-    z-index: 60000 !important;
+    z-index: 1100 !important;
 }
 
 .leaflet-popup-pane {
-    z-index: 60000 !important;
+    z-index: 1100 !important;
 }
 
 /* Force close button visibility - Override any conflicting styles */
 .leaflet-popup-close-button {
-    display: block !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     visibility: visible !important;
     opacity: 1 !important;
     pointer-events: auto !important;
@@ -4090,7 +4104,7 @@ body[data-theme="dark"] .leaflet-container {
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: 20000;
+    z-index: 1200;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -4397,7 +4411,8 @@ body[data-theme="dark"] .leaflet-container {
     transform: translateY(0) !important;
 }
 
-.btn-cancel {
+/* Specific modal button overrides */
+.delete-confirmation-modal .btn-cancel {
     background: #4a5568 !important;
     color: #e2e8f0 !important;
     border: 1px solid #718096 !important;
@@ -4405,22 +4420,21 @@ body[data-theme="dark"] .leaflet-container {
     border-radius: 6px !important;
     font-weight: 500 !important;
     font-size: 14px !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
     min-width: 80px;
 }
 
-.btn-cancel:hover {
+.delete-confirmation-modal .btn-cancel:hover {
     background: #718096 !important;
     border-color: #a0aec0 !important;
     transform: translateY(-1px) !important;
 }
 
-.btn-cancel:active {
+.delete-confirmation-modal .btn-cancel:active {
     transform: translateY(0) !important;
 }
 
-/* Square Info Popup Styles */
+/* Square Info Popup Styles - COMMENTED OUT FOR NOW */
+/*
 .square-info-popup .leaflet-popup-content-wrapper {
     background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
     border: 2px solid #4a5568;
@@ -4549,13 +4563,6 @@ body[data-theme="dark"] .leaflet-container {
     font-size: 12px;
 }
 
-.close-btn {
-    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
-}
-
-.close-btn:hover {
-    background: linear-gradient(135deg, #c53030 0%, #9c2626 100%);
-}
 
 /* Popup arrow styling */
 .square-info-popup .leaflet-popup-tip {
@@ -4584,6 +4591,7 @@ body[data-theme="dark"] .leaflet-container {
         font-size: 13px;
     }
 }
+*/
 
 /* Draggable pin styles */
 .draggable-pin {
@@ -4599,19 +4607,4 @@ body[data-theme="dark"] .leaflet-container {
     opacity: 0.7;
     transform: scale(1.1);
     z-index: 10000;
-}
-
-/* Custom pin icon styles */
-.custom-pin {
-    background: transparent !important;
-    border: none !important;
-}
-
-.custom-pin div {
-    transition: all 0.2s ease;
-}
-
-.custom-pin:hover div {
-    transform: scale(1.1);
-    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
 }

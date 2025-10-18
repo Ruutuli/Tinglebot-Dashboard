@@ -3501,15 +3501,6 @@ html {
     border-bottom-color: var(--border-color);
   }
   
-  /* Close Modal Button */
-  .close-modal {
-    color: var(--text-secondary);
-  }
-  
-  .close-modal:hover {
-    background: var(--hover-bg);
-    color: var(--text-primary);
-  }
   
   /* Character Status Colors */
   .profile-character-status.blighted {

@@ -314,15 +314,31 @@ async function runMigrations() {
   try {
     logger.info('Running database migrations...');
     
-    // Migration: Update homes pins color from gold to cyan
+    // Migration: Update homes pins color to lime green
     const Pin = require('./models/PinModel');
-    const result = await Pin.updateMany(
+    
+    // Update from old gold color
+    const result1 = await Pin.updateMany(
       { category: 'homes', color: '#FFD700' },
-      { $set: { color: '#09A98E' } }
+      { $set: { color: '#C5FF00' } }
     );
     
-    if (result.modifiedCount > 0) {
-      logger.success(`Updated ${result.modifiedCount} homes pins to use cyan color`);
+    // Update from cyan color
+    const result2 = await Pin.updateMany(
+      { category: 'homes', color: '#09A98E' },
+      { $set: { color: '#C5FF00' } }
+    );
+    
+    // Update from previous house color
+    const result3 = await Pin.updateMany(
+      { category: 'homes', color: '#EDAF12' },
+      { $set: { color: '#C5FF00' } }
+    );
+    
+    const totalUpdated = result1.modifiedCount + result2.modifiedCount + result3.modifiedCount;
+    
+    if (totalUpdated > 0) {
+      logger.success(`Updated ${totalUpdated} homes pins to use lime green color #C5FF00`);
     } else {
       logger.info('No homes pins needed color update');
     }
@@ -9452,26 +9468,54 @@ app.post('/api/pins/migrate-house-colors', async (req, res) => {
       return res.status(403).json({ error: accessCheck.error });
     }
     
-    // Update all pins with category 'homes' and old color to new color
-    const result = await Pin.updateMany(
+    // Update all pins with category 'homes' to new lime green color
+    const result1 = await Pin.updateMany(
       { 
         category: 'homes',
-        color: '#09A98E'  // Old house color
+        color: '#09A98E'  // Old cyan color
       },
       { 
         $set: { 
-          color: '#EDAF12',  // New house color
+          color: '#C5FF00',  // New lime green color
           updatedAt: new Date()
         }
       }
     );
     
-    console.log(`[server.js]: ✅ Updated ${result.modifiedCount} house pins to new color #EDAF12`);
+    const result2 = await Pin.updateMany(
+      { 
+        category: 'homes',
+        color: '#EDAF12'  // Old house color
+      },
+      { 
+        $set: { 
+          color: '#C5FF00',  // New lime green color
+          updatedAt: new Date()
+        }
+      }
+    );
+    
+    const result3 = await Pin.updateMany(
+      { 
+        category: 'homes',
+        color: '#FFD700'  // Old gold color
+      },
+      { 
+        $set: { 
+          color: '#C5FF00',  // New lime green color
+          updatedAt: new Date()
+        }
+      }
+    );
+    
+    const totalUpdated = result1.modifiedCount + result2.modifiedCount + result3.modifiedCount;
+    
+    console.log(`[server.js]: ✅ Updated ${totalUpdated} house pins to new color #C5FF00`);
     
     res.json({ 
       success: true, 
-      message: `Successfully updated ${result.modifiedCount} house pins to new color`,
-      modifiedCount: result.modifiedCount
+      message: `Successfully updated ${totalUpdated} house pins to new color #C5FF00`,
+      modifiedCount: totalUpdated
     });
   } catch (error) {
     console.error('[server.js]: ❌ Error migrating house pin colors:', error);
