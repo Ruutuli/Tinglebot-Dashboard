@@ -507,7 +507,23 @@ function handleMapClick(event) {
     if (!mapEngine) return;
     
     const latlng = event.latlng;
-    const hitTest = mapEngine.hitTest(latlng.lng, latlng.lat);
+    const lat = latlng.lat;
+    const lng = latlng.lng;
+    
+    // Handle exploration mode
+    if (explorationMode && currentExplorationId) {
+        const activeMarker = document.querySelector('.marker-btn.active');
+        if (activeMarker) {
+            const markerType = activeMarker.classList.contains('ruins') ? 'ruins' : 
+                              activeMarker.classList.contains('monster') ? 'monster' : 'grotto';
+            addExplorationMarker(lat, lng, markerType);
+            return;
+        }
+    }
+    
+    
+    // Default behavior - show square info
+    const hitTest = mapEngine.hitTest(lng, lat);
     
     if (hitTest.square) {
         // Clicked square - show square information
@@ -645,6 +661,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // Initialize pins system
             initializePinsWhenReady();
+            
             
             // Map system ready
         } else {
@@ -980,6 +997,37 @@ function showPinCreationModal(lat, lng) {
 
                         <div class="form-section">
                             <h4 class="section-title">
+                                <i class="fas fa-image"></i>
+                                Pin Image
+                            </h4>
+                            <div class="form-group">
+                                <label for="pin-image">
+                                    Upload Image
+                                    <span class="optional-label">(Optional)</span>
+                                </label>
+                                <div class="image-upload-container">
+                                    <input type="file" id="pin-image" name="image" accept="image/*" 
+                                           class="image-upload-input" onchange="handleImageUpload(event)">
+                                    <div class="image-upload-area" onclick="document.getElementById('pin-image').click()">
+                                        <div class="upload-placeholder" id="upload-placeholder">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                            <p>Click to upload an image</p>
+                                            <small>JPEG, PNG, GIF, WebP (max 5MB)</small>
+                                        </div>
+                                        <div class="image-preview" id="image-preview" style="display: none;">
+                                            <img id="preview-img" src="" alt="Preview">
+                                            <button type="button" class="remove-image-btn" onclick="removeImagePreview()" title="Remove image">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="image-error" id="image-error"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4 class="section-title">
                                 <i class="fas fa-tags"></i>
                                 Appearance
                             </h4>
@@ -1053,12 +1101,124 @@ function showPinCreationModal(lat, lng) {
 // Get default color for pin category
 function getDefaultColorForCategory(category) {
     const colorMap = {
-        'homes': '#FFD700',      // Gold
+        'homes': '#09A98E',      // Cyan
         'farms': '#22C55E',      // Green
         'shops': '#FF8C00',      // Orange
         'points-of-interest': '#FF69B4'  // Pink
     };
     return colorMap[category] || '#00A3DA'; // Default blue if category not found
+}
+
+// Handle image upload and preview
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    const errorDiv = document.getElementById('image-error');
+    const previewDiv = document.getElementById('image-preview');
+    const placeholderDiv = document.getElementById('upload-placeholder');
+    const previewImg = document.getElementById('preview-img');
+    
+    // Clear previous errors
+    errorDiv.textContent = '';
+    errorDiv.style.display = 'none';
+    
+    if (!file) {
+        // No file selected, show placeholder
+        previewDiv.style.display = 'none';
+        placeholderDiv.style.display = 'block';
+        return;
+    }
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+        errorDiv.textContent = 'Please select a valid image file (JPEG, PNG, GIF, or WebP)';
+        errorDiv.style.display = 'block';
+        event.target.value = '';
+        return;
+    }
+    
+    // Validate file size (5MB = 5 * 1024 * 1024 bytes)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+        errorDiv.textContent = 'Image file is too large. Maximum size is 5MB.';
+        errorDiv.style.display = 'block';
+        event.target.value = '';
+        return;
+    }
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        previewImg.src = e.target.result;
+        previewDiv.style.display = 'block';
+        placeholderDiv.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+// Remove image preview
+function removeImagePreview() {
+    const fileInput = document.getElementById('pin-image');
+    const previewDiv = document.getElementById('image-preview');
+    const placeholderDiv = document.getElementById('upload-placeholder');
+    const errorDiv = document.getElementById('image-error');
+    
+    fileInput.value = '';
+    previewDiv.style.display = 'none';
+    placeholderDiv.style.display = 'block';
+    errorDiv.textContent = '';
+    errorDiv.style.display = 'none';
+}
+
+// Open image modal for viewing pin images
+function openImageModal(imageUrl, imageTitle) {
+    const modal = document.createElement('div');
+    modal.className = 'image-viewer-modal';
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="closeImageModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>${imageTitle}</h3>
+                    <button class="modal-close" onclick="closeImageModal()" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <img src="${imageUrl}" alt="${imageTitle}" class="image-viewer-img">
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add keyboard event listener
+    const handleKeydown = (e) => {
+        if (e.key === 'Escape') {
+            closeImageModal();
+        }
+    };
+    document.addEventListener('keydown', handleKeydown);
+    
+    // Store event listener for cleanup
+    modal._handleKeydown = handleKeydown;
+}
+
+// Close image modal
+function closeImageModal() {
+    const modal = document.querySelector('.image-viewer-modal');
+    if (modal) {
+        // Remove keyboard event listener
+        if (modal._handleKeydown) {
+            document.removeEventListener('keydown', modal._handleKeydown);
+        }
+        
+        // Add closing animation
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            modal.remove();
+        }, 300);
+    }
 }
 
 // Create pin from form data
@@ -1080,15 +1240,13 @@ async function createPinFromForm(lat, lng) {
         // Get default color based on category
         const defaultColor = getDefaultColorForCategory(selectedCategory);
         
-        const pinData = {
-            name: formData.get('name').trim(),
-            description: formData.get('description').trim(),
-            coordinates: { lat, lng },
-            category: selectedCategory,
-            icon: iconClass,
-            color: defaultColor,
-            isPublic: true
-        };
+        // Add coordinates to FormData
+        formData.append('coordinates', JSON.stringify({ lat, lng }));
+        // Update existing category with the selected one (in case form has different value)
+        formData.set('category', selectedCategory);
+        formData.set('icon', iconClass);
+        formData.set('color', defaultColor);
+        formData.set('isPublic', 'true');
         
         // Show loading state
         const createBtn = document.getElementById('create-btn');
@@ -1098,9 +1256,8 @@ async function createPinFromForm(lat, lng) {
         
         const response = await fetch('/api/pins', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify(pinData)
+            body: formData
         });
         
         if (response.ok) {
@@ -1402,7 +1559,7 @@ function addPinToMap(pin) {
     const canEdit = pinManager.isAuthenticated && pin.discordId === pinManager.currentUser?.discordId;
     // Get category display info
     const categoryInfo = {
-        'homes': { name: 'Homes', icon: '🏠', color: '#FFD700' },
+        'homes': { name: 'Homes', icon: '🏠', color: '#09A98E' },
         'farms': { name: 'Farms', icon: '🌱', color: '#22C55E' },
         'shops': { name: 'Shops', icon: '🏪', color: '#FF8C00' },
         'points-of-interest': { name: 'Points of Interest', icon: '⭐', color: '#FF69B4' }
@@ -1433,6 +1590,11 @@ function addPinToMap(pin) {
                     <div class="pin-popup-description">
                         <i class="fas fa-info-circle"></i>
                         <span>${pin.description}</span>
+                    </div>
+                    ` : ''}
+                    ${pin.imageUrl ? `
+                    <div class="pin-popup-image">
+                        <img src="${pin.imageUrl}" alt="${pin.name}" class="pin-popup-img" onclick="openImageModal('${pin.imageUrl}', '${pin.name}')">
                     </div>
                     ` : ''}
                     <div class="pin-popup-creator">
@@ -1981,6 +2143,206 @@ function demonstrateSquareMetadata() {
 
 // Make demonstration function available globally
 window.demonstrateSquareMetadata = demonstrateSquareMetadata;
+
+// ============================================================================
+// Exploration System
+// ============================================================================
+
+let currentExplorationId = null;
+let explorationMode = false;
+let pathDrawingMode = false;
+
+/**
+ * Toggle exploration mode (inline panel)
+ */
+function toggleExplorationMode() {
+    const panel = document.getElementById('exploration-panel');
+    if (panel) {
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+            console.log('[exploration] Exploration panel shown');
+        } else {
+            panel.style.display = 'none';
+            // Reset exploration state when hiding
+            explorationMode = false;
+            pathDrawingMode = false;
+            
+            // Re-enable map interactions
+            const map = mapEngine.getMap();
+            map.dragging.enable();
+            map.touchZoom.enable();
+            map.doubleClickZoom.enable();
+            map.scrollWheelZoom.enable();
+            map.boxZoom.enable();
+            map.keyboard.enable();
+            
+            console.log('[exploration] Exploration panel hidden');
+        }
+    }
+}
+
+/**
+ * Close exploration panel (legacy function - now handled by toggle)
+ */
+function closeExplorationPanel() {
+    // This function is now handled by toggleExplorationMode()
+    toggleExplorationMode();
+}
+
+/**
+ * Set exploration ID
+ */
+function setExplorationId() {
+    const input = document.querySelector('#exploration-id');
+    const id = input.value.trim();
+    
+    if (id && id.startsWith('E')) {
+        currentExplorationId = id;
+        document.getElementById('current-id-display').textContent = id;
+        explorationMode = true;
+        document.getElementById('exploration-mode-status').textContent = 'Exploration mode active - Click map to add markers';
+        console.log('[exploration] Set exploration ID:', id);
+    } else {
+        alert('Exploration ID must start with "E" (e.g., E123456)');
+    }
+}
+
+/**
+ * Set marker type for placement
+ */
+function setMarkerType(type) {
+    if (!currentExplorationId) {
+        alert('Please set an exploration ID first');
+        return;
+    }
+    
+    explorationMode = true;
+    pathDrawingMode = false;
+    
+    // Update button states
+    document.querySelectorAll('.marker-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`.marker-btn.${type}`).classList.add('active');
+    
+    document.getElementById('exploration-mode-status').textContent = `Click map to place ${type} marker`;
+    console.log('[exploration] Marker type set:', type);
+}
+
+/**
+ * Toggle path drawing mode
+ */
+function togglePathDrawing() {
+    if (!currentExplorationId) {
+        alert('Please set an exploration ID first');
+        return;
+    }
+    
+    pathDrawingMode = !pathDrawingMode;
+    explorationMode = false;
+    
+    // Reset drawing state
+    isDrawingPath = false;
+    currentPath = null;
+    pathDrawingStartPoint = null;
+    
+    // Update button states
+    document.querySelectorAll('.marker-btn').forEach(btn => btn.classList.remove('active'));
+    
+            if (pathDrawingMode) {
+                document.querySelector('.path-btn').classList.add('active');
+                document.getElementById('exploration-mode-status').textContent = 'Click once to start, move mouse to draw, click to end. Zoom in for smooth lines!';
+        
+        // Disable map dragging for path drawing
+        const map = mapEngine.getMap();
+        map.dragging.disable();
+        map.touchZoom.disable();
+        map.doubleClickZoom.disable();
+        map.scrollWheelZoom.disable();
+        map.boxZoom.disable();
+        map.keyboard.disable();
+    } else {
+        document.querySelector('.path-btn').classList.remove('active');
+        document.getElementById('exploration-mode-status').textContent = 'Path drawing mode off';
+        
+        // Re-enable map interactions
+        const map = mapEngine.getMap();
+        map.dragging.enable();
+        map.touchZoom.enable();
+        map.doubleClickZoom.enable();
+        map.scrollWheelZoom.enable();
+        map.boxZoom.enable();
+        map.keyboard.enable();
+    }
+}
+
+
+/**
+ * Add exploration marker
+ */
+function addExplorationMarker(lat, lng, type) {
+    if (!currentExplorationId) return;
+    
+    const iconUrls = {
+        ruins: 'https://storage.googleapis.com/tinglebot/maps/ruinrestcamproots2024.png',
+        monster: 'https://storage.googleapis.com/tinglebot/maps/monstercamproots2024.png',
+        grotto: 'https://storage.googleapis.com/tinglebot/maps/grottoiconroots2024.png'
+    };
+    
+    const icon = L.icon({
+        iconUrl: iconUrls[type],
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16]
+    });
+    
+    const marker = L.marker([lat, lng], { icon })
+        .addTo(mapEngine.getMap());
+    
+    // Create the popup content
+    const popupContent = document.createElement('div');
+    popupContent.className = 'exploration-popup';
+    popupContent.innerHTML = `
+        <h4>${type.charAt(0).toUpperCase() + type.slice(1)}</h4>
+        <p><strong>Exploration ID:</strong> ${currentExplorationId}</p>
+        <p><strong>Type:</strong> ${type}</p>
+        <button class="remove-btn">Remove</button>
+    `;
+    
+    // Set up the remove button
+    const removeBtn = popupContent.querySelector('.remove-btn');
+    removeBtn.onclick = () => {
+        mapEngine.getMap().removeLayer(marker);
+    };
+    
+    marker.bindPopup(popupContent);
+    
+    // Mark as exploration marker
+    marker._explorationMarker = true;
+    marker._explorationId = currentExplorationId;
+    marker._markerType = type;
+    
+    console.log('[exploration] Added marker:', { type, id: currentExplorationId, lat, lng });
+}
+
+/**
+ * Remove exploration marker
+ */
+function removeExplorationMarker(button) {
+    const marker = button._marker;
+    if (marker) {
+        mapEngine.getMap().removeLayer(marker);
+    }
+}
+
+
+
+// Make exploration functions globally accessible
+window.toggleExplorationMode = toggleExplorationMode;
+window.closeExplorationPanel = closeExplorationPanel;
+window.setExplorationId = setExplorationId;
+window.setMarkerType = setMarkerType;
+window.togglePathDrawing = togglePathDrawing;
+window.addExplorationMarker = addExplorationMarker;
+window.removeExplorationMarker = removeExplorationMarker;
 
 // Make square info functions globally accessible
 window.showSquareInfo = showSquareInfo;

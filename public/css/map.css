@@ -2202,10 +2202,10 @@ body[data-theme="dark"] .leaflet-container {
 
 /* Category-specific selected states */
 .category-option[data-category="homes"].selected {
-    background: rgba(255, 215, 0, 0.15);
-    border-color: #FFD700;
+    background: rgba(9, 169, 142, 0.15);
+    border-color: #09A98E;
     transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(255, 215, 0, 0.3);
+    box-shadow: 0 3px 8px rgba(9, 169, 142, 0.3);
 }
 
 .category-option[data-category="farms"].selected {
@@ -2248,7 +2248,7 @@ body[data-theme="dark"] .leaflet-container {
 
 /* Category-specific icon colors */
 .category-option[data-category="homes"].selected i {
-    color: #FFD700;
+    color: #09A98E;
     transform: scale(1.05);
 }
 
@@ -2284,7 +2284,7 @@ body[data-theme="dark"] .leaflet-container {
 
 /* Category-specific text colors */
 .category-option[data-category="homes"].selected span {
-    color: #FFD700;
+    color: #09A98E;
 }
 
 .category-option[data-category="farms"].selected span {
@@ -2307,7 +2307,7 @@ body[data-theme="dark"] .leaflet-container {
     right: 4px;
     width: 8px;
     height: 8px;
-    background: #FFD700;
+    background: #09A98E;
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.9);
     z-index: 2;
@@ -2818,6 +2818,515 @@ body[data-theme="dark"] .leaflet-container {
     font-style: italic;
 }
 
+
+/* ============================================================================
+   Exploration System Styles
+   ============================================================================ */
+
+.exploration-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(20, 20, 25, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 0;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 50000;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+.exploration-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 16px 16px 0 0;
+}
+
+.exploration-header h3 {
+    margin: 0;
+    color: #00A3DA;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.exploration-content {
+    padding: 25px;
+}
+
+.exploration-section {
+    margin-bottom: 25px;
+}
+
+.exploration-section:last-child {
+    margin-bottom: 0;
+}
+
+.exploration-section h4 {
+    margin: 0 0 15px 0;
+    color: #00A3DA;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.exploration-section label {
+    display: block;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+.exploration-section input {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.exploration-section input:focus {
+    outline: none;
+    border-color: #00A3DA;
+    box-shadow: 0 0 0 2px rgba(0, 163, 218, 0.2);
+}
+
+.exploration-section button {
+    background: linear-gradient(135deg, #00A3DA 0%, #0078A3 100%);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.exploration-section button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 163, 218, 0.3);
+}
+
+.marker-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.marker-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.marker-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.marker-btn.active {
+    background: rgba(0, 163, 218, 0.2);
+    border-color: #00A3DA;
+    box-shadow: 0 0 0 2px rgba(0, 163, 218, 0.3);
+}
+
+.marker-btn img {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 8px;
+    object-fit: contain;
+}
+
+.marker-btn span {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+
+.clear-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.clear-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.exploration-status {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 10px;
+}
+
+.exploration-status span {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+}
+
+.exploration-popup {
+    text-align: center;
+    min-width: 220px;
+    background: rgba(20, 20, 25, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+.exploration-popup h4 {
+    margin: 0 0 12px 0;
+    color: #00A3DA;
+    font-size: 18px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.exploration-popup p {
+    margin: 8px 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    font-weight: 500;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.remove-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 12px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.remove-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+/* Marker popup styling */
+.leaflet-popup-content-wrapper {
+    background: rgba(20, 20, 25, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+.leaflet-popup-tip {
+    background: rgba(20, 20, 25, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Exploration path styling - simple and clean */
+#exploration-svg-overlay path.exploration-path {
+    stroke-width: 20px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: none;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    vector-effect: non-scaling-stroke;
+}
+
+/* Explorer Tools Content */
+.explorer-tools-content {
+    padding: 0;
+}
+
+/* Exploration tip styling */
+.exploration-tip {
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 4px;
+    color: #ffc107;
+}
+
+.exploration-tip small {
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.exploration-tip i {
+    color: #ffc107;
+}
+
+/* Inline Exploration Panel */
+.exploration-panel-inline {
+    margin-top: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 15px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.exploration-panel-inline .exploration-content {
+    padding: 0;
+}
+
+.exploration-panel-inline .exploration-section {
+    margin-bottom: 15px;
+}
+
+.exploration-panel-inline .exploration-section:last-child {
+    margin-bottom: 0;
+}
+
+.exploration-panel-inline .exploration-section h4 {
+    margin: 0 0 10px 0;
+    color: #00A3DA;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.exploration-panel-inline .exploration-section label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.exploration-panel-inline .exploration-section input {
+    width: calc(100% - 24px);
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: white;
+    font-size: 13px;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+}
+
+.exploration-panel-inline .exploration-section input:focus {
+    outline: none;
+    border-color: #00A3DA;
+    box-shadow: 0 0 0 2px rgba(0, 163, 218, 0.2);
+}
+
+.exploration-panel-inline .exploration-section button {
+    background: linear-gradient(135deg, #00A3DA 0%, #0078A3 100%);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.exploration-panel-inline .exploration-section button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 163, 218, 0.3);
+}
+
+.exploration-panel-inline .marker-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.exploration-panel-inline .marker-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.exploration-panel-inline .marker-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.exploration-panel-inline .marker-btn.active {
+    background: rgba(0, 163, 218, 0.2);
+    border-color: #00A3DA;
+    box-shadow: 0 0 0 2px rgba(0, 163, 218, 0.3);
+}
+
+.exploration-panel-inline .marker-btn img {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 6px;
+    object-fit: contain;
+}
+
+.exploration-panel-inline .marker-btn span {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+
+.exploration-panel-inline .clear-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    font-size: 12px;
+}
+
+.exploration-panel-inline .clear-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.exploration-panel-inline .exploration-status {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 8px;
+}
+
+.exploration-panel-inline .exploration-status span {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+}
+
+.exploration-tool-item {
+    margin-bottom: 12px;
+}
+
+.exploration-tool-btn {
+    width: 100%;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #00A3DA 0%, #0078A3 100%);
+    border: 1px solid rgba(0, 163, 218, 0.3);
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+}
+
+.exploration-tool-btn:hover {
+    background: linear-gradient(135deg, #00A3DA 0%, #0078A3 100%);
+    border-color: #00A3DA;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 163, 218, 0.4);
+}
+
+.exploration-tool-btn i {
+    font-size: 18px;
+    color: white;
+}
+
+.tool-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tool-content span {
+    font-weight: 600;
+    font-size: 15px;
+    color: white;
+}
+
+.tool-content small {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 400;
+}
+
 /* ============================================================================
    Print Styles
    ============================================================================ */
@@ -3089,6 +3598,204 @@ body[data-theme="dark"] .leaflet-container {
     animation: modalSlideIn 0.3s ease-out;
     border: 1px solid #4a5568;
     position: relative;
+}
+
+/* Image Upload Styles */
+.image-upload-container {
+    margin-top: 8px;
+}
+
+.image-upload-input {
+    display: none;
+}
+
+.image-upload-area {
+    border: 2px dashed #4a5568;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #1a202c;
+    position: relative;
+}
+
+.image-upload-area:hover {
+    border-color: #00A3DA;
+    background: #2d3748;
+}
+
+.upload-placeholder {
+    color: #a0aec0;
+}
+
+.upload-placeholder i {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    display: block;
+    color: #718096;
+}
+
+.upload-placeholder p {
+    margin: 8px 0 4px 0;
+    font-weight: 500;
+}
+
+.upload-placeholder small {
+    color: #718096;
+    font-size: 0.875rem;
+}
+
+.image-preview {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+}
+
+.image-preview img {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.remove-image-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #e53e3e;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s ease;
+}
+
+.remove-image-btn:hover {
+    background: #c53030;
+}
+
+.image-error {
+    color: #e53e3e;
+    font-size: 0.875rem;
+    margin-top: 8px;
+    display: none;
+}
+
+.optional-label {
+    color: #718096;
+    font-weight: normal;
+    font-size: 0.875rem;
+}
+
+/* Pin Popup Image Styles */
+.pin-popup-image {
+    margin: 12px 0;
+    text-align: center;
+}
+
+.pin-popup-img {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 8px;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.pin-popup-img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: #00A3DA;
+}
+
+/* Image Viewer Modal Styles */
+.image-viewer-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.image-viewer-modal .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-viewer-modal .modal-content {
+    max-width: 90vw;
+    max-height: 90vh;
+    background: #2d3748;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    border: 1px solid #4a5568;
+    position: relative;
+}
+
+.image-viewer-modal .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #4a5568;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1a202c;
+}
+
+.image-viewer-modal .modal-header h3 {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 1.125rem;
+}
+
+.image-viewer-modal .modal-close {
+    background: none;
+    border: none;
+    color: #a0aec0;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.image-viewer-modal .modal-close:hover {
+    color: #e2e8f0;
+    background: #4a5568;
+}
+
+.image-viewer-modal .modal-body {
+    padding: 20px;
+    text-align: center;
+}
+
+.image-viewer-img {
+    max-width: 100%;
+    max-height: calc(90vh - 120px);
+    object-fit: contain;
+    border-radius: 8px;
 }
 
 @keyframes modalSlideIn {

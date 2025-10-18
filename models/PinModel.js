@@ -84,6 +84,12 @@ const pinSchema = new mongoose.Schema({
     default: true
   },
   
+  // Image attachment
+  imageUrl: {
+    type: String,
+    default: null
+  },
+  
   // Timestamps
   createdAt: {
     type: Date,

@@ -166,38 +166,49 @@
                     <i class="fas fa-chevron-down section-arrow"></i>
                 </h3>
                 <div class="section-content">
-                    <div class="feature-placeholder">
-                        <div class="feature-item">
-                            <i class="fas fa-map-pin"></i>
-                            <div class="feature-content">
-                                <span>Personal Pins</span>
-                                <small>Mark your discoveries</small>
-                            </div>
-                            <div class="feature-status">Soon</div>
+                    <div class="explorer-tools-content">
+                        <div class="exploration-tool-item">
+                            <button class="exploration-tool-btn" onclick="toggleExplorationMode()">
+                                <i class="fas fa-map-marked-alt"></i>
+                                <div class="tool-content">
+                                    <span>Exploration Mode</span>
+                                    <small>Add markers and paths</small>
+                                </div>
+                            </button>
                         </div>
-                        <div class="feature-item">
-                            <i class="fas fa-search-location"></i>
-                            <div class="feature-content">
-                                <span>Exploration Tracker</span>
-                                <small>Track visited areas</small>
+                        
+                        <!-- Exploration Panel (hidden by default) -->
+                        <div id="exploration-panel" class="exploration-panel-inline" style="display: none;">
+                            <div class="exploration-content">
+                                <div class="exploration-section">
+                                    <label for="exploration-id">Exploration ID:</label>
+                                    <input type="text" id="exploration-id" placeholder="E123456" maxlength="10">
+                                    <button onclick="setExplorationId()">Set ID</button>
+                                </div>
+                                <div class="exploration-section">
+                                    <h4>Add Markers</h4>
+                                    <div class="marker-buttons">
+                                        <button onclick="setMarkerType('ruins')" class="marker-btn ruins">
+                                            <img src="https://storage.googleapis.com/tinglebot/maps/ruinrestcamproots2024.png" alt="Ruins">
+                                            <span>Ruins</span>
+                                        </button>
+                                        <button onclick="setMarkerType('monster')" class="marker-btn monster">
+                                            <img src="https://storage.googleapis.com/tinglebot/maps/monstercamproots2024.png" alt="Monster">
+                                            <span>Monster</span>
+                                        </button>
+                                        <button onclick="setMarkerType('grotto')" class="marker-btn grotto">
+                                            <img src="https://storage.googleapis.com/tinglebot/maps/grottoiconroots2024.png" alt="Grotto">
+                                            <span>Grotto</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            <div class="exploration-section">
+                                <h4>Current ID: <span id="current-id-display">None</span></h4>
+                                <div class="exploration-status">
+                                    <span id="exploration-mode-status">Click map to add markers</span>
+                                </div>
                             </div>
-                            <div class="feature-status">Soon</div>
-                        </div>
-                        <div class="feature-item">
-                            <i class="fas fa-bookmark"></i>
-                            <div class="feature-content">
-                                <span>Saved Locations</span>
-                                <small>Bookmark important places</small>
                             </div>
-                            <div class="feature-status">Soon</div>
-                        </div>
-                        <div class="feature-item">
-                            <i class="fas fa-route"></i>
-                            <div class="feature-content">
-                                <span>Custom Routes</span>
-                                <small>Create your own paths</small>
-                            </div>
-                            <div class="feature-status">Soon</div>
                         </div>
                     </div>
                 </div>

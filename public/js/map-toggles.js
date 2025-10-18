@@ -62,27 +62,28 @@ class MapToggles {
                     { key: 'quadrant-labels', label: 'Quadrant Labels', icon: 'Q' }
                 ]
             },
-            {
-                title: 'Map Layers',
-                layers: [
-                    { key: 'paths', label: 'All Paths', icon: '🛤️' },
-                    { key: 'region-borders', label: 'Region Borders', icon: '🏞️' },
-                    { key: 'village-borders-inner', label: 'Village Borders (Inner)', icon: '🏘️' },
-                    { key: 'village-borders-outer', label: 'Village Borders (Outer)', icon: '🏘️' },
-                    { key: 'village-markers', label: 'Village Markers', icon: '🏛️' },
-                    { key: 'region-names', label: 'Region Names', icon: '🏷️' },
-                    { key: 'blight', label: 'Blight Areas', icon: '💀' },
-                    { key: 'fog', label: 'Fog Layer (Admin)', icon: '🌫️', adminOnly: true }
-                ]
-            },
-            {
-                title: 'Path Types',
-                layers: [
-                    { key: 'MAP_0003s_0000_PSL', label: 'Path of Scarlet Leaves', icon: '🍂' },
-                    { key: 'MAP_0003s_0001_LDW', label: 'Leaf Dew Way', icon: '🌿' },
-                    { key: 'MAP_0003s_0002_Other-Paths', label: 'Other Paths', icon: '🛣️' }
-                ]
-            }
+        {
+            title: 'Map Layers',
+            layers: [
+                { key: 'paths', label: 'All Paths', icon: '🛤️' },
+                { key: 'region-borders', label: 'Region Borders', icon: '🏞️' },
+                { key: 'village-borders-inner', label: 'Village Borders (Inner)', icon: '🏘️' },
+                { key: 'village-borders-outer', label: 'Village Borders (Outer)', icon: '🏘️' },
+                { key: 'village-markers', label: 'Village Markers', icon: '🏛️' },
+                { key: 'region-names', label: 'Region Names', icon: '🏷️' },
+                { key: 'blight', label: 'Blight Areas', icon: '💀' },
+                { key: 'fog', label: 'Fog Layer (Admin)', icon: '🌫️', adminOnly: true },
+                { key: 'exploration', label: 'Exploration Markers', icon: '🗺️' }
+            ]
+        },
+        {
+            title: 'Path Types',
+            layers: [
+                { key: 'MAP_0003s_0000_PSL', label: 'Path of Scarlet Leaves', icon: '🍂' },
+                { key: 'MAP_0003s_0001_LDW', label: 'Leaf Dew Way', icon: '🌿' },
+                { key: 'MAP_0003s_0002_Other-Paths', label: 'Other Paths', icon: '🛣️' }
+            ]
+        }
         ];
         
         layerGroups.forEach(group => {
@@ -97,10 +98,25 @@ class MapToggles {
             groupContainer.appendChild(groupTitle);
             
             // Group layers
-            group.layers.forEach(layer => {
+        group.layers.forEach(layer => {
+            if (layer.special === 'exploration') {
+                // Create special exploration button
+                const explorationBtn = document.createElement('button');
+                explorationBtn.className = 'exploration-tool-btn';
+                explorationBtn.innerHTML = `
+                    <span class="tool-icon">${layer.icon}</span>
+                    <span class="tool-label">${layer.label}</span>
+                `;
+                explorationBtn.onclick = () => {
+                    console.log('[exploration] Button clicked');
+                    showExplorationPanel();
+                };
+                groupContainer.appendChild(explorationBtn);
+            } else {
                 const toggleElement = this._createToggleElement(layer.key, layer.label, layer.icon, layer.adminOnly);
                 groupContainer.appendChild(toggleElement);
-            });
+            }
+        });
             
             this.toggleContainer.appendChild(groupContainer);
         });
@@ -249,9 +265,12 @@ class MapToggles {
                 this.layers.setQuadrantCrossVisibility(visible);
                 break;
                 
-            case 'fog':
-                this.layers.setFogVisibility(visible);
-                break;
+        case 'fog':
+            this.layers.setFogVisibility(visible);
+            break;
+        case 'exploration':
+            this.layers.setExplorationVisibility(visible);
+            break;
                 
             case 'paths':
             case 'region-borders':

@@ -109,6 +109,7 @@ const userSchema = new mongoose.Schema({
     lng: { type: Number, required: true, min: -180, max: 180 },
     icon: { type: String, default: 'fas fa-thumbtack' },
     color: { type: String, default: '#FFD700' },
+    imageUrl: { type: String, default: null },
     createdAt: { type: Date, default: Date.now }
   }]
 });
@@ -684,6 +685,7 @@ userSchema.methods.addMapPin = async function(pinData) {
     lng: pinData.lng,
     icon: pinData.icon || 'fas fa-thumbtack',
     color: pinData.color || '#FFD700',
+    imageUrl: pinData.imageUrl || null,
     createdAt: new Date()
   };
   

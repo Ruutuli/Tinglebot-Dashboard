@@ -308,6 +308,31 @@ const initializeCacheCleanup = () => {
 
 // ------------------- Section: Database Initialization -------------------
 
+// ------------------- Function: runMigrations -------------------
+// Runs database migrations to update existing data
+async function runMigrations() {
+  try {
+    logger.info('Running database migrations...');
+    
+    // Migration: Update homes pins color from gold to cyan
+    const Pin = require('./models/PinModel');
+    const result = await Pin.updateMany(
+      { category: 'homes', color: '#FFD700' },
+      { $set: { color: '#09A98E' } }
+    );
+    
+    if (result.modifiedCount > 0) {
+      logger.success(`Updated ${result.modifiedCount} homes pins to use cyan color`);
+    } else {
+      logger.info('No homes pins needed color update');
+    }
+    
+  } catch (error) {
+    logger.error('Migration failed:', error);
+    // Don't throw error - migrations shouldn't break server startup
+  }
+}
+
 // ------------------- Function: initializeDatabases -------------------
 // Establishes connections to all required databases using db.js methods
 async function initializeDatabases() {
@@ -337,6 +362,10 @@ async function initializeDatabases() {
     }
     
     logger.success('All databases connected successfully!');
+    
+    // Run database migrations
+    await runMigrations();
+    
     logger.divider();
     
   } catch (error) {   
@@ -423,6 +452,69 @@ const upload = multer({
     cb(null, true);
   }
 });
+
+// Multer configuration for pin image uploads to Google Cloud Storage
+const pinImageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { 
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Accept images only
+    if (!file.mimetype.startsWith('image/')) {
+      cb(new Error('Only image files are allowed!'), false);
+      return;
+    }
+    // Additional validation for image types
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      cb(new Error('Only JPEG, PNG, GIF, and WebP images are allowed!'), false);
+      return;
+    }
+    cb(null, true);
+  }
+});
+
+// Helper function to upload pin image to Google Cloud Storage
+async function uploadPinImageToGCS(file, pinId) {
+  try {
+    if (!file) return null;
+    
+    const bucket = require('./config/gcsService');
+    const fileName = `tinglebot/mapUserImages/${pinId}_${Date.now()}_${Math.round(Math.random() * 1E9)}`;
+    
+    const fileUpload = bucket.file(fileName);
+    
+    const stream = fileUpload.createWriteStream({
+      metadata: {
+        contentType: file.mimetype,
+        metadata: {
+          originalName: file.originalname,
+          uploadedAt: new Date().toISOString(),
+          pinId: pinId
+        }
+      }
+      // Removed public: true - using uniform bucket-level access instead of legacy ACLs
+    });
+    
+    return new Promise((resolve, reject) => {
+      stream.on('error', (error) => {
+        console.error('[server.js]: Error uploading pin image to GCS:', error);
+        reject(error);
+      });
+      
+      stream.on('finish', () => {
+        const publicUrl = `https://storage.googleapis.com/${process.env.GCP_BUCKET_NAME}/${fileName}`;
+        resolve(publicUrl);
+      });
+      
+      stream.end(file.buffer);
+    });
+  } catch (error) {
+    console.error('[server.js]: Error in uploadPinImageToGCS:', error);
+    throw error;
+  }
+}
 
 // HTTPS redirect middleware (only in production)
 if (isProduction) {
@@ -3834,7 +3926,7 @@ app.get('/api/map/user-pins', requireAuth, async (req, res) => {
 });
 
 // Create a new user pin
-app.post('/api/map/user-pins', requireAuth, async (req, res) => {
+app.post('/api/map/user-pins', pinImageUpload.single('image'), requireAuth, async (req, res) => {
   try {
     const userId = req.user.discordId;
     
@@ -3858,6 +3950,19 @@ app.post('/api/map/user-pins', requireAuth, async (req, res) => {
       icon: icon || 'fas fa-thumbtack',
       color: color || '#FFD700'
     };
+    
+    // Handle image upload if provided
+    if (req.file) {
+      try {
+        const imageUrl = await uploadPinImageToGCS(req.file, `user_pin_${Date.now()}`);
+        if (imageUrl) {
+          pinData.imageUrl = imageUrl;
+        }
+      } catch (uploadError) {
+        console.error('[server.js]: Error uploading user pin image:', uploadError);
+        // Don't fail the pin creation if image upload fails
+      }
+    }
     
     const result = await user.addMapPin(pinData);
     
@@ -9031,14 +9136,27 @@ app.get('/api/pins/user', async (req, res) => {
 
 // ------------------- POST /api/pins -------------------
 // Create a new pin
-app.post('/api/pins', async (req, res) => {
+app.post('/api/pins', pinImageUpload.single('image'), async (req, res) => {
   try {
     const accessCheck = await checkUserAccess(req);
     if (!accessCheck.hasAccess) {
       return res.status(403).json({ error: accessCheck.error });
     }
     
-    const { name, description, coordinates, icon, color, category, isPublic } = req.body;
+    const { name, description, icon, color, category, isPublic } = req.body;
+    
+    // Handle case where category might be an array (due to FormData duplication)
+    const normalizedCategory = Array.isArray(category) ? category[0] : category;
+    
+    // Parse coordinates from FormData (it's sent as a JSON string)
+    let coordinates;
+    try {
+      coordinates = JSON.parse(req.body.coordinates);
+    } catch (error) {
+      return res.status(400).json({ 
+        error: 'Invalid coordinates format' 
+      });
+    }
     
     // Validate required fields
     if (!name || !coordinates || !coordinates.lat || !coordinates.lng) {
@@ -9065,7 +9183,7 @@ app.post('/api/pins', async (req, res) => {
       },
       icon: icon || 'fas fa-home',
       color: color || '#00A3DA',
-      category: category || 'homes',
+      category: normalizedCategory || 'homes',
       isPublic: isPublic !== false, // Default to true
       createdBy: req.user._id,
       discordId: req.user.discordId
@@ -9085,6 +9203,20 @@ app.post('/api/pins', async (req, res) => {
     
     await pin.save();
     
+    // Upload image to Google Cloud Storage if provided
+    if (req.file) {
+      try {
+        const imageUrl = await uploadPinImageToGCS(req.file, pin._id);
+        if (imageUrl) {
+          pin.imageUrl = imageUrl;
+          await pin.save();
+        }
+      } catch (uploadError) {
+        console.error('[server.js]: Error uploading pin image:', uploadError);
+        // Don't fail the pin creation if image upload fails
+      }
+    }
+    
     // Populate creator info
     await pin.populate('creator', 'username avatar discriminator');
     
@@ -9101,7 +9233,7 @@ app.post('/api/pins', async (req, res) => {
 
 // ------------------- PUT /api/pins/:id -------------------
 // Update a pin (only by owner)
-app.put('/api/pins/:id', async (req, res) => {
+app.put('/api/pins/:id', pinImageUpload.single('image'), async (req, res) => {
   try {
     const accessCheck = await checkUserAccess(req);
     if (!accessCheck.hasAccess) {
@@ -9122,13 +9254,29 @@ app.put('/api/pins/:id', async (req, res) => {
     
     const { name, description, icon, color, category, isPublic } = req.body;
     
+    // Handle case where category might be an array (due to FormData duplication)
+    const normalizedCategory = Array.isArray(category) ? category[0] : category;
+    
     // Update fields if provided
     if (name !== undefined) pin.name = name.trim();
     if (description !== undefined) pin.description = description.trim();
     if (icon !== undefined) pin.icon = icon;
     if (color !== undefined) pin.color = color;
-    if (category !== undefined) pin.category = category;
+    if (category !== undefined) pin.category = normalizedCategory;
     if (isPublic !== undefined) pin.isPublic = isPublic;
+    
+    // Handle image upload if provided
+    if (req.file) {
+      try {
+        const imageUrl = await uploadPinImageToGCS(req.file, pin._id);
+        if (imageUrl) {
+          pin.imageUrl = imageUrl;
+        }
+      } catch (uploadError) {
+        console.error('[server.js]: Error uploading pin image:', uploadError);
+        // Don't fail the pin update if image upload fails
+      }
+    }
     
     pin.updatedAt = new Date();
     await pin.save();

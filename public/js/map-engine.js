@@ -237,7 +237,10 @@ class MapEngine {
             const zoom = this.map.getZoom();
             this.loader.onZoomChange(zoom);
             debouncedViewportChange();
+            
         });
+        
+        
         
         // Store handlers for cleanup
         this.eventHandlers.set('moveend', debouncedViewportChange);
@@ -270,6 +273,9 @@ class MapEngine {
         // Initial viewport loaded
     }
     
+    
+    
+
     /**
      * Get map instance
      * @returns {L.Map} Leaflet map instance
