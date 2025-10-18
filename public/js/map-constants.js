@@ -22,7 +22,7 @@ const MAP_CONFIG = {
     
     // Zoom Limits and Thresholds
     MIN_ZOOM: -3,            // Maximum zoom out level
-    MAX_ZOOM: 0,             // Maximum zoom in level
+    MAX_ZOOM: 1,             // Maximum zoom in level
     LABEL_ZOOM_SQUARES: -3,  // Show A1 labels at zoom -3
     LABEL_ZOOM_QUADS: -2,    // Show quadrant labels at zoom -2
     
@@ -62,6 +62,7 @@ const MAP_CONFIG = {
         'village-markers': true,
         'region-names': true,
         'blight': true,
+        'fog': true,  // Fog layer is visible by default for admins
         'MAP_0003s_0000_PSL': true,
         'MAP_0003s_0001_LDW': true,
         'MAP_0003s_0002_Other-Paths': true
@@ -125,6 +126,31 @@ MAP_CONFIG.getFallbackManifestURL = function() {
     return this.FALLBACK_MANIFEST_URL;
 };
 
+
+// Square Metadata Configuration
+MAP_CONFIG.SQUARE_METADATA = {
+    // Available regions
+    REGIONS: ['Eldin', 'Central Hyrule', 'Hebra', 'Lanayru', 'Faron', 'Gerudo'],
+    
+    // Available statuses
+    STATUSES: ['Explorable', 'Inaccessible'],
+    
+    // Status colors for UI
+    STATUS_COLORS: {
+        'Explorable': '#22C55E',      // Green
+        'Inaccessible': '#EF4444'     // Red
+    },
+    
+    // Region colors for UI
+    REGION_COLORS: {
+        'Eldin': '#EF4444',           // Red
+        'Central Hyrule': '#06B6D4',  // Cyan
+        'Hebra': '#8B5CF6',           // Purple
+        'Gerudo': '#F59E0B',          // Orange
+        'Faron': '#10B981',           // Green
+        'Lanayru': '#3B82F6'          // Blue
+    }
+};
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {

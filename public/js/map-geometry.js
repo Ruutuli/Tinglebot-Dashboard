@@ -296,6 +296,75 @@ class MapGeometry {
         }
         return ids;
     }
+    
+    /**
+     * Get square metadata (status and region)
+     * @param {string} squareId - Square ID like "E4"
+     * @returns {Object|null} Square metadata or null if not found
+     */
+    getSquareMetadata(squareId) {
+        // This will be populated by the MapEngine when metadata module is available
+        if (this.metadata) {
+            return this.metadata.getSquareMetadata(squareId);
+        }
+        return null;
+    }
+    
+    /**
+     * Check if a square is explorable
+     * @param {string} squareId - Square ID like "E4"
+     * @returns {boolean} True if square is explorable
+     */
+    isExplorable(squareId) {
+        if (this.metadata) {
+            return this.metadata.isExplorable(squareId);
+        }
+        return false;
+    }
+    
+    /**
+     * Check if a square is inaccessible
+     * @param {string} squareId - Square ID like "E4"
+     * @returns {boolean} True if square is inaccessible
+     */
+    isInaccessible(squareId) {
+        if (this.metadata) {
+            return this.metadata.isInaccessible(squareId);
+        }
+        return false;
+    }
+    
+    /**
+     * Get region for a square
+     * @param {string} squareId - Square ID like "E4"
+     * @returns {string|null} Region name or null if not found
+     */
+    getRegion(squareId) {
+        if (this.metadata) {
+            return this.metadata.getRegion(squareId);
+        }
+        return null;
+    }
+    
+    /**
+     * Get status for a square
+     * @param {string} squareId - Square ID like "E4"
+     * @returns {string|null} Status or null if not found
+     */
+    getStatus(squareId) {
+        if (this.metadata) {
+            return this.metadata.getStatus(squareId);
+        }
+        return null;
+    }
+    
+    /**
+     * Set metadata module reference
+     * @param {MapMetadata} metadata - Metadata module instance
+     */
+    setMetadata(metadata) {
+        this.metadata = metadata;
+    }
 }
 
 // Export for use in other modules

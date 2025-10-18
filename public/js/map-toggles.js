@@ -8,6 +8,7 @@ class MapToggles {
     constructor(config, layers) {
         this.config = config;
         this.layers = layers;
+        this.isAdmin = false;
         
         // Toggle state (defaults from config)
         this.state = { ...this.config.LAYER_DEFAULTS };
@@ -70,7 +71,8 @@ class MapToggles {
                     { key: 'village-borders-outer', label: 'Village Borders (Outer)', icon: '🏘️' },
                     { key: 'village-markers', label: 'Village Markers', icon: '🏛️' },
                     { key: 'region-names', label: 'Region Names', icon: '🏷️' },
-                    { key: 'blight', label: 'Blight Areas', icon: '💀' }
+                    { key: 'blight', label: 'Blight Areas', icon: '💀' },
+                    { key: 'fog', label: 'Fog Layer (Admin)', icon: '🌫️', adminOnly: true }
                 ]
             },
             {
@@ -96,7 +98,7 @@ class MapToggles {
             
             // Group layers
             group.layers.forEach(layer => {
-                const toggleElement = this._createToggleElement(layer.key, layer.label, layer.icon);
+                const toggleElement = this._createToggleElement(layer.key, layer.label, layer.icon, layer.adminOnly);
                 groupContainer.appendChild(toggleElement);
             });
             
@@ -109,10 +111,17 @@ class MapToggles {
      * @param {string} key - Toggle key
      * @param {string} label - Display label
      * @param {string} icon - Display icon
+     * @param {boolean} adminOnly - Whether this toggle is admin-only
      */
-    _createToggleElement(key, label, icon) {
+    _createToggleElement(key, label, icon, adminOnly = false) {
         const toggleDiv = document.createElement('div');
         toggleDiv.className = 'layer-toggle';
+        
+        // Check if this is an admin-only toggle and user is not admin
+        if (adminOnly && !this._isAdmin()) {
+            toggleDiv.style.display = 'none';
+            return toggleDiv;
+        }
         
         // Checkbox
         const checkbox = document.createElement('input');
@@ -195,6 +204,29 @@ class MapToggles {
     }
     
     /**
+     * Check if current user is admin
+     * @returns {boolean} True if user is admin
+     */
+    _isAdmin() {
+        // Check instance admin status first
+        if (this.isAdmin) {
+            return true;
+        }
+        
+        // Check if we have admin status from the global user data
+        if (typeof window !== 'undefined' && window.currentUser && window.currentUser.isAdmin) {
+            return true;
+        }
+        
+        // Check if we have admin status from the map system
+        if (typeof window !== 'undefined' && window.mapEngine && window.mapEngine.isAdmin) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
      * Apply toggle state to layers
      * @param {string} key - Toggle key
      * @param {boolean} visible - Visibility state
@@ -215,6 +247,10 @@ class MapToggles {
                 
             case 'quadrant-cross':
                 this.layers.setQuadrantCrossVisibility(visible);
+                break;
+                
+            case 'fog':
+                this.layers.setFogVisibility(visible);
                 break;
                 
             case 'paths':

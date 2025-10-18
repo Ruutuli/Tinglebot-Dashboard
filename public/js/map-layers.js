@@ -740,6 +740,28 @@ class MapLayers {
     }
     
     /**
+     * Set fog layer visibility (admin-only)
+     * @param {boolean} visible - Visibility state
+     */
+    setFogVisibility(visible) {
+        if (!this.map) {
+            console.warn('[layers] Map not initialized');
+            return;
+        }
+        
+        // Find all fog layer overlays and set their opacity
+        this.map.eachLayer(layer => {
+            if (layer._mapKey && layer._mapKey.includes('MAP_0001_hidden-areas')) {
+                if (visible) {
+                    layer.setOpacity(1);
+                } else {
+                    layer.setOpacity(0);
+                }
+            }
+        });
+    }
+    
+    /**
      * Set grid visibility
      * @param {boolean} visible - Visibility state
      */

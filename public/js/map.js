@@ -7,6 +7,34 @@
 let mapEngine = null;
 
 /**
+ * Check admin status and set it on the map engine
+ */
+async function checkAdminStatus() {
+    try {
+        const response = await fetch('/api/user', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const userData = await response.json();
+            if (userData.isAuthenticated && userData.isAdmin) {
+                // Set admin status on map engine
+                if (mapEngine) {
+                    mapEngine.isAdmin = true;
+                }
+                // Also set it globally for toggles to access
+                window.currentUser = userData.user;
+                window.currentUser.isAdmin = true;
+            }
+        }
+    } catch (error) {
+        console.error('[map] Error checking admin status:', error);
+    }
+}
+
+/**
  * Initialize the map system
  */
 async function initializeMap() {
@@ -36,6 +64,10 @@ async function initializeMap() {
         // Step 2: Create map engine with config
         updateLoadingProgress(25, 'Creating map engine...', 2);
         mapEngine = new MapEngine(MAP_CONFIG);
+        
+        // Check admin status and set it on the map engine
+        await checkAdminStatus();
+        
         await new Promise(resolve => setTimeout(resolve, 300));
         
         // Step 3: Initialize the engine
@@ -149,8 +181,12 @@ function handleGlobalKeydown(event) {
             break;
             
         case 'escape':
-            // Hide sidebar
-            hideSidebar();
+            // Hide sidebar or close square popup
+            if (window.currentSquarePopup) {
+                closeSquareInfo();
+            } else {
+                hideSidebar();
+            }
             break;
     }
 }
@@ -474,14 +510,114 @@ function handleMapClick(event) {
     const hitTest = mapEngine.hitTest(latlng.lng, latlng.lat);
     
     if (hitTest.square) {
-        // Clicked square
-        
-        if (hitTest.quadrant) {
-            // Clicked quadrant
-        }
-        
-        // You can add custom click handling here
-        // For example, show square information or jump to it
+        // Clicked square - show square information
+        showSquareInfo(hitTest.square, hitTest.quadrant);
+    }
+}
+
+/**
+ * Show square information including region and status
+ * @param {string} squareId - Square ID like "E4"
+ * @param {number} quadrant - Quadrant number (1-4) if clicked on quadrant
+ */
+function showSquareInfo(squareId, quadrant = null) {
+    if (!mapEngine) return;
+    
+    // Close any existing popup first
+    closeSquareInfo();
+    
+    // Get square metadata
+    const metadata = mapEngine.getSquareMetadata(squareId);
+    const region = mapEngine.getRegion(squareId);
+    const status = mapEngine.getStatus(squareId);
+    const isExplorable = mapEngine.isExplorable(squareId);
+    
+    // Create info popup
+    const popup = L.popup({
+        closeButton: true,
+        autoClose: false,
+        closeOnClick: false,
+        className: 'square-info-popup'
+    });
+    
+    // Get region and status colors from config
+    const regionColor = MAP_CONFIG.SQUARE_METADATA.REGION_COLORS[region] || '#666';
+    const statusColor = MAP_CONFIG.SQUARE_METADATA.STATUS_COLORS[status] || '#666';
+    
+    // Create popup content
+    const content = `
+        <div class="square-info-content">
+            <div class="square-info-header">
+                <h3 class="square-title">Square ${squareId}</h3>
+                ${quadrant ? `<div class="quadrant-info">Quadrant ${quadrant}</div>` : ''}
+            </div>
+            <div class="square-info-body">
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Region:
+                    </div>
+                    <div class="info-value" style="color: ${regionColor};">
+                        ${region || 'Unknown'}
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-${isExplorable ? 'check-circle' : 'times-circle'}"></i>
+                        Status:
+                    </div>
+                    <div class="info-value" style="color: ${statusColor};">
+                        ${status || 'Unknown'}
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-${isExplorable ? 'unlock' : 'lock'}"></i>
+                        Access:
+                    </div>
+                    <div class="info-value" style="color: ${isExplorable ? '#22C55E' : '#EF4444'};">
+                        ${isExplorable ? 'Explorable' : 'Inaccessible'}
+                    </div>
+                </div>
+            </div>
+            <div class="square-info-actions">
+                <button class="action-btn close-btn" onclick="closeSquareInfo()" title="Close popup">
+                    <i class="fas fa-times"></i>
+                    Close
+                </button>
+            </div>
+        </div>
+    `;
+    
+    popup.setContent(content);
+    
+    // Get square center coordinates
+    const squareCenter = mapEngine.geometry.getSquareCenter(squareId);
+    
+    // Open popup at square center
+    popup.setLatLng([squareCenter.y, squareCenter.x])
+         .openOn(mapEngine.getMap());
+    
+    // Store popup reference for closing
+    window.currentSquarePopup = popup;
+    
+    console.log(`[map] Square ${squareId} clicked - Region: ${region}, Status: ${status}, Explorable: ${isExplorable}`);
+}
+
+/**
+ * Close the current square info popup
+ */
+function closeSquareInfo() {
+    if (window.currentSquarePopup) {
+        // Close the popup
+        mapEngine.getMap().closePopup(window.currentSquarePopup);
+        // Clear the reference
+        window.currentSquarePopup = null;
+    }
+    
+    // Also close any other popups that might be open
+    if (mapEngine && mapEngine.getMap()) {
+        mapEngine.getMap().closePopup();
     }
 }
 
@@ -584,7 +720,22 @@ window.MapAPI = {
     jumpToCoordinates,
     getMapState,
     setMapToggleState,
-    getMapEngine: () => mapEngine
+    getMapEngine: () => mapEngine,
+    
+    // Square metadata API
+    getSquareMetadata: (squareId) => mapEngine ? mapEngine.getSquareMetadata(squareId) : null,
+    isExplorable: (squareId) => mapEngine ? mapEngine.isExplorable(squareId) : false,
+    isInaccessible: (squareId) => mapEngine ? mapEngine.isInaccessible(squareId) : false,
+    getRegion: (squareId) => mapEngine ? mapEngine.getRegion(squareId) : null,
+    getStatus: (squareId) => mapEngine ? mapEngine.getStatus(squareId) : null,
+    getSquaresByRegion: (region) => mapEngine ? mapEngine.getSquaresByRegion(region) : [],
+    getSquaresByStatus: (status) => mapEngine ? mapEngine.getSquaresByStatus(status) : [],
+    getRegions: () => mapEngine ? mapEngine.getRegions() : [],
+    getStatuses: () => mapEngine ? mapEngine.getStatuses() : [],
+    
+    // Square info popup functions
+    showSquareInfo: (squareId, quadrant) => showSquareInfo(squareId, quadrant),
+    closeSquareInfo: () => closeSquareInfo()
 };
 
 // Export for module systems
@@ -1539,32 +1690,6 @@ async function deletePin(pinId) {
     }
 }
 
-// Toggle pin manager
-function togglePinManager() {
-    const sidebar = document.querySelector('.side-ui');
-    const pinsSection = document.querySelector('.pins-section');
-    
-    if (sidebar && pinsSection) {
-        // Toggle the sidebar if it's collapsed
-        if (sidebar.classList.contains('collapsed')) {
-            sidebar.classList.remove('collapsed');
-        }
-        
-        // Expand the pins section if it's collapsed
-        if (pinsSection.classList.contains('collapsed')) {
-            pinsSection.classList.remove('collapsed');
-        }
-        
-        // Scroll to the pins section
-        pinsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        
-        // Focus on the search input
-        const searchInput = document.getElementById('pin-search-input');
-        if (searchInput) {
-            setTimeout(() => searchInput.focus(), 300);
-        }
-    }
-}
 
 // Show authentication required message
 function showPinAuthRequired() {
@@ -1773,8 +1898,90 @@ async function initializePinsWhenReady() {
     // Wait for map engine to be ready
     if (mapEngine && mapEngine.isInitialized) {
         await initializePinManager();
+        
+        // Test metadata integration
+        testMetadataIntegration();
     } else {
         // Wait a bit and try again
         setTimeout(initializePinsWhenReady, 1000);
     }
 }
+
+// Test metadata integration
+function testMetadataIntegration() {
+    if (!mapEngine) return;
+    
+    console.log('[map] Testing metadata integration...');
+    
+    // Test getting metadata for a known square
+    const testSquare = 'H5'; // Rudania
+    const metadata = mapEngine.getSquareMetadata(testSquare);
+    console.log(`[map] Metadata for ${testSquare}:`, metadata);
+    
+    // Test region and status
+    const region = mapEngine.getRegion(testSquare);
+    const status = mapEngine.getStatus(testSquare);
+    console.log(`[map] ${testSquare} - Region: ${region}, Status: ${status}`);
+    
+    // Test explorable check
+    const isExplorable = mapEngine.isExplorable(testSquare);
+    console.log(`[map] ${testSquare} is explorable: ${isExplorable}`);
+    
+    // Test getting all regions
+    const regions = mapEngine.getRegions();
+    console.log('[map] Available regions:', regions);
+    
+    // Test getting squares by region
+    const eldinSquares = mapEngine.getSquaresByRegion('Eldin');
+    console.log('[map] Eldin squares:', eldinSquares.length, 'squares');
+    
+    // Test getting squares by status
+    const explorableSquares = mapEngine.getSquaresByStatus('Explorable');
+    console.log('[map] Explorable squares:', explorableSquares.length, 'squares');
+    
+    console.log('[map] Metadata integration test complete!');
+}
+
+// Demonstration function for using square metadata
+function demonstrateSquareMetadata() {
+    if (!mapEngine) {
+        console.log('[map] Map engine not available');
+        return;
+    }
+    
+    console.log('=== Square Metadata Demonstration ===');
+    
+    // Example 1: Get metadata for a specific square
+    const squareId = 'H5'; // Rudania
+    const metadata = MapAPI.getSquareMetadata(squareId);
+    console.log(`Square ${squareId} metadata:`, metadata);
+    
+    // Example 2: Check if a square is explorable
+    const isExplorable = MapAPI.isExplorable(squareId);
+    console.log(`Square ${squareId} is explorable: ${isExplorable}`);
+    
+    // Example 3: Get region information
+    const region = MapAPI.getRegion(squareId);
+    console.log(`Square ${squareId} is in region: ${region}`);
+    
+    // Example 4: Get all squares in a region
+    const eldinSquares = MapAPI.getSquaresByRegion('Eldin');
+    console.log(`Eldin region has ${eldinSquares.length} squares:`, eldinSquares.slice(0, 5), '...');
+    
+    // Example 5: Get all explorable squares
+    const explorableSquares = MapAPI.getSquaresByStatus('Explorable');
+    console.log(`There are ${explorableSquares.length} explorable squares`);
+    
+    // Example 6: Get all available regions
+    const regions = MapAPI.getRegions();
+    console.log('Available regions:', regions);
+    
+    console.log('=== End Demonstration ===');
+}
+
+// Make demonstration function available globally
+window.demonstrateSquareMetadata = demonstrateSquareMetadata;
+
+// Make square info functions globally accessible
+window.showSquareInfo = showSquareInfo;
+window.closeSquareInfo = closeSquareInfo;

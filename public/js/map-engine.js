@@ -10,6 +10,7 @@ class MapEngine {
         this.map = null;
         this.isInitialized = false;
         this.isDestroyed = false;
+        this.isAdmin = false;
         
         // Module instances
         this.geometry = null;
@@ -85,6 +86,10 @@ class MapEngine {
     _createModules() {
         this.geometry = new MapGeometry(this.config);
         this.manifest = new MapManifest(this.config, this.geometry);
+        this.metadata = new MapMetadata();
+        
+        // Connect metadata to geometry module
+        this.geometry.setMetadata(this.metadata);
         
         // Modules created
     }
@@ -171,6 +176,11 @@ class MapEngine {
         
         // Create toggles after layers are initialized
         this.toggles = new MapToggles(this.config, this.layers);
+        
+        // Set admin status on toggles if available
+        if (this.isAdmin) {
+            this.toggles.isAdmin = true;
+        }
         
         // Create loader (needs all other modules)
         this.loader = new MapLoader(this.config, this.geometry, this.manifest, this.layers);
@@ -488,6 +498,85 @@ class MapEngine {
     }
     
     /**
+     * Get square metadata (status and region)
+     * @param {string} squareId - Square ID like "E4"
+     * @returns {Object|null} Square metadata or null if not found
+     */
+    getSquareMetadata(squareId) {
+        return this.geometry.getSquareMetadata(squareId);
+    }
+    
+    /**
+     * Check if a square is explorable
+     * @param {string} squareId - Square ID like "E4"
+     * @returns {boolean} True if square is explorable
+     */
+    isExplorable(squareId) {
+        return this.geometry.isExplorable(squareId);
+    }
+    
+    /**
+     * Check if a square is inaccessible
+     * @param {string} squareId - Square ID like "E4"
+     * @returns {boolean} True if square is inaccessible
+     */
+    isInaccessible(squareId) {
+        return this.geometry.isInaccessible(squareId);
+    }
+    
+    /**
+     * Get region for a square
+     * @param {string} squareId - Square ID like "E4"
+     * @returns {string|null} Region name or null if not found
+     */
+    getRegion(squareId) {
+        return this.geometry.getRegion(squareId);
+    }
+    
+    /**
+     * Get status for a square
+     * @param {string} squareId - Square ID like "E4"
+     * @returns {string|null} Status or null if not found
+     */
+    getStatus(squareId) {
+        return this.geometry.getStatus(squareId);
+    }
+    
+    /**
+     * Get all squares in a specific region
+     * @param {string} region - Region name
+     * @returns {Array<string>} Array of square IDs in the region
+     */
+    getSquaresByRegion(region) {
+        return this.metadata.getSquaresByRegion(region);
+    }
+    
+    /**
+     * Get all squares with a specific status
+     * @param {string} status - Status like "Explorable" or "Inaccessible"
+     * @returns {Array<string>} Array of square IDs with the status
+     */
+    getSquaresByStatus(status) {
+        return this.metadata.getSquaresByStatus(status);
+    }
+    
+    /**
+     * Get all available regions
+     * @returns {Array<string>} Array of unique region names
+     */
+    getRegions() {
+        return this.metadata.getRegions();
+    }
+    
+    /**
+     * Get all available statuses
+     * @returns {Array<string>} Array of unique status values
+     */
+    getStatuses() {
+        return this.metadata.getStatuses();
+    }
+    
+    /**
      * Force reload of current viewport
      */
     reloadViewport() {
@@ -588,6 +677,7 @@ class MapEngine {
         this.layers = null;
         this.loader = null;
         this.toggles = null;
+        this.metadata = null;
         
         this.isInitialized = false;
         this.isDestroyed = true;
