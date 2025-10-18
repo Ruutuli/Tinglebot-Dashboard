@@ -1559,7 +1559,7 @@ function addPinToMap(pin) {
     const canEdit = pinManager.isAuthenticated && pin.discordId === pinManager.currentUser?.discordId;
     // Get category display info
     const categoryInfo = {
-        'homes': { name: 'Homes', icon: '🏠', color: '#09A98E' },
+        'homes': { name: 'Homes', icon: '🏠', color: '#EDAF12' },
         'farms': { name: 'Farms', icon: '🌱', color: '#22C55E' },
         'shops': { name: 'Shops', icon: '🏪', color: '#FF8C00' },
         'points-of-interest': { name: 'Points of Interest', icon: '⭐', color: '#FF69B4' }
@@ -1685,43 +1685,125 @@ function showPinEditModal(pin) {
     const modal = document.createElement('div');
     modal.className = 'pin-creation-modal';
     modal.innerHTML = `
-        <div class="modal-overlay">
-            <div class="modal-content">
+        <div class="modal-overlay" onclick="closePinModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
                 <div class="modal-header">
-                    <h3>Edit Pin</h3>
-                    <button class="modal-close" onclick="closePinModal()">&times;</button>
+                    <div class="header-left">
+                        <div class="pin-icon-preview">
+                            <i class="${pin.icon || 'fas fa-map-marker-alt'}" id="preview-icon"></i>
+                        </div>
+                        <div class="header-text">
+                            <h3>Edit Pin</h3>
+                            <div class="coordinate-info">
+                                <i class="fas fa-crosshairs"></i>
+                                <span>Location: ${pin.coordinates?.lat?.toFixed(2) || '0.00'}, ${pin.coordinates?.lng?.toFixed(2) || '0.00'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="modal-close" onclick="closePinModal()" title="Close (Esc)" aria-label="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
                 <div class="modal-body">
-                    <form id="pin-edit-form">
-                        <div class="form-group">
-                            <label for="pin-name">Pin Name *</label>
-                            <input type="text" id="pin-name" name="name" required maxlength="100" value="${pin.name}">
+                    <form id="pin-edit-form" novalidate>
+                        <div class="form-section">
+                            <h4 class="section-title">
+                                <i class="fas fa-info-circle"></i>
+                                Basic Information
+                            </h4>
+                            <div class="form-group">
+                                <label for="pin-name">
+                                    Pin Name <span class="required">*</span>
+                                    <span class="char-count" id="name-count">${pin.name?.length || 0}/100</span>
+                                </label>
+                                <input type="text" id="pin-name" name="name" required maxlength="100" 
+                                       placeholder="Enter a descriptive name for this location" autocomplete="off" value="${pin.name || ''}">
+                                <div class="field-error" id="name-error"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="pin-description">
+                                    Description
+                                    <span class="char-count" id="desc-count">${pin.description?.length || 0}/500</span>
+                                </label>
+                                <textarea id="pin-description" name="description" maxlength="500" 
+                                          placeholder="Add details about this location (optional)" rows="3">${pin.description || ''}</textarea>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="pin-description">Description</label>
-                            <textarea id="pin-description" name="description" maxlength="500">${pin.description || ''}</textarea>
+
+                        <div class="form-section">
+                            <h4 class="section-title">
+                                <i class="fas fa-image"></i>
+                                Pin Image
+                            </h4>
+                            <div class="form-group">
+                                <label for="pin-image">
+                                    Upload Image
+                                    <span class="optional-label">(Optional)</span>
+                                </label>
+                                <div class="image-upload-container">
+                                    <input type="file" id="pin-image" name="image" accept="image/*" 
+                                           class="image-upload-input" onchange="handleImageUpload(event)">
+                                    <div class="image-upload-area" onclick="document.getElementById('pin-image').click()">
+                                        <div class="upload-placeholder" id="upload-placeholder" ${pin.imageUrl ? 'style="display: none;"' : ''}>
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                            <p>Click to upload an image</p>
+                                            <small>JPEG, PNG, GIF, WebP (max 5MB)</small>
+                                        </div>
+                                        <div class="image-preview" id="image-preview" ${pin.imageUrl ? '' : 'style="display: none;"'}>
+                                            <img id="preview-img" src="${pin.imageUrl || ''}" alt="Preview">
+                                            <button type="button" class="remove-image-btn" onclick="removeImagePreview()" title="Remove image">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="image-error" id="image-error"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="pin-category">Category</label>
-                            <select id="pin-category" name="category">
-                                <option value="homes" ${pin.category === 'homes' ? 'selected' : ''}>🏠 Homes</option>
-                                <option value="farms" ${pin.category === 'farms' ? 'selected' : ''}>🌱 Farms</option>
-                                <option value="shops" ${pin.category === 'shops' ? 'selected' : ''}>🏪 Shops</option>
-                                <option value="points-of-interest" ${pin.category === 'points-of-interest' ? 'selected' : ''}>📍 Points of Interest</option>
-                            </select>
+
+                        <div class="form-section">
+                            <h4 class="section-title">
+                                <i class="fas fa-tags"></i>
+                                Appearance
+                            </h4>
+                            <div class="appearance-grid">
+                                <div class="form-group category-group">
+                                    <label for="pin-category">Category</label>
+                                    <div class="category-selector">
+                                        <div class="category-option ${pin.category === 'homes' ? 'selected' : ''}" data-category="homes" data-icon="fas fa-home">
+                                            <input type="radio" name="category" value="homes" ${pin.category === 'homes' ? 'checked' : ''} style="display: none;">
+                                            <i class="fas fa-home"></i>
+                                            <span>Homes</span>
+                                        </div>
+                                        <div class="category-option ${pin.category === 'farms' ? 'selected' : ''}" data-category="farms" data-icon="fas fa-seedling">
+                                            <input type="radio" name="category" value="farms" ${pin.category === 'farms' ? 'checked' : ''} style="display: none;">
+                                            <i class="fas fa-seedling"></i>
+                                            <span>Farms</span>
+                                        </div>
+                                        <div class="category-option ${pin.category === 'shops' ? 'selected' : ''}" data-category="shops" data-icon="fas fa-store">
+                                            <input type="radio" name="category" value="shops" ${pin.category === 'shops' ? 'checked' : ''} style="display: none;">
+                                            <i class="fas fa-store"></i>
+                                            <span>Shops</span>
+                                        </div>
+                                        <div class="category-option ${pin.category === 'points-of-interest' ? 'selected' : ''}" data-category="points-of-interest" data-icon="fas fa-star">
+                                            <input type="radio" name="category" value="points-of-interest" ${pin.category === 'points-of-interest' ? 'checked' : ''} style="display: none;">
+                                            <i class="fas fa-star"></i>
+                                            <span>Points of Interest</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="pin-icon">Icon</label>
-                            <select id="pin-icon" name="icon">
-                                <option value="fas fa-home" ${pin.icon === 'fas fa-home' ? 'selected' : ''}>🏠 Home</option>
-                                <option value="fas fa-seedling" ${pin.icon === 'fas fa-seedling' ? 'selected' : ''}>🌱 Farm</option>
-                                <option value="fas fa-store" ${pin.icon === 'fas fa-store' ? 'selected' : ''}>🏪 Store</option>
-                                <option value="fas fa-star" ${pin.icon === 'fas fa-star' ? 'selected' : ''}>⭐ Point of Interest</option>
-                            </select>
-                        </div>
+
                         <div class="form-actions">
-                            <button type="button" onclick="closePinModal()" class="btn-cancel">Cancel</button>
-                            <button type="submit" class="btn-create">Update Pin</button>
+                            <button type="button" onclick="closePinModal()" class="btn-cancel">
+                                <i class="fas fa-times"></i>
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn-create" id="update-btn">
+                                <i class="fas fa-save"></i>
+                                Update Pin
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -1731,34 +1813,58 @@ function showPinEditModal(pin) {
     
     document.body.appendChild(modal);
     
+    // Setup form interactions
+    setupPinFormInteractions();
+    
     // Handle form submission
     document.getElementById('pin-edit-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         await updatePinFromForm(pin._id);
     });
+    
+    // Focus on name input
+    setTimeout(() => {
+        document.getElementById('pin-name').focus();
+    }, 100);
+    
+    // Handle keyboard shortcuts
+    document.addEventListener('keydown', handlePinModalKeyboard);
 }
 
 // Update pin from form data
 async function updatePinFromForm(pinId) {
     try {
-        const formData = new FormData(document.getElementById('pin-edit-form'));
-        const category = formData.get('category');
-        const defaultColor = getDefaultColorForCategory(category);
+        const form = document.getElementById('pin-edit-form');
+        const formData = new FormData(form);
         
-        const pinData = {
-            name: formData.get('name'),
-            description: formData.get('description'),
-            category: category,
-            icon: formData.get('icon'),
-            color: defaultColor,
-            isPublic: true
-        };
+        // Get the selected category and its corresponding icon
+        const selectedCategory = formData.get('category');
+        const categoryOption = document.querySelector(`.pin-creation-modal [data-category="${selectedCategory}"]`);
+        const iconClass = categoryOption ? categoryOption.dataset.icon : 'fas fa-home';
+        
+        console.log('Selected category:', selectedCategory);
+        console.log('Category option found:', categoryOption);
+        console.log('Icon class:', iconClass);
+        
+        // Get default color based on category
+        const defaultColor = getDefaultColorForCategory(selectedCategory);
+        
+        // Update form data with correct values
+        formData.set('category', selectedCategory);
+        formData.set('icon', iconClass);
+        formData.set('color', defaultColor);
+        formData.set('isPublic', 'true');
+        
+        // Show loading state
+        const updateBtn = document.getElementById('update-btn');
+        const originalText = updateBtn.innerHTML;
+        updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        updateBtn.disabled = true;
         
         const response = await fetch(`/api/pins/${pinId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify(pinData)
+            body: formData
         });
         
         if (response.ok) {
@@ -1769,7 +1875,7 @@ async function updatePinFromForm(pinId) {
                 pinManager.pins[pinIndex] = data.pin;
             }
             addPinsToMap();
-        updatePinsList();
+            updatePinsList();
             closePinModal();
             console.log('Pin updated successfully:', data.pin);
         } else {
@@ -1779,6 +1885,13 @@ async function updatePinFromForm(pinId) {
     } catch (error) {
         console.error('[map.js]: Error updating pin:', error);
         alert('Failed to update pin. Please try again.');
+    } finally {
+        // Restore button state
+        const updateBtn = document.getElementById('update-btn');
+        if (updateBtn) {
+            updateBtn.innerHTML = '<i class="fas fa-save"></i> Update Pin';
+            updateBtn.disabled = false;
+        }
     }
 }
 
@@ -2347,3 +2460,41 @@ window.removeExplorationMarker = removeExplorationMarker;
 // Make square info functions globally accessible
 window.showSquareInfo = showSquareInfo;
 window.closeSquareInfo = closeSquareInfo;
+
+/**
+ * Migrate existing house pins to new color
+ */
+async function migrateHousePinColors() {
+    try {
+        console.log('Starting house pin color migration...');
+        
+        const response = await fetch('/api/pins/migrate-house-colors', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('Migration successful:', result);
+            alert(`Successfully updated ${result.modifiedCount} house pins to new color!`);
+            
+            // Refresh the map to show updated pins
+            if (typeof loadPins === 'function') {
+                loadPins();
+            }
+        } else {
+            const error = await response.json();
+            console.error('Migration failed:', error);
+            alert('Failed to migrate house pin colors: ' + error.error);
+        }
+    } catch (error) {
+        console.error('Error during migration:', error);
+        alert('Error during migration: ' + error.message);
+    }
+}
+
+// Make migration function globally accessible
+window.migrateHousePinColors = migrateHousePinColors;

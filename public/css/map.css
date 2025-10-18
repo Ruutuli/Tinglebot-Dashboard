@@ -2203,7 +2203,7 @@ body[data-theme="dark"] .leaflet-container {
 /* Category-specific selected states */
 .category-option[data-category="homes"].selected {
     background: rgba(9, 169, 142, 0.15);
-    border-color: #09A98E;
+    border-color: #EDAF12;
     transform: translateY(-1px);
     box-shadow: 0 3px 8px rgba(9, 169, 142, 0.3);
 }
@@ -2248,7 +2248,7 @@ body[data-theme="dark"] .leaflet-container {
 
 /* Category-specific icon colors */
 .category-option[data-category="homes"].selected i {
-    color: #09A98E;
+    color: #EDAF12;
     transform: scale(1.05);
 }
 
@@ -2284,7 +2284,7 @@ body[data-theme="dark"] .leaflet-container {
 
 /* Category-specific text colors */
 .category-option[data-category="homes"].selected span {
-    color: #09A98E;
+    color: #EDAF12;
 }
 
 .category-option[data-category="farms"].selected span {
@@ -2307,7 +2307,7 @@ body[data-theme="dark"] .leaflet-container {
     right: 4px;
     width: 8px;
     height: 8px;
-    background: #09A98E;
+    background: #EDAF12;
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.9);
     z-index: 2;

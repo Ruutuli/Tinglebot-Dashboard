@@ -9376,6 +9376,42 @@ app.get('/api/pins/category/:category', async (req, res) => {
   }
 });
 
+// ------------------- POST /api/pins/migrate-house-colors -------------------
+// Migration endpoint to update existing house pins to new color
+app.post('/api/pins/migrate-house-colors', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    // Update all pins with category 'homes' and old color to new color
+    const result = await Pin.updateMany(
+      { 
+        category: 'homes',
+        color: '#09A98E'  // Old house color
+      },
+      { 
+        $set: { 
+          color: '#EDAF12',  // New house color
+          updatedAt: new Date()
+        }
+      }
+    );
+    
+    console.log(`[server.js]: ✅ Updated ${result.modifiedCount} house pins to new color #EDAF12`);
+    
+    res.json({ 
+      success: true, 
+      message: `Successfully updated ${result.modifiedCount} house pins to new color`,
+      modifiedCount: result.modifiedCount
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error migrating house pin colors:', error);
+    res.status(500).json({ error: 'Failed to migrate house pin colors' });
+  }
+});
+
 // Handle 404s - only for API routes
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
