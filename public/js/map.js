@@ -890,8 +890,11 @@ async function handleMapClickForPin(e) {
     
     // Get proper coordinates using hitTest
     const hitTest = mapEngine.hitTest(e.latlng.lng, e.latlng.lat);
-    const lat = hitTest.coordinates.y;  // Y coordinate in map system
-    const lng = hitTest.coordinates.x;  // X coordinate in map system
+    // Note: Leaflet uses [lat, lng] which maps to [y, x] in screen space
+    // But our coordinate system has Y=0 at bottom, Leaflet has Y=0 at top
+    // So we need to flip the Y coordinate: y_our = CANVAS_H - y_leaflet
+    const lat = mapEngine.config.CANVAS_H - e.latlng.lat;  // Flip Y coordinate
+    const lng = e.latlng.lng;  // X coordinate stays the same
     
     // Hide instruction tooltip
     hidePinPlacementTooltip();
@@ -1107,6 +1110,111 @@ function getDefaultColorForCategory(category) {
         'points-of-interest': '#FF69B4'  // Pink
     };
     return colorMap[category] || '#00A3DA'; // Default blue if category not found
+}
+
+// Get location information for a pin
+function getPinLocationInfo(gridLocation, coordinates) {
+    const info = {
+        region: null,
+        village: null,
+        quadrant: null
+    };
+    
+    // Get region from map engine
+    if (mapEngine && gridLocation) {
+        info.region = mapEngine.getRegion(gridLocation);
+    }
+    
+    // Village mapping based on grid location
+    const villageMap = {
+        'H8': 'Inariko',
+        'H5': 'Rudania', 
+        'F10': 'Vhintl'
+    };
+    
+    if (gridLocation && villageMap[gridLocation]) {
+        info.village = villageMap[gridLocation];
+    }
+    
+    // Calculate quadrant if coordinates are available
+    if (coordinates && mapEngine) {
+        console.log('[DEBUG] Pin coordinates:', coordinates);
+        
+        // Get square bounds for debugging
+        const squareBounds = mapEngine.geometry.getSquareBounds(gridLocation);
+        console.log('[DEBUG] Square bounds for', gridLocation, ':', squareBounds);
+        
+        // Calculate relative position within square
+        const relativeX = coordinates.lng - squareBounds.x0;
+        const relativeY = coordinates.lat - squareBounds.y0;
+        console.log('[DEBUG] Relative position within square:', { relativeX, relativeY });
+        console.log('[DEBUG] Square dimensions:', { width: mapEngine.geometry.config.SQUARE_W, height: mapEngine.geometry.config.SQUARE_H });
+        console.log('[DEBUG] Half dimensions:', { halfWidth: mapEngine.geometry.config.SQUARE_W / 2, halfHeight: mapEngine.geometry.config.SQUARE_H / 2 });
+        
+        // Manual quadrant calculation to debug
+        const isRight = relativeX >= mapEngine.geometry.config.SQUARE_W / 2;
+        const isBottom = relativeY >= mapEngine.geometry.config.SQUARE_H / 2;
+        console.log('[DEBUG] Manual calculation - isRight:', isRight, 'isBottom:', isBottom);
+        
+        // Try inverted Y-axis calculation
+        const isBottomInverted = relativeY < mapEngine.geometry.config.SQUARE_H / 2;
+        console.log('[DEBUG] Inverted Y calculation - isBottomInverted:', isBottomInverted);
+        
+        // Manual quadrant calculation with inverted Y
+        let manualQuadrant;
+        if (!isRight && !isBottomInverted) manualQuadrant = 1;
+        else if (isRight && !isBottomInverted) manualQuadrant = 2;
+        else if (!isRight && isBottomInverted) manualQuadrant = 3;
+        else manualQuadrant = 4;
+        console.log('[DEBUG] Manual quadrant with inverted Y:', manualQuadrant);
+        
+        // Try completely inverted coordinate system
+        const isLeftInverted = relativeX < mapEngine.geometry.config.SQUARE_W / 2;
+        const isTopInverted = relativeY < mapEngine.geometry.config.SQUARE_H / 2;
+        console.log('[DEBUG] Completely inverted - isLeftInverted:', isLeftInverted, 'isTopInverted:', isTopInverted);
+        
+        let invertedQuadrant;
+        if (isLeftInverted && isTopInverted) invertedQuadrant = 1;
+        else if (!isLeftInverted && isTopInverted) invertedQuadrant = 2;
+        else if (isLeftInverted && !isTopInverted) invertedQuadrant = 3;
+        else invertedQuadrant = 4;
+        console.log('[DEBUG] Completely inverted quadrant:', invertedQuadrant);
+        
+        // Try both coordinate orders since the map system might be different
+        let hitTest = mapEngine.hitTest(coordinates.lng, coordinates.lat);
+        console.log('[DEBUG] Hit test result (lng, lat):', hitTest);
+        console.log('[DEBUG] Expected square:', gridLocation, 'vs Hit test square:', hitTest.square);
+        
+        // If no quadrant found, try the reverse order
+        if (!hitTest.quadrant) {
+            hitTest = mapEngine.hitTest(coordinates.lat, coordinates.lng);
+            console.log('[DEBUG] Hit test result (lat, lng):', hitTest);
+            console.log('[DEBUG] Expected square:', gridLocation, 'vs Hit test square (reverse):', hitTest.square);
+        }
+        
+        // Also test the reverse coordinate order for square detection
+        const reverseHitTest = mapEngine.hitTest(coordinates.lat, coordinates.lng);
+        console.log('[DEBUG] Reverse hit test for square detection:', reverseHitTest);
+        
+        // Use the correct quadrant calculation
+        // This uses: isRight = relativeX >= halfWidth, isTop = relativeY < halfHeight
+        const isRightFinal = relativeX >= mapEngine.geometry.config.SQUARE_W / 2;
+        const isTopFinal = relativeY < mapEngine.geometry.config.SQUARE_H / 2;
+        
+        let correctedQuadrant;
+        if (!isRightFinal && isTopFinal) correctedQuadrant = 1;  // top-left
+        else if (isRightFinal && isTopFinal) correctedQuadrant = 2;  // top-right
+        else if (!isRightFinal && !isTopFinal) correctedQuadrant = 3;  // bottom-left
+        else correctedQuadrant = 4;  // bottom-right
+        
+        info.quadrant = `Q${correctedQuadrant}`;
+        console.log('[DEBUG] Corrected quadrant set to:', info.quadrant);
+        console.log('[DEBUG] Using correct quadrant calculation - isRightFinal:', isRightFinal, 'isTopFinal:', isTopFinal);
+    } else {
+        console.log('[DEBUG] Missing coordinates or mapEngine:', { coordinates, mapEngine: !!mapEngine });
+    }
+    
+    return info;
 }
 
 // Handle image upload and preview
@@ -1546,7 +1654,11 @@ function addPinToMap(pin) {
     if (!mapEngine || !mapEngine.getMap()) return;
     
     const map = mapEngine.getMap();
-    const marker = L.marker([pin.coordinates.lat, pin.coordinates.lng], {
+    // Convert from our coordinate system (Y=0 at bottom) to Leaflet (Y=0 at top)
+    const leafletLat = mapEngine.config.CANVAS_H - pin.coordinates.lat;
+    const leafletLng = pin.coordinates.lng;
+    
+    const marker = L.marker([leafletLat, leafletLng], {
         icon: L.divIcon({
             className: 'custom-pin',
             html: `<div style="color: ${pin.color}; font-size: 20px; text-shadow: -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 1px 1px 0 white, 0 0 3px white; z-index: 50000; position: relative;"><i class="${pin.icon}"></i></div>`,
@@ -1557,6 +1669,7 @@ function addPinToMap(pin) {
     
     // Create popup content with proper permissions
     const canEdit = pinManager.isAuthenticated && pin.discordId === pinManager.currentUser?.discordId;
+    
     // Get category display info
     const categoryInfo = {
         'homes': { name: 'Homes', icon: '🏠', color: '#EDAF12' },
@@ -1565,6 +1678,21 @@ function addPinToMap(pin) {
         'points-of-interest': { name: 'Points of Interest', icon: '⭐', color: '#FF69B4' }
     };
     const category = categoryInfo[pin.category] || { name: 'Unknown', icon: '📍', color: '#00A3DA' };
+
+    // Format creation date
+    const createdDate = pin.createdAt ? new Date(pin.createdAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    }) : 'Unknown';
+
+    // Get location information
+    console.log('[DEBUG] Pin data for location info:', {
+        gridLocation: pin.gridLocation,
+        coordinates: pin.coordinates,
+        pin: pin
+    });
+    const locationInfo = getPinLocationInfo(pin.gridLocation, pin.coordinates);
 
     const popupContent = `
         <div class="pin-popup">
@@ -1584,8 +1712,22 @@ function addPinToMap(pin) {
                 <div class="pin-popup-info">
                     <div class="pin-popup-location">
                         <i class="fas fa-map-marker-alt"></i>
-                        <span>${pin.gridLocation}</span>
+                        <span>Square: ${pin.gridLocation}${locationInfo.quadrant ? ' ' + locationInfo.quadrant : ''}</span>
                     </div>
+                    <div class="pin-popup-coordinates">
+                        <i class="fas fa-crosshairs"></i>
+                        <span>Coordinates: ${pin.coordinates?.lat?.toFixed(2) || 'N/A'}, ${pin.coordinates?.lng?.toFixed(2) || 'N/A'}</span>
+                    </div>
+                    <div class="pin-popup-region">
+                        <i class="fas fa-globe"></i>
+                        <span>Region: ${locationInfo.region || 'Unknown'}</span>
+                    </div>
+                    ${locationInfo.village ? `
+                    <div class="pin-popup-village">
+                        <i class="fas fa-home"></i>
+                        <span>Village: ${locationInfo.village}</span>
+                    </div>
+                    ` : ''}
                     ${pin.description ? `
                     <div class="pin-popup-description">
                         <i class="fas fa-info-circle"></i>
@@ -1594,23 +1736,27 @@ function addPinToMap(pin) {
                     ` : ''}
                     ${pin.imageUrl ? `
                     <div class="pin-popup-image">
-                        <img src="${pin.imageUrl}" alt="${pin.name}" class="pin-popup-img" onclick="openImageModal('${pin.imageUrl}', '${pin.name}')">
+                        <img src="${pin.imageUrl}" alt="${pin.name}" class="pin-popup-img" onclick="openImageModal('${pin.imageUrl}', '${pin.name}')" loading="lazy">
                     </div>
                     ` : ''}
                     <div class="pin-popup-creator">
                         <i class="fas fa-user"></i>
-                        <span>Created by: ${pin.creator?.username || 'Unknown'}</span>
+                        <span>Created by ${pin.creator?.username || 'Unknown'}</span>
+                    </div>
+                    <div class="pin-popup-date">
+                        <i class="fas fa-calendar"></i>
+                        <span>${createdDate}</span>
                     </div>
                 </div>
                 ${canEdit ? `
                 <div class="pin-popup-actions">
                     <button onclick="editPin('${pin._id}')" class="pin-popup-btn edit-btn">
                         <i class="fas fa-edit"></i>
-                        Edit
+                        <span>Edit</span>
                     </button>
                     <button onclick="deletePin('${pin._id}')" class="pin-popup-btn delete-btn">
                         <i class="fas fa-trash"></i>
-                        Delete
+                        <span>Delete</span>
                     </button>
                 </div>
                 ` : ''}
@@ -1618,7 +1764,18 @@ function addPinToMap(pin) {
         </div>
     `;
     
-    marker.bindPopup(popupContent);
+    // Configure popup options
+    const popupOptions = {
+        closeButton: true,
+        autoClose: true,
+        closeOnClick: true,
+        maxWidth: 400,
+        minWidth: 320,
+        keepInView: true
+    };
+    
+    marker.bindPopup(popupContent, popupOptions);
+    
     marker.addTo(map);
     marker.pinId = pin._id;
 }
@@ -1654,7 +1811,10 @@ function viewPin(pinId) {
     
     // Center map on pin
     if (mapEngine && mapEngine.getMap()) {
-        mapEngine.getMap().setView([pin.coordinates.lat, pin.coordinates.lng], Math.max(mapEngine.getMap().getZoom(), 10));
+        // Convert from our coordinate system (Y=0 at bottom) to Leaflet (Y=0 at top)
+        const leafletLat = mapEngine.config.CANVAS_H - pin.coordinates.lat;
+        const leafletLng = pin.coordinates.lng;
+        mapEngine.getMap().setView([leafletLat, leafletLng], Math.max(mapEngine.getMap().getZoom(), 10));
     }
     
     console.log('Viewing pin:', pin);
@@ -2086,7 +2246,15 @@ function filterPins() {
     
     const filteredPins = pinManager.pins.filter(pin => {
         // Check category filter
-        const categoryMatch = currentFilterCategory === 'all' || pin.category === currentFilterCategory;
+        let categoryMatch;
+        if (currentFilterCategory === 'all') {
+            categoryMatch = true;
+        } else if (currentFilterCategory === 'my-pins') {
+            // Filter for pins created by the current user
+            categoryMatch = pinManager.isAuthenticated && pin.discordId === pinManager.currentUser?.discordId;
+        } else {
+            categoryMatch = pin.category === currentFilterCategory;
+        }
         
         // Check search term
         const searchMatch = !currentSearchTerm || 

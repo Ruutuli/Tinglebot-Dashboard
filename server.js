@@ -9295,6 +9295,73 @@ app.put('/api/pins/:id', pinImageUpload.single('image'), async (req, res) => {
   }
 });
 
+// ------------------- PUT /api/pins/:id/coordinates -------------------
+// Update pin coordinates (only by owner)
+app.put('/api/pins/:id/coordinates', async (req, res) => {
+  try {
+    const accessCheck = await checkUserAccess(req);
+    if (!accessCheck.hasAccess) {
+      return res.status(403).json({ error: accessCheck.error });
+    }
+    
+    const pinId = req.params.id;
+    const pin = await Pin.findById(pinId);
+    
+    if (!pin) {
+      return res.status(404).json({ error: 'Pin not found' });
+    }
+    
+    // Check if user can modify this pin
+    if (!pin.canUserModify(req.user.discordId)) {
+      return res.status(403).json({ error: 'You can only edit your own pins' });
+    }
+    
+    const { coordinates } = req.body;
+    
+    // Validate coordinates
+    if (!coordinates || coordinates.lat === undefined || coordinates.lng === undefined) {
+      return res.status(400).json({ error: 'Coordinates are required' });
+    }
+    
+    // Validate coordinates (map uses custom coordinate system: 0-20000 for lat, 0-24000 for lng)
+    if (coordinates.lat < 0 || coordinates.lat > 20000 || 
+        coordinates.lng < 0 || coordinates.lng > 24000) {
+      return res.status(400).json({ 
+        error: 'Invalid coordinates' 
+      });
+    }
+    
+    // Update coordinates
+    pin.coordinates.lat = coordinates.lat;
+    pin.coordinates.lng = coordinates.lng;
+    
+    // Recalculate grid location
+    const { lat, lng } = pin.coordinates;
+    const colIndex = Math.floor(lng / 2400); // 0-9 for A-J
+    const rowIndex = Math.floor(lat / 1666); // 0-11 for 1-12
+    const clampedColIndex = Math.max(0, Math.min(9, colIndex));
+    const clampedRowIndex = Math.max(0, Math.min(11, rowIndex));
+    const col = String.fromCharCode(65 + clampedColIndex); // A-J
+    const row = clampedRowIndex + 1; // 1-12
+    pin.gridLocation = col + row;
+    
+    pin.updatedAt = new Date();
+    await pin.save();
+    
+    // Populate creator info
+    await pin.populate('creator', 'username avatar discriminator');
+    
+    res.json({ 
+      success: true, 
+      pin,
+      message: 'Pin coordinates updated successfully' 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error updating pin coordinates:', error);
+    res.status(500).json({ error: 'Failed to update pin coordinates' });
+  }
+});
+
 // ------------------- DELETE /api/pins/:id -------------------
 // Delete a pin (only by owner)
 app.delete('/api/pins/:id', async (req, res) => {
