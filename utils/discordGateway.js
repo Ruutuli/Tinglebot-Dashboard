@@ -62,7 +62,6 @@ class DiscordGateway {
     
     try {
       await MessageTracking.create(messageData);
-      logger.debug(`Tracked message from ${message.author.username} in ${message.guild.name}`);
     } catch (error) {
       // Ignore duplicate key errors (message already tracked)
       if (error.code !== 11000) {

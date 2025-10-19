@@ -7746,7 +7746,7 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
     const dailyResetDate = user.blupeeHunt.dailyResetDate ? new Date(user.blupeeHunt.dailyResetDate) : null;
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
-    if (!dailyResetDate || dailyResetDate.getTime() !== today.getTime()) {
+    if (!dailyResetDate || dailyResetDate.getDate() !== today.getDate() || dailyResetDate.getMonth() !== today.getMonth() || dailyResetDate.getFullYear() !== today.getFullYear()) {
       console.log(`[server.js]: Resetting daily count for user ${user.username || user.discordId} - was ${user.blupeeHunt.dailyCount}, reset date was ${dailyResetDate}, new date is ${today}`);
       user.blupeeHunt.dailyCount = 0;
       user.blupeeHunt.dailyResetDate = today;
@@ -7902,7 +7902,7 @@ app.get('/api/blupee/status', requireAuth, async (req, res) => {
     const dailyResetDate = user.blupeeHunt.dailyResetDate ? new Date(user.blupeeHunt.dailyResetDate) : null;
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
-    if (!dailyResetDate || dailyResetDate.getTime() !== today.getTime()) {
+    if (!dailyResetDate || dailyResetDate.getDate() !== today.getDate() || dailyResetDate.getMonth() !== today.getMonth() || dailyResetDate.getFullYear() !== today.getFullYear()) {
       console.log(`[server.js]: STATUS - Resetting daily count for user ${user.username || user.discordId} - was ${user.blupeeHunt.dailyCount}, reset date was ${dailyResetDate}, new date is ${today}`);
       user.blupeeHunt.dailyCount = 0;
       user.blupeeHunt.dailyResetDate = today;

@@ -131,14 +131,11 @@ async function checkBlupeeStatus() {
     
     // Check if user can claim (daily limit and cooldown)
     if (status.canClaim) {
-      console.log(`[blupee.js]: User can catch blupees - Daily: ${status.dailyCount}/${status.dailyLimit} - attempting spawn`);
       scheduleBlupeeSpawn();
     } else if (status.dailyLimitReached) {
       const hoursRemaining = Math.floor(status.resetIn / (60 * 60 * 1000));
       const minutesRemaining = Math.floor((status.resetIn % (60 * 60 * 1000)) / (60 * 1000));
-      console.log(`[blupee.js]: Daily limit reached (${status.dailyCount}/${status.dailyLimit}) - Resets in ${hoursRemaining}h ${minutesRemaining}m`);
     } else {
-      console.log(`[blupee.js]: Blupee on cooldown - ${Math.floor(status.cooldownRemaining / 60)}m ${status.cooldownRemaining % 60}s remaining`);
     }
   } catch (error) {
     console.error('[blupee.js]: Error checking blupee status:', error);
