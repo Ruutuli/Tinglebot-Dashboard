@@ -1808,7 +1808,7 @@ function addPinToMap(pin) {
     marker.bindTooltip(pin.name, {
         permanent: false,
         direction: 'top',
-        offset: [0, -10],
+        offset: [0, -15],
         opacity: 0.9,
         className: 'pin-tooltip'
     });
