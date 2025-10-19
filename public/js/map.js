@@ -1804,6 +1804,15 @@ function addPinToMap(pin) {
     
     marker.bindPopup(popupContent, popupOptions);
     
+    // Add tooltip for hover functionality to show pin name
+    marker.bindTooltip(pin.name, {
+        permanent: false,
+        direction: 'top',
+        offset: [0, -10],
+        opacity: 0.9,
+        className: 'pin-tooltip'
+    });
+    
     marker.addTo(map);
     marker.pinId = pin._id;
     } catch (error) {

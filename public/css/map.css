@@ -2684,6 +2684,24 @@ body[data-theme="dark"] .leaflet-container {
     color: #EF4444;
 }
 
+/* Pin Hover Tooltips */
+.leaflet-tooltip.pin-tooltip {
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    text-shadow: none;
+}
+
+.leaflet-tooltip.pin-tooltip::before {
+    border-top-color: rgba(0, 0, 0, 0.8);
+}
+
 /* Notifications */
 .pin-notification {
     position: fixed;
