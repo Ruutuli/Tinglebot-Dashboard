@@ -87,12 +87,12 @@ const isLocalhost = process.env.FORCE_LOCALHOST === 'true' ||
                    process.env.NODE_ENV === 'development' ||
                    process.env.USE_LOCALHOST === 'true';
 
-console.log('[server.js]: Environment Detection:');
-console.log('  - NODE_ENV:', process.env.NODE_ENV);
-console.log('  - RAILWAY_ENVIRONMENT:', process.env.RAILWAY_ENVIRONMENT);
-console.log('  - FORCE_LOCALHOST:', process.env.FORCE_LOCALHOST);
-console.log('  - isProduction:', isProduction);
-console.log('  - isLocalhost:', isLocalhost);
+logger.info('Environment Detection:', 'server.js');
+logger.debug('NODE_ENV: ' + process.env.NODE_ENV, null, 'server.js');
+logger.debug('RAILWAY_ENVIRONMENT: ' + process.env.RAILWAY_ENVIRONMENT, null, 'server.js');
+logger.debug('FORCE_LOCALHOST: ' + process.env.FORCE_LOCALHOST, null, 'server.js');
+logger.debug('isProduction: ' + isProduction, null, 'server.js');
+logger.debug('isLocalhost: ' + isLocalhost, null, 'server.js');
 
 // Trust proxy for production environments (Railway, etc.)
 if (isProduction) {
@@ -114,20 +114,20 @@ try {
   });
   
   sessionStore.on('error', (error) => {
-    console.error('Session store error:', error);
+    logger.error('Session store error', error, 'server.js');
   });
   
   sessionStore.on('connected', () => {
-    console.log('Session store connected to MongoDB');
+    logger.database('Session store connected to MongoDB', 'server.js');
   });
   
-  console.log('Session store created successfully');
-  console.log('Session store type:', typeof sessionStore);
-  console.log('Session store is null:', sessionStore === null);
+  logger.database('Session store created successfully', 'server.js');
+  logger.debug('Session store type: ' + typeof sessionStore, null, 'server.js');
+  logger.debug('Session store is null: ' + (sessionStore === null), null, 'server.js');
 } catch (error) {
-  console.error('Failed to create session store:', error);
+  logger.error('Failed to create session store', error, 'server.js');
   // Fallback to memory store (not recommended for production but allows server to start)
-  console.log('Using memory store as fallback for development');
+  logger.warn('Using memory store as fallback for development', 'server.js');
   sessionStore = null;
 }
 
@@ -150,7 +150,7 @@ app.use(session({
 app.use((req, res, next) => {
   // Only log session issues, not every request
   if (req.path.includes('/auth/') && !req.session) {
-    console.log('[server.js]: ⚠️ No session found for auth request:', req.path);
+    logger.warn('No session found for auth request: ' + req.path, 'server.js');
   }
   next();
 });
@@ -180,11 +180,11 @@ const callbackURL = (isProduction && !isLocalhost)
   ? `https://${domain}/auth/discord/callback`
   : `http://localhost:5001/auth/discord/callback`;
 
-console.log('[server.js]: Discord OAuth Configuration:');
-console.log('  - isProduction:', isProduction);
-console.log('  - domain:', domain);
-console.log('  - callbackURL:', callbackURL);
-console.log('  - DISCORD_CALLBACK_URL env:', process.env.DISCORD_CALLBACK_URL);
+logger.info('Discord OAuth Configuration:', 'server.js');
+logger.debug('isProduction: ' + isProduction, null, 'server.js');
+logger.debug('domain: ' + domain, null, 'server.js');
+logger.debug('callbackURL: ' + callbackURL, null, 'server.js');
+logger.debug('DISCORD_CALLBACK_URL env: ' + process.env.DISCORD_CALLBACK_URL, null, 'server.js');
 
 
 
@@ -312,7 +312,7 @@ const initializeCacheCleanup = () => {
 // Runs database migrations to update existing data
 async function runMigrations() {
   try {
-    logger.info('Running database migrations...');
+    logger.info('Running database migrations...', 'server.js');
     
     // Migration: Update homes pins color to lime green
     const Pin = require('./models/PinModel');
@@ -338,9 +338,9 @@ async function runMigrations() {
     const totalUpdated = result1.modifiedCount + result2.modifiedCount + result3.modifiedCount;
     
     if (totalUpdated > 0) {
-      logger.success(`Updated ${totalUpdated} homes pins to use lime green color #C5FF00`);
+      logger.success(`Updated ${totalUpdated} homes pins to use lime green color #C5FF00`, 'server.js');
     } else {
-      logger.info('No homes pins needed color update');
+      logger.info('No homes pins needed color update', 'server.js');
     }
     
   } catch (error) {
@@ -357,27 +357,27 @@ async function initializeDatabases() {
     
     // Connect to Tinglebot database using db.js method
     await connectToTinglebot();
-    logger.database('Connected to Tinglebot database');
+    logger.database('Connected to Tinglebot database', 'server.js');
     
     // Connect to Inventories database using db.js method
     try {
       inventoriesConnection = await connectToInventories();
-      logger.database('Connected to Inventories database');
+      logger.database('Connected to Inventories database', 'server.js');
     } catch (inventoryError) {
-      logger.warn('Failed to connect to Inventories database: ' + inventoryError.message);
+      logger.warn('Failed to connect to Inventories database: ' + inventoryError.message, 'server.js');
       // Continue without inventories connection - spirit orb counting will fail gracefully
     }
     
     // Connect to Vending database using db.js method
     try {
       vendingConnection = await connectToVending();
-      logger.database('Connected to Vending database');
+      logger.database('Connected to Vending database', 'server.js');
     } catch (vendingError) {
-      logger.warn('Failed to connect to Vending database: ' + vendingError.message);
+      logger.warn('Failed to connect to Vending database: ' + vendingError.message, 'server.js');
       // Continue without vending connection
     }
     
-    logger.success('All databases connected successfully!');
+    logger.success('All databases connected successfully!', 'server.js');
     
     // Run database migrations
     await runMigrations();
@@ -977,23 +977,23 @@ app.get('/auth/discord', (req, res, next) => {
   // Store the return URL in session if provided
   if (req.query.returnTo) {
     req.session.returnTo = req.query.returnTo;
-    console.log('[server.js]: Storing returnTo in session:', req.query.returnTo);
-    console.log('[server.js]: Session ID:', req.session.id);
+    logger.debug('Storing returnTo in session: ' + req.query.returnTo, null, 'server.js');
+    logger.debug('Session ID: ' + req.session.id, null, 'server.js');
     
     // Save session explicitly and wait for it to complete
     req.session.save((err) => {
       if (err) {
-        console.error('[server.js]: Error saving session:', err);
+        logger.error('Error saving session', err, 'server.js');
         return next(err);
       }
-      console.log('[server.js]: Session saved successfully');
+      logger.debug('Session saved successfully', null, 'server.js');
       
       // Now proceed with Discord authentication
-      console.log('[server.js]: Initiating Discord auth with callback URL:', callbackURL);
+      logger.debug('Initiating Discord auth with callback URL: ' + callbackURL, null, 'server.js');
       passport.authenticate('discord')(req, res, next);
     });
   } else {
-    console.log('[server.js]: Initiating Discord auth with callback URL:', callbackURL);
+    logger.debug('Initiating Discord auth with callback URL: ' + callbackURL, null, 'server.js');
     passport.authenticate('discord')(req, res, next);
   }
 });
@@ -1006,29 +1006,29 @@ app.get('/auth/discord/callback',
     failureFlash: true 
   }), 
   (req, res) => {
-    logger.success(`User authenticated: ${req.user?.username} (${req.user?.discordId})`);
+    logger.success(`User authenticated: ${req.user?.username} (${req.user?.discordId})`, 'server.js');
     
     // Check if there's a returnTo parameter in the session or query
     const returnTo = req.session.returnTo || req.query.returnTo;
     
-    console.log('[server.js]: Discord callback redirect:');
-    console.log('  - returnTo from session:', req.session.returnTo);
-    console.log('  - returnTo from query:', req.query.returnTo);
-    console.log('  - final returnTo:', returnTo);
-    console.log('  - session ID:', req.session.id);
-    console.log('  - passport user:', req.session.passport?.user);
-    console.log('  - session exists:', !!req.session);
-    console.log('  - session keys:', Object.keys(req.session || {}));
+    logger.debug('Discord callback redirect:', null, 'server.js');
+    logger.debug('returnTo from session: ' + req.session.returnTo, null, 'server.js');
+    logger.debug('returnTo from query: ' + req.query.returnTo, null, 'server.js');
+    logger.debug('final returnTo: ' + returnTo, null, 'server.js');
+    logger.debug('session ID: ' + req.session.id, null, 'server.js');
+    logger.debug('passport user: ' + req.session.passport?.user, null, 'server.js');
+    logger.debug('session exists: ' + !!req.session, null, 'server.js');
+    logger.debug('session keys: ' + Object.keys(req.session || {}), null, 'server.js');
     
     if (returnTo) {
       // Clear the returnTo from session
       delete req.session.returnTo;
       // Redirect to the original page
-      console.log('  - Redirecting to:', returnTo + '?login=success');
+      logger.debug('Redirecting to: ' + returnTo + '?login=success', null, 'server.js');
       res.redirect(returnTo + '?login=success');
     } else {
       // Default redirect to dashboard
-      console.log('  - Redirecting to default: /?login=success');
+      logger.debug('Redirecting to default: /?login=success', null, 'server.js');
       res.redirect('/?login=success');
     }
   }
@@ -1042,7 +1042,7 @@ app.get('/auth/logout', (req, res) => {
       logger.error('Logout error', err);
       return res.redirect('/login');
     }
-    logger.info('User logged out successfully');
+    logger.info('User logged out successfully', 'server.js');
     res.redirect('/login');
   });
 });
@@ -1101,19 +1101,19 @@ app.get('/api/debug/session', (req, res) => {
 // ------------------- Function: testSession -------------------
 // Simple endpoint to test session persistence
 app.get('/api/test/session', (req, res) => {
-  console.log('[server.js]: Session test endpoint called');
-  console.log('  - Session ID:', req.sessionID);
-  console.log('  - Session exists:', !!req.session);
-  console.log('  - Session store:', sessionStore ? 'MongoDB' : 'Memory');
+  logger.debug('Session test endpoint called', null, 'server.js');
+  logger.debug('Session ID: ' + req.sessionID, null, 'server.js');
+  logger.debug('Session exists: ' + !!req.session, null, 'server.js');
+  logger.debug('Session store: ' + (sessionStore ? 'MongoDB' : 'Memory'), null, 'server.js');
   
   if (req.query.test) {
     req.session.testValue = req.query.test;
     req.session.save((err) => {
       if (err) {
-        console.error('[server.js]: Session save error:', err);
+        logger.error('Session save error', err, 'server.js');
         res.json({ error: 'Failed to save session', details: err.message });
       } else {
-        console.log('[server.js]: Session saved successfully');
+        logger.debug('Session saved successfully', null, 'server.js');
         res.json({ 
           success: true, 
           message: 'Test value saved', 
@@ -1161,7 +1161,7 @@ app.get('/api/user', async (req, res) => {
   try {
     // Only log authentication issues
     if (!req.isAuthenticated() && req.session?.passport) {
-      console.log('[server.js]: ⚠️ Session exists but user not authenticated');
+      logger.warn('Session exists but user not authenticated', 'server.js');
     }
     
     let isAdmin = false;
@@ -1190,7 +1190,7 @@ app.get('/api/user', async (req, res) => {
             }
           }
         } catch (error) {
-          console.error('[server.js]: Error checking admin status:', error);
+          logger.error('Error checking admin status', error, 'server.js');
           isAdmin = false;
         }
       }
@@ -1218,7 +1218,7 @@ app.get('/api/user', async (req, res) => {
           return res.json(authInfo);
         }
       } catch (dbError) {
-        console.error('[server.js]: Error fetching user from database:', dbError);
+        logger.error('Error fetching user from database', dbError, 'server.js');
         // Fall through to use session data
       }
     }
@@ -1245,7 +1245,7 @@ app.get('/api/user', async (req, res) => {
     
     res.json(authInfo);
   } catch (error) {
-    console.error('[server.js]: Error in user auth endpoint:', error);
+    logger.error('Error in user auth endpoint', error, 'server.js');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -1291,7 +1291,7 @@ app.get('/api/users/search', async (req, res) => {
 
     res.json({ users: usersWithCharacters });
   } catch (error) {
-    console.error('[server.js]: Error searching users:', error);
+    logger.error('Error searching users', error, 'server.js');
     res.status(500).json({ error: 'Failed to search users' });
   }
 });
@@ -1390,7 +1390,7 @@ app.get('/api/users', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[server.js]: Error fetching users:', error);
+    logger.error('Error fetching users', error, 'server.js');
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
@@ -1425,7 +1425,7 @@ app.get('/api/users/:discordId', async (req, res) => {
       characters
     });
   } catch (error) {
-    console.error('[server.js]: Error fetching user details:', error);
+    logger.error('Error fetching user details', error, 'server.js');
     res.status(500).json({ error: 'Failed to fetch user details' });
   }
 });
@@ -1831,7 +1831,7 @@ app.get('/api/stats/characters', async (req, res) => {
       timestamp: Date.now() // Add timestamp for cache busting
     });
   } catch (error) {
-    console.error('[server.js]: ❌ Error fetching character stats:', error);
+    logger.error('Error fetching character stats', error, 'server.js');
     res.status(500).json({ error: 'Failed to fetch character stats' });
   }
 });
@@ -2023,7 +2023,7 @@ app.get('/api/stats/hwqs', async (req, res) => {
       timestamp: Date.now()
     });
   } catch (error) {
-    console.error('[server.js]: ❌ Error fetching HWQ stats:', error);
+    logger.error('Error fetching HWQ stats', error, 'server.js');
     res.status(500).json({ error: 'Failed to fetch HWQ stats' });
   }
 });
@@ -2743,7 +2743,7 @@ app.get('/api/characters/:id/export', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Character not found or access denied' });
     }
     
-    console.log(`[server.js]: 📦 Exporting data for character ${character.name} (${character._id})`);
+    logger.info(`Exporting data for character ${character.name} (${character._id})`, 'server.js');
     
     // Initialize export data object
     const exportData = {
@@ -2760,9 +2760,9 @@ app.get('/api/characters/:id/export', requireAuth, async (req, res) => {
       const inventoryCollection = inventoriesDb.collection(collectionName);
       const inventoryItems = await inventoryCollection.find().toArray();
       exportData.inventory = inventoryItems;
-      console.log(`[server.js]: ✅ Found ${inventoryItems.length} inventory items`);
+      logger.success(`Found ${inventoryItems.length} inventory items`, 'server.js');
     } catch (error) {
-      console.warn(`[server.js]: ⚠️ Error fetching inventory:`, error.message);
+      logger.warn(`Error fetching inventory: ${error.message}`, 'server.js');
       exportData.inventory = [];
     }
     
@@ -2775,9 +2775,9 @@ app.get('/api/characters/:id/export', requireAuth, async (req, res) => {
         ]
       }).lean();
       exportData.pets = pets;
-      console.log(`[server.js]: ✅ Found ${pets.length} pets`);
+      logger.success(`Found ${pets.length} pets`, 'server.js');
     } catch (error) {
-      console.warn(`[server.js]: ⚠️ Error fetching pets:`, error.message);
+      logger.warn(`Error fetching pets: ${error.message}`, 'server.js');
       exportData.pets = [];
     }
     
@@ -2790,9 +2790,9 @@ app.get('/api/characters/:id/export', requireAuth, async (req, res) => {
         ]
       }).lean();
       exportData.mounts = mounts;
-      console.log(`[server.js]: ✅ Found ${mounts.length} mounts`);
+      logger.success(`Found ${mounts.length} mounts`, 'server.js');
     } catch (error) {
-      console.warn(`[server.js]: ⚠️ Error fetching mounts:`, error.message);
+      logger.warn(`Error fetching mounts: ${error.message}`, 'server.js');
       exportData.mounts = [];
     }
     
@@ -2805,9 +2805,9 @@ app.get('/api/characters/:id/export', requireAuth, async (req, res) => {
         ]
       }).lean();
       exportData.relationships = relationships;
-      console.log(`[server.js]: ✅ Found ${relationships.length} relationships`);
+      logger.success(`Found ${relationships.length} relationships`, 'server.js');
     } catch (error) {
-      console.warn(`[server.js]: ⚠️ Error fetching relationships:`, error.message);
+      logger.warn(`Error fetching relationships: ${error.message}`, 'server.js');
       exportData.relationships = [];
     }
     
@@ -2817,9 +2817,9 @@ app.get('/api/characters/:id/export', requireAuth, async (req, res) => {
         [`participants.${userId}`]: { $exists: true }
       }).lean();
       exportData.quests = quests;
-      console.log(`[server.js]: ✅ Found ${quests.length} quests`);
+      logger.success(`Found ${quests.length} quests`, 'server.js');
     } catch (error) {
-      console.warn(`[server.js]: ⚠️ Error fetching quests:`, error.message);
+      logger.warn(`Error fetching quests: ${error.message}`, 'server.js');
       exportData.quests = [];
     }
     
@@ -7642,7 +7642,7 @@ app.put('/api/user/settings', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    logger.success(`Updated settings for user ${user.username || user.discordId}`);
+    logger.success(`Updated settings for user ${user.username || user.discordId}`, 'server.js');
     
     // Send confirmation DMs for newly enabled notifications (don't await - send in background)
     if (notificationsEnabled.length > 0) {
@@ -7754,7 +7754,7 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
       await user.save(); // Save the reset immediately
     }
     
-    // Check daily limit (5 per day)
+    // Check daily limit (5 per day) BEFORE incrementing
     if (user.blupeeHunt.dailyCount >= DAILY_LIMIT) {
       const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
       const timeUntilReset = tomorrow.getTime() - now.getTime();
