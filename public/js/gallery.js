@@ -422,10 +422,6 @@ class Gallery {
       existingModal.remove();
     }
 
-    // Debug: Log submission data to see what fields are available
-    console.log('Submission data:', submission);
-    console.log('Submission link field:', submission.link);
-    console.log('Submission category:', submission.category);
 
     const modal = document.createElement('div');
     modal.className = 'gallery-modal';
@@ -475,7 +471,7 @@ class Gallery {
             ` : ''}
             ${(submission.link || submission.messageUrl) ? `
               <div class="gallery-modal-meta-item">
-                <div class="gallery-modal-meta-label">Link</div>
+                <div class="gallery-modal-meta-label">Submission Link</div>
                 <div class="gallery-modal-meta-value">
                   <a href="${submission.link || submission.messageUrl}" target="_blank" rel="noopener noreferrer" class="gallery-modal-link">
                     <i class="fas fa-external-link-alt"></i> View Original Submission
@@ -497,14 +493,6 @@ class Gallery {
                   <span class="gallery-modal-collaborator">${this.escapeHtml(collaborator)}</span>
                 `).join('')}
               </div>
-            </div>
-          ` : ''}
-          ${submission.category === 'writing' ? `
-            <div class="gallery-modal-debug" style="background: #f0f0f0; padding: 10px; margin-top: 20px; border-radius: 5px; font-size: 12px;">
-              <strong>Debug Info:</strong><br>
-              Link: ${submission.link || 'null'}<br>
-              MessageUrl: ${submission.messageUrl || 'null'}<br>
-              Available fields: ${Object.keys(submission).join(', ')}
             </div>
           ` : ''}
         </div>
