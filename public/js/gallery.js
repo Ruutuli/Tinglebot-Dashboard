@@ -6,13 +6,16 @@
 class Gallery {
   constructor() {
     this.currentPage = 1;
-    this.itemsPerPage = 10;
+    this.artItemsPerPage = 8;
+    this.writingItemsPerPage = 4;
     this.currentCategory = 'all';
     this.currentUser = 'all';
+    this.currentCharacter = 'all';
     this.currentSort = 'newest';
     this.submissions = [];
     this.filteredSubmissions = [];
     this.users = [];
+    this.characters = [];
     this.currentUserId = null;
     
     this.init();
@@ -43,6 +46,12 @@ class Gallery {
       this.filterAndDisplay();
     });
 
+    document.getElementById('character-filter')?.addEventListener('change', (e) => {
+      this.currentCharacter = e.target.value;
+      this.updateURL();
+      this.filterAndDisplay();
+    });
+
     document.getElementById('refresh-gallery')?.addEventListener('click', () => {
       this.loadSubmissions();
     });
@@ -58,7 +67,7 @@ class Gallery {
     });
 
     document.getElementById('next-page')?.addEventListener('click', () => {
-      const totalPages = Math.ceil(this.filteredSubmissions.length / this.itemsPerPage);
+      const totalPages = this.calculateTotalPages();
       if (this.currentPage < totalPages) {
         this.currentPage++;
         this.updateURL();
@@ -69,6 +78,33 @@ class Gallery {
 
     // Handle browser back/forward
     window.addEventListener('popstate', (e) => {
+      this.parseURL();
+      this.filterAndDisplay();
+    });
+    
+    // Handle hash changes
+    window.addEventListener('hashchange', (e) => {
+      const hash = window.location.hash;
+      if (hash.includes('gallery-section')) {
+        // Show gallery section if not already visible
+        const gallerySection = document.getElementById('gallery-section');
+        if (gallerySection && gallerySection.style.display === 'none') {
+          gallerySection.style.display = 'block';
+          // Hide other sections
+          const sections = document.querySelectorAll('main > section');
+          sections.forEach(section => {
+            if (section.id !== 'gallery-section') {
+              section.style.display = 'none';
+            }
+          });
+        }
+        
+        // Initialize gallery if not already initialized
+        if (!window.gallery) {
+          window.gallery = new Gallery();
+        }
+      }
+      
       this.parseURL();
       this.filterAndDisplay();
     });
@@ -91,7 +127,8 @@ class Gallery {
       
       const data = await response.json();
       this.submissions = data.submissions || [];
-      this.populateUsers();
+      await this.populateUsers();
+      await this.populateCharacters();
       this.filterAndDisplay();
     } catch (error) {
       console.error('Error loading gallery submissions:', error);
@@ -100,12 +137,18 @@ class Gallery {
   }
 
   filterAndDisplay() {
-    // Filter by category and user
+    // Filter by category, user, and character
     this.filteredSubmissions = this.submissions.filter(submission => {
       const categoryMatch = this.currentCategory === 'all' || submission.category === this.currentCategory;
       const userMatch = this.currentUser === 'all' || submission.userId === this.currentUser;
-      return categoryMatch && userMatch;
+      const characterMatch = this.currentCharacter === 'all' || 
+        (submission.taggedCharacters && submission.taggedCharacters.includes(this.currentCharacter));
+      
+      return categoryMatch && userMatch && characterMatch;
     });
+
+    // Reset to page 1 when filtering changes
+    this.currentPage = 1;
 
     // Sort submissions
     this.filteredSubmissions.sort((a, b) => {
@@ -129,24 +172,41 @@ class Gallery {
     const params = new URLSearchParams();
     if (this.currentCategory !== 'all') params.set('category', this.currentCategory);
     if (this.currentUser !== 'all') params.set('user', this.currentUser);
+    if (this.currentCharacter !== 'all') params.set('character', this.currentCharacter);
     if (this.currentSort !== 'newest') params.set('sort', this.currentSort);
     if (this.currentPage > 1) params.set('page', this.currentPage);
     
-    const newURL = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+    const newURL = `${window.location.pathname}#gallery-section${params.toString() ? '?' + params.toString() : ''}`;
     window.history.pushState({}, '', newURL);
   }
 
   parseURL() {
-    const params = new URLSearchParams(window.location.search);
+    // Check if we're on the gallery section and DOM elements exist
+    const hash = window.location.hash;
+    if (!hash.includes('gallery-section') || !document.getElementById('gallery-section')) {
+      return; // Don't parse if not on gallery section or DOM not ready
+    }
+    
+    // Extract query parameters from hash
+    const hashParts = hash.split('?');
+    const params = hashParts.length > 1 ? new URLSearchParams(hashParts[1]) : new URLSearchParams();
+    
     this.currentCategory = params.get('category') || 'all';
     this.currentUser = params.get('user') || 'all';
+    this.currentCharacter = params.get('character') || 'all';
     this.currentSort = params.get('sort') || 'newest';
     this.currentPage = parseInt(params.get('page')) || 1;
     
     // Update UI
-    document.getElementById('category-filter').value = this.currentCategory;
-    document.getElementById('user-filter').value = this.currentUser;
-    document.getElementById('sort-filter').value = this.currentSort;
+    const categoryFilter = document.getElementById('category-filter');
+    const userFilter = document.getElementById('user-filter');
+    const characterFilter = document.getElementById('character-filter');
+    const sortFilter = document.getElementById('sort-filter');
+    
+    if (categoryFilter) categoryFilter.value = this.currentCategory;
+    if (userFilter) userFilter.value = this.currentUser;
+    if (characterFilter) characterFilter.value = this.currentCharacter;
+    if (sortFilter) sortFilter.value = this.currentSort;
   }
 
   displaySubmissions() {
@@ -161,31 +221,35 @@ class Gallery {
     // Clear sections
     sections.innerHTML = '';
 
-    // Calculate pagination
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = startIndex + this.itemsPerPage;
-    const paginatedSubmissions = this.filteredSubmissions.slice(startIndex, endIndex);
+    // Separate art and writing submissions first
+    const artSubmissions = this.filteredSubmissions.filter(s => s && s.category === 'art');
+    const writingSubmissions = this.filteredSubmissions.filter(s => s && s.category === 'writing');
+    
+    // Calculate pagination for each category separately
+    const artStartIndex = (this.currentPage - 1) * this.artItemsPerPage;
+    const artEndIndex = artStartIndex + this.artItemsPerPage;
+    const paginatedArtSubmissions = artSubmissions.slice(artStartIndex, artEndIndex);
+    
+    const writingStartIndex = (this.currentPage - 1) * this.writingItemsPerPage;
+    const writingEndIndex = writingStartIndex + this.writingItemsPerPage;
+    const paginatedWritingSubmissions = writingSubmissions.slice(writingStartIndex, writingEndIndex);
 
-    // Separate art and writing submissions from paginated results
-    const artSubmissions = paginatedSubmissions.filter(s => s && s.category === 'art');
-    const writingSubmissions = paginatedSubmissions.filter(s => s && s.category === 'writing');
-
-    // Create art section if there are art submissions
-    if (artSubmissions.length > 0) {
-      const artSection = this.createGallerySection('art', artSubmissions);
+    // Create art section if there are paginated art submissions
+    if (paginatedArtSubmissions.length > 0) {
+      const artSection = this.createGallerySection('art', paginatedArtSubmissions);
       sections.appendChild(artSection);
     }
 
-    // Create writing section if there are writing submissions
-    if (writingSubmissions.length > 0) {
-      const writingSection = this.createGallerySection('writing', writingSubmissions);
+    // Create writing section if there are paginated writing submissions
+    if (paginatedWritingSubmissions.length > 0) {
+      const writingSection = this.createGallerySection('writing', paginatedWritingSubmissions);
       sections.appendChild(writingSection);
     }
 
     this.updatePagination();
   }
 
-  populateUsers() {
+  async populateUsers() {
     const userFilter = document.getElementById('user-filter');
     if (!userFilter) return;
 
@@ -200,6 +264,46 @@ class Gallery {
       };
     });
 
+    // Get all unique collaborators from all submissions
+    const allCollaborators = [...new Set(this.submissions.flatMap(s => s.collab || []))];
+    
+    // Fetch user data for collaborators who aren't already in users list
+    for (const collaboratorId of allCollaborators) {
+      if (!this.users.find(u => u.id === collaboratorId)) {
+        try {
+          // Clean the collaborator ID (remove Discord mention format)
+          const cleanId = collaboratorId.replace(/[<@>]/g, '');
+          
+          // Try to fetch user data from our server
+          const response = await fetch(`/api/users/${cleanId}`);
+          if (response.ok) {
+            const responseData = await response.json();
+            const userData = responseData.user; // The user data is wrapped in a 'user' object
+            this.users.push({
+              id: collaboratorId, // Keep original ID for display
+              username: userData.username || userData.nickname || `User ${cleanId}`,
+              avatar: userData.avatar
+            });
+          } else {
+            // Fallback: add with cleaned ID as display name
+            this.users.push({
+              id: collaboratorId, // Keep original ID for display
+              username: `User ${cleanId}`,
+              avatar: null
+            });
+          }
+        } catch (error) {
+          // Fallback: add with cleaned ID as display name
+          const cleanId = collaboratorId.replace(/[<@>]/g, '');
+          this.users.push({
+            id: collaboratorId, // Keep original ID for display
+            username: `User ${cleanId}`,
+            avatar: null
+          });
+        }
+      }
+    }
+
     // Sort users alphabetically
     this.users.sort((a, b) => a.username.localeCompare(b.username));
 
@@ -213,6 +317,30 @@ class Gallery {
       option.textContent = user.username;
       userFilter.appendChild(option);
     });
+  }
+
+  async populateCharacters() {
+    const characterFilter = document.getElementById('character-filter');
+    if (!characterFilter) return;
+
+    try {
+      // Get characters from the API
+      const characters = await this.getCharacters();
+      this.characters = characters;
+
+      // Clear existing options except "All Characters"
+      characterFilter.innerHTML = '<option value="all">All Characters</option>';
+
+      // Add character options
+      characters.forEach(character => {
+        const option = document.createElement('option');
+        option.value = character._id;
+        option.textContent = character.name;
+        characterFilter.appendChild(option);
+      });
+    } catch (error) {
+      console.error('Error populating characters:', error);
+    }
   }
 
   createGallerySection(category, submissions) {
@@ -298,9 +426,11 @@ class Gallery {
               <div class="gallery-item-collaborators">
                 <div class="gallery-item-collaborators-title">Collaborators:</div>
                 <div class="gallery-item-collaborators-list">
-                  ${submission.collab.map(collaborator => `
-                    <span class="gallery-item-collaborator">${this.escapeHtml(collaborator)}</span>
-                  `).join('')}
+                  ${submission.collab.map(collaborator => {
+                    const user = this.users.find(u => u.id === collaborator);
+                    const displayName = user ? user.username : collaborator;
+                    return `<span class="gallery-item-collaborator">${this.escapeHtml(displayName)}</span>`;
+                  }).join('')}
                 </div>
               </div>
             ` : ''}
@@ -341,9 +471,11 @@ class Gallery {
               <div class="gallery-item-collaborators">
                 <div class="gallery-item-collaborators-title">Collaborators:</div>
                 <div class="gallery-item-collaborators-list">
-                  ${submission.collab.map(collaborator => `
-                    <span class="gallery-item-collaborator">${this.escapeHtml(collaborator)}</span>
-                  `).join('')}
+                  ${submission.collab.map(collaborator => {
+                    const user = this.users.find(u => u.id === collaborator);
+                    const displayName = user ? user.username : collaborator;
+                    return `<span class="gallery-item-collaborator">${this.escapeHtml(displayName)}</span>`;
+                  }).join('')}
                 </div>
               </div>
             ` : ''}
@@ -403,9 +535,11 @@ class Gallery {
           <div class="gallery-item-collaborators">
             <div class="gallery-item-collaborators-title">Collaborators:</div>
             <div class="gallery-item-collaborators-list">
-              ${submission.collab.map(collaborator => `
-                <span class="gallery-item-collaborator">${this.escapeHtml(collaborator)}</span>
-              `).join('')}
+              ${submission.collab.map(collaborator => {
+                const user = this.users.find(u => u.id === collaborator);
+                const displayName = user ? user.username : collaborator;
+                return `<span class="gallery-item-collaborator">${this.escapeHtml(displayName)}</span>`;
+              }).join('')}
             </div>
           </div>
         ` : ''}
@@ -432,7 +566,7 @@ class Gallery {
         </button>
         ${submission.fileUrl && submission.category === 'art' 
           ? `<img src="${submission.fileUrl}" alt="${submission.title}" class="gallery-modal-image">`
-          : submission.category === 'writing' && (submission.link || submission.messageUrl)
+          : submission.category === 'writing' 
             ? `<div class="gallery-modal-writing-preview">
                 <div class="gallery-modal-writing-icon">
                   <i class="fas fa-pen-fancy"></i>
@@ -456,9 +590,74 @@ class Gallery {
               <div class="gallery-modal-meta-value">${this.escapeHtml(submission.username)}</div>
             </div>
             <div class="gallery-modal-meta-item">
-              <div class="gallery-modal-meta-label">Tokens</div>
+              <div class="gallery-modal-meta-label">Total Tokens</div>
               <div class="gallery-modal-meta-value">${submission.finalTokenAmount}</div>
             </div>
+            ${submission.category !== 'writing' && (submission.tokenBreakdown || submission.tokenCalculation) ? `
+              <div class="gallery-modal-meta-item gallery-modal-token-breakdown">
+                <div class="gallery-modal-meta-label">Token Breakdown</div>
+                <div class="gallery-modal-meta-value">
+                  <div class="token-breakdown">
+                    ${submission.tokenBreakdown ? Object.entries(submission.tokenBreakdown).map(([key, value]) => `
+                      <div class="token-breakdown-item">
+                        <span class="token-breakdown-label">${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</span>
+                        <span class="token-breakdown-value">${value}</span>
+                      </div>
+                    `).join('') : ''}
+                    ${submission.baseSelections && submission.baseSelections.length > 0 ? `
+                      <div class="token-breakdown-section">
+                        <div class="token-breakdown-section-title">Base Selections</div>
+                        ${submission.baseSelections.map(selection => {
+                          const count = submission.baseCounts && submission.baseCounts[selection] ? submission.baseCounts[selection] : 0;
+                          return `
+                            <div class="token-breakdown-item">
+                              <span class="token-breakdown-label">${selection}:</span>
+                              <span class="token-breakdown-value">${count}</span>
+                            </div>
+                          `;
+                        }).join('')}
+                      </div>
+                    ` : ''}
+                    ${submission.typeMultiplierSelections && submission.typeMultiplierSelections.length > 0 ? `
+                      <div class="token-breakdown-section">
+                        <div class="token-breakdown-section-title">Type Multipliers</div>
+                        ${submission.typeMultiplierSelections.map(selection => {
+                          const count = submission.typeMultiplierCounts && submission.typeMultiplierCounts[selection] ? submission.typeMultiplierCounts[selection] : 0;
+                          return `
+                            <div class="token-breakdown-item">
+                              <span class="token-breakdown-label">${selection}:</span>
+                              <span class="token-breakdown-value">${count}</span>
+                            </div>
+                          `;
+                        }).join('')}
+                      </div>
+                    ` : ''}
+                    ${submission.addOnsApplied && submission.addOnsApplied.length > 0 ? `
+                      <div class="token-breakdown-section">
+                        <div class="token-breakdown-section-title">Add-ons Applied</div>
+                        ${submission.addOnsApplied.map(addon => `
+                          <div class="token-breakdown-item">
+                            <span class="token-breakdown-label">${addon.addOn}:</span>
+                            <span class="token-breakdown-value">${addon.count}</span>
+                          </div>
+                        `).join('')}
+                      </div>
+                    ` : ''}
+                    ${submission.specialWorksApplied && submission.specialWorksApplied.length > 0 ? `
+                      <div class="token-breakdown-section">
+                        <div class="token-breakdown-section-title">Special Works</div>
+                        ${submission.specialWorksApplied.map(work => `
+                          <div class="token-breakdown-item">
+                            <span class="token-breakdown-label">${work.work}:</span>
+                            <span class="token-breakdown-value">${work.count}</span>
+                          </div>
+                        `).join('')}
+                      </div>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            ` : ''}
             <div class="gallery-modal-meta-item">
               <div class="gallery-modal-meta-label">Approved</div>
               <div class="gallery-modal-meta-value">${this.formatDate(submission.approvedAt)}</div>
@@ -469,11 +668,21 @@ class Gallery {
                 <div class="gallery-modal-meta-value">${submission.wordCount}</div>
               </div>
             ` : ''}
-            ${(submission.link || submission.messageUrl) ? `
+            ${submission.category === 'writing' && submission.link ? `
               <div class="gallery-modal-meta-item">
                 <div class="gallery-modal-meta-label">Submission Link</div>
                 <div class="gallery-modal-meta-value">
-                  <a href="${submission.link || submission.messageUrl}" target="_blank" rel="noopener noreferrer" class="gallery-modal-link">
+                  <a href="${submission.link}" target="_blank" rel="noopener noreferrer" class="gallery-modal-link">
+                    <i class="fas fa-external-link-alt"></i> View Submission
+                  </a>
+                </div>
+              </div>
+            ` : ''}
+            ${submission.category !== 'writing' && (submission.fileUrl || submission.messageUrl) ? `
+              <div class="gallery-modal-meta-item">
+                <div class="gallery-modal-meta-label">Submission Link</div>
+                <div class="gallery-modal-meta-value">
+                  <a href="${submission.fileUrl || submission.messageUrl}" target="_blank" rel="noopener noreferrer" class="gallery-modal-link">
                     <i class="fas fa-external-link-alt"></i> View Original Submission
                   </a>
                 </div>
@@ -489,9 +698,23 @@ class Gallery {
             <div class="gallery-modal-collaborators">
               <div class="gallery-modal-collaborators-title">Collaborators</div>
               <div class="gallery-modal-collaborators-list">
-                ${submission.collab.map(collaborator => `
-                  <span class="gallery-modal-collaborator">${this.escapeHtml(collaborator)}</span>
-                `).join('')}
+                ${submission.collab.map(collaborator => {
+                  const user = this.users.find(u => u.id === collaborator);
+                  const displayName = user ? user.username : collaborator;
+                  return `<span class="gallery-modal-collaborator">${this.escapeHtml(displayName)}</span>`;
+                }).join('')}
+              </div>
+            </div>
+          ` : ''}
+          ${submission.taggedCharacters && Array.isArray(submission.taggedCharacters) && submission.taggedCharacters.length > 0 ? `
+            <div class="gallery-modal-tagged-characters">
+              <div class="gallery-modal-tagged-characters-title">Tagged Characters</div>
+              <div class="gallery-modal-tagged-characters-list">
+                ${submission.taggedCharacters.map(characterId => {
+                  const character = this.characters.find(c => c._id === characterId);
+                  const displayName = character ? character.name : characterId;
+                  return `<span class="gallery-modal-tagged-character">${this.escapeHtml(displayName)}</span>`;
+                }).join('')}
               </div>
             </div>
           ` : ''}
@@ -518,6 +741,16 @@ class Gallery {
     document.addEventListener('keydown', handleEscape);
   }
 
+  calculateTotalPages() {
+    const artSubmissions = this.filteredSubmissions.filter(s => s && s.category === 'art');
+    const writingSubmissions = this.filteredSubmissions.filter(s => s && s.category === 'writing');
+    
+    const artPages = Math.ceil(artSubmissions.length / this.artItemsPerPage);
+    const writingPages = Math.ceil(writingSubmissions.length / this.writingItemsPerPage);
+    
+    return Math.max(artPages, writingPages);
+  }
+
   updatePagination() {
     const pagination = document.getElementById('gallery-pagination');
     const prevBtn = document.getElementById('prev-page');
@@ -526,7 +759,7 @@ class Gallery {
 
     if (!pagination || !prevBtn || !nextBtn || !pageInfo) return;
 
-    const totalPages = Math.ceil(this.filteredSubmissions.length / this.itemsPerPage);
+    const totalPages = this.calculateTotalPages();
     
     if (totalPages <= 1) {
       pagination.style.display = 'none';
@@ -536,6 +769,7 @@ class Gallery {
     pagination.style.display = 'flex';
     prevBtn.disabled = this.currentPage <= 1;
     nextBtn.disabled = this.currentPage >= totalPages;
+    
     pageInfo.textContent = `Page ${this.currentPage} of ${totalPages}`;
   }
 
@@ -602,11 +836,9 @@ class Gallery {
     if (aspectRatio > 1.2) {
       // Landscape
       img.classList.add('landscape');
-      container.style.gridColumn = 'span 2';
     } else if (aspectRatio < 0.8) {
       // Portrait
       img.classList.add('portrait');
-      container.style.gridRow = 'span 2';
     } else {
       // Square
       img.classList.add('square');
@@ -619,14 +851,20 @@ class Gallery {
       const submission = this.submissions.find(s => s.submissionId === submissionId);
       if (!submission) return;
 
+      console.log('Editing submission:', {
+        submissionId,
+        currentTaggedCharacters: submission.taggedCharacters
+      });
+
       // Get characters for tagging
       const characters = await this.getCharacters();
+      console.log('Loaded characters for editing:', characters.length);
       
       // Show edit modal
       this.showEditModal(submission, characters);
     } catch (error) {
       console.error('Error editing submission:', error);
-      alert('Failed to load edit form. Please try again.');
+      this.showErrorPopup('Failed to load edit form. Please try again.');
     }
   }
 
@@ -635,8 +873,11 @@ class Gallery {
       const response = await fetch('/api/characters');
       if (!response.ok) throw new Error('Failed to fetch characters');
       const data = await response.json();
+      console.log('Characters API response:', data);
       // The API returns { characters: [...] }, so extract the characters array
-      return data.characters || [];
+      const characters = data.characters || [];
+      console.log('Extracted characters:', characters.length, 'characters');
+      return characters;
     } catch (error) {
       console.error('Error fetching characters:', error);
       return [];
@@ -722,6 +963,12 @@ class Gallery {
       const title = document.getElementById('edit-title').value;
       const taggedCharacters = Array.from(document.querySelectorAll('.character-tag input:checked')).map(cb => cb.value);
 
+      console.log('Saving submission with data:', {
+        submissionId,
+        title,
+        taggedCharacters
+      });
+
       const response = await fetch(`/api/gallery/submissions/${submissionId}`, {
         method: 'PUT',
         headers: {
@@ -741,10 +988,11 @@ class Gallery {
       // Refresh gallery
       this.loadSubmissions();
       
-      alert('Submission updated successfully!');
+      // Show success popup
+      this.showSuccessPopup('Submission updated successfully!');
     } catch (error) {
       console.error('Error saving submission:', error);
-      alert('Failed to save changes. Please try again.');
+      this.showErrorPopup('Failed to save changes. Please try again.');
     }
   }
 
@@ -763,6 +1011,139 @@ class Gallery {
     });
     
     return canEdit;
+  }
+
+  showSuccessPopup(message) {
+    this.showPopup(message, 'success');
+  }
+
+  showErrorPopup(message) {
+    this.showPopup(message, 'error');
+  }
+
+  showPopup(message, type = 'success') {
+    // Remove existing popup
+    const existingPopup = document.querySelector('.gallery-popup');
+    if (existingPopup) {
+      existingPopup.remove();
+    }
+
+    const popup = document.createElement('div');
+    popup.className = 'gallery-popup';
+    popup.innerHTML = `
+      <div class="gallery-popup-content">
+        <div class="gallery-popup-icon">
+          <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
+        </div>
+        <div class="gallery-popup-message">${message}</div>
+        <button class="gallery-popup-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      if (popup.parentNode) {
+        popup.remove();
+      }
+    }, 3000);
+
+    // Close on button click
+    popup.querySelector('.gallery-popup-close').addEventListener('click', () => {
+      popup.remove();
+    });
+
+    // Close on background click
+    popup.addEventListener('click', (e) => {
+      if (e.target === popup) {
+        popup.remove();
+      }
+    });
+  }
+
+  formatTokenCalculation(calculation) {
+    if (typeof calculation === 'string') {
+      // Parse the calculation string and format it nicely
+      return this.parseTokenCalculationString(calculation);
+    } else if (typeof calculation === 'object') {
+      // Handle object format
+      return Object.entries(calculation).map(([key, value]) => `
+        <div class="token-breakdown-item">
+          <span class="token-breakdown-label">${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</span>
+          <span class="token-breakdown-value">${value}</span>
+        </div>
+      `).join('');
+    }
+    return '';
+  }
+
+  parseTokenCalculationString(calculationString) {
+    try {
+      // Clean up the string and parse it
+      const cleanString = calculationString.replace(/[`]/g, '').trim();
+      
+      // Split by lines and format each line
+      const lines = cleanString.split('\n').filter(line => line.trim());
+      let formattedLines = [];
+      let totalTokens = '';
+      
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        
+        // Skip empty lines
+        if (!trimmedLine) continue;
+        
+        // Check if this is the total tokens line
+        if (trimmedLine.includes('Tokens')) {
+          totalTokens = trimmedLine;
+          continue;
+        }
+        
+        // Check if this is a separator line
+        if (trimmedLine.includes('---')) {
+          formattedLines.push(`<div class="token-calculation-separator">${trimmedLine}</div>`);
+          continue;
+        }
+        
+        // Format regular calculation lines
+        formattedLines.push(`<div class="token-calculation-line">${trimmedLine}</div>`);
+      }
+      
+      // Add the total at the end
+      if (totalTokens) {
+        formattedLines.push(`<div class="token-total">${totalTokens}</div>`);
+      }
+      
+      return formattedLines.join('');
+    } catch (error) {
+      console.error('Error parsing token calculation:', error);
+      return '<div class="token-calculation-error">Error parsing calculation</div>';
+    }
+  }
+
+  formatCalculationLine(line) {
+    // Format a calculation line (e.g., "Chibi (15×1)" -> "Chibi (15×1)")
+    const match = line.match(/(\w+)\s*\((\d+)\s*×\s*(\d+)\)/);
+    if (match) {
+      const [, name, multiplier, count] = match;
+      return `<div class="token-calculation-line">${name} (${multiplier}×${count})</div>`;
+    }
+    
+    // Handle other patterns
+    if (line.includes('×')) {
+      return `<div class="token-calculation-line">${line}</div>`;
+    }
+    
+    return `<div class="token-calculation-line">${line}</div>`;
+  }
+
+  extractTokenTotal(calculationString) {
+    // Extract the final token total from the calculation string
+    const match = calculationString.match(/(\d+)\s*Tokens/);
+    return match ? `${match[1]} Tokens` : 'Unknown Tokens';
   }
 
   scrollToTop() {
@@ -800,7 +1181,27 @@ class Gallery {
 document.addEventListener('DOMContentLoaded', () => {
   // Only initialize if we're on a page with gallery functionality
   if (document.getElementById('gallery-section')) {
-    window.gallery = new Gallery();
+    // Check if we're loading directly to gallery section
+    const hash = window.location.hash;
+    if (hash.includes('gallery-section')) {
+      // Show the gallery section
+      const gallerySection = document.getElementById('gallery-section');
+      if (gallerySection) {
+        gallerySection.style.display = 'block';
+        // Hide other sections
+        const sections = document.querySelectorAll('main > section');
+        sections.forEach(section => {
+          if (section.id !== 'gallery-section') {
+            section.style.display = 'none';
+          }
+        });
+      }
+    }
+    
+    // Small delay to ensure all DOM elements are ready
+    setTimeout(() => {
+      window.gallery = new Gallery();
+    }, 100);
   }
 });
 
@@ -810,6 +1211,32 @@ document.addEventListener('click', (e) => {
     // Refresh gallery when switching to gallery section
     if (window.gallery) {
       window.gallery.loadSubmissions();
+    }
+  }
+});
+
+// Handle initial page load with gallery hash
+window.addEventListener('load', () => {
+  const hash = window.location.hash;
+  if (hash.includes('gallery-section')) {
+    // Show the gallery section
+    const gallerySection = document.getElementById('gallery-section');
+    if (gallerySection) {
+      gallerySection.style.display = 'block';
+      // Hide other sections
+      const sections = document.querySelectorAll('main > section');
+      sections.forEach(section => {
+        if (section.id !== 'gallery-section') {
+          section.style.display = 'none';
+        }
+      });
+      
+      // Initialize gallery if not already initialized
+      if (!window.gallery) {
+        setTimeout(() => {
+          window.gallery = new Gallery();
+        }, 100);
+      }
     }
   }
 });

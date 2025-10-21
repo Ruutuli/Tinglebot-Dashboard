@@ -1451,6 +1451,7 @@ app.get('/api/commands', async (req, res) => {
   }
 });
 
+
 // ------------------- Section: Statistics API Routes -------------------
 
 // ------------------- Function: getRootsOfTheWildStats -------------------
@@ -5606,6 +5607,13 @@ app.put('/api/gallery/submissions/:submissionId', async (req, res) => {
     const { submissionId } = req.params;
     const { title, description, taggedCharacters } = req.body;
     
+    console.log('Updating submission:', {
+      submissionId,
+      title,
+      description,
+      taggedCharacters
+    });
+    
     // Find and update the submission
     const submission = await ApprovedSubmission.findOneAndUpdate(
       { submissionId },
@@ -5621,6 +5629,12 @@ app.put('/api/gallery/submissions/:submissionId', async (req, res) => {
     if (!submission) {
       return res.status(404).json({ error: 'Submission not found' });
     }
+    
+    console.log('Submission updated successfully:', {
+      submissionId: submission.submissionId,
+      title: submission.title,
+      taggedCharacters: submission.taggedCharacters
+    });
     
     res.json({ 
       message: 'Submission updated successfully',
