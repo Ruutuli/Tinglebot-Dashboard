@@ -5526,6 +5526,115 @@ app.get('/api/inventory', async (req, res) => {
   }
 });
 
+// ------------------- Section: Gallery API Routes -------------------
+
+// ------------------- Function: testGalleryEndpoint -------------------
+// Test endpoint to verify gallery routes are working
+app.get('/api/gallery/test', (req, res) => {
+  res.json({ message: 'Gallery API is working!', timestamp: new Date().toISOString() });
+});
+
+// ------------------- Function: getGallerySubmissions -------------------
+// Returns approved submissions for the gallery
+app.get('/api/gallery/submissions', async (req, res) => {
+  try {
+    console.log('[server.js]: 🖼️ Gallery API endpoint called');
+    const { category, sort, page = 1, limit = 50 } = req.query;
+    
+    // Build query
+    const query = {};
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+    
+    // Build sort
+    let sortOptions = {};
+    switch (sort) {
+      case 'oldest':
+        sortOptions = { approvedAt: 1 };
+        break;
+      case 'tokens':
+        sortOptions = { finalTokenAmount: -1 };
+        break;
+      case 'newest':
+      default:
+        sortOptions = { approvedAt: -1 };
+        break;
+    }
+    
+    // Calculate pagination
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+    
+    // Fetch submissions
+    console.log('[server.js]: 🔍 Fetching submissions with query:', query);
+    const submissions = await ApprovedSubmission.find(query)
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+    
+    console.log('[server.js]: 📊 Found', submissions.length, 'submissions');
+    
+    // Get total count for pagination
+    const totalCount = await ApprovedSubmission.countDocuments(query);
+    console.log('[server.js]: 📈 Total count:', totalCount);
+    
+    res.json({
+      submissions,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalCount / limitNum),
+        totalItems: totalCount,
+        itemsPerPage: limitNum
+      }
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching gallery submissions:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch gallery submissions', 
+      details: error.message 
+    });
+  }
+});
+
+// ------------------- Function: updateGallerySubmission -------------------
+// Updates a gallery submission (title, description, tagged characters)
+app.put('/api/gallery/submissions/:submissionId', async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const { title, description, taggedCharacters } = req.body;
+    
+    // Find and update the submission
+    const submission = await ApprovedSubmission.findOneAndUpdate(
+      { submissionId },
+      { 
+        title,
+        description,
+        taggedCharacters: taggedCharacters || [],
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+    
+    if (!submission) {
+      return res.status(404).json({ error: 'Submission not found' });
+    }
+    
+    res.json({ 
+      message: 'Submission updated successfully',
+      submission 
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error updating gallery submission:', error);
+    res.status(500).json({ 
+      error: 'Failed to update submission', 
+      details: error.message 
+    });
+  }
+});
+
 // ------------------- Function: getCharacterInventory -------------------
 // Returns inventory data for specific characters
 app.get('/api/inventory/characters', async (req, res) => {
@@ -9818,4 +9927,5 @@ async function checkAdminAccess(req) {
   
   return false;
 }
+
 

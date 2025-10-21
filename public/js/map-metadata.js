@@ -20,7 +20,6 @@ class MapMetadata {
                     "letter": "A",
                     "number": 1,
                     "region": "Hebra",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -49,7 +48,6 @@ class MapMetadata {
                     "letter": "A",
                     "number": 10,
                     "region": "Gerudo",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -78,7 +76,6 @@ class MapMetadata {
                     "letter": "A",
                     "number": 11,
                     "region": "Gerudo",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -107,7 +104,6 @@ class MapMetadata {
                     "letter": "A",
                     "number": 12,
                     "region": "Gerudo",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -136,7 +132,6 @@ class MapMetadata {
                     "letter": "A",
                     "number": 2,
                     "region": "Hebra",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -165,7 +160,6 @@ class MapMetadata {
                     "letter": "A",
                     "number": 3,
                     "region": "Hebra",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -194,7 +188,6 @@ class MapMetadata {
                     "letter": "A",
                     "number": 4,
                     "region": "Hebra",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -223,7 +216,6 @@ class MapMetadata {
                     "letter": "A",
                     "number": 5,
                     "region": "Hebra",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -252,7 +244,6 @@ class MapMetadata {
                     "letter": "A",
                     "number": 6,
                     "region": "Hebra",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -281,7 +272,6 @@ class MapMetadata {
                     "letter": "A",
                     "number": 7,
                     "region": "Hebra",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -310,7 +300,6 @@ class MapMetadata {
                     "letter": "A",
                     "number": 8,
                     "region": "Hebra",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -339,7 +328,6 @@ class MapMetadata {
                     "letter": "A",
                     "number": 9,
                     "region": "Gerudo",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -368,7 +356,6 @@ class MapMetadata {
                     "letter": "B",
                     "number": 1,
                     "region": "Hebra",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -397,7 +384,6 @@ class MapMetadata {
                     "letter": "B",
                     "number": 10,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -426,7 +412,6 @@ class MapMetadata {
                     "letter": "B",
                     "number": 11,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -455,7 +440,6 @@ class MapMetadata {
                     "letter": "B",
                     "number": 12,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -484,7 +468,6 @@ class MapMetadata {
                     "letter": "B",
                     "number": 2,
                     "region": "Hebra",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -513,7 +496,6 @@ class MapMetadata {
                     "letter": "B",
                     "number": 3,
                     "region": "Hebra",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -542,7 +524,6 @@ class MapMetadata {
                     "letter": "B",
                     "number": 4,
                     "region": "Hebra",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -571,7 +552,6 @@ class MapMetadata {
                     "letter": "B",
                     "number": 5,
                     "region": "Hebra",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -600,7 +580,6 @@ class MapMetadata {
                     "letter": "B",
                     "number": 6,
                     "region": "Hebra",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -629,7 +608,6 @@ class MapMetadata {
                     "letter": "B",
                     "number": 7,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -658,7 +636,6 @@ class MapMetadata {
                     "letter": "B",
                     "number": 8,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -687,7 +664,6 @@ class MapMetadata {
                     "letter": "B",
                     "number": 9,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -716,7 +692,6 @@ class MapMetadata {
                     "letter": "C",
                     "number": 1,
                     "region": "Hebra",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -745,7 +720,6 @@ class MapMetadata {
                     "letter": "C",
                     "number": 10,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -774,7 +748,6 @@ class MapMetadata {
                     "letter": "C",
                     "number": 11,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -803,7 +776,6 @@ class MapMetadata {
                     "letter": "C",
                     "number": 12,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -832,7 +804,6 @@ class MapMetadata {
                     "letter": "C",
                     "number": 2,
                     "region": "Hebra",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -861,7 +832,6 @@ class MapMetadata {
                     "letter": "C",
                     "number": 3,
                     "region": "Hebra",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -890,7 +860,6 @@ class MapMetadata {
                     "letter": "C",
                     "number": 4,
                     "region": "Hebra",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -919,7 +888,6 @@ class MapMetadata {
                     "letter": "C",
                     "number": 5,
                     "region": "Hebra",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -948,7 +916,6 @@ class MapMetadata {
                     "letter": "C",
                     "number": 6,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -977,7 +944,6 @@ class MapMetadata {
                     "letter": "C",
                     "number": 7,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1006,7 +972,6 @@ class MapMetadata {
                     "letter": "C",
                     "number": 8,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1035,7 +1000,6 @@ class MapMetadata {
                     "letter": "C",
                     "number": 9,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1064,7 +1028,6 @@ class MapMetadata {
                     "letter": "D",
                     "number": 1,
                     "region": "Hebra",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1093,7 +1056,6 @@ class MapMetadata {
                     "letter": "D",
                     "number": 10,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1122,7 +1084,6 @@ class MapMetadata {
                     "letter": "D",
                     "number": 11,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1151,7 +1112,6 @@ class MapMetadata {
                     "letter": "D",
                     "number": 12,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1180,7 +1140,6 @@ class MapMetadata {
                     "letter": "D",
                     "number": 2,
                     "region": "Hebra",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1209,7 +1168,6 @@ class MapMetadata {
                     "letter": "D",
                     "number": 3,
                     "region": "Hebra",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1238,7 +1196,6 @@ class MapMetadata {
                     "letter": "D",
                     "number": 4,
                     "region": "Hebra",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1267,7 +1224,6 @@ class MapMetadata {
                     "letter": "D",
                     "number": 5,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1296,7 +1252,6 @@ class MapMetadata {
                     "letter": "D",
                     "number": 6,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1325,7 +1280,6 @@ class MapMetadata {
                     "letter": "D",
                     "number": 7,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1354,7 +1308,6 @@ class MapMetadata {
                     "letter": "D",
                     "number": 8,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1383,7 +1336,6 @@ class MapMetadata {
                     "letter": "D",
                     "number": 9,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1412,7 +1364,6 @@ class MapMetadata {
                     "letter": "E",
                     "number": 1,
                     "region": "Hebra",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1441,7 +1392,6 @@ class MapMetadata {
                     "letter": "E",
                     "number": 10,
                     "region": "Faron",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1470,7 +1420,6 @@ class MapMetadata {
                     "letter": "E",
                     "number": 11,
                     "region": "Gerudo",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1499,7 +1448,6 @@ class MapMetadata {
                     "letter": "E",
                     "number": 12,
                     "region": "Faron",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1528,7 +1476,6 @@ class MapMetadata {
                     "letter": "E",
                     "number": 2,
                     "region": "Hebra",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1557,7 +1504,6 @@ class MapMetadata {
                     "letter": "E",
                     "number": 3,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1586,7 +1532,6 @@ class MapMetadata {
                     "letter": "E",
                     "number": 4,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1615,7 +1560,6 @@ class MapMetadata {
                     "letter": "E",
                     "number": 5,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1644,7 +1588,6 @@ class MapMetadata {
                     "letter": "E",
                     "number": 6,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1673,7 +1616,6 @@ class MapMetadata {
                     "letter": "E",
                     "number": 7,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1702,7 +1644,6 @@ class MapMetadata {
                     "letter": "E",
                     "number": 8,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1731,7 +1672,6 @@ class MapMetadata {
                     "letter": "E",
                     "number": 9,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1760,7 +1700,6 @@ class MapMetadata {
                     "letter": "F",
                     "number": 1,
                     "region": "Eldin",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1789,7 +1728,6 @@ class MapMetadata {
                     "letter": "F",
                     "number": 10,
                     "region": "Faron",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1818,7 +1756,6 @@ class MapMetadata {
                     "letter": "F",
                     "number": 11,
                     "region": "Faron",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1847,7 +1784,6 @@ class MapMetadata {
                     "letter": "F",
                     "number": 12,
                     "region": "Faron",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1876,7 +1812,6 @@ class MapMetadata {
                     "letter": "F",
                     "number": 2,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1905,7 +1840,6 @@ class MapMetadata {
                     "letter": "F",
                     "number": 3,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1934,7 +1868,6 @@ class MapMetadata {
                     "letter": "F",
                     "number": 4,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1963,7 +1896,6 @@ class MapMetadata {
                     "letter": "F",
                     "number": 5,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -1992,7 +1924,6 @@ class MapMetadata {
                     "letter": "F",
                     "number": 6,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2021,7 +1952,6 @@ class MapMetadata {
                     "letter": "F",
                     "number": 7,
                     "region": "Central Hyrule",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2050,7 +1980,6 @@ class MapMetadata {
                     "letter": "F",
                     "number": 8,
                     "region": "Lanayru",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2079,7 +2008,6 @@ class MapMetadata {
                     "letter": "F",
                     "number": 9,
                     "region": "Faron",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2108,7 +2036,6 @@ class MapMetadata {
                     "letter": "G",
                     "number": 1,
                     "region": "Eldin",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2137,7 +2064,6 @@ class MapMetadata {
                     "letter": "G",
                     "number": 10,
                     "region": "Faron",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2166,7 +2092,6 @@ class MapMetadata {
                     "letter": "G",
                     "number": 11,
                     "region": "Faron",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2195,7 +2120,6 @@ class MapMetadata {
                     "letter": "G",
                     "number": 12,
                     "region": "Faron",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2224,7 +2148,6 @@ class MapMetadata {
                     "letter": "G",
                     "number": 2,
                     "region": "Eldin",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2253,7 +2176,6 @@ class MapMetadata {
                     "letter": "G",
                     "number": 3,
                     "region": "Eldin",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2282,7 +2204,6 @@ class MapMetadata {
                     "letter": "G",
                     "number": 4,
                     "region": "Eldin",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2311,7 +2232,6 @@ class MapMetadata {
                     "letter": "G",
                     "number": 5,
                     "region": "Eldin",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2340,7 +2260,6 @@ class MapMetadata {
                     "letter": "G",
                     "number": 6,
                     "region": "Eldin",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2369,7 +2288,6 @@ class MapMetadata {
                     "letter": "G",
                     "number": 7,
                     "region": "Lanayru",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2398,7 +2316,6 @@ class MapMetadata {
                     "letter": "G",
                     "number": 8,
                     "region": "Lanayru",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2427,7 +2344,6 @@ class MapMetadata {
                     "letter": "G",
                     "number": 9,
                     "region": "Lanayru",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2456,7 +2372,6 @@ class MapMetadata {
                     "letter": "H",
                     "number": 1,
                     "region": "Eldin",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2485,7 +2400,6 @@ class MapMetadata {
                     "letter": "H",
                     "number": 10,
                     "region": "Faron",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2514,7 +2428,6 @@ class MapMetadata {
                     "letter": "H",
                     "number": 11,
                     "region": "Faron",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2543,7 +2456,6 @@ class MapMetadata {
                     "letter": "H",
                     "number": 12,
                     "region": "Faron",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2572,7 +2484,6 @@ class MapMetadata {
                     "letter": "H",
                     "number": 2,
                     "region": "Eldin",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2601,7 +2512,6 @@ class MapMetadata {
                     "letter": "H",
                     "number": 3,
                     "region": "Eldin",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2630,7 +2540,6 @@ class MapMetadata {
                     "letter": "H",
                     "number": 4,
                     "region": "Eldin",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2659,7 +2568,6 @@ class MapMetadata {
                     "letter": "H",
                     "number": 5,
                     "region": "Eldin",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2688,7 +2596,6 @@ class MapMetadata {
                     "letter": "H",
                     "number": 6,
                     "region": "Eldin",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2717,7 +2624,6 @@ class MapMetadata {
                     "letter": "H",
                     "number": 7,
                     "region": "Lanayru",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2746,7 +2652,6 @@ class MapMetadata {
                     "letter": "H",
                     "number": 8,
                     "region": "Lanayru",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2775,7 +2680,6 @@ class MapMetadata {
                     "letter": "H",
                     "number": 9,
                     "region": "Faron",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2804,7 +2708,6 @@ class MapMetadata {
                     "letter": "I",
                     "number": 1,
                     "region": "Eldin",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2833,7 +2736,6 @@ class MapMetadata {
                     "letter": "I",
                     "number": 10,
                     "region": "Faron",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2862,7 +2764,6 @@ class MapMetadata {
                     "letter": "I",
                     "number": 11,
                     "region": "Faron",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2891,7 +2792,6 @@ class MapMetadata {
                     "letter": "I",
                     "number": 12,
                     "region": "Faron",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2920,7 +2820,6 @@ class MapMetadata {
                     "letter": "I",
                     "number": 2,
                     "region": "Eldin",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2949,7 +2848,6 @@ class MapMetadata {
                     "letter": "I",
                     "number": 3,
                     "region": "Eldin",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -2978,7 +2876,6 @@ class MapMetadata {
                     "letter": "I",
                     "number": 4,
                     "region": "Eldin",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3007,7 +2904,6 @@ class MapMetadata {
                     "letter": "I",
                     "number": 5,
                     "region": "Eldin",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3036,7 +2932,6 @@ class MapMetadata {
                     "letter": "I",
                     "number": 6,
                     "region": "Lanayru",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3065,7 +2960,6 @@ class MapMetadata {
                     "letter": "I",
                     "number": 7,
                     "region": "Lanayru",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3094,7 +2988,6 @@ class MapMetadata {
                     "letter": "I",
                     "number": 8,
                     "region": "Lanayru",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3123,7 +3016,6 @@ class MapMetadata {
                     "letter": "I",
                     "number": 9,
                     "region": "Lanayru",
-                    "status": "Explorable",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3152,7 +3044,6 @@ class MapMetadata {
                     "letter": "J",
                     "number": 1,
                     "region": "Eldin",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3181,7 +3072,6 @@ class MapMetadata {
                     "letter": "J",
                     "number": 10,
                     "region": "Faron",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3210,7 +3100,6 @@ class MapMetadata {
                     "letter": "J",
                     "number": 11,
                     "region": "Faron",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3239,7 +3128,6 @@ class MapMetadata {
                     "letter": "J",
                     "number": 12,
                     "region": "Faron",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3268,7 +3156,6 @@ class MapMetadata {
                     "letter": "J",
                     "number": 2,
                     "region": "Eldin",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3297,7 +3184,6 @@ class MapMetadata {
                     "letter": "J",
                     "number": 3,
                     "region": "Eldin",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3326,7 +3212,6 @@ class MapMetadata {
                     "letter": "J",
                     "number": 4,
                     "region": "Eldin",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3355,7 +3240,6 @@ class MapMetadata {
                     "letter": "J",
                     "number": 5,
                     "region": "Eldin",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3384,7 +3268,6 @@ class MapMetadata {
                     "letter": "J",
                     "number": 6,
                     "region": "Lanayru",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3413,7 +3296,6 @@ class MapMetadata {
                     "letter": "J",
                     "number": 7,
                     "region": "Lanayru",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3442,7 +3324,6 @@ class MapMetadata {
                     "letter": "J",
                     "number": 8,
                     "region": "Lanayru",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3471,7 +3352,6 @@ class MapMetadata {
                     "letter": "J",
                     "number": 9,
                     "region": "Lanayru",
-                    "status": "Inaccessible",
                     "quadrants": [
                               {
                                         "quadrantId": "Q1",
@@ -3504,7 +3384,6 @@ class MapMetadata {
                 letter: data.letter,
                 number: data.number,
                 region: data.region,
-                status: data.status,
                 quadrants: data.quadrants
             });
         });
@@ -3535,14 +3414,27 @@ class MapMetadata {
     }
     
     /**
-     * Get all squares with a specific status
-     * @param {string} status - Status like "Explorable" or "Inaccessible"
-     * @returns {Array} Array of square IDs with the status
+     * Get all squares with at least one explorable quadrant
+     * @returns {Array} Array of square IDs with explorable quadrants
      */
-    getSquaresByStatus(status) {
+    getSquaresWithExplorableQuadrants() {
         const squares = [];
         for (const [squareId, data] of this.squareData) {
-            if (data.status === status) {
+            if (data.quadrants.some(q => q.status === 'explorable')) {
+                squares.push(squareId);
+            }
+        }
+        return squares;
+    }
+    
+    /**
+     * Get all squares with only inaccessible quadrants
+     * @returns {Array} Array of square IDs with only inaccessible quadrants
+     */
+    getSquaresWithOnlyInaccessibleQuadrants() {
+        const squares = [];
+        for (const [squareId, data] of this.squareData) {
+            if (data.quadrants.every(q => q.status === 'inaccessible')) {
                 squares.push(squareId);
             }
         }
@@ -3562,35 +3454,23 @@ class MapMetadata {
     }
     
     /**
-     * Get all available statuses
-     * @returns {Array} Array of unique status values
+     * Check if a square has any explorable quadrants
+     * @param {string} squareId - Square ID like "E4"
+     * @returns {boolean} True if square has at least one explorable quadrant
      */
-    getStatuses() {
-        const statuses = new Set();
-        for (const data of this.squareData.values()) {
-            statuses.add(data.status);
-        }
-        return Array.from(statuses);
+    hasExplorableQuadrants(squareId) {
+        const metadata = this.getSquareMetadata(squareId);
+        return metadata ? metadata.quadrants.some(q => q.status === 'explorable') : false;
     }
     
     /**
-     * Check if a square is explorable
+     * Check if a square has only inaccessible quadrants
      * @param {string} squareId - Square ID like "E4"
-     * @returns {boolean} True if square is explorable
+     * @returns {boolean} True if all quadrants are inaccessible
      */
-    isExplorable(squareId) {
+    hasOnlyInaccessibleQuadrants(squareId) {
         const metadata = this.getSquareMetadata(squareId);
-        return metadata ? metadata.status === 'Explorable' : false;
-    }
-    
-    /**
-     * Check if a square is inaccessible
-     * @param {string} squareId - Square ID like "E4"
-     * @returns {boolean} True if square is inaccessible
-     */
-    isInaccessible(squareId) {
-        const metadata = this.getSquareMetadata(squareId);
-        return metadata ? metadata.status === 'Inaccessible' : false;
+        return metadata ? metadata.quadrants.every(q => q.status === 'inaccessible') : true;
     }
     
     /**
@@ -3601,16 +3481,6 @@ class MapMetadata {
     getRegion(squareId) {
         const metadata = this.getSquareMetadata(squareId);
         return metadata ? metadata.region : null;
-    }
-    
-    /**
-     * Get status for a square
-     * @param {string} squareId - Square ID like "E4"
-     * @returns {string|null} Status or null if not found
-     */
-    getStatus(squareId) {
-        const metadata = this.getSquareMetadata(squareId);
-        return metadata ? metadata.status : null;
     }
     
     /**
@@ -3635,6 +3505,62 @@ class MapMetadata {
         
         const quadrantData = quadrants.find(q => q.quadrantId === `Q${quadrant}`);
         return quadrantData ? quadrantData.blighted : false;
+    }
+    
+    /**
+     * Check if a specific quadrant is explorable
+     * @param {string} squareId - Square ID like "E4"
+     * @param {number} quadrant - Quadrant number (1-4)
+     * @returns {boolean} True if quadrant is explorable
+     */
+    isQuadrantExplorable(squareId, quadrant) {
+        const quadrants = this.getQuadrants(squareId);
+        if (!quadrants) return false;
+        
+        const quadrantData = quadrants.find(q => q.quadrantId === `Q${quadrant}`);
+        return quadrantData ? quadrantData.status === 'explorable' : false;
+    }
+    
+    /**
+     * Get the status of a specific quadrant
+     * @param {string} squareId - Square ID like "E4"
+     * @param {number} quadrant - Quadrant number (1-4)
+     * @returns {string|null} Status of the quadrant or null if not found
+     */
+    getQuadrantStatus(squareId, quadrant) {
+        const quadrants = this.getQuadrants(squareId);
+        if (!quadrants) return null;
+        
+        const quadrantData = quadrants.find(q => q.quadrantId === `Q${quadrant}`);
+        return quadrantData ? quadrantData.status : null;
+    }
+    
+    /**
+     * Get all explorable quadrants for a square
+     * @param {string} squareId - Square ID like "E4"
+     * @returns {Array} Array of explorable quadrant IDs
+     */
+    getExplorableQuadrants(squareId) {
+        const quadrants = this.getQuadrants(squareId);
+        if (!quadrants) return [];
+        
+        return quadrants
+            .filter(q => q.status === 'explorable')
+            .map(q => q.quadrantId);
+    }
+    
+    /**
+     * Get all blighted quadrants for a square
+     * @param {string} squareId - Square ID like "E4"
+     * @returns {Array} Array of blighted quadrant IDs
+     */
+    getBlightedQuadrants(squareId) {
+        const quadrants = this.getQuadrants(squareId);
+        if (!quadrants) return [];
+        
+        return quadrants
+            .filter(q => q.blighted)
+            .map(q => q.quadrantId);
     }
 }
 
