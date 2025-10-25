@@ -374,29 +374,99 @@ function setupMobileSidebar() {
 
 /**
  * ------------------- Function: setupTouchInteractions -------------------
- * Enhances touch interactions for mobile devices.
+ * Enhances touch interactions for mobile devices with proper sensitivity handling.
  */
 function setupTouchInteractions() {
   // Add touch feedback to interactive elements
   const touchElements = document.querySelectorAll('.model-card, .countdown-card, .weather-card, .sidebar-nav a');
   
   touchElements.forEach(element => {
-    // Add touch feedback
-    element.addEventListener('touchstart', function() {
+    let touchStartTime = 0;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let hasMoved = false;
+    let touchDelay = null;
+    
+    // Touch start - record initial position and time
+    element.addEventListener('touchstart', function(e) {
+      touchStartTime = Date.now();
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      hasMoved = false;
+      
+      // Add visual feedback immediately
       this.style.transform = 'scale(0.98)';
       this.style.transition = 'transform 0.1s ease';
-    });
+      
+      // Set a delay to prevent accidental clicks during scrolling
+      touchDelay = setTimeout(() => {
+        // Only proceed if touch hasn't moved significantly
+        if (!hasMoved) {
+          this.style.transform = 'scale(0.95)';
+        }
+      }, 50);
+    }, { passive: true });
     
-    element.addEventListener('touchend', function() {
+    // Touch move - track if user is scrolling
+    element.addEventListener('touchmove', function(e) {
+      if (touchStartX && touchStartY) {
+        const deltaX = Math.abs(e.touches[0].clientX - touchStartX);
+        const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
+        
+        // If moved more than 10px, consider it scrolling
+        if (deltaX > 10 || deltaY > 10) {
+          hasMoved = true;
+          // Reset visual feedback if scrolling
+          this.style.transform = '';
+          this.style.transition = '';
+        }
+      }
+    }, { passive: true });
+    
+    // Touch end - handle click only if not scrolling
+    element.addEventListener('touchend', function(e) {
+      // Clear the delay
+      if (touchDelay) {
+        clearTimeout(touchDelay);
+        touchDelay = null;
+      }
+      
+      // Reset visual feedback
       this.style.transform = '';
       this.style.transition = '';
-    });
-    
-    // Prevent double-tap zoom on buttons
-    element.addEventListener('touchend', function(e) {
-      e.preventDefault();
-      this.click();
+      
+      // Only trigger click if:
+      // 1. Touch duration was reasonable (not too quick, not too long)
+      // 2. User didn't scroll significantly
+      // 3. Touch was intentional (not accidental)
+      const touchDuration = Date.now() - touchStartTime;
+      const isValidTouch = touchDuration > 50 && touchDuration < 1000 && !hasMoved;
+      
+      if (isValidTouch) {
+        // Prevent default to avoid double-tap zoom
+        e.preventDefault();
+        // Trigger the click
+        this.click();
+      }
+      
+      // Reset tracking variables
+      touchStartTime = 0;
+      touchStartX = 0;
+      touchStartY = 0;
+      hasMoved = false;
     }, { passive: false });
+    
+    // Handle touch cancel (e.g., when scrolling starts)
+    element.addEventListener('touchcancel', function() {
+      if (touchDelay) {
+        clearTimeout(touchDelay);
+        touchDelay = null;
+      }
+      
+      this.style.transform = '';
+      this.style.transition = '';
+      hasMoved = true;
+    }, { passive: true });
   });
   
   // Improve scroll performance on mobile

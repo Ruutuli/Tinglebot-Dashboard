@@ -1226,6 +1226,8 @@ h4 { font-size: 1.25rem; }
   .countdown-card,
   .weather-card {
     min-height: 48px;
+    /* Add touch-friendly spacing */
+    margin: 2px 0;
   }
   
   /* Improve button touch targets */
@@ -1243,12 +1245,12 @@ h4 { font-size: 1.25rem; }
     min-height: 48px;
   }
   
-  /* Add touch feedback */
+  /* Enhanced touch feedback with better sensitivity */
   .model-card:active,
   .countdown-card:active,
   .weather-card:active,
   .sidebar-nav a:active {
-    transform: scale(0.98);
+    transform: scale(0.96);
     transition: transform 0.1s ease;
   }
   
@@ -1258,6 +1260,24 @@ h4 { font-size: 1.25rem; }
   .weather-card:hover,
   .sidebar-nav a:hover {
     transform: none;
+  }
+  
+  /* Add visual feedback for touch states */
+  .model-card.touching,
+  .countdown-card.touching,
+  .weather-card.touching {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  /* Prevent accidental button presses during scroll */
+  .model-card,
+  .countdown-card,
+  .weather-card {
+    /* Add a small delay to prevent accidental triggers */
+    touch-action: manipulation;
+    /* Improve scroll performance */
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -4130,4 +4150,788 @@ html {
 [data-animation-speed="disabled"] * {
   transition: none !important;
   animation: none !important;
+}
+
+/* ============================================================================ */
+/* Village Shops Admin Styles - Using Database Editor Styling */
+/* ============================================================================ */
+
+/* Database Editor Header - Consistent Styling */
+.database-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--glass-divider);
+}
+
+.database-editor-header h2 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Back Button Styling - Database Editor Style */
+.back-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.75rem 1.5rem !important;
+  background: transparent !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--input-radius) !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  text-decoration: none !important;
+  margin-bottom: 1rem !important;
+  font-family: inherit !important;
+  line-height: 1.5 !important;
+  white-space: nowrap !important;
+}
+
+.back-button:hover {
+  background: var(--glass-bg) !important;
+  border-color: var(--accent) !important;
+  color: var(--text-primary) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  text-decoration: none !important;
+}
+
+.back-button:focus {
+  outline: none !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1) !important;
+}
+
+.back-button i {
+  font-size: 0.9rem !important;
+  transition: transform 0.3s ease !important;
+  margin-right: 0 !important;
+}
+
+.back-button:hover i {
+  transform: translateX(-2px) !important;
+}
+
+/* Ensure back button works in database editor header */
+.database-editor-header .back-button {
+  margin-right: auto !important;
+}
+
+/* Database Editor Controls Styling */
+.db-editor-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+}
+
+.model-selector-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.model-selector-container label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.model-selector-container select {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--input-radius);
+  background: var(--input-background);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.model-selector-container select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+}
+
+.search-container {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 300px;
+}
+
+.search-container input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--input-radius);
+  background: var(--input-background);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.search-container input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+}
+
+.search-btn {
+  padding: 0.75rem 1rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--input-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.search-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.create-btn {
+  padding: 0.75rem 1.5rem;
+  background: var(--success-color);
+  color: white;
+  border: none;
+  border-radius: var(--input-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.create-btn:hover {
+  background: #2e7d32;
+  transform: translateY(-1px);
+}
+
+/* Database Editor Table Styles - Applied to Village Shops */
+.db-records-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card-background);
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  font-size: 0.9rem;
+}
+
+.db-records-table th {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--glass-divider);
+  white-space: nowrap;
+}
+
+.db-records-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--glass-divider);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.db-records-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.db-records-table tbody tr:hover {
+  background: var(--glass-bg);
+}
+
+.db-records-table tbody tr.even-row {
+  background: rgba(var(--accent-rgb), 0.02);
+}
+
+.db-records-table tbody tr.even-row:hover {
+  background: var(--glass-bg);
+}
+
+.item-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.item-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.item-emoji {
+  font-size: 1.2rem;
+}
+
+.village-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, var(--accent), var(--success-color));
+  color: white;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.category-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: var(--glass-background);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.price-cell {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: var(--success-color);
+}
+
+.stock-cell {
+  text-align: center;
+}
+
+.stock-amount {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.stock-amount.high {
+  background: rgba(var(--success-color-rgb), 0.1);
+  color: var(--success-color);
+  border: 1px solid rgba(var(--success-color-rgb), 0.3);
+}
+
+.stock-amount.medium {
+  background: rgba(var(--warning-color-rgb), 0.1);
+  color: var(--warning-color);
+  border: 1px solid rgba(var(--warning-color-rgb), 0.3);
+}
+
+.stock-amount.low {
+  background: rgba(var(--error-color-rgb), 0.1);
+  color: var(--error-color);
+  border: 1px solid rgba(var(--error-color-rgb), 0.3);
+}
+
+/* Action Buttons - Matching Database Editor Style */
+.action-btn {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0 0.25rem;
+}
+
+.action-btn.edit-btn {
+  background: var(--accent);
+  color: white;
+}
+
+.action-btn.edit-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.action-btn.delete-btn {
+  background: var(--error-color);
+  color: white;
+}
+
+.action-btn.delete-btn:hover {
+  background: #c62828;
+  transform: translateY(-1px);
+}
+
+.actions-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.loading-cell {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.loading-cell .loading-spinner {
+  margin-right: 0.5rem;
+}
+
+/* Village Shop Item Modal Styles - Database Editor Style */
+.shop-item-modal {
+  max-width: 600px;
+  width: 90%;
+}
+
+.shop-item-modal .modal-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--glass-divider);
+  padding: 1.5rem;
+  border-radius: var(--card-radius) var(--card-radius) 0 0;
+}
+
+.shop-item-modal .modal-header h3 {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shop-item-modal .modal-body {
+  padding: 2rem;
+  background: var(--card-background);
+}
+
+.shop-item-modal .modal-footer {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--glass-divider);
+  padding: 1.5rem;
+  border-radius: 0 0 var(--card-radius) var(--card-radius);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.shop-item-modal .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.shop-item-modal .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.shop-item-modal label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.shop-item-modal input,
+.shop-item-modal select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--input-radius);
+  background: var(--input-background);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.shop-item-modal input:focus,
+.shop-item-modal select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+}
+
+.shop-item-modal .btn-primary {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--input-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.shop-item-modal .btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.shop-item-modal .btn-secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--input-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.shop-item-modal .btn-secondary:hover {
+  background: var(--glass-bg);
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.shop-item-modal .btn-danger {
+  background: var(--error-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--input-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.shop-item-modal .btn-danger:hover {
+  background: #c62828;
+  transform: translateY(-1px);
+}
+
+/* Item Suggestions Dropdown */
+.item-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 var(--input-radius) var(--input-radius);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.suggestion-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid var(--glass-divider);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background: var(--glass-bg);
+}
+
+.suggestion-item.selected {
+  background: var(--accent);
+  color: white;
+}
+
+.suggestion-item-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.suggestion-item.selected .suggestion-item-name {
+  color: white;
+}
+
+.suggestion-item-emoji {
+  font-size: 1.1rem;
+}
+
+.suggestion-item-category {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+.suggestion-item.selected .suggestion-item-category {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.form-group {
+  position: relative;
+}
+
+/* ============================================================================ */
+/* Modal Base Styles                                                           */
+/* ============================================================================ */
+
+.modal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(8px) !important;
+  z-index: 10000 !important;
+  display: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+  box-sizing: border-box !important;
+  animation: modalFadeIn 0.3s ease !important;
+}
+
+.modal.show {
+  display: flex !important;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+}
+
+@keyframes modalFadeOut {
+  from {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+  to {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+}
+
+.modal-content {
+  position: relative !important;
+  background: var(--card-background) !important;
+  border-radius: var(--card-radius) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+  overflow: hidden !important;
+  border: 1px solid var(--border-color) !important;
+  animation: modalSlideIn 0.3s ease-out !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  background: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--glass-divider) !important;
+  padding: 1.5rem !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.modal-header h3 {
+  margin: 0 !important;
+  color: var(--text-primary) !important;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+}
+
+.modal-close {
+  background: none !important;
+  border: none !important;
+  color: var(--text-secondary) !important;
+  font-size: 1.5rem !important;
+  cursor: pointer !important;
+  padding: 0.5rem !important;
+  border-radius: 50% !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px !important;
+  height: 40px !important;
+}
+
+.modal-close:hover {
+  background: var(--glass-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.modal-body {
+  padding: 2rem !important;
+  background: var(--card-background) !important;
+}
+
+.modal-footer {
+  background: var(--bg-secondary) !important;
+  border-top: 1px solid var(--glass-divider) !important;
+  padding: 1.5rem !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 1rem !important;
+}
+
+/* Table Wrapper - Matching Database Editor */
+.records-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+}
+
+/* Pagination Controls - Database Editor Style */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding: 1rem;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+}
+
+.pagination-btn {
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--input-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.pagination-btn:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+#shops-pagination-info {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .db-editor-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .model-selector-container {
+    min-width: auto;
+  }
+  
+  .search-container {
+    min-width: auto;
+  }
+  
+  .db-records-table {
+    font-size: 0.8rem;
+  }
+  
+  .db-records-table th,
+  .db-records-table td {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .shop-item-modal .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .pagination-controls {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .records-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .db-records-table {
+    min-width: 600px;
+  }
+  
+  .action-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
 }

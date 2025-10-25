@@ -8633,6 +8633,205 @@ app.get('/api/user/levels/exchange-status', requireAuth, async (req, res) => {
   }
 });
 
+// ------------------- Section: Village Shops Management API -------------------
+
+// ------------------- Endpoint: Get all village shop items -------------------
+app.get('/api/admin/village-shops', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { page = 1, limit = 20, search = '', category = '', village = '' } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Build query
+    let query = {};
+    
+    if (search) {
+      query.$or = [
+        { itemName: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    if (category) {
+      query.category = { $in: [category] };
+    }
+    
+    if (village) {
+      // Note: Village is not directly stored in VillageShops, but we can filter by itemName patterns
+      // This is a simplified approach - you might want to add a village field to the schema
+      query.itemName = { $regex: village, $options: 'i' };
+    }
+
+    const [items, total] = await Promise.all([
+      VillageShops.find(query)
+        .populate('itemId', 'itemName image')
+        .sort({ itemName: 1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
+      VillageShops.countDocuments(query)
+    ]);
+
+    res.json({
+      items,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('[server.js]: Error fetching village shop items:', error);
+    res.status(500).json({ error: 'Failed to fetch village shop items' });
+  }
+});
+
+// ------------------- Endpoint: Get single village shop item -------------------
+app.get('/api/admin/village-shops/:id', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const item = await VillageShops.findById(req.params.id).populate('itemId', 'itemName image');
+    
+    if (!item) {
+      return res.status(404).json({ error: 'Village shop item not found' });
+    }
+
+    res.json(item);
+  } catch (error) {
+    console.error('[server.js]: Error fetching village shop item:', error);
+    res.status(500).json({ error: 'Failed to fetch village shop item' });
+  }
+});
+
+// ------------------- Endpoint: Create new village shop item -------------------
+app.post('/api/admin/village-shops', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    // Find the item by name to get the itemId
+    const item = await Item.findOne({ itemName: req.body.itemName });
+    if (!item) {
+      return res.status(400).json({ error: 'Item not found. Please ensure the item exists in the database.' });
+    }
+
+    const shopItemData = {
+      ...req.body,
+      itemId: item._id,
+      // Copy relevant fields from the base item
+      category: item.category || ['Misc'],
+      type: item.type || ['Unknown'],
+      subtype: item.subtype || ['None'],
+      buyPrice: item.buyPrice || 0,
+      sellPrice: item.sellPrice || 0,
+      itemRarity: item.itemRarity || 1,
+      emoji: item.emoji || '',
+      image: item.image || 'No Image',
+      imageType: item.imageType || 'No Image Type'
+    };
+
+    const shopItem = new VillageShops(shopItemData);
+    await shopItem.save();
+
+    console.log(`[server.js]: ✅ Admin ${req.user.username} created village shop item:`, shopItem._id);
+    
+    res.status(201).json({
+      success: true,
+      item: shopItem
+    });
+  } catch (error) {
+    console.error('[server.js]: Error creating village shop item:', error);
+    res.status(500).json({ 
+      error: 'Failed to create village shop item',
+      details: error.message,
+      validationErrors: error.errors 
+    });
+  }
+});
+
+// ------------------- Endpoint: Update village shop item -------------------
+app.put('/api/admin/village-shops/:id', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const updateData = { ...req.body };
+    
+    // Ensure array fields are properly formatted
+    if (updateData.category && !Array.isArray(updateData.category)) {
+      updateData.category = [updateData.category];
+    }
+    if (updateData.type && !Array.isArray(updateData.type)) {
+      updateData.type = [updateData.type];
+    }
+    if (updateData.subtype && !Array.isArray(updateData.subtype)) {
+      updateData.subtype = [updateData.subtype];
+    }
+
+    const item = await VillageShops.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!item) {
+      return res.status(404).json({ error: 'Village shop item not found' });
+    }
+
+    console.log(`[server.js]: ✅ Admin ${req.user.username} updated village shop item:`, item._id);
+    
+    res.json({
+      success: true,
+      item
+    });
+  } catch (error) {
+    console.error('[server.js]: Error updating village shop item:', error);
+    res.status(500).json({ 
+      error: 'Failed to update village shop item',
+      details: error.message,
+      validationErrors: error.errors 
+    });
+  }
+});
+
+// ------------------- Endpoint: Delete village shop item -------------------
+app.delete('/api/admin/village-shops/:id', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const item = await VillageShops.findByIdAndDelete(req.params.id);
+    
+    if (!item) {
+      return res.status(404).json({ error: 'Village shop item not found' });
+    }
+
+    console.log(`[server.js]: ✅ Admin ${req.user.username} deleted village shop item:`, item._id);
+    
+    res.json({
+      success: true,
+      message: 'Village shop item deleted successfully'
+    });
+  } catch (error) {
+    console.error('[server.js]: Error deleting village shop item:', error);
+    res.status(500).json({ error: 'Failed to delete village shop item' });
+  }
+});
+
 // ------------------- Section: Admin Database Editor -------------------
 
 // ------------------- Import all remaining models for database management -------------------

@@ -96,20 +96,51 @@ function setupMobileEventHandlers() {
       card.style.setProperty('--hover-shadow', 'var(--card-shadow)');
     }
     
-    // Add touch feedback
-    card.addEventListener('touchstart', function() {
+    // Add touch feedback with proper sensitivity handling
+    let touchStartTime = 0;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let hasMoved = false;
+    
+    card.addEventListener('touchstart', function(e) {
+      touchStartTime = Date.now();
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      hasMoved = false;
+      
       this.style.transform = 'scale(0.98)';
       this.style.transition = 'transform 0.1s ease';
-    });
+    }, { passive: true });
     
-    card.addEventListener('touchend', function() {
+    card.addEventListener('touchmove', function(e) {
+      if (touchStartX && touchStartY) {
+        const deltaX = Math.abs(e.touches[0].clientX - touchStartX);
+        const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
+        
+        if (deltaX > 10 || deltaY > 10) {
+          hasMoved = true;
+          this.style.transform = '';
+          this.style.transition = '';
+        }
+      }
+    }, { passive: true });
+    
+    card.addEventListener('touchend', function(e) {
       this.style.transform = '';
       this.style.transition = '';
-    });
-    
-    // Prevent zoom on double tap
-    card.addEventListener('touchend', function(e) {
-      e.preventDefault();
+      
+      const touchDuration = Date.now() - touchStartTime;
+      const isValidTouch = touchDuration > 50 && touchDuration < 1000 && !hasMoved;
+      
+      if (isValidTouch) {
+        e.preventDefault();
+        this.click();
+      }
+      
+      touchStartTime = 0;
+      touchStartX = 0;
+      touchStartY = 0;
+      hasMoved = false;
     }, { passive: false });
   });
   

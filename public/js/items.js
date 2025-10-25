@@ -2045,7 +2045,7 @@ function setupItemMobileEventHandlers() {
 }
 
 // ------------------- Function: setupItemCardTouchHandlers -------------------
-// Enhanced touch handlers for item cards
+// Enhanced touch handlers for item cards with proper sensitivity handling
 function setupItemCardTouchHandlers(card) {
   const isTouch = isTouchDevice();
   
@@ -2055,13 +2055,17 @@ function setupItemCardTouchHandlers(card) {
     card.style.setProperty('--hover-shadow', 'var(--card-shadow)');
   }
   
-  // Enhanced touch feedback
+  // Enhanced touch feedback with proper sensitivity handling
   let touchStartTime = 0;
+  let touchStartX = 0;
   let touchStartY = 0;
+  let hasMoved = false;
   
   card.addEventListener('touchstart', function(e) {
     touchStartTime = Date.now();
+    touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
+    hasMoved = false;
     
     this.style.transform = 'scale(0.98)';
     this.style.transition = 'transform 0.1s ease';
@@ -2069,14 +2073,19 @@ function setupItemCardTouchHandlers(card) {
   }, { passive: true });
   
   card.addEventListener('touchmove', function(e) {
-    const currentY = e.touches[0].clientY;
-    const diffY = Math.abs(currentY - touchStartY);
-    
-    // Prevent scrolling if user is trying to interact with card
-    if (diffY > 10) {
-      e.preventDefault();
+    if (touchStartX && touchStartY) {
+      const deltaX = Math.abs(e.touches[0].clientX - touchStartX);
+      const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
+      
+      // If moved more than 10px, consider it scrolling
+      if (deltaX > 10 || deltaY > 10) {
+        hasMoved = true;
+        this.style.transform = '';
+        this.style.transition = '';
+        this.classList.remove('touching');
+      }
     }
-  }, { passive: false });
+  }, { passive: true });
   
   card.addEventListener('touchend', function(e) {
     const touchDuration = Date.now() - touchStartTime;
@@ -2085,18 +2094,28 @@ function setupItemCardTouchHandlers(card) {
     this.style.transition = '';
     this.classList.remove('touching');
     
-    // Handle tap vs long press
-    if (touchDuration < 500) {
-      // Short tap - normal interaction
-      this.classList.add('tapped');
-      setTimeout(() => this.classList.remove('tapped'), 200);
+    // Only trigger click if it was a valid touch (not scrolling)
+    const isValidTouch = touchDuration > 50 && touchDuration < 1000 && !hasMoved;
+    
+    if (isValidTouch) {
+      e.preventDefault();
+      this.click();
     }
-  }, { passive: true });
-  
-  // Prevent zoom on double tap
-  card.addEventListener('touchend', function(e) {
-    e.preventDefault();
+    
+    // Reset tracking variables
+    touchStartTime = 0;
+    touchStartX = 0;
+    touchStartY = 0;
+    hasMoved = false;
   }, { passive: false });
+  
+  // Handle touch cancel (e.g., when scrolling starts)
+  card.addEventListener('touchcancel', function() {
+    this.style.transform = '';
+    this.style.transition = '';
+    this.classList.remove('touching');
+    hasMoved = true;
+  }, { passive: true });
 }
 
 // ------------------- Function: optimizeItemFilterControls -------------------

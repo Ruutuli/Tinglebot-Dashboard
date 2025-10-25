@@ -820,6 +820,23 @@
               </div>
             </div>
           </div>
+
+          <!-- Village Shops Management -->
+          <div class="admin-tool-card">
+            <div class="admin-tool-header">
+              <i class="fas fa-store"></i>
+              <h3>Village Shops Management</h3>
+            </div>
+            <div class="admin-tool-content">
+              <p>Manage village shop items, stock, and pricing</p>
+              <div class="admin-tool-actions">
+                <button class="admin-action-btn primary" id="village-shops-manager-btn">
+                  <i class="fas fa-shopping-cart"></i>
+                  Manage Village Shops
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Database Editor Section -->
@@ -909,6 +926,115 @@
                 Delete
               </button>
               <button id="modal-save-btn" class="btn-primary">
+                <i class="fas fa-save"></i>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Village Shops Management Section -->
+        <div id="village-shops-management-section" style="display: none;">
+          <div class="database-editor-header">
+            <button class="back-button" id="back-to-admin-from-shops-btn">
+              <i class="fas fa-arrow-left"></i>
+              Back to Admin Tools
+            </button>
+            <h2><i class="fas fa-store"></i> Village Shops Management</h2>
+          </div>
+
+          <!-- Village Shops Controls -->
+          <div class="db-editor-controls">
+            <div class="model-selector-container">
+              <label for="shops-category-filter">Filter by Category:</label>
+              <select id="shops-category-filter">
+                <option value="">All Categories</option>
+                <option value="Weapons">Weapons</option>
+                <option value="Armor">Armor</option>
+                <option value="Tools">Tools</option>
+                <option value="Materials">Materials</option>
+                <option value="Food">Food</option>
+                <option value="Misc">Misc</option>
+              </select>
+            </div>
+
+            <div class="search-container">
+              <input type="text" id="shops-search-input" placeholder="Search village shop items...">
+              <button id="shops-search-btn" class="search-btn">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+
+            <button id="add-shop-item-btn" class="create-btn">
+              <i class="fas fa-plus"></i>
+              Add Shop Item
+            </button>
+          </div>
+
+          <!-- Village Shops Table -->
+          <div id="village-shops-container">
+            <div class="records-table-wrapper">
+              <table id="village-shops-table" class="db-records-table">
+                <thead id="village-shops-table-head">
+                  <!-- Dynamic headers will be inserted here -->
+                </thead>
+                <tbody id="village-shops-table-body">
+                  <!-- Dynamic rows will be inserted here -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-controls">
+              <button id="shops-prev-page-btn" class="pagination-btn">
+                <i class="fas fa-chevron-left"></i>
+                Previous
+              </button>
+              <span id="shops-pagination-info">Page 1 of 1</span>
+              <button id="shops-next-page-btn" class="pagination-btn">
+                Next
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div id="shops-empty-state" class="empty-state">
+            <i class="fas fa-store"></i>
+            <p>No village shop items found</p>
+          </div>
+        </div>
+
+        <!-- Village Shop Item Edit Modal -->
+        <div id="shop-item-edit-modal" class="modal" style="display: none;">
+          <div class="modal-content shop-item-modal">
+            <div class="modal-header">
+              <h3 id="shop-modal-title">Edit Shop Item</h3>
+              <button class="modal-close" id="shop-modal-close-btn">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body" id="shop-modal-body">
+              <form id="shop-item-form">
+                <div class="form-group">
+                  <label for="shop-item-name">Item Name:</label>
+                  <input type="text" id="shop-item-name" name="itemName" required placeholder="Start typing to search items..." autocomplete="off">
+                  <div id="item-suggestions" class="item-suggestions" style="display: none;"></div>
+                </div>
+
+                <div class="form-group">
+                  <label for="shop-item-stock">Stock:</label>
+                  <input type="number" id="shop-item-stock" name="stock" min="0" required placeholder="Enter stock quantity">
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button id="shop-modal-cancel-btn" class="btn-secondary">Cancel</button>
+              <button id="shop-modal-delete-btn" class="btn-danger" style="display: none;">
+                <i class="fas fa-trash"></i>
+                Delete
+              </button>
+              <button id="shop-modal-save-btn" class="btn-primary">
                 <i class="fas fa-save"></i>
                 Save
               </button>
@@ -2654,6 +2780,7 @@
   <script type="module" src="js/calendar.js"></script>
   <script type="module" src="js/index.js"></script>
   <script src="js/databaseEditor.js"></script>
+  <script src="js/villageShopsAdmin.js"></script>
   <script src="js/countdown.js"></script>
   <script src="js/debug.js"></script>
   <script type="module" src="js/characterOfWeek.js"></script>
