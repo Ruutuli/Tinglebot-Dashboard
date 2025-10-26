@@ -103,7 +103,10 @@ class SettingsManager {
         return false;
       }
     } catch (error) {
-      console.error('[settings.js]: Error loading settings from server:', error);
+      // Only log non-401 errors to reduce noise
+      if (!error.message.includes('401')) {
+        console.error('[settings.js]: Error loading settings from server:', error);
+      }
       return false;
     }
   }
@@ -160,7 +163,10 @@ class SettingsManager {
         throw new Error('Failed to save settings to server');
       }
     } catch (error) {
-      console.error('[settings.js]: Error saving settings to server:', error);
+      // Only log non-401 errors to reduce noise
+      if (!error.message.includes('401')) {
+        console.error('[settings.js]: Error saving settings to server:', error);
+      }
       return false;
     }
   }

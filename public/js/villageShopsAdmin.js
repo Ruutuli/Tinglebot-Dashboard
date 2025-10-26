@@ -193,6 +193,22 @@ class VillageShopsAdmin {
 
   async loadVillageShops() {
     try {
+      // Check authentication before making admin API calls
+      const authResponse = await fetch('/api/user', {
+        credentials: 'include'
+      });
+      
+      if (!authResponse.ok) {
+        throw new Error('Authentication required');
+      }
+      
+      const authData = await authResponse.json();
+      
+      if (!authData.isAuthenticated || !authData.isAdmin) {
+        this.showError('Admin access required. Please log in with admin privileges.');
+        return;
+      }
+      
       this.showLoading();
       
       const params = new URLSearchParams({
@@ -506,6 +522,22 @@ class VillageShopsAdmin {
 
   async saveShopItem() {
     try {
+      // Check authentication before making admin API calls
+      const authResponse = await fetch('/api/user', {
+        credentials: 'include'
+      });
+      
+      if (!authResponse.ok) {
+        throw new Error('Authentication required');
+      }
+      
+      const authData = await authResponse.json();
+      
+      if (!authData.isAuthenticated || !authData.isAdmin) {
+        this.showError('Admin access required. Please log in with admin privileges.');
+        return;
+      }
+      
       const formData = new FormData(document.getElementById('shop-item-form'));
       const data = Object.fromEntries(formData.entries());
 
@@ -556,6 +588,22 @@ class VillageShopsAdmin {
 
   async editShopItem(itemId) {
     try {
+      // Check authentication before making admin API calls
+      const authResponse = await fetch('/api/user', {
+        credentials: 'include'
+      });
+      
+      if (!authResponse.ok) {
+        throw new Error('Authentication required');
+      }
+      
+      const authData = await authResponse.json();
+      
+      if (!authData.isAuthenticated || !authData.isAdmin) {
+        this.showError('Admin access required. Please log in with admin privileges.');
+        return;
+      }
+      
       const response = await fetch(`/api/admin/village-shops/${itemId}`, {
         credentials: 'include'
       });
@@ -581,6 +629,22 @@ class VillageShopsAdmin {
 
   async deleteShopItem(itemId = null) {
     try {
+      // Check authentication before making admin API calls
+      const authResponse = await fetch('/api/user', {
+        credentials: 'include'
+      });
+      
+      if (!authResponse.ok) {
+        throw new Error('Authentication required');
+      }
+      
+      const authData = await authResponse.json();
+      
+      if (!authData.isAuthenticated || !authData.isAdmin) {
+        this.showError('Admin access required. Please log in with admin privileges.');
+        return;
+      }
+      
       const id = itemId || this.editingItem._id;
       
       const response = await fetch(`/api/admin/village-shops/${id}`, {
