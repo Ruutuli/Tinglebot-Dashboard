@@ -41,8 +41,7 @@ const pinSchema = new mongoose.Schema({
   gridLocation: {
     type: String,
     required: true,
-    match: /^[A-J]([1-9]|1[0-2])$/,
-    index: true
+    match: /^[A-J]([1-9]|1[0-2])$/
   },
   
   // Pin appearance

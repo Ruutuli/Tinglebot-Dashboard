@@ -4100,7 +4100,7 @@ const getNextMidnightEST = (fromDate) => {
 // ------------------- Function: checkIfTodayIsBeforeBloodMoon -------------------
 // Checks if today is the day before a blood moon event
 const checkIfTodayIsBeforeBloodMoon = () => {
-  const { bloodmoonDates } = require('./modules/calendarModule');
+  const { bloodmoonDates } = require('./calendarModule');
   
   const now = new Date();
   const estTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
@@ -5539,7 +5539,7 @@ app.get('/api/gallery/test', (req, res) => {
 // Returns approved submissions for the gallery
 app.get('/api/gallery/submissions', async (req, res) => {
   try {
-    console.log('[server.js]: 🖼️ Gallery API endpoint called');
+    logger.api('Gallery API endpoint called');
     const { category, sort, page = 1, limit = 50 } = req.query;
     
     // Build query
@@ -5569,18 +5569,18 @@ app.get('/api/gallery/submissions', async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
     
     // Fetch submissions
-    console.log('[server.js]: 🔍 Fetching submissions with query:', query);
+    logger.debug('Fetching submissions with query:', query);
     const submissions = await ApprovedSubmission.find(query)
       .sort(sortOptions)
       .skip(skip)
       .limit(limitNum)
       .lean();
     
-    console.log('[server.js]: 📊 Found', submissions.length, 'submissions');
+    logger.debug('Found ' + submissions.length + ' submissions');
     
     // Get total count for pagination
     const totalCount = await ApprovedSubmission.countDocuments(query);
-    console.log('[server.js]: 📈 Total count:', totalCount);
+    logger.debug('Total count: ' + totalCount);
     
     res.json({
       submissions,
@@ -6723,7 +6723,7 @@ const SCANNABLE_FIELDS = {
 
 // Security audit function
 async function performSecurityAudit() {
-  console.log('[server.js]: 🔍 Starting comprehensive security audit...');
+  logger.debug('Starting comprehensive security audit...');
   const auditResults = {
     timestamp: new Date().toISOString(),
     totalRecordsScanned: 0,
@@ -6737,8 +6737,21 @@ async function performSecurityAudit() {
     // Scan each model for malicious content
     for (const [modelName, fields] of Object.entries(SCANNABLE_FIELDS)) {
       try {
-        const Model = require(`./models/${modelName}Model.js`);
-        console.log(`[server.js]: 🔍 Scanning ${modelName} model...`);
+        const ModelModule = require(`./models/${modelName}Model.js`);
+        logger.debug('Scanning ' + modelName + ' model...');
+        
+        // Handle models that export initialization functions vs direct models
+        let Model;
+        if (typeof ModelModule === 'function') {
+          // This is an initialization function, get the model from MODEL_REGISTRY
+          Model = MODEL_REGISTRY[modelName];
+          if (!Model) {
+            logger.error('Error scanning ' + modelName + ': Model not found in registry');
+            continue;
+          }
+        } else {
+          Model = ModelModule;
+        }
         
         const records = await Model.find({}).lean();
         auditResults.totalRecordsScanned += records.length;
@@ -6784,9 +6797,9 @@ async function performSecurityAudit() {
           }
         }
         
-        console.log(`[server.js]: ✅ Scanned ${records.length} ${modelName} records`);
+        logger.success('Scanned ' + records.length + ' ' + modelName + ' records');
       } catch (error) {
-        console.error(`[server.js]: ❌ Error scanning ${modelName}:`, error.message);
+        logger.error('Error scanning ' + modelName + ': ' + error.message);
         auditResults.warnings.push({
           model: modelName,
           error: error.message,
@@ -7931,7 +7944,7 @@ app.post('/api/blupee/claim', requireAuth, async (req, res) => {
     await user.save();
     
     logger.success(`User ${user.username || user.discordId} claimed a blupee! (+${tokensAwarded} tokens, Daily: ${user.blupeeHunt.dailyCount}/${DAILY_LIMIT}, Total: ${user.blupeeHunt.totalClaimed})`);
-    console.log(`[server.js]: Daily count after claim: ${user.blupeeHunt.dailyCount}, reset date: ${user.blupeeHunt.dailyResetDate}`);
+    logger.debug('Daily count after claim: ' + user.blupeeHunt.dailyCount + ', reset date: ' + user.blupeeHunt.dailyResetDate);
     
     // Log to Google Sheets if user has a token tracker
     if (user.tokenTracker && googleSheets.isValidGoogleSheetsUrl(user.tokenTracker)) {
