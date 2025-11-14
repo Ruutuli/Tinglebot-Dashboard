@@ -3,7 +3,7 @@
 /* Handles village shop item card rendering, filtering, pagination       */
 /* ====================================================================== */
 
-import { scrollToTop } from './ui.js';
+import { scrollToTop, createSearchFilterBar } from './ui.js';
 import { capitalize } from './utils.js';
 
 // ============================================================================
@@ -967,45 +967,51 @@ async function initializeVillageShopsPage(data, page, contentDiv) {
 
     // Create the filters container with proper structure
     const filtersContainer = document.createElement('div');
-    filtersContainer.className = 'village-shop-filters';
-    filtersContainer.innerHTML = `
-      <div class="search-filter-bar">
-        <div class="search-filter-control search-input">
-          <input type="text" id="village-shop-search-input" placeholder="Search village shop items...">
-        </div>
-        <div class="search-filter-control">
-          <select id="village-shop-filter-category">
-            <option value="all">All Categories</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="village-shop-filter-type">
-            <option value="all">All Types</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="village-shop-sort-by">
-            <option value="name-asc">Name (A-Z)</option>
-            <option value="name-desc">Name (Z-A)</option>
-            <option value="price-asc">Price (Low-High)</option>
-            <option value="price-desc">Price (High-Low)</option>
-            <option value="stock-asc">Stock (Low-High)</option>
-            <option value="stock-desc">Stock (High-Low)</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="village-shop-items-per-page">
-            <option value="35">35 per page</option>
-            <option value="15">15 per page</option>
-            <option value="25">25 per page</option>
-            <option value="45">45 per page</option>
-            <option value="55">55 per page</option>
-            <option value="all">All items</option>
-          </select>
-        </div>
-        <button id="village-shop-clear-filters" class="clear-filters-btn">Clear Filters</button>
-      </div>
-    `;
+    filtersContainer.className = 'village-shop-search-filters';
+
+    const { bar: villageShopFilterBar } = createSearchFilterBar({
+      layout: 'wide',
+      filters: [
+        {
+          type: 'input',
+          id: 'village-shop-search-input',
+          placeholder: 'Search village shop items...',
+          attributes: { autocomplete: 'off' },
+          width: 'double'
+        },
+        { type: 'select', id: 'village-shop-filter-category', options: [{ value: 'all', label: 'All Categories' }] },
+        { type: 'select', id: 'village-shop-filter-type', options: [{ value: 'all', label: 'All Types' }] },
+        {
+          type: 'select',
+          id: 'village-shop-sort-by',
+          options: [
+            { value: 'name-asc', label: 'Name (A-Z)', selected: true },
+            { value: 'name-desc', label: 'Name (Z-A)' },
+            { value: 'price-asc', label: 'Price (Low-High)' },
+            { value: 'price-desc', label: 'Price (High-Low)' },
+            { value: 'stock-asc', label: 'Stock (Low-High)' },
+            { value: 'stock-desc', label: 'Stock (High-Low)' }
+          ]
+        },
+        {
+          type: 'select',
+          id: 'village-shop-items-per-page',
+          options: [
+            { value: '35', label: '35 per page', selected: true },
+            { value: '15', label: '15 per page' },
+            { value: '25', label: '25 per page' },
+            { value: '45', label: '45 per page' },
+            { value: '55', label: '55 per page' },
+            { value: 'all', label: 'All items' }
+          ]
+        }
+      ],
+      buttons: [
+        { id: 'village-shop-clear-filters', label: 'Clear Filters', className: 'clear-filters-btn' }
+      ]
+    });
+
+    filtersContainer.appendChild(villageShopFilterBar);
     contentDiv.appendChild(filtersContainer);
 
     // Add results info section

@@ -486,7 +486,7 @@ body.map-page, html.map-page {
     flex-wrap: wrap;
 }
 
-.action-btn {
+body.map-page .action-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -507,7 +507,7 @@ body.map-page, html.map-page {
     overflow: hidden;
 }
 
-.action-btn::before {
+body.map-page .action-btn::before {
     content: '';
     position: absolute;
     top: 0;
@@ -518,35 +518,35 @@ body.map-page, html.map-page {
     transition: left 0.5s ease;
 }
 
-.action-btn:hover::before {
+body.map-page .action-btn:hover::before {
     left: 100%;
 }
 
-.action-btn:hover {
+body.map-page .action-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
-.action-btn.dashboard-btn:hover {
+body.map-page .action-btn.dashboard-btn:hover {
     background: rgba(34, 197, 94, 0.15);
     border-color: #22C55E;
     color: #22C55E;
     box-shadow: 0 8px 25px rgba(34, 197, 94, 0.2);
 }
 
-.action-btn.close-btn:hover {
+body.map-page .action-btn.close-btn:hover {
     background: rgba(239, 68, 68, 0.15);
     border-color: #EF4444;
     color: #EF4444;
     box-shadow: 0 8px 25px rgba(239, 68, 68, 0.2);
 }
 
-.action-btn i {
+body.map-page .action-btn i {
     font-size: 14px;
     flex-shrink: 0;
 }
 
-.action-btn span {
+body.map-page .action-btn span {
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.5px;
@@ -1708,7 +1708,7 @@ body.map-page, html.map-page {
         font-size: 16px;
     }
     
-    .action-btn {
+    body.map-page .action-btn {
         padding: 11px 18px;
         min-width: 110px;
     }
@@ -1744,13 +1744,13 @@ body.map-page, html.map-page {
         gap: 6px;
     }
     
-    .action-btn {
+    body.map-page .action-btn {
         padding: 10px 16px;
         min-width: 100px;
         font-size: 12px;
     }
     
-    .action-btn span {
+    body.map-page .action-btn span {
         font-size: 12px;
     }
     
@@ -4554,7 +4554,7 @@ body[data-theme="dark"] .leaflet-container {
     justify-content: center;
 }
 
-.action-btn {
+body.map-page .action-btn {
     background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
     color: white;
     border: none;
@@ -4570,18 +4570,18 @@ body[data-theme="dark"] .leaflet-container {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.action-btn:hover {
+body.map-page .action-btn:hover {
     background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.action-btn:active {
+body.map-page .action-btn:active {
     transform: translateY(0);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.action-btn i {
+body.map-page .action-btn i {
     font-size: 12px;
 }
 

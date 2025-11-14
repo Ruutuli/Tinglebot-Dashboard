@@ -16,13 +16,12 @@ import * as weatherStats from './weatherStats.js';
 import * as error from './error.js';
 import * as auth from './auth.js';
 import * as guilds from './guilds.js';
-import * as commands from './commands.js';
 import * as villageShops from './villageShops.js';
 import * as monsters from './monsters.js';
 import * as pets from './pets.js';
 import * as starterGear from './starterGear.js';
 import * as quests from './quests.js';
-import { createPagination, setupBackToTopButton, scrollToTop } from './ui.js';
+import { createPagination, setupBackToTopButton, scrollToTop, createSearchFilterBar } from './ui.js';
 
 // Import specific functions from characters module
 const { renderCharacterCards } = characters;
@@ -40,7 +39,6 @@ export {
   error,
   auth,
   guilds,
-  commands,
   villageShops,
   monsters,
   pets,
@@ -696,8 +694,6 @@ function setupSidebarNavigation() {
         showProfileSection();
       } else if (sectionId === 'guilds-section') {
         showGuildSection();
-      } else if (sectionId === 'commands-section') {
-        commands.showCommandsSection();
       } else if (sectionId === 'calendar-section') {
         showCalendarSection();
       } else if (sectionId === 'users-section') {
@@ -743,8 +739,6 @@ function setupSidebarNavigation() {
         showProfileSection();
       } else if (section === 'guilds-section') {
         showGuildSection();
-      } else if (section === 'commands-section') {
-        commands.showCommandsSection();
       } else if (section === 'calendar-section') {
         showCalendarSection();
       } else if (section === 'users-section') {
@@ -809,8 +803,6 @@ function setupSidebarNavigation() {
       showProfileSection();
     } else if (hashValue === 'guilds-section') {
       showGuildSection();
-    } else if (hashValue === 'commands-section') {
-      commands.showCommandsSection();
     } else if (hashValue === 'calendar-section') {
       showCalendarSection();
     } else if (hashValue === 'users-section') {
@@ -1272,7 +1264,7 @@ function showProfileSection() {
     profileSection.style.display = 'block';
     
     // Initialize profile page
-    import('./profile.js').then(profileModule => {
+    import('./profile.js?v=20251114').then(profileModule => {
       profileModule.initProfilePage();
     }).catch(err => {
       console.error('❌ Error loading profile module:', err);
@@ -2367,73 +2359,7 @@ function createHWQInterface(contentDiv) {
       </div>
     </div>
 
-    <!-- HWQ Filter Bar -->
-    <div class="hwq-filter-bar">
-      <div class="hwq-filter-control search-input">
-        <label for="hwq-search-input">Search</label>
-        <i class="fas fa-search hwq-search-icon"></i>
-        <input 
-          type="text" 
-          id="hwq-search-input" 
-          placeholder="Search by NPC, requirements, or Quest ID..."
-          aria-label="Search Help Wanted Quests"
-        />
-      </div>
-      
-      <div class="hwq-filter-control">
-        <label for="hwq-village-filter">Village</label>
-        <select id="hwq-village-filter" aria-label="Filter by village">
-          <option value="">All Villages</option>
-          <option value="Rudania">Rudania</option>
-          <option value="Inariko">Inariko</option>
-          <option value="Vhintl">Vhintl</option>
-        </select>
-      </div>
-      
-      <div class="hwq-filter-control">
-        <label for="hwq-type-filter">Quest Type</label>
-        <select id="hwq-type-filter" aria-label="Filter by quest type">
-          <option value="">All Types</option>
-          <option value="item">Item</option>
-          <option value="monster">Monster</option>
-          <option value="escort">Escort</option>
-          <option value="crafting">Crafting</option>
-          <option value="art">Art</option>
-          <option value="writing">Writing</option>
-        </select>
-      </div>
-      
-      <div class="hwq-filter-control">
-        <label for="hwq-npc-filter">NPC</label>
-        <select id="hwq-npc-filter" aria-label="Filter by NPC">
-          <option value="">All NPCs</option>
-        </select>
-      </div>
-      
-      <div class="hwq-filter-control">
-        <label for="hwq-status-filter">Status</label>
-        <select id="hwq-status-filter" aria-label="Filter by status">
-          <option value="">All</option>
-          <option value="completed">Completed</option>
-          <option value="expired">Expired</option>
-        </select>
-      </div>
-
-      <div class="hwq-filter-control">
-        <label for="hwq-sort-select">Sort By</label>
-        <select id="hwq-sort-select" aria-label="Sort quests">
-          <option value="date-desc">Newest First</option>
-          <option value="date-asc">Oldest First</option>
-          <option value="village">Village</option>
-          <option value="type">Type</option>
-          <option value="npc">NPC Name</option>
-        </select>
-      </div>
-      
-      <button class="hwq-clear-filters-btn" id="hwq-clear-filters" aria-label="Clear all filters">
-        <i class="fas fa-times"></i> Clear Filters
-      </button>
-    </div>
+    <div class="hwq-filter-container"></div>
 
     <!-- HWQ Stats Grid -->
     <div class="hwq-stats-grid" id="hwq-stats-grid"></div>
@@ -2448,8 +2374,100 @@ function createHWQInterface(contentDiv) {
     <div class="hwq-pagination" id="hwq-pagination" style="display: none;"></div>
   `;
 
+  renderHWQFilterBar(contentDiv);
+
   // Setup event listeners
   setupHWQEventListeners();
+}
+
+function renderHWQFilterBar(contentDiv) {
+  const container = contentDiv.querySelector('.hwq-filter-container');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  const { bar } = createSearchFilterBar({
+    id: 'hwq-filter-bar',
+    layout: 'wide',
+    filters: [
+      {
+        type: 'input',
+        id: 'hwq-search-input',
+        placeholder: 'Search by NPC, requirements, or Quest ID...',
+        attributes: { 'aria-label': 'Search Help Wanted Quests' },
+        width: 'double',
+        label: 'Search'
+      },
+      {
+        type: 'select',
+        id: 'hwq-village-filter',
+        label: 'Village',
+        attributes: { 'aria-label': 'Filter by village' },
+        options: [
+          { value: '', label: 'All Villages', selected: true },
+          { value: 'Rudania', label: 'Rudania' },
+          { value: 'Inariko', label: 'Inariko' },
+          { value: 'Vhintl', label: 'Vhintl' }
+        ]
+      },
+      {
+        type: 'select',
+        id: 'hwq-type-filter',
+        label: 'Quest Type',
+        attributes: { 'aria-label': 'Filter by quest type' },
+        options: [
+          { value: '', label: 'All Types', selected: true },
+          { value: 'item', label: 'Item' },
+          { value: 'monster', label: 'Monster' },
+          { value: 'escort', label: 'Escort' },
+          { value: 'crafting', label: 'Crafting' },
+          { value: 'art', label: 'Art' },
+          { value: 'writing', label: 'Writing' }
+        ]
+      },
+      {
+        type: 'select',
+        id: 'hwq-npc-filter',
+        label: 'NPC',
+        attributes: { 'aria-label': 'Filter by NPC' },
+        options: [{ value: '', label: 'All NPCs', selected: true }]
+      },
+      {
+        type: 'select',
+        id: 'hwq-status-filter',
+        label: 'Status',
+        attributes: { 'aria-label': 'Filter by status' },
+        options: [
+          { value: '', label: 'All', selected: true },
+          { value: 'completed', label: 'Completed' },
+          { value: 'expired', label: 'Expired' }
+        ]
+      },
+      {
+        type: 'select',
+        id: 'hwq-sort-select',
+        label: 'Sort By',
+        attributes: { 'aria-label': 'Sort quests' },
+        options: [
+          { value: 'date-desc', label: 'Newest First', selected: true },
+          { value: 'date-asc', label: 'Oldest First' },
+          { value: 'village', label: 'Village' },
+          { value: 'type', label: 'Type' },
+          { value: 'npc', label: 'NPC Name' }
+        ]
+      }
+    ],
+    buttons: [
+      {
+        id: 'hwq-clear-filters',
+        className: 'clear-filters-btn hwq-clear-filters-btn',
+        html: '<i class="fas fa-times"></i> Clear Filters',
+        attributes: { 'aria-label': 'Clear all filters' }
+      }
+    ]
+  });
+
+  container.appendChild(bar);
 }
 
 // ------------------- Function: populateHWQNPCFilter -------------------

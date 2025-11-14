@@ -4176,57 +4176,6 @@ html {
   gap: 0.5rem;
 }
 
-/* Back Button Styling - Database Editor Style */
-.back-button {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 0.5rem !important;
-  padding: 0.75rem 1.5rem !important;
-  background: transparent !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: var(--input-radius) !important;
-  color: var(--text-secondary) !important;
-  font-size: 0.9rem !important;
-  font-weight: 500 !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  text-decoration: none !important;
-  margin-bottom: 1rem !important;
-  font-family: inherit !important;
-  line-height: 1.5 !important;
-  white-space: nowrap !important;
-}
-
-.back-button:hover {
-  background: var(--glass-bg) !important;
-  border-color: var(--accent) !important;
-  color: var(--text-primary) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-  text-decoration: none !important;
-}
-
-.back-button:focus {
-  outline: none !important;
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1) !important;
-}
-
-.back-button i {
-  font-size: 0.9rem !important;
-  transition: transform 0.3s ease !important;
-  margin-right: 0 !important;
-}
-
-.back-button:hover i {
-  transform: translateX(-2px) !important;
-}
-
-/* Ensure back button works in database editor header */
-.database-editor-header .back-button {
-  margin-right: auto !important;
-}
-
 /* Database Editor Controls Styling */
 .db-editor-controls {
   display: flex;
@@ -4461,17 +4410,7 @@ html {
 }
 
 /* Action Buttons - Matching Database Editor Style */
-.action-btn {
-  padding: 0.5rem 0.75rem;
-  border: none;
-  border-radius: 0.375rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
+.actions-cell .action-btn {
   margin: 0 0.25rem;
 }
 

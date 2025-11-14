@@ -10,6 +10,7 @@
 
 let currentUser = null;
 let isAuthenticated = false;
+let isAdminUser = false;
 let userDropdown = null; // Global reference to user dropdown element
 
 // ============================================================================
@@ -113,6 +114,7 @@ async function checkUserAuthStatus() {
     if (userData.isAuthenticated) {
       currentUser = userData.user;
       isAuthenticated = true;
+      isAdminUser = Boolean(userData.isAdmin);
       updateUserMenu(userData.user);
       
       // Handle admin area visibility
@@ -124,12 +126,14 @@ async function checkUserAuthStatus() {
     } else {
       currentUser = null;
       isAuthenticated = false;
+      isAdminUser = false;
       showGuestUser();
       hideAdminArea();
     }
   } catch (error) {
     console.error('[auth.js]: ❌ Error checking auth status:', error);
     showGuestUser();
+    isAdminUser = false;
   }
 }
 
@@ -286,6 +290,8 @@ function updateUserMenu(userData) {
   // Show user info, hide guest info
   userInfo.style.display = 'flex';
   guestInfo.style.display = 'none';
+
+  toggleInventoriesNav(true);
 }
 
 // ------------------- Function: showGuestUser -------------------
@@ -308,6 +314,8 @@ function showGuestUser() {
   // Show guest info, hide user info
   userInfo.style.display = 'none';
   guestInfo.style.display = 'flex';
+
+  toggleInventoriesNav(false);
 }
 
 // ============================================================================
@@ -331,6 +339,7 @@ async function refreshUserData() {
       const userData = await response.json();
       if (userData.isAuthenticated && userData.user) {
         currentUser = userData.user;
+        isAdminUser = Boolean(userData.isAdmin);
         updateUserMenu(userData.user);
       }
     }
@@ -394,6 +403,14 @@ function hideAdminArea() {
   }
 }
 
+function toggleInventoriesNav(isVisible) {
+  const navItem = document.getElementById('inventories-nav-item');
+  if (!navItem) {
+    return;
+  }
+  navItem.style.display = isVisible ? 'block' : 'none';
+}
+
 // ============================================================================
 // ------------------- Section: Public API -------------------
 // Exports functions for use in other modules
@@ -402,6 +419,7 @@ function hideAdminArea() {
 export {
   currentUser,
   isAuthenticated,
+  isAdminUser,
   checkUserAuthStatus,
   updateUserMenu,
   showGuestUser,

@@ -30,8 +30,7 @@ const approvedSubmissionSchema = new mongoose.Schema({
   // ------------------- User Information -------------------
   userId: {
     type: String,
-    required: true,
-    index: true
+    required: true
   },
   username: {
     type: String,
@@ -112,12 +111,6 @@ const approvedSubmissionSchema = new mongoose.Schema({
     default: []
   },
   
-  // ------------------- Character Tagging -------------------
-  taggedCharacters: {
-    type: [String], // Array of character IDs
-    default: []
-  },
-  
   // ------------------- Blight Healing Information -------------------
   blightId: {
     type: String,
@@ -166,6 +159,12 @@ const approvedSubmissionSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  
+  // ------------------- Tagged Characters -------------------
+  taggedCharacters: {
+    type: [String], // Array of character names
+    default: []
   }
 }, {
   timestamps: true
@@ -203,7 +202,6 @@ approvedSubmissionSchema.methods.getCollaboratorId = function() {
   return ids.length > 0 ? ids[0] : null;
 };
 
-
 // ------------------- Statics -------------------
 approvedSubmissionSchema.statics.findByUser = function(userId) {
   return this.find({ userId }).sort({ submittedAt: -1 });
@@ -216,7 +214,6 @@ approvedSubmissionSchema.statics.findByCategory = function(category) {
 approvedSubmissionSchema.statics.findRecent = function(limit = 10) {
   return this.find().sort({ approvedAt: -1 }).limit(limit);
 };
-
 
 // ------------------- Export -------------------
 module.exports = mongoose.model('ApprovedSubmission', approvedSubmissionSchema); 

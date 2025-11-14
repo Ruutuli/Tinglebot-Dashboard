@@ -2,7 +2,7 @@
 // Monster Rendering and Filtering Module
 // ============================================================================
 
-import { scrollToTop } from './ui.js';
+import { scrollToTop, createSearchFilterBar } from './ui.js';
 import { capitalize } from './utils.js';
 
 // ------------------- Function: renderMonsterCards -------------------
@@ -1351,65 +1351,62 @@ function populateSelect(select, values) {
 async function initializeMonsterPage(data, page = 1, contentDiv) {
   window.allMonsters = data;
 
-  // Create filter bar if it doesn't exist
+  // Create or refresh the standardized filter bar
   let filtersContainer = document.querySelector('.monster-filters');
   if (!filtersContainer) {
     filtersContainer = document.createElement('div');
     filtersContainer.className = 'monster-filters';
-    filtersContainer.innerHTML = `
-      <div class="search-filter-bar">
-        <div class="search-filter-control search-input">
-          <input type="text" id="monster-search-input" placeholder="Search monsters..." autocomplete="off">
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-species">
-            <option value="all">All Species</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-type">
-            <option value="all">All Types</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-tier">
-            <option value="all">All Tiers</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-jobs">
-            <option value="all">All Jobs</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-locations">
-            <option value="all">All Locations</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="sort-by">
-            <option value="name-asc">Name (A-Z)</option>
-            <option value="name-desc">Name (Z-A)</option>
-            <option value="tier-asc">Tier (Low-High)</option>
-            <option value="tier-desc">Tier (High-Low)</option>
-            <option value="hearts-desc">Hearts (High-Low)</option>
-            <option value="damage-desc">Damage (High-Low)</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="monsters-per-page">
-            <option value="15">15 per page</option>
-            <option value="30">30 per page</option>
-            <option value="45">45 per page</option>
-            <option value="60">60 per page</option>
-            <option value="all">All monsters</option>
-          </select>
-        </div>
-        <button id="clear-filters" class="clear-filters-btn">Clear Filters</button>
-      </div>
-    `;
-    contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
   }
+  filtersContainer.innerHTML = '';
+
+  const { bar: monsterFilterBar } = createSearchFilterBar({
+    layout: 'wide',
+    filters: [
+      {
+        type: 'input',
+        id: 'monster-search-input',
+        placeholder: 'Search monsters...',
+        attributes: { autocomplete: 'off' },
+        width: 'double'
+      },
+      { type: 'select', id: 'filter-species', options: [{ value: 'all', label: 'All Species' }] },
+      { type: 'select', id: 'filter-type', options: [{ value: 'all', label: 'All Types' }] },
+      {
+        type: 'select',
+        id: 'sort-by',
+        options: [
+          { value: 'name-asc', label: 'Name (A-Z)', selected: true },
+          { value: 'name-desc', label: 'Name (Z-A)' },
+          { value: 'tier-asc', label: 'Tier (Low-High)' },
+          { value: 'tier-desc', label: 'Tier (High-Low)' },
+          { value: 'hearts-desc', label: 'Hearts (High-Low)' },
+          { value: 'damage-desc', label: 'Damage (High-Low)' }
+        ]
+      },
+      {
+        type: 'select',
+        id: 'monsters-per-page',
+        options: [
+          { value: '15', label: '15 per page', selected: true },
+          { value: '30', label: '30 per page' },
+          { value: '45', label: '45 per page' },
+          { value: '60', label: '60 per page' },
+          { value: 'all', label: 'All monsters' }
+        ]
+      }
+    ],
+    advancedFilters: [
+      { type: 'select', id: 'filter-tier', options: [{ value: 'all', label: 'All Tiers' }] },
+      { type: 'select', id: 'filter-jobs', options: [{ value: 'all', label: 'All Jobs' }] },
+      { type: 'select', id: 'filter-locations', options: [{ value: 'all', label: 'All Locations' }] }
+    ],
+    buttons: [
+      { id: 'clear-filters', label: 'Clear Filters', className: 'clear-filters-btn' }
+    ]
+  });
+
+  filtersContainer.appendChild(monsterFilterBar);
+  contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
 
   // Create monster container if it doesn't exist
   let container = document.getElementById('monsters-container');

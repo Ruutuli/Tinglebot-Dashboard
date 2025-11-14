@@ -3,7 +3,7 @@
 /* Only shows a specific set of starter gear items for new characters.    */
 /* ====================================================================== */
 
-import { scrollToTop } from './ui.js';
+import { scrollToTop, createSearchFilterBar } from './ui.js';
 import { renderItemCards } from './items.js';
 
 // List of allowed starter gear item names
@@ -481,53 +481,56 @@ function initializeStarterGearPage(data, page = 1, contentDiv) {
   // Filter data to only starter gear
   const starterGearItems = filterStarterGear(data);
 
-  // Create filters container if it doesn't exist
+  // Create or refresh the standardized filter bar
   let filtersContainer = document.querySelector('.starter-gear-filters');
   if (!filtersContainer) {
     filtersContainer = document.createElement('div');
     filtersContainer.className = 'starter-gear-filters';
-    filtersContainer.innerHTML = `
-      <div class="search-filter-bar">
-        <div class="search-filter-control search-input">
-          <input type="text" id="starter-gear-search-input" placeholder="Search starter gear...">
-        </div>
-        <div class="search-filter-control">
-          <select id="starter-gear-filter-category">
-            <option value="all">All Categories</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="starter-gear-filter-type">
-            <option value="all">All Types</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="starter-gear-filter-subtype">
-            <option value="all">All Subtypes</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="starter-gear-sort-by">
-            <option value="name-asc">Name (A-Z)</option>
-            <option value="name-desc">Name (Z-A)</option>
-            <option value="price-desc">Price (High-Low)</option>
-            <option value="price-asc">Price (Low-High)</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="starter-gear-items-per-page">
-            <option value="12">12 per page</option>
-            <option value="24">24 per page</option>
-            <option value="36">36 per page</option>
-            <option value="48">48 per page</option>
-            <option value="all">All items</option>
-          </select>
-        </div>
-        <button id="starter-gear-clear-filters" class="clear-filters-btn">Clear Filters</button>
-      </div>
-    `;
-    contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
   }
+  filtersContainer.innerHTML = '';
+
+  const { bar: starterGearFilterBar } = createSearchFilterBar({
+    layout: 'wide',
+    filters: [
+      {
+        type: 'input',
+        id: 'starter-gear-search-input',
+        placeholder: 'Search starter gear...',
+        attributes: { autocomplete: 'off' },
+        width: 'double'
+      },
+      { type: 'select', id: 'starter-gear-filter-category', options: [{ value: 'all', label: 'All Categories' }] },
+      { type: 'select', id: 'starter-gear-filter-type', options: [{ value: 'all', label: 'All Types' }] },
+      { type: 'select', id: 'starter-gear-filter-subtype', options: [{ value: 'all', label: 'All Subtypes' }] },
+      {
+        type: 'select',
+        id: 'starter-gear-sort-by',
+        options: [
+          { value: 'name-asc', label: 'Name (A-Z)', selected: true },
+          { value: 'name-desc', label: 'Name (Z-A)' },
+          { value: 'price-desc', label: 'Price (High-Low)' },
+          { value: 'price-asc', label: 'Price (Low-High)' }
+        ]
+      },
+      {
+        type: 'select',
+        id: 'starter-gear-items-per-page',
+        options: [
+          { value: '12', label: '12 per page', selected: true },
+          { value: '24', label: '24 per page' },
+          { value: '36', label: '36 per page' },
+          { value: '48', label: '48 per page' },
+          { value: 'all', label: 'All items' }
+        ]
+      }
+    ],
+    buttons: [
+      { id: 'starter-gear-clear-filters', label: 'Clear Filters', className: 'clear-filters-btn' }
+    ]
+  });
+
+  filtersContainer.appendChild(starterGearFilterBar);
+  contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
 
   // Create container if it doesn't exist
   let container = document.getElementById('items-container');

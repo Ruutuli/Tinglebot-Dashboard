@@ -4,7 +4,7 @@
 /* ====================================================================== */
 
 import { getVillageCrestUrl, capitalize } from './utils.js';
-import { scrollToTop } from './ui.js';
+import { scrollToTop, createSearchFilterBar } from './ui.js';
 
 // ============================================================================
 // ------------------- Utility Functions -------------------
@@ -1310,103 +1310,74 @@ async function initializeCharacterPage(data, page = 1, contentDiv) {
     // Apply mobile optimizations early
     const { isMobile, isTouch } = optimizeForMobile();
 
-    // Create filters container if it doesn't exist
+    // Create or refresh the standard filter bar
     let filtersContainer = document.querySelector('.character-filters');
     if (!filtersContainer) {
         filtersContainer = document.createElement('div');
         filtersContainer.className = 'character-filters';
-        
-        // Mobile-friendly filter layout
-        const filterLayout = isMobile ? `
-            <div class="search-filter-bar mobile-filter-bar">
-                <div class="search-filter-control search-input">
-                    <input type="text" id="character-search-input" placeholder="Search characters..." autocomplete="off">
-                </div>
-                <div class="mobile-filter-row">
-                    <div class="search-filter-control">
-                        <select id="filter-job">
-                            <option value="all">All Jobs</option>
-                        </select>
-                    </div>
-                    <div class="search-filter-control">
-                        <select id="filter-race">
-                            <option value="all">All Races</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="mobile-filter-row">
-                    <div class="search-filter-control">
-                        <select id="filter-village">
-                            <option value="all">All Villages</option>
-                        </select>
-                    </div>
-                    <div class="search-filter-control">
-                        <select id="sort-by">
-                            <option value="name-asc">Name (A-Z)</option>
-                            <option value="name-desc">Name (Z-A)</option>
-                            <option value="level-desc">Level (High-Low)</option>
-                            <option value="level-asc">Level (Low-High)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="mobile-filter-row">
-                    <div class="search-filter-control">
-                        <select id="characters-per-page">
-                            <option value="6">6 per page</option>
-                            <option value="12">12 per page</option>
-                            <option value="24">24 per page</option>
-                            <option value="all">All characters</option>
-                        </select>
-                    </div>
-                    <button id="clear-filters" class="clear-filters-btn">Clear</button>
-                </div>
-            </div>
-        ` : `
-            <div class="search-filter-bar">
-                <div class="search-filter-control search-input">
-                    <input type="text" id="character-search-input" placeholder="Search characters...">
-                </div>
-                <div class="search-filter-control">
-                    <select id="filter-job">
-                        <option value="all">All Jobs</option>
-                    </select>
-                </div>
-                <div class="search-filter-control">
-                    <select id="filter-race">
-                        <option value="all">All Races</option>
-                    </select>
-                </div>
-                <div class="search-filter-control">
-                    <select id="filter-village">
-                        <option value="all">All Villages</option>
-                    </select>
-                </div>
-                <div class="search-filter-control">
-                    <select id="sort-by">
-                        <option value="name-asc">Name (A-Z)</option>
-                        <option value="name-desc">Name (Z-A)</option>
-                        <option value="level-desc">Level (High-Low)</option>
-                        <option value="level-asc">Level (Low-High)</option>
-                    </select>
-                </div>
-                <div class="search-filter-control">
-                    <select id="characters-per-page">
-                        <option value="12">12 per page</option>
-                        <option value="24">24 per page</option>
-                        <option value="36">36 per page</option>
-                        <option value="48">48 per page</option>
-                        <option value="all">All characters</option>
-                    </select>
-                </div>
-
-                <button id="clear-filters" class="clear-filters-btn">Clear Filters</button>
-            </div>
-        `;
-        
-        filtersContainer.innerHTML = filterLayout;
-        contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
     }
+    filtersContainer.innerHTML = '';
+
+    const { bar: characterFilterBar } = createSearchFilterBar({
+        layout: 'wide',
+        filters: [
+            {
+                type: 'input',
+                id: 'character-search-input',
+                placeholder: 'Search characters...',
+                attributes: { autocomplete: 'off' },
+                width: 'double'
+            },
+            {
+                type: 'select',
+                id: 'filter-job',
+                options: [{ value: 'all', label: 'All Jobs' }]
+            },
+            {
+                type: 'select',
+                id: 'filter-race',
+                options: [{ value: 'all', label: 'All Races' }]
+            },
+            {
+                type: 'select',
+                id: 'filter-village',
+                options: [{ value: 'all', label: 'All Villages' }]
+            },
+            {
+                type: 'select',
+                id: 'sort-by',
+                options: [
+                    { value: 'name-asc', label: 'Name (A-Z)', selected: true },
+                    { value: 'name-desc', label: 'Name (Z-A)' },
+                    { value: 'level-desc', label: 'Level (High-Low)' },
+                    { value: 'level-asc', label: 'Level (Low-High)' }
+                ]
+            },
+            {
+                type: 'select',
+                id: 'characters-per-page',
+                options: [
+                    { value: '6', label: '6 per page' },
+                    { value: '12', label: '12 per page', selected: true },
+                    { value: '24', label: '24 per page' },
+                    { value: '36', label: '36 per page' },
+                    { value: '48', label: '48 per page' },
+                    { value: 'all', label: 'All characters' }
+                ]
+            }
+        ],
+        buttons: [
+            {
+                id: 'clear-filters',
+                label: 'Clear Filters',
+                className: 'clear-filters-btn'
+            }
+        ]
+    });
+
+    filtersContainer.appendChild(characterFilterBar);
+    contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
+    filtersContainer.style.display = 'flex';
 
     // Create character container if it doesn't exist
     let container = document.getElementById('characters-container');

@@ -3,7 +3,7 @@
 // Basic structure and connection functionality for rebuilding
 // ============================================================================
 
-
+import { createSearchFilterBar } from './ui.js';
 
 // ------------------- Utility Functions -------------------
 
@@ -176,42 +176,6 @@ function updateResultsInfo(currentCount, totalCount, type = 'inventory', paginat
 }
 
 /**
- * Creates filter HTML with consistent structure
- * @returns {string} Filter HTML
- */
-function createFilterHTML() {
-  return `
-    <div class="search-filter-control search-input">
-      <input type="text" id="inventory-search" placeholder="Search characters...">
-    </div>
-    <div class="search-filter-control">
-      <select id="inventory-village-filter">
-        <option value="all">All Villages</option>
-        <option value="Rudania">Rudania</option>
-        <option value="Inariko">Inariko</option>
-        <option value="Vhintl">Vhintl</option>
-      </select>
-    </div>
-    <div class="search-filter-control">
-      <select id="inventory-sort">
-        <option value="character-asc">Character (A-Z)</option>
-        <option value="character-desc">Character (Z-A)</option>
-      </select>
-    </div>
-    <div class="search-filter-control">
-      <select id="inventory-characters-per-page">
-        <option value="12">12 per page</option>
-        <option value="24">24 per page</option>
-        <option value="36">36 per page</option>
-        <option value="48">48 per page</option>
-        <option value="all">All characters</option>
-      </select>
-    </div>
-    <button id="inventory-clear-filters" class="clear-filters-btn">Clear Filters</button>
-  `;
-}
-
-/**
  * Applies sorting to an array with consistent logic
  * @param {Array} items - Items to sort
  * @param {string} sortBy - Sort criteria
@@ -268,21 +232,70 @@ let charactersPerPage = 12;
  */
 async function initializeInventoryPage(data, page = 1, contentDiv) {
   
-  // Create filters container if it doesn't exist
-  let filtersContainer = document.querySelector('.search-filter-bar');
-  if (!filtersContainer) {
-    filtersContainer = document.createElement('div');
-    filtersContainer.className = 'search-filter-bar';
-    filtersContainer.innerHTML = createFilterHTML();
-    
-    // Try to insert into the model details data div
-    const contentDiv = getContentDiv();
-    if (contentDiv) {
-      contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
-    } else {
-      // Fallback to body
-      document.body.appendChild(filtersContainer);    
-    }
+  // Create or refresh the standardized filter bar
+  const targetContent = contentDiv || getContentDiv();
+  let filtersWrapper = document.querySelector('.inventory-filters');
+  if (!filtersWrapper) {
+    filtersWrapper = document.createElement('div');
+    filtersWrapper.className = 'inventory-filters';
+  }
+  filtersWrapper.innerHTML = '';
+
+  const { bar: inventoryFilterBar } = createSearchFilterBar({
+    layout: 'compact',
+    filters: [
+      {
+        type: 'input',
+        id: 'inventory-search',
+        placeholder: 'Search characters...',
+        attributes: { autocomplete: 'off' },
+        width: 'double'
+      },
+      {
+        type: 'select',
+        id: 'inventory-village-filter',
+        options: [
+          { value: 'all', label: 'All Villages', selected: true },
+          { value: 'Rudania', label: 'Rudania' },
+          { value: 'Inariko', label: 'Inariko' },
+          { value: 'Vhintl', label: 'Vhintl' }
+        ]
+      },
+      {
+        type: 'select',
+        id: 'inventory-sort',
+        options: [
+          { value: 'character-asc', label: 'Character (A-Z)', selected: true },
+          { value: 'character-desc', label: 'Character (Z-A)' }
+        ]
+      },
+      {
+        type: 'select',
+        id: 'inventory-characters-per-page',
+        options: [
+          { value: '12', label: '12 per page', selected: true },
+          { value: '24', label: '24 per page' },
+          { value: '36', label: '36 per page' },
+          { value: '48', label: '48 per page' },
+          { value: 'all', label: 'All characters' }
+        ]
+      }
+    ],
+    buttons: [
+      {
+        id: 'inventory-clear-filters',
+        label: 'Clear Filters',
+        className: 'clear-filters-btn'
+      }
+    ]
+  });
+
+  filtersWrapper.appendChild(inventoryFilterBar);
+
+  if (targetContent) {
+    targetContent.insertBefore(filtersWrapper, targetContent.firstChild);
+  } else {
+    document.body.appendChild(filtersWrapper);
   }
 
   // Create basic container
@@ -789,7 +802,7 @@ function renderCharacterItems(items, characterName, renderFilterBar = true) {
   let filterBar = '';
   if (renderFilterBar) {
     filterBar = `
-      <div class="character-item-filter-bar">
+      <div class="search-filter-bar" data-layout="compact">
         <div class="search-filter-control search-input">
           <input type="text" class="character-item-search" placeholder="Search items..." value="${filterState.search}">
         </div>
@@ -813,7 +826,7 @@ function renderCharacterItems(items, characterName, renderFilterBar = true) {
             <option value="quantity-desc" ${filterState.sort === 'quantity-desc' ? 'selected' : ''}>Quantity (High-Low)</option>
           </select>
         </div>
-        <button class="character-item-clear-filters">Clear</button>
+        <button class="clear-filters-btn character-item-clear-filters">Clear</button>
       </div>
     `;
   }
@@ -1055,7 +1068,7 @@ function setupInventoryFilters() {
   }
   
   // Show the filters container
-  const filtersContainer = document.querySelector('.search-filter-bar');
+  const filtersContainer = document.querySelector('.inventory-filters .search-filter-bar');
   if (filtersContainer) {
     filtersContainer.style.display = 'flex';
   }

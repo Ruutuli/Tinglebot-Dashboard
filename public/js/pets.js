@@ -3,7 +3,7 @@
 /* Handles pet card rendering, filtering, pagination, and pet details */
 /* ====================================================================== */
 
-import { scrollToTop } from './ui.js';
+import { scrollToTop, createSearchFilterBar } from './ui.js';
 import { capitalize } from './utils.js';
 
 // ============================================================================
@@ -763,60 +763,59 @@ function initializePetPage(data, page = 1, contentDiv) {
   // Store pets globally for filtering
   window.allPets = data;
 
-  // Create filters container if it doesn't exist
+  // Create or refresh the standardized filter bar
   let filtersContainer = document.querySelector('.pet-filters');
   if (!filtersContainer) {
     filtersContainer = document.createElement('div');
     filtersContainer.className = 'pet-filters';
-    filtersContainer.innerHTML = `
-      <div class="search-filter-bar">
-        <div class="search-filter-control search-input">
-          <input type="text" id="pet-search-input" placeholder="Search pets...">
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-species">
-            <option value="all">All Species</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-petType">
-            <option value="all">All Types</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-status">
-            <option value="all">All Statuses</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-owner">
-            <option value="all">All Owners</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="sort-by">
-            <option value="name-asc">Name (A-Z)</option>
-            <option value="name-desc">Name (Z-A)</option>
-            <option value="level-desc">Level (High-Low)</option>
-            <option value="level-asc">Level (Low-High)</option>
-            <option value="rolls-desc">Rolls (High-Low)</option>
-            <option value="rolls-asc">Rolls (Low-High)</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="pets-per-page">
-            <option value="12">12 per page</option>
-            <option value="24">24 per page</option>
-            <option value="36">36 per page</option>
-            <option value="48">48 per page</option>
-            <option value="all">All pets</option>
-          </select>
-        </div>
-        <button id="clear-filters" class="clear-filters-btn">Clear Filters</button>
-      </div>
-    `;
-    contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
   }
+  filtersContainer.innerHTML = '';
+
+  const { bar: petFilterBar } = createSearchFilterBar({
+    layout: 'wide',
+    filters: [
+      {
+        type: 'input',
+        id: 'pet-search-input',
+        placeholder: 'Search pets...',
+        attributes: { autocomplete: 'off' },
+        width: 'double'
+      },
+      { type: 'select', id: 'filter-species', options: [{ value: 'all', label: 'All Species' }] },
+      { type: 'select', id: 'filter-petType', options: [{ value: 'all', label: 'All Types' }] },
+      { type: 'select', id: 'filter-status', options: [{ value: 'all', label: 'All Statuses' }] },
+      { type: 'select', id: 'filter-owner', options: [{ value: 'all', label: 'All Owners' }] },
+      {
+        type: 'select',
+        id: 'sort-by',
+        options: [
+          { value: 'name-asc', label: 'Name (A-Z)', selected: true },
+          { value: 'name-desc', label: 'Name (Z-A)' },
+          { value: 'level-desc', label: 'Level (High-Low)' },
+          { value: 'level-asc', label: 'Level (Low-High)' },
+          { value: 'rolls-desc', label: 'Rolls (High-Low)' },
+          { value: 'rolls-asc', label: 'Rolls (Low-High)' }
+        ]
+      },
+      {
+        type: 'select',
+        id: 'pets-per-page',
+        options: [
+          { value: '12', label: '12 per page', selected: true },
+          { value: '24', label: '24 per page' },
+          { value: '36', label: '36 per page' },
+          { value: '48', label: '48 per page' },
+          { value: 'all', label: 'All pets' }
+        ]
+      }
+    ],
+    buttons: [
+      { id: 'clear-filters', label: 'Clear Filters', className: 'clear-filters-btn' }
+    ]
+  });
+
+  filtersContainer.appendChild(petFilterBar);
+  contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
 
   // Create pet container if it doesn't exist
   let container = document.getElementById('pets-container');

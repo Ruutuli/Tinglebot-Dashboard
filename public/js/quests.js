@@ -3,7 +3,7 @@
 /* Handles quest card rendering, filtering, pagination, and quest details */
 /* ====================================================================== */
 
-import { scrollToTop } from './ui.js';
+import { scrollToTop, createSearchFilterBar } from './ui.js';
 import { capitalize } from './utils.js';
 
 // ============================================================================
@@ -1196,53 +1196,56 @@ function initializeQuestPage(data, page = 1, contentDiv) {
     // Store quests globally for filtering
     window.allQuests = data;
 
-    // Create filters container if it doesn't exist
+    // Create or refresh the standardized filter bar
     let filtersContainer = document.querySelector('.quest-filters');
     if (!filtersContainer) {
         filtersContainer = document.createElement('div');
         filtersContainer.className = 'quest-filters';
-        filtersContainer.innerHTML = `
-            <div class="search-filter-bar">
-                <div class="search-filter-control search-input">
-                    <input type="text" id="quest-search-input" placeholder="Search quests...">
-                </div>
-                <div class="search-filter-control">
-                    <select id="filter-quest-type">
-                        <option value="all">All Quest Types</option>
-                    </select>
-                </div>
-                <div class="search-filter-control">
-                    <select id="filter-quest-status">
-                        <option value="all">All Status</option>
-                    </select>
-                </div>
-                <div class="search-filter-control">
-                    <select id="filter-quest-location">
-                        <option value="all">All Locations</option>
-                    </select>
-                </div>
-                <div class="search-filter-control">
-                    <select id="sort-by">
-                        <option value="date-desc">Date (Newest First)</option>
-                        <option value="date-asc">Date (Oldest First)</option>
-                        <option value="title-asc">Title (A-Z)</option>
-                        <option value="title-desc">Title (Z-A)</option>
-                    </select>
-                </div>
-                <div class="search-filter-control">
-                    <select id="quests-per-page">
-                        <option value="12">12 per page</option>
-                        <option value="24">24 per page</option>
-                        <option value="36">36 per page</option>
-                        <option value="48">48 per page</option>
-                        <option value="all">All quests</option>
-                    </select>
-                </div>
-                <button id="clear-filters" class="clear-filters-btn">Clear Filters</button>
-            </div>
-        `;
-        contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
     }
+    filtersContainer.innerHTML = '';
+
+    const { bar: questFilterBar } = createSearchFilterBar({
+        layout: 'wide',
+        filters: [
+            {
+                type: 'input',
+                id: 'quest-search-input',
+                placeholder: 'Search quests...',
+                attributes: { autocomplete: 'off' },
+                width: 'double'
+            },
+            { type: 'select', id: 'filter-quest-type', options: [{ value: 'all', label: 'All Quest Types' }] },
+            { type: 'select', id: 'filter-quest-status', options: [{ value: 'all', label: 'All Status' }] },
+            { type: 'select', id: 'filter-quest-location', options: [{ value: 'all', label: 'All Locations' }] },
+            {
+                type: 'select',
+                id: 'sort-by',
+                options: [
+                    { value: 'date-desc', label: 'Date (Newest First)', selected: true },
+                    { value: 'date-asc', label: 'Date (Oldest First)' },
+                    { value: 'title-asc', label: 'Title (A-Z)' },
+                    { value: 'title-desc', label: 'Title (Z-A)' }
+                ]
+            },
+            {
+                type: 'select',
+                id: 'quests-per-page',
+                options: [
+                    { value: '12', label: '12 per page', selected: true },
+                    { value: '24', label: '24 per page' },
+                    { value: '36', label: '36 per page' },
+                    { value: '48', label: '48 per page' },
+                    { value: 'all', label: 'All quests' }
+                ]
+            }
+        ],
+        buttons: [
+            { id: 'clear-filters', label: 'Clear Filters', className: 'clear-filters-btn' }
+        ]
+    });
+
+    filtersContainer.appendChild(questFilterBar);
+    contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
 
     // Create quest container if it doesn't exist
     let container = document.getElementById('quests-container');

@@ -51,7 +51,6 @@
   <link rel="stylesheet" href="css/databaseEditor.css" />
   <link rel="stylesheet" href="css/character.css" />
   <link rel="stylesheet" href="css/characterOfTheWeek.css" />
-  <link rel="stylesheet" href="css/commands.css" />
   <link rel="stylesheet" href="css/countdown.css" />
   <link rel="stylesheet" href="css/discord.css" />
   <link rel="stylesheet" href="css/inventory.css" />
@@ -189,9 +188,6 @@
             <a href="#levels" data-section="levels-section"><i class="fas fa-level-up-alt"></i><span>Levels</span></a>
           </li>
           <li>
-            <a href="#commands" data-section="commands-section"><i class="fas fa-terminal"></i><span>Commands</span></a>
-          </li>
-          <li>
             <a href="#calendar" data-section="calendar-section"><i class="fas fa-calendar-alt"></i><span>Calendar</span></a>
           </li>
           <li>
@@ -211,6 +207,9 @@
           </li>
           <li>
             <a href="/map"><i class="fas fa-map"></i><span>Map</span></a>
+          </li>
+          <li id="inventories-nav-item" style="display: none;">
+            <a href="/inventories.html"><i class="fas fa-boxes"></i><span>Inventories</span></a>
           </li>
           <li>
             <a href="#stats" data-section="stats-section"><i class="fas fa-chart-bar"></i><span>Stats</span></a>
@@ -768,6 +767,22 @@
               <div class="profile-help-wanted-loading" id="profile-help-wanted-loading">
                 <div class="loading-spinner"></div>
                 <p>Loading your help wanted completions...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quest Participation Section -->
+          <div class="profile-quests-section">
+            <div class="profile-quests-header">
+              <h3><i class="fas fa-scroll"></i> Quest Activity</h3>
+              <div class="profile-quests-count" id="profile-quests-total">
+                <span id="quests-total-count">0</span> tracked quests
+              </div>
+            </div>
+            <div class="profile-quests-container" id="profile-quests-container">
+              <div class="profile-quests-loading" id="profile-quests-loading">
+                <div class="loading-spinner"></div>
+                <p>Loading your quest history...</p>
               </div>
             </div>
           </div>
@@ -1861,51 +1876,6 @@
         </div>
       </section>
 
-      <!-- Commands Section -->
-      <section id="commands-section" style="display:none;">
-        <div class="dashboard-header">
-          <h1>Commands</h1>
-          <div class="dashboard-divider"></div>
-        </div>
-        <div class="commands-container">
-
-          <!-- Command Filters -->
-          <div class="command-filters">
-            <div class="search-input-wrapper">
-              <i class="fas fa-search"></i>
-              <input type="text" id="search-input" placeholder="Search commands..." />
-            </div>
-            <div class="filter-controls">
-              <select id="category-filter">
-                <option value="all">All Categories</option>
-                <option value="character">Character</option>
-                <option value="economy">Economy</option>
-                <option value="inventory">Inventory</option>
-                <option value="exploration">Exploration</option>
-                <option value="companions">Companions</option>
-                <option value="jobs">Jobs</option>
-                <option value="utility">Utility</option>
-                <option value="moderation">Moderation</option>
-                <option value="admin">Admin</option>
-                <option value="world">World</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Commands Error State -->
-          <div class="commands-error" id="commands-error" style="display: none;">
-            <i class="fas fa-exclamation-circle"></i>
-            <p>Failed to load commands</p>
-            <button class="retry-button" onclick="commandsModule.loadCommands()">Retry</button>
-          </div>
-
-          <!-- Commands Container -->
-          <div id="commands-container">
-            <!-- Commands will be dynamically loaded here -->
-          </div>
-        </div>
-      </section>
-
       <!-- Relationships Section -->
       <section id="relationships-section" style="display:none;">
         <div class="dashboard-header">
@@ -2365,49 +2335,7 @@
 
         <div class="gallery-container">
           <!-- Filter Controls -->
-          <div class="gallery-filters">
-            <div class="filter-group">
-              <label for="category-filter">
-                <i class="fas fa-tags"></i> Category
-              </label>
-              <select id="category-filter" class="filter-select">
-                <option value="all">All Categories</option>
-                <option value="art">🎨 Art</option>
-                <option value="writing">📝 Writing</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label for="user-filter">
-                <i class="fas fa-user"></i> User
-              </label>
-              <select id="user-filter" class="filter-select">
-                <option value="all">All Users</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label for="character-filter">
-                <i class="fas fa-user-friends"></i> Character
-              </label>
-              <select id="character-filter" class="filter-select">
-                <option value="all">All Characters</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label for="sort-filter">
-                <i class="fas fa-sort"></i> Sort by
-              </label>
-              <select id="sort-filter" class="filter-select">
-                <option value="newest">🕒 Newest First</option>
-                <option value="oldest">⏰ Oldest First</option>
-                <option value="tokens">💰 Most Tokens</option>
-              </select>
-            </div>
-            <div class="filter-group filter-group-button">
-              <button id="refresh-gallery" class="filter-btn">
-                <i class="fas fa-sync-alt"></i> Refresh
-              </button>
-            </div>
-          </div>
+          <div class="gallery-filters"></div>
 
           <!-- Gallery Sections -->
           <div class="gallery-sections" id="gallery-sections">
@@ -2776,9 +2704,8 @@
   <script type="module" src="js/weather.js"></script>
   <script type="module" src="js/weatherStats.js"></script>
   <script type="module" src="js/guilds.js"></script>
-  <script type="module" src="js/commands.js"></script>
   <script type="module" src="js/calendar.js"></script>
-  <script type="module" src="js/index.js"></script>
+  <script type="module" src="js/index.js?v=20251114"></script>
   <script src="js/databaseEditor.js"></script>
   <script src="js/villageShopsAdmin.js"></script>
   <script src="js/countdown.js"></script>

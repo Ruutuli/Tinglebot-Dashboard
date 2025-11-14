@@ -3,11 +3,6 @@ const mongoose = require('mongoose');
 // ------------------- Define the user schema -------------------
 const userSchema = new mongoose.Schema({
   discordId: { type: String, required: true, unique: true }, // Unique Discord ID of the user
-  username: { type: String, default: '' }, // Discord username
-  nickname: { type: String, default: '' }, // User's custom display name
-  email: { type: String, default: '' }, // Discord email
-  avatar: { type: String, default: '' }, // Discord avatar hash
-  discriminator: { type: String, default: '' }, // Discord discriminator
   googleSheetsUrl: { type: String, default: '' }, // URL to user's Google Sheets (if applicable)
   timezone: { type: String, default: 'UTC' }, // User's timezone (default to UTC)
   tokens: { type: Number, default: 0 }, // Number of tokens the user has
@@ -90,28 +85,37 @@ const userSchema = new mongoose.Schema({
     }]
   },
 
-  // ------------------- Blupee Hunt System -------------------
-  blupeeHunt: {
-    lastClaimed: { type: Date, default: null }, // Last time user claimed a blupee
-    totalClaimed: { type: Number, default: 0 }, // Total number of blupees claimed
-    claimHistory: [{ // Track blupee claim history
-      tokensReceived: { type: Number },
-      timestamp: { type: Date, default: Date.now }
-    }]
-  },
-
-  // ------------------- Map Pins System -------------------
-  mapPins: [{
-    id: { type: String, required: true },
-    title: { type: String, required: true, maxlength: 100 },
-    description: { type: String, maxlength: 500, default: '' },
-    lat: { type: Number, required: true, min: -90, max: 90 },
-    lng: { type: Number, required: true, min: -180, max: 180 },
-    icon: { type: String, default: 'fas fa-thumbtack' },
-    color: { type: String, default: '#FFD700' },
-    imageUrl: { type: String, default: null },
-    createdAt: { type: Date, default: Date.now }
-  }]
+  // ------------------- Quest Completion Tracking -------------------
+  quests: {
+    totalCompleted: { type: Number, default: 0 }, // Total number of standard quests completed
+    lastCompletionAt: { type: Date, default: null }, // Timestamp of most recent quest completion
+    typeTotals: {
+      art: { type: Number, default: 0 },
+      writing: { type: Number, default: 0 },
+      interactive: { type: Number, default: 0 },
+      rp: { type: Number, default: 0 },
+      artWriting: { type: Number, default: 0 },
+      other: { type: Number, default: 0 }
+    },
+    completions: [
+      {
+        questId: { type: String },
+        questType: { type: String },
+        questTitle: { type: String },
+        completedAt: { type: Date, default: Date.now },
+        rewardedAt: { type: Date, default: null },
+        tokensEarned: { type: Number, default: 0 },
+        itemsEarned: [{ name: String, quantity: Number }],
+        rewardSource: { type: String, default: 'immediate' }
+      }
+    ],
+    legacy: {
+      totalTransferred: { type: Number, default: 0 },
+      pendingTurnIns: { type: Number, default: 0 },
+      transferredAt: { type: Date, default: null },
+      transferUsed: { type: Boolean, default: false }
+    }
+  }
 });
 
 // ------------------- Static methods for leveling -------------------
@@ -215,33 +219,21 @@ userSchema.methods.getProgressToNextLevel = function() {
     return { current: 0, needed: xpNeeded, percentage: 0 };
   }
   
-  const currentLevel = parseInt(this.leveling.level) || 1;
-  const currentXP = parseInt(this.leveling.xp) || 0;
-  
-  // Calculate total cumulative XP required to reach current level (from level 1)
-  let cumulativeXPForCurrentLevel = 0;
-  for (let i = 2; i <= currentLevel; i++) {
-    cumulativeXPForCurrentLevel += this.getXPRequiredForLevel(i);
+  // Calculate total XP required to reach current level
+  let currentLevelTotalXP = 0;
+  for (let i = 2; i <= this.leveling.level; i++) {
+    currentLevelTotalXP += this.getXPRequiredForLevel(i);
   }
   
   // Calculate XP needed for next level
-  const xpNeededForNextLevel = this.getXPRequiredForLevel(currentLevel + 1);
+  const xpNeededForNextLevel = this.getXPRequiredForLevel(this.leveling.level + 1);
   
   // Calculate progress within current level
-  // This is the XP earned beyond what was needed to reach the current level
-  const progressXP = currentXP - cumulativeXPForCurrentLevel;
-  
-  // Debug logging for troubleshooting
-  if (progressXP < 0 || progressXP > xpNeededForNextLevel * 2) {
-    console.log('[UserModel]: Progress calculation - Level:', currentLevel, 'Total XP:', currentXP, 'Cumulative for level:', cumulativeXPForCurrentLevel, 'Progress:', progressXP, 'Needed:', xpNeededForNextLevel);
-  }
-  
-  // Clamp values to prevent display issues
-  const clampedProgress = Math.max(0, Math.min(progressXP, xpNeededForNextLevel));
-  const percentage = Math.min(100, Math.max(0, Math.round((clampedProgress / xpNeededForNextLevel) * 100)));
+  const progressXP = this.leveling.xp - currentLevelTotalXP;
+  const percentage = Math.min(100, Math.max(0, Math.round((progressXP / xpNeededForNextLevel) * 100)));
   
   return {
-    current: clampedProgress,
+    current: progressXP,
     needed: xpNeededForNextLevel,
     percentage: percentage
   };
@@ -378,6 +370,289 @@ userSchema.methods.getTotalXPForLevel = function(targetLevel) {
   }
   
   return totalXP;
+};
+
+// ------------------- Quest Tracking Methods -------------------
+function getQuestTypeKey(questType = '') {
+  const normalized = questType.trim().toLowerCase();
+  
+  if (normalized === 'art') return 'art';
+  if (normalized === 'writing') return 'writing';
+  if (normalized === 'interactive') return 'interactive';
+  if (normalized === 'rp') return 'rp';
+  if (normalized === 'art / writing' || normalized === 'art/writing') return 'artWriting';
+  
+  return 'other';
+}
+
+function defaultQuestTracking() {
+  return {
+    totalCompleted: 0,
+    lastCompletionAt: null,
+    pendingTurnIns: 0,
+    typeTotals: {
+      art: 0,
+      writing: 0,
+      interactive: 0,
+      rp: 0,
+      artWriting: 0,
+      other: 0
+    },
+    completions: [],
+    legacy: {
+      totalTransferred: 0,
+      pendingTurnIns: 0,
+      transferredAt: null,
+      transferUsed: false
+    }
+  };
+}
+
+userSchema.methods.ensureQuestTracking = function() {
+  if (!this.quests) {
+    this.quests = defaultQuestTracking();
+  } else {
+    if (!this.quests.typeTotals) {
+      this.quests.typeTotals = { ...defaultQuestTracking().typeTotals };
+    } else {
+      const defaults = defaultQuestTracking().typeTotals;
+      for (const key of Object.keys(defaults)) {
+        if (typeof this.quests.typeTotals[key] !== 'number') {
+          this.quests.typeTotals[key] = defaults[key];
+        }
+      }
+    }
+    
+    if (!Array.isArray(this.quests.completions)) {
+      this.quests.completions = [];
+    }
+    
+    if (typeof this.quests.totalCompleted !== 'number') {
+      this.quests.totalCompleted = 0;
+    }
+
+    if (typeof this.quests.pendingTurnIns !== 'number') {
+      this.quests.pendingTurnIns = 0;
+    }
+
+    if (!this.quests.legacy) {
+      this.quests.legacy = { ...defaultQuestTracking().legacy };
+    } else {
+      const legacyDefaults = defaultQuestTracking().legacy;
+      for (const key of Object.keys(legacyDefaults)) {
+        if (typeof this.quests.legacy[key] === 'undefined' || this.quests.legacy[key] === null) {
+          this.quests.legacy[key] = legacyDefaults[key];
+        }
+      }
+    }
+  }
+  
+  return this.quests;
+};
+
+userSchema.methods.recordQuestCompletion = async function({
+  questId = null,
+  questType = null,
+  questTitle = null,
+  completedAt = null,
+  rewardedAt = null,
+  tokensEarned = 0,
+  itemsEarned = [],
+  rewardSource = 'immediate'
+} = {}) {
+  const questTracking = this.ensureQuestTracking();
+  const completionTimestamp = rewardedAt || completedAt || new Date();
+  const typeKey = getQuestTypeKey(questType);
+  const normalizedItems = Array.isArray(itemsEarned)
+    ? itemsEarned.map(item => ({
+        name: item?.name || null,
+        quantity: typeof item?.quantity === 'number' ? item.quantity : 1
+      }))
+    : [];
+  
+  let isNewCompletion = true;
+  if (questId) {
+    const existingCompletion = questTracking.completions.find(entry => entry.questId === questId);
+    if (existingCompletion) {
+      existingCompletion.questType = questType;
+      existingCompletion.questTitle = questTitle;
+      existingCompletion.completedAt = completedAt || existingCompletion.completedAt || completionTimestamp;
+      existingCompletion.rewardedAt = rewardedAt || completionTimestamp;
+      existingCompletion.tokensEarned = tokensEarned;
+      existingCompletion.itemsEarned = normalizedItems;
+      existingCompletion.rewardSource = rewardSource;
+      isNewCompletion = false;
+    }
+  }
+  
+  if (isNewCompletion) {
+    questTracking.completions.push({
+      questId,
+      questType,
+      questTitle,
+      completedAt: completedAt || completionTimestamp,
+      rewardedAt: rewardedAt || completionTimestamp,
+      tokensEarned,
+      itemsEarned: normalizedItems,
+      rewardSource
+    });
+    
+    questTracking.totalCompleted += 1;
+    questTracking.pendingTurnIns = (questTracking.pendingTurnIns || 0) + 1;
+    questTracking.typeTotals[typeKey] = (questTracking.typeTotals[typeKey] || 0) + 1;
+  }
+  
+  questTracking.lastCompletionAt = completionTimestamp;
+  
+  if (questTracking.completions.length > 25) {
+    questTracking.completions = questTracking.completions.slice(-25);
+  }
+  
+  await this.save();
+  
+  return {
+    totalCompleted: questTracking.totalCompleted,
+    lastCompletionAt: questTracking.lastCompletionAt,
+    typeTotals: questTracking.typeTotals
+  };
+};
+
+userSchema.methods.getQuestStats = function() {
+  const questTracking = this.ensureQuestTracking();
+  const legacy = questTracking.legacy || defaultQuestTracking().legacy;
+  const legacyClone = {
+    totalTransferred: legacy.totalTransferred || 0,
+    pendingTurnIns: legacy.pendingTurnIns || 0,
+    transferredAt: legacy.transferredAt || null,
+    transferUsed: legacy.transferUsed || false
+  };
+  const allTimeTotal = (questTracking.totalCompleted || 0) + legacyClone.totalTransferred;
+  const turnInSummary = this.getQuestTurnInSummary();
+  return {
+    totalCompleted: questTracking.totalCompleted,
+    legacy: legacyClone,
+    allTimeTotal,
+    lastCompletionAt: questTracking.lastCompletionAt,
+    typeTotals: { ...questTracking.typeTotals },
+    recentCompletions: questTracking.completions.slice(-5).reverse(),
+    pendingTurnIns: turnInSummary.totalPending,
+    turnInSummary
+  };
+};
+
+userSchema.methods.canUseLegacyQuestTransfer = function() {
+  const questTracking = this.ensureQuestTracking();
+  return questTracking.legacy?.transferUsed !== true;
+};
+
+userSchema.methods.applyLegacyQuestTransfer = async function({
+  totalCompleted = 0,
+  pendingTurnIns = 0
+} = {}) {
+  const questTracking = this.ensureQuestTracking();
+
+  if (questTracking.legacy?.transferUsed) {
+    return {
+      success: false,
+      error: 'Legacy quest transfer has already been used.'
+    };
+  }
+
+  const sanitizedTotal = Number.isFinite(totalCompleted) ? Math.max(0, Math.floor(totalCompleted)) : 0;
+  const sanitizedPending = Number.isFinite(pendingTurnIns) ? Math.max(0, Math.floor(pendingTurnIns)) : 0;
+
+  if (sanitizedPending > sanitizedTotal) {
+    return {
+      success: false,
+      error: 'Pending turn-ins cannot exceed total transferred quests.'
+    };
+  }
+
+  questTracking.legacy.totalTransferred = sanitizedTotal;
+  questTracking.legacy.pendingTurnIns = sanitizedPending;
+  questTracking.legacy.transferredAt = new Date();
+  questTracking.legacy.transferUsed = true;
+
+  await this.save();
+
+  return {
+    success: true,
+    legacy: {
+      totalTransferred: questTracking.legacy.totalTransferred,
+      pendingTurnIns: questTracking.legacy.pendingTurnIns,
+      transferredAt: questTracking.legacy.transferredAt,
+      transferUsed: questTracking.legacy.transferUsed
+    },
+    allTimeTotal: (questTracking.totalCompleted || 0) + questTracking.legacy.totalTransferred,
+    pendingTurnIns: this.getQuestPendingTurnIns(),
+    turnInSummary: this.getQuestTurnInSummary()
+  };
+};
+
+userSchema.methods.getQuestPendingTurnIns = function() {
+  const questTracking = this.ensureQuestTracking();
+  const legacyPending = questTracking.legacy?.pendingTurnIns || 0;
+
+  // Placeholder for future non-legacy pending tracking.
+  const currentPending = questTracking.pendingTurnIns || 0;
+
+  return legacyPending + currentPending;
+};
+
+userSchema.methods.getQuestTurnInSummary = function() {
+  const questTracking = this.ensureQuestTracking();
+  const legacyPending = questTracking.legacy?.pendingTurnIns || 0;
+  const currentPending = questTracking.pendingTurnIns || 0;
+  const totalPending = legacyPending + currentPending;
+  const redeemableSets = Math.floor(totalPending / 10);
+  const remainder = totalPending % 10;
+
+  return {
+    totalPending,
+    redeemableSets,
+    remainder,
+    legacyPending,
+    currentPending
+  };
+};
+
+userSchema.methods.consumeQuestTurnIns = async function(amount = 10) {
+  const questTracking = this.ensureQuestTracking();
+  const sanitizedAmount = Number.isFinite(amount) ? Math.max(0, Math.floor(amount)) : 0;
+
+  if (sanitizedAmount <= 0) {
+    return { success: false, error: 'Amount to consume must be greater than zero.' };
+  }
+
+  const totalPending = this.getQuestPendingTurnIns();
+  if (totalPending < sanitizedAmount) {
+    return {
+      success: false,
+      error: `Not enough pending quest turn-ins. You currently have ${totalPending}.`
+    };
+  }
+
+  let remaining = sanitizedAmount;
+
+  if (questTracking.pendingTurnIns && questTracking.pendingTurnIns > 0) {
+    const deductCurrent = Math.min(questTracking.pendingTurnIns, remaining);
+    questTracking.pendingTurnIns -= deductCurrent;
+    remaining -= deductCurrent;
+  }
+
+  if (remaining > 0 && questTracking.legacy?.pendingTurnIns) {
+    questTracking.legacy.pendingTurnIns = Math.max(0, questTracking.legacy.pendingTurnIns - remaining);
+    remaining = 0;
+  }
+
+  await this.save();
+
+  return {
+    success: true,
+    consumed: sanitizedAmount,
+    remainingPending: this.getQuestPendingTurnIns(),
+    turnInSummary: this.getQuestTurnInSummary()
+  };
 };
 
 userSchema.methods.importMee6Levels = async function(mee6Level, lastExchangedLevel = 0) {
@@ -665,75 +940,6 @@ userSchema.methods.giveBoostRewards = async function() {
     newTokenBalance: this.tokens,
     month: currentMonth
   };
-};
-
-// ------------------- Map Pin Methods -------------------
-userSchema.methods.addMapPin = async function(pinData) {
-  // Initialize mapPins array if it doesn't exist
-  if (!this.mapPins) {
-    this.mapPins = [];
-  }
-  
-  // Generate unique ID for the pin
-  const pinId = `pin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
-  const newPin = {
-    id: pinId,
-    title: pinData.title,
-    description: pinData.description || '',
-    lat: pinData.lat,
-    lng: pinData.lng,
-    icon: pinData.icon || 'fas fa-thumbtack',
-    color: pinData.color || '#FFD700',
-    imageUrl: pinData.imageUrl || null,
-    createdAt: new Date()
-  };
-  
-  this.mapPins.push(newPin);
-  
-  // Keep only last 50 pins to prevent database bloat
-  if (this.mapPins.length > 50) {
-    this.mapPins = this.mapPins.slice(-50);
-  }
-  
-  await this.save();
-  
-  return {
-    success: true,
-    pin: newPin,
-    message: 'Pin added successfully!'
-  };
-};
-
-userSchema.methods.removeMapPin = async function(pinId) {
-  if (!this.mapPins) {
-    return {
-      success: false,
-      message: 'No pins found'
-    };
-  }
-  
-  const pinIndex = this.mapPins.findIndex(pin => pin.id === pinId);
-  
-  if (pinIndex === -1) {
-    return {
-      success: false,
-      message: 'Pin not found'
-    };
-  }
-  
-  const removedPin = this.mapPins.splice(pinIndex, 1)[0];
-  await this.save();
-  
-  return {
-    success: true,
-    pin: removedPin,
-    message: 'Pin removed successfully!'
-  };
-};
-
-userSchema.methods.getMapPins = function() {
-  return this.mapPins || [];
 };
 
 // ------------------- Export the User model -------------------

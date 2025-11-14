@@ -16,7 +16,7 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const helmet = require('helmet');
 const { getDiscordGateway } = require('./utils/discordGateway');
 const MessageTracking = require('./models/MessageTrackingModel');
@@ -31,6 +31,7 @@ const {
   connectToInventoriesNative,
   connectToVending,
   fetchAllCharacters,
+  fetchCharactersByUserId,
   fetchCharacterById,
   fetchAllItems,
   fetchItemByName,
@@ -63,6 +64,7 @@ const Relationship = require('./models/RelationshipModel');
 const Raid = require('./models/RaidModel');
 const StealStats = require('./models/StealStatsModel');
 const BlightRollHistory = require('./models/BlightRollHistoryModel');
+const { getGearType, getWeaponStyle } = require('./gearModule');
 
 // Import calendar module
 const calendarModule = require('./calendarModule');
@@ -1198,7 +1200,7 @@ app.get('/api/user', async (req, res) => {
       // Fetch full user data from database to get leveling, birthday, helpWanted, etc.
       try {
         const dbUser = await User.findOne({ discordId: req.user.discordId })
-          .select('discordId username email avatar discriminator tokens characterSlot status leveling birthday helpWanted createdAt nickname')
+          .select('discordId username email avatar discriminator tokens characterSlot status leveling birthday helpWanted quests createdAt nickname')
           .lean();
         
         if (dbUser) {
@@ -1439,16 +1441,6 @@ app.get('/api/activities', (_, res) => {
     { type: 'join', text: 'New server joined: Gaming Community', timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString() },
     { type: 'error', text: 'Command failed: /play (Invalid URL)', timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString() }
   ]);
-});
-
-// ------------------- Commands Endpoint -------------------
-app.get('/api/commands', async (req, res) => {
-  try {
-    // Return empty array - commands are now defined in commands.js
-    res.json({ commands: [] });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch commands' });
-  }
 });
 
 
@@ -2721,6 +2713,97 @@ app.get('/api/user/characters', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('[server.js]: ❌ Error fetching user characters:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ------------------- Function: getUserQuestParticipation -------------------
+// Returns quest participation summaries for the authenticated user
+app.get('/api/user/quests', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.discordId;
+    const participantField = `participants.${userId}`;
+
+    const quests = await Quest.find({
+      [participantField]: { $exists: true }
+    })
+      .select('questID title questType status location date timeLimit postedAt updatedAt completionReason participants requiredVillage tokenReward collabAllowed')
+      .sort({ updatedAt: -1 })
+      .limit(30)
+      .lean();
+
+    const participationEntries = quests
+      .map((quest) => {
+        const participants = quest.participants || {};
+        const participant =
+          participants[userId] ||
+          (typeof participants.get === 'function' ? participants.get(userId) : null);
+
+        if (!participant) {
+          return null;
+        }
+
+        const submissionsCount = Array.isArray(participant.submissions)
+          ? participant.submissions.length
+          : participant.submissions || 0;
+
+        return {
+          id: quest._id,
+          questCode: quest.questID,
+          title: quest.title,
+          questType: quest.questType,
+          questStatus: quest.status,
+          location: quest.location,
+          date: quest.date,
+          timeLimit: quest.timeLimit,
+          requiredVillage: participant.requiredVillage || quest.requiredVillage || null,
+          postedAt: quest.postedAt,
+          completionReason: quest.completionReason || null,
+          tokenReward: quest.tokenReward,
+          collabAllowed: quest.collabAllowed,
+          participant: {
+            status: participant.progress || 'active',
+            joinedAt: participant.joinedAt,
+            completedAt: participant.completedAt,
+            rewardedAt: participant.rewardedAt,
+            tokensEarned: participant.tokensEarned || 0,
+            itemsEarned: participant.itemsEarned || [],
+            rpPostCount: participant.rpPostCount || 0,
+            submissions: submissionsCount,
+            successfulRolls: participant.successfulRolls || 0,
+            lastUpdated: participant.updatedAt || quest.updatedAt,
+            disqualifiedAt: participant.disqualifiedAt || null,
+            disqualificationReason: participant.disqualificationReason || null
+          }
+        };
+      })
+      .filter(Boolean);
+
+    const toTimestamp = (value) => (value ? new Date(value).getTime() : 0);
+
+    const activeQuests = participationEntries
+      .filter((entry) => entry.participant.status === 'active' && entry.questStatus === 'active')
+      .sort((a, b) => toTimestamp(b.participant.joinedAt || b.postedAt || b.date) - toTimestamp(a.participant.joinedAt || a.postedAt || a.date))
+      .slice(0, 5);
+
+    const recentCompletions = participationEntries
+      .filter((entry) => ['completed', 'rewarded'].includes(entry.participant.status))
+      .sort((a, b) => toTimestamp(b.participant.completedAt || b.participant.rewardedAt) - toTimestamp(a.participant.completedAt || a.participant.rewardedAt))
+      .slice(0, 5);
+
+    const pendingRewards = participationEntries.filter(
+      (entry) => entry.participant.status === 'completed' && !entry.participant.rewardedAt
+    ).length;
+
+    res.json({
+      totalParticipations: participationEntries.length,
+      pendingRewards,
+      activeQuests,
+      recentCompletions,
+      participations: participationEntries
+    });
+  } catch (error) {
+    logger.error('Error fetching user quests', error, 'server.js');
+    res.status(500).json({ error: 'Failed to load quest data' });
   }
 });
 
@@ -5500,6 +5583,879 @@ app.post('/api/admin/users/update-timestamp', async (req, res) => {
 });
 
 // ------------------- Section: Inventory API Routes -------------------
+
+const INVENTORY_UPDATE_FIELDS = [
+  'quantity',
+  'location',
+  'job',
+  'perk',
+  'obtain',
+  'fortuneTellerBoost',
+  'notes',
+  'synced'
+];
+
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+function normalizeInventoryItem(item = {}, characterContext = null) {
+  const quantity = Number(item.quantity);
+  const normalizedQuantity = Number.isFinite(quantity) ? quantity : 0;
+  let subtype = [];
+  if (Array.isArray(item.subtype)) {
+    subtype = item.subtype.filter(Boolean);
+  } else if (typeof item.subtype === 'string' && item.subtype.trim().length > 0) {
+    subtype = item.subtype.split(',').map(sub => sub.trim()).filter(Boolean);
+  }
+
+  const normalizedCharacterId = item.characterId
+    ? (typeof item.characterId === 'string' ? item.characterId : item.characterId.toString())
+    : characterContext?._id?.toString() || null;
+
+  const normalizedItemId = item.itemId
+    ? (typeof item.itemId === 'string' ? item.itemId : item.itemId.toString?.() ?? item.itemId)
+    : null;
+
+  return {
+    id: item._id ? item._id.toString() : null,
+    characterId: normalizedCharacterId,
+    itemId: normalizedItemId,
+    itemName: item.itemName || 'Unknown Item',
+    quantity: normalizedQuantity,
+    category: item.category || '',
+    type: item.type || '',
+    subtype,
+    job: item.job || characterContext?.job || '',
+    perk: item.perk || '',
+    location: item.location || characterContext?.currentVillage || '',
+    obtain: item.obtain || '',
+    date: item.date || null,
+    craftedAt: item.craftedAt || null,
+    gatheredAt: item.gatheredAt || null,
+    fortuneTellerBoost: Boolean(item.fortuneTellerBoost),
+    synced: item.synced || '',
+    notes: item.notes || ''
+  };
+}
+
+async function getOwnedCharacter(characterId, userId) {
+  const character = await fetchCharacterById(characterId);
+  if (!character) {
+    return { error: { status: 404, message: 'Character not found' } };
+  }
+
+  if (String(character.userId) !== String(userId)) {
+    return { error: { status: 403, message: 'Character does not belong to the authenticated user' } };
+  }
+
+  return { character };
+}
+
+function normalizeGearSlotData(slot) {
+  if (!slot || !slot.name) {
+    return null;
+  }
+
+  let stats = {};
+  if (slot.stats instanceof Map) {
+    stats = Object.fromEntries(slot.stats);
+  } else if (slot.stats && typeof slot.stats === 'object') {
+    stats = typeof slot.stats.toObject === 'function' ? slot.stats.toObject() : { ...slot.stats };
+  }
+
+  return {
+    name: slot.name,
+    stats
+  };
+}
+
+function extractCharacterGear(character) {
+  const gearArmor = character.gearArmor || {};
+  return {
+    weapon: normalizeGearSlotData(character.gearWeapon),
+    shield: normalizeGearSlotData(character.gearShield),
+    armor: {
+      head: normalizeGearSlotData(gearArmor.head),
+      chest: normalizeGearSlotData(gearArmor.chest),
+      legs: normalizeGearSlotData(gearArmor.legs)
+    }
+  };
+}
+
+const GEAR_SLOT_FIELD_MAP = {
+  weapon: 'gearWeapon',
+  shield: 'gearShield',
+  armor_head: 'gearArmor.head',
+  armor_chest: 'gearArmor.chest',
+  armor_legs: 'gearArmor.legs'
+};
+
+const ARMOR_SLOT_KEYWORDS = {
+  armor_head: [
+    'head',
+    'helmet',
+    'helm',
+    'mask',
+    'cap',
+    'earrings',
+    'headdress',
+    'bandanna',
+    'headband',
+    'circlet',
+    'hood',
+    'headpiece',
+    'veil'
+  ].map((value) => value.toLowerCase()),
+  armor_chest: [
+    'chest',
+    'torso',
+    'armor',
+    'shirt',
+    'tunic',
+    'cuirass',
+    'doublet',
+    'top',
+    'uniform',
+    'spaulder',
+    'guard',
+    'robe',
+    'gear'
+  ].map((value) => value.toLowerCase()),
+  armor_legs: [
+    'legs',
+    'pants',
+    'boots',
+    'greaves',
+    'legwear',
+    'leg wraps',
+    'tights',
+    'sirwal',
+    'trousers'
+  ].map((value) => value.toLowerCase())
+};
+
+const WEAPON_STYLE_KEYWORDS = {
+  bow: ['bow', 'longbow', 'shortbow', 'arrow'].map((value) => value.toLowerCase()),
+  oneHanded: [
+    '1h'
+  ].map((value) => value.toLowerCase()),
+  twoHanded: [
+    '2h'
+  ].map((value) => value.toLowerCase())
+};
+
+const SHIELD_KEYWORDS = ['shield', 'buckler', 'guard'].map((value) => value.toLowerCase());
+
+function normalizeGearSlotKey(slot = '') {
+  const key = String(slot || '').trim().toLowerCase();
+  if (!key) {
+    return null;
+  }
+
+  if (key === 'weapon') return 'weapon';
+  if (key === 'shield') return 'shield';
+  if (['armor_head', 'armorhead', 'head', 'head_armor', 'helmet'].includes(key)) return 'armor_head';
+  if (['armor_chest', 'armorchest', 'chest', 'chest_armor', 'torso'].includes(key)) return 'armor_chest';
+  if (['armor_legs', 'armorlegs', 'legs', 'leg_armor', 'pants'].includes(key)) return 'armor_legs';
+
+  return null;
+}
+
+async function buildGearPayloadFromInventoryItem(item = {}) {
+  if (!item.itemName) {
+    return null;
+  }
+
+  const stats = extractNumericStatsFromInventory(item);
+
+  const needsModifierHydration = !Number.isFinite(stats.modifierHearts) || stats.modifierHearts === 0;
+  if (needsModifierHydration) {
+    const canonical = await Item.findOne({ itemName: item.itemName }).lean();
+    if (canonical && Number.isFinite(canonical?.modifierHearts) && canonical.modifierHearts !== 0) {
+      stats.modifierHearts = canonical.modifierHearts;
+    }
+    if (canonical && Number.isFinite(canonical?.staminaRecovered) && canonical.staminaRecovered !== 0) {
+      stats.staminaRecovered = canonical.staminaRecovered;
+    }
+    if (canonical && Number.isFinite(canonical?.staminaToCraft) && canonical.staminaToCraft !== 0) {
+      stats.staminaToCraft = canonical.staminaToCraft;
+    }
+  }
+
+  if (!Object.keys(stats).length) {
+    stats.modifierHearts = 0;
+  }
+
+  return {
+    name: item.itemName,
+    stats
+  };
+}
+
+function extractNumericStatsFromInventory(item = {}) {
+  const stats = {};
+
+  const addStat = (key, value) => {
+    const numericValue = Number(value);
+    if (Number.isFinite(numericValue) && numericValue !== 0) {
+      stats[key] = numericValue;
+    }
+  };
+
+  const numericFields = ['modifierHearts', 'attack', 'defense', 'staminaRecovered', 'staminaToCraft'];
+  numericFields.forEach((field) => addStat(field, item[field]));
+
+  if (item.stats) {
+    let statEntries = item.stats;
+    if (typeof item.stats.toObject === 'function') {
+      statEntries = item.stats.toObject();
+    } else if (item.stats instanceof Map) {
+      statEntries = Object.fromEntries(item.stats.entries());
+    }
+    Object.entries(statEntries || {}).forEach(([key, value]) => addStat(key, value));
+  }
+
+  return stats;
+}
+
+function isItemEligibleForSlot(item = {}, slotKey) {
+  if (!item || !slotKey) {
+    return false;
+  }
+  const tags = collectItemTags(item);
+  const gearType = getGearType(item);
+  if (slotKey === 'weapon') {
+    const styleFromTags = determineWeaponStyle(tags);
+    const styleFromModel = getWeaponStyle(item);
+    if (isShieldItem(tags) || gearType === 'shield') {
+      return false;
+    }
+    return Boolean(styleFromTags || styleFromModel);
+  }
+  if (slotKey === 'shield') {
+    return gearType === 'shield' || isShieldItem(tags);
+  }
+  if (slotKey.startsWith('armor_')) {
+    if (gearType !== 'armor') {
+      return false;
+    }
+    return isArmorItemForSlot(tags, slotKey);
+  }
+  return false;
+}
+
+function collectItemTags(item = {}) {
+  const normalizeList = (value) => {
+    if (!value) {
+      return [];
+    }
+    if (Array.isArray(value)) {
+      return value.filter(Boolean);
+    }
+    return [value];
+  };
+
+  const toLowerSet = (arr) => new Set(arr.map((entry) => String(entry).toLowerCase()));
+
+  return {
+    categories: toLowerSet([
+      ...normalizeList(item.category),
+      ...normalizeList(item.categoryGear)
+    ]),
+    types: toLowerSet(normalizeList(item.type)),
+    subtypes: toLowerSet(normalizeList(item.subtype))
+  };
+}
+
+function determineWeaponStyle(tags = {}) {
+  if (!tags) {
+    return null;
+  }
+  if (matchKeywords(tags.types, WEAPON_STYLE_KEYWORDS.bow)
+    || matchKeywords(tags.subtypes, WEAPON_STYLE_KEYWORDS.bow)
+    || tags.categories.has('bow')) {
+    return 'bow';
+  }
+  if (matchKeywords(tags.types, WEAPON_STYLE_KEYWORDS.twoHanded)
+    || matchKeywords(tags.subtypes, WEAPON_STYLE_KEYWORDS.twoHanded)) {
+    return '2h';
+  }
+  if (matchKeywords(tags.types, WEAPON_STYLE_KEYWORDS.oneHanded)
+    || matchKeywords(tags.subtypes, WEAPON_STYLE_KEYWORDS.oneHanded)
+    || tags.categories.has('weapon')) {
+    return '1h';
+  }
+  return null;
+}
+
+function isShieldItem(tags = {}) {
+  if (!tags) {
+    return false;
+  }
+  return (
+    tags.categories.has('shield')
+    || matchKeywords(tags.types, SHIELD_KEYWORDS)
+    || matchKeywords(tags.subtypes, SHIELD_KEYWORDS)
+  );
+}
+
+function isArmorItemForSlot(tags = {}, slotKey = '') {
+  if (!tags || !slotKey.startsWith('armor_')) {
+    return false;
+  }
+  if (!tags.categories.has('armor')) {
+    return false;
+  }
+  const slotKeywords = ARMOR_SLOT_KEYWORDS[slotKey] || [];
+  const typeMatches = matchKeywords(tags.types, slotKeywords);
+  const subtypeMatches = matchKeywords(tags.subtypes, slotKeywords);
+
+  if (typeMatches || subtypeMatches) {
+    return true;
+  }
+
+  const linkKeywords = [
+    ...slotKeywords,
+    ...(slotKey === 'armor_legs' ? ['legs'] : []),
+    ...(slotKey === 'armor_head' ? ['head'] : []),
+    ...(slotKey === 'armor_chest' ? ['chest', 'torso'] : [])
+  ];
+  return matchKeywords(tags.categories, linkKeywords);
+}
+
+function matchKeywords(set = new Set(), keywords = []) {
+  if (!set || !keywords || !keywords.length) {
+    return false;
+  }
+  return keywords.some((keyword) => set.has(keyword));
+}
+
+function buildCharacterGearUpdate(slotKey, gearPayload) {
+  const fieldPath = GEAR_SLOT_FIELD_MAP[slotKey];
+  if (!fieldPath) {
+    throw new Error(`Unsupported gear slot: ${slotKey}`);
+  }
+
+  return {
+    $set: {
+      [fieldPath]: gearPayload
+    }
+  };
+}
+
+function buildCharacterGearClearUpdate(slotKey) {
+  const fieldPath = GEAR_SLOT_FIELD_MAP[slotKey];
+  if (!fieldPath) {
+    throw new Error(`Unsupported gear slot: ${slotKey}`);
+  }
+
+  return {
+    $unset: {
+      [fieldPath]: ''
+    }
+  };
+}
+
+async function buildUserInventoryResponse(userId) {
+  const characters = await fetchCharactersByUserId(userId);
+
+  if (!characters || characters.length === 0) {
+    return {
+      characters: [],
+      aggregates: {
+        totalQuantity: 0,
+        uniqueItems: 0,
+        items: []
+      }
+    };
+  }
+
+  const aggregateMap = new Map();
+  const itemNames = new Set();
+  let totalQuantity = 0;
+  const characterPayloads = [];
+
+  for (const character of characters) {
+    try {
+      const collection = await getCharacterInventoryCollection(character.name);
+      const rawItems = await collection.find().toArray();
+      const normalizedItems = rawItems.map(item => normalizeInventoryItem(item, character));
+      const characterQuantity = normalizedItems.reduce((sum, invItem) => sum + invItem.quantity, 0);
+      totalQuantity += characterQuantity;
+
+      normalizedItems.forEach(invItem => {
+        if (invItem.itemName) {
+          itemNames.add(invItem.itemName);
+        }
+        const key = invItem.itemName ? invItem.itemName.toLowerCase() : invItem.id;
+        if (!aggregateMap.has(key)) {
+          aggregateMap.set(key, {
+            itemName: invItem.itemName || 'Unknown Item',
+            itemId: invItem.itemId,
+            categories: new Set(),
+            types: new Set(),
+            subtypes: new Set(),
+            hasFortuneBoost: false,
+            totalQuantity: 0,
+            instances: []
+          });
+        }
+
+        const aggregateEntry = aggregateMap.get(key);
+        aggregateEntry.totalQuantity += invItem.quantity;
+        if (invItem.category) {
+          aggregateEntry.categories.add(invItem.category);
+        }
+        if (invItem.type) {
+          aggregateEntry.types.add(invItem.type);
+        }
+        invItem.subtype?.forEach(sub => aggregateEntry.subtypes.add(sub));
+        if (invItem.fortuneTellerBoost) {
+          aggregateEntry.hasFortuneBoost = true;
+        }
+        aggregateEntry.instances.push({
+          inventoryId: invItem.id,
+          characterId: invItem.characterId,
+          characterName: character.name,
+          quantity: invItem.quantity,
+          location: invItem.location,
+          job: invItem.job,
+          perk: invItem.perk,
+          obtain: invItem.obtain,
+          fortuneTellerBoost: invItem.fortuneTellerBoost
+        });
+      });
+
+      characterPayloads.push({
+        id: character._id.toString(),
+        name: character.name,
+        icon: character.icon,
+        job: character.job,
+        race: character.race,
+        currentVillage: character.currentVillage,
+        homeVillage: character.homeVillage,
+        totalQuantity: characterQuantity,
+        uniqueItems: normalizedItems.length,
+        categories: [...new Set(normalizedItems.map(item => item.category).filter(Boolean))],
+        inventory: normalizedItems,
+        gear: extractCharacterGear(character)
+      });
+    } catch (error) {
+      console.warn(`[server.js]: ⚠️ Error loading inventory for ${character.name}:`, error.message);
+      characterPayloads.push({
+        id: character._id.toString(),
+        name: character.name,
+        icon: character.icon,
+        job: character.job,
+        race: character.race,
+        currentVillage: character.currentVillage,
+        homeVillage: character.homeVillage,
+        totalQuantity: 0,
+        uniqueItems: 0,
+        categories: [],
+        inventory: [],
+        gear: extractCharacterGear(character),
+        error: 'Failed to load inventory'
+      });
+    }
+  }
+
+  let aggregateItems = Array.from(aggregateMap.values());
+  let imageMap = {};
+
+  if (itemNames.size > 0) {
+    const itemsMeta = await Item.find(
+      { itemName: { $in: Array.from(itemNames) } },
+      { itemName: 1, image: 1 }
+    ).lean();
+
+    imageMap = itemsMeta.reduce((acc, doc) => {
+      acc[doc.itemName] = doc.image;
+      return acc;
+    }, {});
+  }
+
+  aggregateItems = aggregateItems.map(entry => ({
+    itemName: entry.itemName,
+    itemId: entry.itemId,
+    totalQuantity: entry.totalQuantity,
+    categories: Array.from(entry.categories),
+    types: Array.from(entry.types),
+    subtypes: Array.from(entry.subtypes),
+    hasFortuneBoost: entry.hasFortuneBoost,
+    image: entry.itemName && imageMap[entry.itemName] ? imageMap[entry.itemName] : null,
+    instances: entry.instances
+  }));
+
+  aggregateItems.sort((a, b) => a.itemName.localeCompare(b.itemName));
+
+  return {
+    characters: characterPayloads,
+    aggregates: {
+      totalQuantity,
+      uniqueItems: aggregateItems.length,
+      items: aggregateItems
+    }
+  };
+}
+
+function buildItemNameQuery(itemName) {
+  if (!itemName) {
+    return { itemName: '' };
+  }
+  const safeName = escapeRegex(String(itemName).trim());
+  return { itemName: { $regex: new RegExp(`^${safeName}$`, 'i') } };
+}
+
+app.get('/api/inventories/me', requireAuth, async (req, res) => {
+  try {
+    const payload = await buildUserInventoryResponse(req.user.discordId);
+    res.json(payload);
+  } catch (error) {
+    console.error('[server.js]: ❌ Error fetching user inventories:', error);
+    res.status(500).json({ error: 'Failed to load inventory data', details: error.message });
+  }
+});
+
+app.post('/api/inventories/transfer', requireAuth, async (req, res) => {
+  try {
+    const { sourceCharacterId, targetCharacterId, itemId, quantity } = req.body;
+
+    if (!sourceCharacterId || !targetCharacterId || !itemId) {
+      return res.status(400).json({ error: 'sourceCharacterId, targetCharacterId, and itemId are required' });
+    }
+
+    if (sourceCharacterId === targetCharacterId) {
+      return res.status(400).json({ error: 'Source and target characters must be different' });
+    }
+
+    const transferQuantity = Number(quantity);
+    if (!Number.isFinite(transferQuantity) || transferQuantity <= 0) {
+      return res.status(400).json({ error: 'Quantity must be a positive number' });
+    }
+
+    const userId = req.user.discordId;
+    const [sourceResult, targetResult] = await Promise.all([
+      getOwnedCharacter(sourceCharacterId, userId),
+      getOwnedCharacter(targetCharacterId, userId)
+    ]);
+
+    if (sourceResult.error) {
+      return res.status(sourceResult.error.status).json({ error: sourceResult.error.message });
+    }
+    if (targetResult.error) {
+      return res.status(targetResult.error.status).json({ error: targetResult.error.message });
+    }
+
+    const sourceCharacter = sourceResult.character;
+    const targetCharacter = targetResult.character;
+
+    let sourceItemObjectId;
+    try {
+      sourceItemObjectId = new ObjectId(itemId);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid itemId' });
+    }
+
+    const inventoriesDb = await connectToInventoriesNative();
+    const sourceCollection = inventoriesDb.collection(sourceCharacter.name.trim().toLowerCase());
+    const targetCollection = inventoriesDb.collection(targetCharacter.name.trim().toLowerCase());
+
+    const sourceItem = await sourceCollection.findOne({ _id: sourceItemObjectId });
+    if (!sourceItem) {
+      return res.status(404).json({ error: 'Source inventory item not found' });
+    }
+
+    const availableQuantity = Number(sourceItem.quantity) || 0;
+    if (transferQuantity > availableQuantity) {
+      return res.status(400).json({ error: 'Transfer quantity exceeds available quantity' });
+    }
+
+    const remainingQuantity = availableQuantity - transferQuantity;
+    if (remainingQuantity === 0) {
+      await sourceCollection.deleteOne({ _id: sourceItemObjectId });
+    } else {
+      await sourceCollection.updateOne(
+        { _id: sourceItemObjectId },
+        { $set: { quantity: remainingQuantity } }
+      );
+    }
+
+    const targetQuery = buildItemNameQuery(sourceItem.itemName);
+    let destinationItem = await targetCollection.findOne(targetQuery);
+
+    const transferNote = buildTransferObtainNote(sourceCharacter.name);
+
+    if (destinationItem) {
+      await targetCollection.updateOne(
+        { _id: destinationItem._id },
+        {
+          $inc: { quantity: transferQuantity },
+          $set: { obtain: transferNote }
+        }
+      );
+      destinationItem = await targetCollection.findOne({ _id: destinationItem._id });
+    } else {
+      const { _id, characterId, ...rest } = sourceItem;
+      const newItem = {
+        ...rest,
+        characterId: targetCharacter._id,
+        quantity: transferQuantity,
+        job: targetCharacter.job || rest.job || '',
+        location: targetCharacter.currentVillage || rest.location || '',
+        date: new Date(),
+        obtain: transferNote
+      };
+      const insertResult = await targetCollection.insertOne(newItem);
+      destinationItem = await targetCollection.findOne({ _id: insertResult.insertedId });
+    }
+
+    const updatedSourceItem = remainingQuantity === 0
+      ? null
+      : await sourceCollection.findOne({ _id: sourceItemObjectId });
+
+    res.json({
+      success: true,
+      transfer: {
+        sourceCharacterId: sourceCharacterId.toString(),
+        targetCharacterId: targetCharacterId.toString(),
+        sourceInventoryId: sourceItemObjectId.toString(),
+        quantity: transferQuantity,
+        sourceItem: updatedSourceItem ? normalizeInventoryItem(updatedSourceItem, sourceCharacter) : null,
+        destinationItem: destinationItem ? normalizeInventoryItem(destinationItem, targetCharacter) : null
+      }
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error transferring inventory item:', error);
+    res.status(500).json({ error: 'Failed to transfer item', details: error.message });
+  }
+});
+
+function buildTransferObtainNote(sourceName) {
+  const timestamp = new Date().toLocaleDateString();
+  return `Transferred from ${sourceName} on ${timestamp}`;
+}
+
+function mergeObtainValue(existingValue, note) {
+  return note;
+}
+
+app.patch('/api/inventories/:characterId/items/:itemId', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { characterId, itemId } = req.params;
+    const character = await fetchCharacterById(characterId);
+    if (!character) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    let targetObjectId;
+    try {
+      targetObjectId = new ObjectId(itemId);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid itemId' });
+    }
+
+    const updates = {};
+    for (const field of INVENTORY_UPDATE_FIELDS) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'No valid fields provided for update' });
+    }
+
+    if (updates.quantity !== undefined) {
+      const newQuantity = Number(updates.quantity);
+      if (!Number.isFinite(newQuantity) || newQuantity < 0) {
+        return res.status(400).json({ error: 'Quantity must be a non-negative number' });
+      }
+      updates.quantity = newQuantity;
+    }
+
+    if (updates.quantity === 0) {
+      const inventoriesDb = await connectToInventoriesNative();
+      const collection = inventoriesDb.collection(character.name.trim().toLowerCase());
+      const deleteResult = await collection.deleteOne({ _id: targetObjectId });
+
+      if (deleteResult.deletedCount === 0) {
+        return res.status(404).json({ error: 'Inventory item not found' });
+      }
+
+      return res.json({ success: true, deleted: true });
+    }
+
+    if (updates.fortuneTellerBoost !== undefined) {
+      updates.fortuneTellerBoost = Boolean(updates.fortuneTellerBoost);
+    }
+
+    ['location', 'job', 'perk', 'obtain', 'notes', 'synced'].forEach(field => {
+      if (updates[field] !== undefined && updates[field] !== null) {
+        updates[field] = String(updates[field]);
+      }
+    });
+
+    const inventoriesDb = await connectToInventoriesNative();
+    const collection = inventoriesDb.collection(character.name.trim().toLowerCase());
+    const result = await collection.findOneAndUpdate(
+      { _id: targetObjectId },
+      { $set: updates },
+      { returnDocument: 'after' }
+    );
+
+    if (!result.value) {
+      return res.status(404).json({ error: 'Inventory item not found' });
+    }
+
+    res.json({
+      success: true,
+      item: normalizeInventoryItem(result.value, character)
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error updating inventory item:', error);
+    res.status(500).json({ error: 'Failed to update inventory item', details: error.message });
+  }
+});
+
+app.delete('/api/inventories/:characterId/items/:itemId', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = await checkAdminAccess(req);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { characterId, itemId } = req.params;
+    const character = await fetchCharacterById(characterId);
+    if (!character) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+
+    let targetObjectId;
+    try {
+      targetObjectId = new ObjectId(itemId);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid itemId' });
+    }
+
+    const inventoriesDb = await connectToInventoriesNative();
+    const collection = inventoriesDb.collection(character.name.trim().toLowerCase());
+    const result = await collection.deleteOne({ _id: targetObjectId });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Inventory item not found' });
+    }
+
+    res.json({ success: true, deleted: true });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error deleting inventory item:', error);
+    res.status(500).json({ error: 'Failed to delete inventory item', details: error.message });
+  }
+});
+
+app.patch('/api/characters/:characterId/gear', requireAuth, async (req, res) => {
+  try {
+    const { characterId } = req.params;
+    const { slot, inventoryId } = req.body || {};
+
+    const normalizedSlot = normalizeGearSlotKey(slot);
+    if (!normalizedSlot) {
+      return res.status(400).json({ error: 'Invalid gear slot provided' });
+    }
+
+    const ownership = await getOwnedCharacter(characterId, req.user.discordId);
+    if (ownership.error) {
+      return res.status(ownership.error.status).json({ error: ownership.error.message });
+    }
+
+    const character = ownership.character;
+
+    const inventoriesDb = await connectToInventoriesNative();
+    const collection = inventoriesDb.collection(character.name.trim().toLowerCase());
+    let gearPayload = null;
+    let inventoryObjectId = null;
+
+    if (inventoryId) {
+      try {
+        inventoryObjectId = new ObjectId(inventoryId);
+      } catch (error) {
+        return res.status(400).json({ error: 'Invalid inventoryId' });
+      }
+
+      const inventoryItem = await collection.findOne({ _id: inventoryObjectId });
+
+      if (!inventoryItem) {
+        return res.status(404).json({ error: 'Inventory item not found' });
+      }
+
+      let canonicalItem = await Item.findOne({ itemName: inventoryItem.itemName }).lean();
+      if (!canonicalItem && inventoryItem.itemName) {
+        canonicalItem = await Item.findOne({ itemName: new RegExp(`^${inventoryItem.itemName}$`, 'i') }).lean();
+      }
+      const combinedItem = canonicalItem ? { ...canonicalItem, ...inventoryItem } : inventoryItem;
+
+      if (!isItemEligibleForSlot(combinedItem, normalizedSlot)) {
+        return res.status(400).json({ error: `Item cannot be equipped in the ${normalizedSlot.replace('_', ' ')} slot.` });
+      }
+
+      gearPayload = await buildGearPayloadFromInventoryItem(combinedItem);
+      if (!gearPayload) {
+        return res.status(400).json({ error: 'Item cannot be equipped' });
+      }
+    }
+
+    const previouslyEquipped = await collection
+      .find({ equippedSlot: normalizedSlot })
+      .project({ _id: 1 })
+      .toArray();
+    const clearedInventoryIds = previouslyEquipped.map((doc) => doc._id.toString());
+
+    if (clearedInventoryIds.length) {
+      await collection.updateMany(
+        { equippedSlot: normalizedSlot },
+        {
+          $unset: { equippedSlot: '' },
+          $set: { isEquipped: false }
+        }
+      );
+    }
+
+    if (inventoryObjectId) {
+      await collection.updateOne(
+        { _id: inventoryObjectId },
+        {
+          $set: {
+            equippedSlot: normalizedSlot,
+            isEquipped: true
+          }
+        }
+      );
+    }
+
+    const gearUpdate = inventoryObjectId
+      ? buildCharacterGearUpdate(normalizedSlot, gearPayload)
+      : buildCharacterGearClearUpdate(normalizedSlot);
+
+    await Character.updateOne({ _id: character._id }, gearUpdate);
+
+    const refreshedCharacter = await fetchCharacterById(character._id);
+
+    res.json({
+      success: true,
+      slot: normalizedSlot,
+      equippedInventoryId: inventoryObjectId ? inventoryObjectId.toString() : null,
+      clearedInventoryIds,
+      gear: extractCharacterGear(refreshedCharacter)
+    });
+  } catch (error) {
+    console.error('[server.js]: ❌ Error equipping gear:', error);
+    res.status(500).json({ error: 'Failed to update gear', details: error.message });
+  }
+});
 
 // ------------------- Function: getInventoryData -------------------
 // Returns all inventory data across all characters

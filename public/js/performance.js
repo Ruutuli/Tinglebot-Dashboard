@@ -29,37 +29,6 @@ window.addEventListener('load', function() {
   });
 });
 
-// Dynamically enable commands.css when commands section is shown
-window.addEventListener('DOMContentLoaded', function() {
-  const commandsLink = document.getElementById('commands-css-link');
-  if (!commandsLink) return;
-
-  function enableCommandsCSS() {
-    commandsLink.media = 'all';
-  }
-
-  function disableCommandsCSS() {
-    commandsLink.media = '(max-width: 0px)';
-  }
-
-  // Listen for section changes
-  const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
-  sidebarLinks.forEach(link => {
-    link.addEventListener('click', function() {
-      if (link.getAttribute('data-section') === 'commands-section') {
-        enableCommandsCSS();
-      } else {
-        disableCommandsCSS();
-      }
-    });
-  });
-
-  // Also enable if page loads directly to commands-section
-  if (window.location.hash === '#commands') {
-    enableCommandsCSS();
-  }
-});
-
 // Ensure character of week is loaded and available
 window.addEventListener('load', function() {
   // If character of week function is available, trigger initial load
@@ -88,11 +57,6 @@ document.addEventListener('click', function(event) {
       case 'retry-inventory':
         if (typeof loadInventory === 'function') {
           loadInventory();
-        }
-        break;
-      case 'retry-commands':
-        if (typeof commandsModule !== 'undefined' && commandsModule.loadCommands) {
-          commandsModule.loadCommands();
         }
         break;
       default:

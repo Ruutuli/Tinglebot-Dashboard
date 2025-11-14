@@ -3,7 +3,7 @@
 /* Handles item card rendering, filtering, pagination, and item details */
 /* ====================================================================== */
 
-import { scrollToTop } from './ui.js';
+import { scrollToTop, createSearchFilterBar } from './ui.js';
 import { capitalize } from './utils.js';
 
 // ============================================================================
@@ -1576,88 +1576,65 @@ function initializeItemPage(data, page = 1, contentDiv) {
   // Initialize enhanced inventory cache
   initializeInventoryCache();
 
-  // Create filters container if it doesn't exist
+  // Create or refresh the standardized filter bar
   let filtersContainer = document.querySelector('.item-filters');
   if (!filtersContainer) {
     filtersContainer = document.createElement('div');
     filtersContainer.className = 'item-filters';
-    filtersContainer.innerHTML = `
-      <div class="search-filter-bar">
-        <div class="search-filter-control search-input">
-          <input type="text" id="item-search-input" placeholder="Search items...">
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-category">
-            <option value="all">All Categories</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-type">
-            <option value="all">All Types</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-subtype">
-            <option value="all">All Subtypes</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-jobs">
-            <option value="all">All Jobs</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-locations">
-            <option value="all">All Locations</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-sources">
-            <option value="all">All Sources</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-modifier-hearts">
-            <option value="all">All Heart Modifiers</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-stamina-recovered">
-            <option value="all">All Stamina Recovery</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-stamina-to-craft">
-            <option value="all">All Craft Stamina</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="filter-rarity">
-            <option value="all">All Rarities</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="sort-by">
-            <option value="name-asc">Name (A-Z)</option>
-            <option value="name-desc">Name (Z-A)</option>
-            <option value="price-desc">Price (High-Low)</option>
-            <option value="price-asc">Price (Low-High)</option>
-          </select>
-        </div>
-        <div class="search-filter-control">
-          <select id="items-per-page">
-            <option value="12">12 per page</option>
-            <option value="24">24 per page</option>
-            <option value="36">36 per page</option>
-            <option value="48">48 per page</option>
-            <option value="all">All items</option>
-          </select>
-        </div>
-        <button id="clear-filters" class="clear-filters-btn">Clear Filters</button>
-      </div>
-    `;
-    contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
   }
+  filtersContainer.innerHTML = '';
+
+  const { bar: itemFilterBar } = createSearchFilterBar({
+    layout: 'wide',
+    filters: [
+      {
+        type: 'input',
+        id: 'item-search-input',
+        placeholder: 'Search items...',
+        attributes: { autocomplete: 'off' },
+        width: 'double'
+      },
+      { type: 'select', id: 'filter-category', options: [{ value: 'all', label: 'All Categories' }] },
+      { type: 'select', id: 'filter-type', options: [{ value: 'all', label: 'All Types' }] },
+      { type: 'select', id: 'filter-subtype', options: [{ value: 'all', label: 'All Subtypes' }] },
+      {
+        type: 'select',
+        id: 'sort-by',
+        options: [
+          { value: 'name-asc', label: 'Name (A-Z)', selected: true },
+          { value: 'name-desc', label: 'Name (Z-A)' },
+          { value: 'price-desc', label: 'Price (High-Low)' },
+          { value: 'price-asc', label: 'Price (Low-High)' }
+        ]
+      },
+      {
+        type: 'select',
+        id: 'items-per-page',
+        options: [
+          { value: '12', label: '12 per page', selected: true },
+          { value: '24', label: '24 per page' },
+          { value: '36', label: '36 per page' },
+          { value: '48', label: '48 per page' },
+          { value: 'all', label: 'All items' }
+        ]
+      }
+    ],
+    advancedFilters: [
+      { type: 'select', id: 'filter-jobs', options: [{ value: 'all', label: 'All Jobs' }] },
+      { type: 'select', id: 'filter-locations', options: [{ value: 'all', label: 'All Locations' }] },
+      { type: 'select', id: 'filter-sources', options: [{ value: 'all', label: 'All Sources' }] },
+      { type: 'select', id: 'filter-modifier-hearts', options: [{ value: 'all', label: 'All Heart Modifiers' }] },
+      { type: 'select', id: 'filter-stamina-recovered', options: [{ value: 'all', label: 'All Stamina Recovery' }] },
+      { type: 'select', id: 'filter-stamina-to-craft', options: [{ value: 'all', label: 'All Craft Stamina' }] },
+      { type: 'select', id: 'filter-rarity', options: [{ value: 'all', label: 'All Rarities' }] }
+    ],
+    buttons: [
+      { id: 'clear-filters', label: 'Clear Filters', className: 'clear-filters-btn' }
+    ]
+  });
+
+  filtersContainer.appendChild(itemFilterBar);
+  contentDiv.insertBefore(filtersContainer, contentDiv.firstChild);
 
   // Create item container if it doesn't exist
   let container = document.getElementById('items-container');

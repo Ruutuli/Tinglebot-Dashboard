@@ -172,6 +172,13 @@ html {
 
 /* [gallery.css]💬 Filter controls - Modern Redesign */
 .gallery-filters {
+  position: sticky;
+  top: 2rem;
+  z-index: 100;
+  margin-bottom: 3rem;
+}
+
+.gallery-filters .search-filter-bar {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
   backdrop-filter: blur(28px);
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -180,18 +187,13 @@ html {
     0 12px 40px rgba(0, 0, 0, 0.15),
     0 4px 16px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3rem;
-  margin-bottom: 3rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   padding: 2.5rem 3rem;
-  position: sticky;
-  top: 2rem;
-  z-index: 100;
+  gap: 1.5rem;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.gallery-filters:hover {
+.gallery-filters .search-filter-bar:hover {
   box-shadow: 
     0 16px 48px rgba(0, 0, 0, 0.18),
     0 6px 20px rgba(0, 0, 0, 0.12),
@@ -199,75 +201,7 @@ html {
   transform: translateY(-2px);
 }
 
-.filter-group {
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  min-width: 160px;
-  position: relative;
-}
-
-.filter-group::before {
-  background: linear-gradient(135deg, var(--gallery-accent-color), rgba(0, 163, 218, 0.6));
-  border-radius: 12px;
-  content: '';
-  height: 2px;
-  left: 50%;
-  opacity: 0;
-  position: absolute;
-  top: -0.5rem;
-  transform: translateX(-50%);
-  transition: all 0.3s ease;
-  width: 0;
-}
-
-.filter-group:hover::before {
-  opacity: 1;
-  width: 100%;
-}
-
-.filter-group-button {
-  align-items: center;
-  display: flex;
-  justify-content: center;
-  margin-left: auto;
-}
-
-.filter-group label {
-  align-items: center;
-  color: var(--gallery-text-primary);
-  display: flex;
-  font-size: 0.75rem;
-  font-weight: 700;
-  gap: 0.6rem;
-  letter-spacing: 1px;
-  margin: 0;
-  text-transform: uppercase;
-  white-space: nowrap;
-  opacity: 0.85;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.filter-group:hover label {
-  opacity: 1;
-  color: var(--gallery-accent-color);
-  transform: translateY(-1px);
-}
-
-.filter-group label i {
-  color: var(--gallery-accent-color);
-  font-size: 1rem;
-  opacity: 0.8;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.filter-group:hover label i {
-  opacity: 1;
-  transform: scale(1.15) rotate(5deg);
-}
-
-.filter-select {
+.gallery-filters .search-filter-control select {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -278,72 +212,27 @@ html {
   background-size: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 16px;
-  box-shadow: 
-    0 4px 16px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   color: var(--gallery-text-primary);
-  cursor: pointer;
-  font-size: 0.9rem;
+  font-family: 'Nunito', sans-serif;
+  font-size: 1rem;
   font-weight: 600;
-  min-width: 160px;
-  padding: 0.875rem 1.25rem;
+  padding: 0.95rem 1.2rem;
   padding-right: 2.5rem;
+  text-transform: capitalize;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gallery-filters .search-filter-control select:focus {
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 2px rgba(0, 163, 218, 0.35);
   outline: none;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  -webkit-background-clip: padding-box;
-  background-clip: padding-box;
-  color-scheme: dark;
 }
 
-.filter-select::-webkit-input-placeholder {
-  color: var(--gallery-text-primary);
-  opacity: 0.7;
+.gallery-filters .clear-filters-btn {
+  justify-self: flex-end;
+  align-self: center;
 }
 
-.filter-select::-moz-placeholder {
-  color: var(--gallery-text-primary);
-  opacity: 0.7;
-}
-
-.filter-select:-ms-input-placeholder {
-  color: var(--gallery-text-primary);
-  opacity: 0.7;
-}
-
-.filter-select::placeholder {
-  color: var(--gallery-text-primary);
-  opacity: 0.7;
-}
-
-/* Style the dropdown options */
-.filter-select option {
-  background: #1a1a1a !important;
-  color: #ffffff !important;
-  padding: 0.5rem;
-}
-
-/* Style the dropdown when open */
-.filter-select:focus option {
-  background: #1a1a1a !important;
-  color: #ffffff !important;
-}
-
-/* Additional option styling for better browser support */
-.filter-select option:checked {
-  background: var(--gallery-accent-color) !important;
-  color: #ffffff !important;
-}
-
-.filter-select option:hover {
-  background: var(--gallery-accent-color) !important;
-  color: #ffffff !important;
-}
 
 /* Force dark theme for the entire select element */
 .filter-select {
@@ -1669,29 +1558,19 @@ html {
     padding: var(--gallery-space-md);
   }
   
-  .gallery-filters {
-    flex-direction: column;
-    gap: 2rem;
+  .gallery-filters .search-filter-bar {
     padding: 2rem;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
   
-  .filter-group {
-    flex-direction: column;
-    gap: 0.375rem;
+  .gallery-filters .search-filter-control {
     width: 100%;
   }
   
-  .filter-group-button {
-    margin-left: 0;
+  .gallery-filters .clear-filters-btn {
     width: 100%;
-  }
-  
-  .filter-group-button .filter-btn {
-    width: 100%;
-  }
-  
-  .filter-group {
-    min-width: auto;
+    justify-content: center;
   }
   
   .gallery-art-grid,
@@ -1730,14 +1609,9 @@ html {
     padding: 0.75rem;
   }
   
-  .gallery-filters {
-    flex-direction: column;
-    gap: 2rem;
-    padding: 2rem;
-  }
-  
-  .filter-group {
-    min-width: auto;
+  .gallery-filters .search-filter-bar {
+    padding: 1.5rem;
+    gap: 1rem;
   }
   
   .gallery-art-grid,

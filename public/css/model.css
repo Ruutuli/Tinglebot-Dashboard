@@ -74,6 +74,18 @@
   z-index: 10;
 }
 
+.model-details-header .back-button {
+  margin: 0 !important;
+  width: 3rem !important;
+  height: 3rem !important;
+  border-radius: 0.85rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
 .model-details-header h2 {
   color: var(--text-primary);
   font-size: 1.8rem;

@@ -3,9 +3,21 @@
  * Purpose: Handles user profile page functionality and data display.
  * ============================================================================ */
 
-import { currentUser, isAuthenticated } from './auth.js';
+let currentUser = null;
+let isAuthenticated = false;
+
+export async function setProfileContext() {
+  const module = await import('./auth.js');
+  currentUser = module.currentUser;
+  isAuthenticated = module.isAuthenticated;
+}
+
+await setProfileContext();
+
 import { renderCharacterCards } from './characters.js';
 import { capitalize } from './utils.js';
+
+console.log('[profile.js] ✅ Profile module loaded');
 
 // ============================================================================
 // ------------------- Utility Functions -------------------
@@ -83,6 +95,9 @@ async function loadProfileData() {
     
     // Load user's help wanted completions
     await loadHelpWantedCompletions();
+
+    // Load quest activity overview
+    await loadQuestOverview();
     
   } catch (error) {
     console.error('[profile.js]: ❌ Error loading profile data:', error);
@@ -634,6 +649,473 @@ function renderHelpWantedCharts(stats) {
   } catch (error) {
     console.error('[profile.js]: Error rendering help wanted charts:', error);
   }
+}
+
+// ------------------- Function: loadQuestOverview -------------------
+// Loads the user's overall quest stats and participation details
+async function loadQuestOverview() {
+  try {
+    const questsContainer = document.getElementById('profile-quests-container');
+    const questsLoading = document.getElementById('profile-quests-loading');
+    const questsTotalCount = document.getElementById('quests-total-count');
+
+    if (!questsContainer || !questsLoading) {
+      console.warn('[profile.js] ⚠️ Quest overview container not found in DOM');
+      return;
+    }
+
+    console.log('[profile.js] ▶️ Loading quest overview...');
+
+    questsLoading.style.display = 'flex';
+    questsContainer.innerHTML = '';
+    questsContainer.appendChild(questsLoading);
+
+    const questTrackingStats = calculateQuestTrackingStats(currentUser?.quests || null);
+    console.log('[profile.js] 📊 Quest tracking stats:', questTrackingStats);
+    let participationData = null;
+
+    try {
+      const response = await fetch('/api/user/quests', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      participationData = await response.json();
+      console.log('[profile.js] 📦 Quest participation data received:', participationData);
+    } catch (error) {
+      console.warn('[profile.js]: ⚠️ Unable to fetch quest participation data:', error);
+    }
+
+    questsLoading.style.display = 'none';
+    console.log('[profile.js] ✅ Quest API processing complete');
+
+    const hasTracking = questTrackingStats && questTrackingStats.allTimeTotal > 0;
+    const hasParticipation = participationData && participationData.totalParticipations > 0;
+
+    if (!hasTracking && !hasParticipation) {
+      questsContainer.innerHTML = `
+        <div class="profile-no-quests">
+          <i class="fas fa-scroll"></i>
+          <h4>No Quest Activity Recorded</h4>
+          <p>Complete any standard quest to see your progress overview here.</p>
+        </div>
+      `;
+      if (questsTotalCount) {
+        questsTotalCount.textContent = '0';
+      }
+      return;
+    }
+
+    if (questsTotalCount) {
+      const totalTracked = questTrackingStats?.allTimeTotal ?? participationData?.totalParticipations ?? 0;
+      questsTotalCount.textContent = totalTracked;
+    }
+
+    const dashboard = document.createElement('div');
+    dashboard.className = 'quests-dashboard';
+
+    const sections = [];
+
+    if (questTrackingStats) {
+      sections.push(renderQuestStatsGrid(questTrackingStats, participationData));
+      const insightsSection = renderQuestInsightsSection(questTrackingStats);
+      if (insightsSection) {
+        sections.push(insightsSection);
+      }
+    }
+
+    sections.push(renderQuestParticipationSection(participationData));
+
+    dashboard.innerHTML = sections.filter(Boolean).join('');
+    questsContainer.appendChild(dashboard);
+    console.log('[profile.js] ✅ Quest overview rendered');
+
+    if (questTrackingStats && Object.keys(questTrackingStats.typeTotals).length > 0) {
+      setTimeout(() => {
+        renderQuestTypeChart(questTrackingStats.typeTotals);
+      }, 100);
+    }
+  } catch (error) {
+    console.error('[profile.js]: ❌ Error loading quest overview:', error);
+    const questsContainer = document.getElementById('profile-quests-container');
+    if (questsContainer) {
+      questsContainer.innerHTML = `
+        <div class="profile-no-quests">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h4>Error Loading Quest Data</h4>
+          <p>Please refresh the page to try again.</p>
+        </div>
+      `;
+    }
+  }
+}
+
+// ------------------- Function: calculateQuestTrackingStats -------------------
+// Normalizes quest tracking data from the UserModel
+function calculateQuestTrackingStats(questTracking) {
+  if (!questTracking) {
+    return null;
+  }
+
+  const completions = Array.isArray(questTracking.completions) ? [...questTracking.completions] : [];
+  completions.sort((a, b) => {
+    const dateA = new Date(a.completedAt || a.rewardedAt || 0);
+    const dateB = new Date(b.completedAt || b.rewardedAt || 0);
+    return dateB - dateA;
+  });
+
+  const legacy = questTracking.legacy || {};
+  const currentPending = questTracking.pendingTurnIns || 0;
+  const legacyPending = legacy.pendingTurnIns || 0;
+  const totalPending = currentPending + legacyPending;
+
+  return {
+    totalCompleted: questTracking.totalCompleted || completions.length,
+    legacyTransferred: legacy.totalTransferred || 0,
+    allTimeTotal: (questTracking.totalCompleted || 0) + (legacy.totalTransferred || 0),
+    pendingTurnIns: currentPending,
+    legacyPending,
+    totalPending,
+    redeemableSets: Math.floor(totalPending / 10),
+    pendingRemainder: totalPending % 10,
+    lastCompletion: completions[0] || null,
+    recentCompletions: completions.slice(0, 5),
+    typeTotals: questTracking.typeTotals || {}
+  };
+}
+
+// ------------------- Function: renderQuestStatsGrid -------------------
+// Builds the summary stat cards for quests
+function renderQuestStatsGrid(stats, participationData) {
+  const pendingMeta = stats.redeemableSets > 0
+    ? `${stats.redeemableSets} set${stats.redeemableSets === 1 ? '' : 's'} ready`
+    : `${stats.pendingRemainder} until next set`;
+
+  const lastCompletionLabel = stats.lastCompletion
+    ? formatDateOnly(stats.lastCompletion.completedAt || stats.lastCompletion.rewardedAt)
+    : 'No completions yet';
+
+  const lastCompletionSubtext = stats.lastCompletion
+    ? `${capitalize((stats.lastCompletion.questType || 'Unknown').replace(/_/g, ' '))} • ${escapeHtmlAttribute(stats.lastCompletion.questTitle || stats.lastCompletion.questId || 'Quest')}`
+    : 'Complete a quest to populate history';
+
+  const activeCount = participationData?.activeQuests?.length || 0;
+  const pendingRewards = participationData?.pendingRewards || 0;
+
+  return `
+    <div class="quests-stats-grid">
+      <div class="quests-stat-card">
+        <span class="quests-stat-label">Total Completed</span>
+        <span class="quests-stat-value">${stats.totalCompleted.toLocaleString()}</span>
+        <span class="quests-stat-meta">+${stats.legacyTransferred.toLocaleString()} legacy</span>
+      </div>
+      <div class="quests-stat-card">
+        <span class="quests-stat-label">All-Time Progress</span>
+        <span class="quests-stat-value">${stats.allTimeTotal.toLocaleString()}</span>
+        <span class="quests-stat-meta">Includes legacy transfers</span>
+      </div>
+      <div class="quests-stat-card">
+        <span class="quests-stat-label">Pending Turn-ins</span>
+        <span class="quests-stat-value">${stats.totalPending.toLocaleString()}</span>
+        <span class="quests-stat-meta">${pendingMeta}</span>
+      </div>
+      <div class="quests-stat-card">
+        <span class="quests-stat-label">Active Quests</span>
+        <span class="quests-stat-value">${activeCount}</span>
+        <span class="quests-stat-meta">${pendingRewards} awaiting rewards</span>
+      </div>
+      <div class="quests-stat-card">
+        <span class="quests-stat-label">Last Completion</span>
+        <span class="quests-stat-value" style="font-size: 1.4rem;">${lastCompletionLabel}</span>
+        <span class="quests-stat-meta">${lastCompletionSubtext}</span>
+      </div>
+    </div>
+  `;
+}
+
+// ------------------- Function: renderQuestInsightsSection -------------------
+// Renders chart + recent completion insights from quest tracking
+function renderQuestInsightsSection(stats) {
+  const hasTypeTotals = Object.values(stats.typeTotals || {}).some((count) => count > 0);
+  const hasRecent = Array.isArray(stats.recentCompletions) && stats.recentCompletions.length > 0;
+
+  if (!hasTypeTotals && !hasRecent) {
+    return '';
+  }
+
+  const recentList = hasRecent
+    ? renderQuestCompletionsList(stats.recentCompletions)
+    : '<div class="quests-empty">No recorded completions yet.</div>';
+
+  if (!hasTypeTotals) {
+    return `
+      <div class="quests-list-card">
+        <h4><i class="fas fa-history"></i> Recent Completions</h4>
+        ${recentList}
+      </div>
+    `;
+  }
+
+  return `
+    <div class="quests-lists-grid">
+      <div class="quests-chart-card">
+        <h4><i class="fas fa-chart-pie"></i> Quest Type Breakdown</h4>
+        <div class="quests-chart-container">
+          <canvas id="quests-types-chart"></canvas>
+        </div>
+        <div class="quests-breakdown">
+          ${Object.entries(stats.typeTotals)
+            .filter(([, count]) => count > 0)
+            .sort((a, b) => b[1] - a[1])
+            .map(([type, count]) => `
+              <div class="quests-breakdown-item">
+                <span class="quest-type-badge ${getQuestTypeClass(type)}">${capitalize(type.replace(/_/g, ' '))}</span>
+                <span>${count}</span>
+              </div>
+            `).join('')}
+        </div>
+      </div>
+      <div class="quests-list-card">
+        <h4><i class="fas fa-history"></i> Recent Completions</h4>
+        ${recentList}
+      </div>
+    </div>
+  `;
+}
+
+// ------------------- Function: renderQuestParticipationSection -------------------
+// Shows active quests and recent quest runs from QuestModel data
+function renderQuestParticipationSection(participationData) {
+  const activeQuestsHtml = renderQuestParticipationList(participationData?.activeQuests, 'active');
+
+  const recentSource = participationData?.recentCompletions?.length
+    ? participationData.recentCompletions
+    : (participationData?.participations || []).slice(0, 5);
+
+  const recentQuestsHtml = renderQuestParticipationList(recentSource, 'recent');
+
+  return `
+    <div class="quests-lists-grid">
+      <div class="quests-list-card">
+        <h4><i class="fas fa-hourglass-half"></i> Active Quests</h4>
+        ${activeQuestsHtml}
+      </div>
+      <div class="quests-list-card">
+        <h4><i class="fas fa-dragon"></i> Recent Quest Runs</h4>
+        ${recentQuestsHtml}
+      </div>
+    </div>
+  `;
+}
+
+// ------------------- Function: renderQuestCompletionsList -------------------
+// Builds the list of recent quest completions from UserModel
+function renderQuestCompletionsList(completions = []) {
+  if (!Array.isArray(completions) || completions.length === 0) {
+    return '<div class="quests-empty">No recorded completions yet.</div>';
+  }
+
+  return `
+    <div class="quests-recent-list">
+      ${completions.map((completion) => {
+        const title = escapeHtmlAttribute(completion.questTitle || completion.questId || 'Quest');
+        const typeLabel = capitalize((completion.questType || 'Unknown').replace(/_/g, ' '));
+        const completionDate = completion.completedAt || completion.rewardedAt;
+        const dateText = completionDate ? formatDateOnly(completionDate) : 'Pending date';
+        const rewardText = completion.tokensEarned
+          ? `+${completion.tokensEarned.toLocaleString()} tokens`
+          : 'No tokens logged';
+        return `
+          <div class="quests-recent-item">
+            <div>
+              <h5>${title}</h5>
+              <div class="quest-card-meta">${typeLabel} • ${dateText}</div>
+            </div>
+            <div class="quests-recent-meta">
+              <span class="quest-type-badge ${getQuestTypeClass(completion.questType)}">${typeLabel}</span>
+              <span class="quests-reward">${rewardText}</span>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ------------------- Function: renderQuestParticipationList -------------------
+// Renders quest cards for participation data from QuestModel
+function renderQuestParticipationList(quests = [], variant = 'active') {
+  const questEntries = Array.isArray(quests) ? quests.filter(Boolean) : [];
+  if (questEntries.length === 0) {
+    const emptyText = variant === 'active'
+      ? 'You are not currently active in any quests.'
+      : 'No recent quest activity captured.';
+    return `<div class="quests-empty">${emptyText}</div>`;
+  }
+
+  return `
+    <div class="quests-list">
+      ${questEntries.map((quest) => {
+        const title = escapeHtmlAttribute(quest.title || quest.questCode || 'Quest');
+        const typeLabel = capitalize((quest.questType || 'Unknown').replace(/_/g, ' '));
+        const status = formatQuestStatus(quest.participant?.status);
+        const timelineDate = variant === 'active'
+          ? formatDateOnly(quest.participant?.joinedAt || quest.postedAt || quest.date)
+          : formatDateOnly(quest.participant?.completedAt || quest.participant?.rewardedAt || quest.participant?.joinedAt);
+        const reward = variant === 'active'
+          ? formatQuestReward(null, quest.tokenReward)
+          : formatQuestReward(quest.participant?.tokensEarned, quest.tokenReward);
+        const progress = formatQuestProgress(quest);
+        const village = quest.requiredVillage ? ` • ${capitalize(quest.requiredVillage)}` : '';
+        return `
+          <div class="quest-card">
+            <div class="quest-card-header">
+              <div>
+                <p class="quest-card-title">${title}</p>
+                <p class="quest-card-meta">${typeLabel}${village}</p>
+              </div>
+              <span class="quest-status ${status.className}">${status.label}</span>
+            </div>
+            <div class="quest-card-body">
+              <div class="quest-card-row">
+                <span><i class="fas fa-calendar-alt"></i> ${timelineDate}</span>
+                <span><i class="fas fa-award"></i> ${reward}</span>
+              </div>
+              <div class="quest-card-row">
+                <span><i class="fas fa-chart-line"></i> ${progress}</span>
+                <span><i class="fas fa-map-marker-alt"></i> ${escapeHtmlAttribute(quest.location || 'Unknown')}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ------------------- Function: formatQuestStatus -------------------
+// Maps quest participant statuses to UI labels and classes
+function formatQuestStatus(status = 'active') {
+  const statusMap = {
+    active: { label: 'In Progress', className: 'status-active' },
+    completed: { label: 'Awaiting Reward', className: 'status-completed' },
+    rewarded: { label: 'Rewarded', className: 'status-rewarded' },
+    failed: { label: 'Failed', className: 'status-failed' },
+    disqualified: { label: 'Disqualified', className: 'status-disqualified' }
+  };
+
+  return statusMap[status] || { label: capitalize(status || 'Unknown'), className: 'status-active' };
+}
+
+// ------------------- Function: formatQuestReward -------------------
+// Formats quest rewards for display
+function formatQuestReward(tokensEarned, tokenReward) {
+  if (typeof tokensEarned === 'number' && tokensEarned > 0) {
+    return `+${tokensEarned.toLocaleString()} tokens`;
+  }
+
+  if (!tokenReward && tokenReward !== 0) {
+    return 'No reward listed';
+  }
+
+  if (typeof tokenReward === 'number') {
+    return `${tokenReward.toLocaleString()} tokens`;
+  }
+
+  return escapeHtmlAttribute(String(tokenReward));
+}
+
+// ------------------- Function: formatQuestProgress -------------------
+// Provides human readable progress text based on quest type
+function formatQuestProgress(quest) {
+  const participant = quest.participant || {};
+
+  if (quest.questType === 'RP') {
+    return `${participant.rpPostCount || 0} RP posts logged`;
+  }
+
+  if (quest.questType === 'Interactive') {
+    return `${participant.successfulRolls || 0} successful rolls`;
+  }
+
+  const submissions = participant.submissions || 0;
+  return `${submissions} submission${submissions === 1 ? '' : 's'} recorded`;
+}
+
+// ------------------- Function: getQuestTypeClass -------------------
+// Returns a class name for quest type badges
+function getQuestTypeClass(type = '') {
+  if (!type) return '';
+  return `quest-type-${type.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+}
+
+// ------------------- Function: renderQuestTypeChart -------------------
+// Renders the quest type breakdown chart
+function renderQuestTypeChart(typeTotals = {}) {
+  if (typeof Chart === 'undefined') {
+    console.warn('[profile.js]: Chart.js not available for quest charts');
+    return;
+  }
+
+  const canvas = document.getElementById('quests-types-chart');
+  if (!canvas) {
+    return;
+  }
+
+  const entries = Object.entries(typeTotals).filter(([, count]) => count > 0);
+  if (!entries.length) {
+    return;
+  }
+
+  const labels = entries.map(([type]) => capitalize(type.replace(/_/g, ' ')));
+  const data = entries.map(([, count]) => count);
+  const colors = ['#ffd43b', '#4dabf7', '#ff6b6b', '#51cf66', '#a78bfa', '#f783ac', '#f8c291'];
+
+  const plugins = [];
+  if (typeof ChartDataLabels !== 'undefined') {
+    plugins.push(ChartDataLabels);
+  }
+
+  new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors.slice(0, data.length),
+        borderWidth: 2,
+        borderColor: '#1a1a2e'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          padding: 12,
+          titleColor: '#fff',
+          bodyColor: '#fff',
+          borderColor: '#ffd43b',
+          borderWidth: 1
+        },
+        datalabels: {
+          color: '#ffffff',
+          font: { weight: 'bold', size: 14 },
+          formatter: (value) => value
+        }
+      }
+    },
+    plugins
+  });
 }
 
 // ------------------- Function: createProfileCharacterCard -------------------

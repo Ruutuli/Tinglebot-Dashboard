@@ -14,6 +14,7 @@
   animation: fadeIn 0.3s ease;
 }
 
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -75,6 +76,7 @@
   width: auto !important;
   height: auto !important;
   justify-content: center !important;
+  margin-right: auto !important;
   z-index: auto !important;
 }
 
@@ -413,7 +415,7 @@
   background: linear-gradient(135deg, #cbb687 0%, #e5dcb7 100%);
 }
 
-.action-btn {
+#database-editor-section .action-btn {
   background: linear-gradient(135deg, rgba(203, 182, 135, 0.1) 0%, rgba(229, 220, 183, 0.05) 100%);
   border: 1px solid rgba(203, 182, 135, 0.2);
   cursor: pointer;
@@ -431,7 +433,7 @@
   overflow: hidden;
 }
 
-.action-btn::before {
+#database-editor-section .action-btn::before {
   content: '';
   position: absolute;
   top: 0;
@@ -442,11 +444,11 @@
   transition: left 0.5s ease;
 }
 
-.action-btn:hover::before {
+#database-editor-section .action-btn:hover::before {
   left: 100%;
 }
 
-.action-btn:hover {
+#database-editor-section .action-btn:hover {
   background: linear-gradient(135deg, rgba(203, 182, 135, 0.2) 0%, rgba(229, 220, 183, 0.15) 100%);
   border-color: rgba(203, 182, 135, 0.4);
   color: #e5dcb7;
@@ -454,13 +456,11 @@
   box-shadow: 
     0 6px 16px rgba(203, 182, 135, 0.3),
     0 0 0 1px rgba(203, 182, 135, 0.3);
-}
-
-.edit-btn {
+#database-editor-section .edit-btn {
   color: #cbb687;
 }
 
-.edit-btn:hover {
+#database-editor-section .edit-btn:hover {
   color: #e5dcb7;
 }
 
@@ -1449,3 +1449,4 @@ div.db-notification-info i {
   }
 }
 
+}

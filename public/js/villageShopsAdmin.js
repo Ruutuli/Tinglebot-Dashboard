@@ -16,10 +16,10 @@ class VillageShopsAdmin {
     this.editingItem = null;
     this.availableItems = [];
     this.selectedSuggestionIndex = -1;
+    this.initialDataRequested = false;
     
     this.initializeEventListeners();
-    this.loadVillageShops();
-    this.loadAvailableItems();
+    this.maybeAutoLoadSectionData();
     
     console.log('VillageShopsAdmin initialized'); // Debug log
   }
@@ -102,6 +102,23 @@ class VillageShopsAdmin {
     });
   }
 
+  maybeAutoLoadSectionData() {
+    const adminSection = document.getElementById('village-shops-management-section');
+    if (adminSection && adminSection.style.display !== 'none') {
+      this.requestInitialData();
+      this.loadVillageShops();
+    }
+  }
+
+  requestInitialData() {
+    if (this.initialDataRequested) {
+      return;
+    }
+
+    this.initialDataRequested = true;
+    this.loadAvailableItems();
+  }
+
   attachVillageShopsEventListeners() {
     // Add new item button
     const addBtn = document.getElementById('add-shop-item-btn');
@@ -180,7 +197,8 @@ class VillageShopsAdmin {
     // Re-attach event listeners to ensure they work (in case elements weren't available before)
     this.attachVillageShopsEventListeners();
     
-    // Load data
+    // Load data only when the section is actually opened
+    this.requestInitialData();
     this.loadVillageShops();
   }
 
@@ -205,7 +223,7 @@ class VillageShopsAdmin {
       const authData = await authResponse.json();
       
       if (!authData.isAuthenticated || !authData.isAdmin) {
-        this.showError('Admin access required. Please log in with admin privileges.');
+        console.info('VillageShopsAdmin: user missing admin privileges, skipping village shop load.');
         return;
       }
       
@@ -823,9 +841,40 @@ class VillageShopsAdmin {
   }
 }
 
-// Initialize the village shops admin when the page loads
+// Initialize the village shops admin when the page loads (admin-only)
 let villageShopsAdmin;
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  const adminSection = document.getElementById('village-shops-management-section');
+  const adminButton = document.getElementById('village-shops-manager-btn');
+  const hasAdminUI = Boolean(adminSection || adminButton);
+
+  if (!hasAdminUI) {
+    // Nothing to initialize on this page
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/user', { credentials: 'include' });
+    if (!response.ok) {
+      throw new Error(`Failed to verify user status (${response.status})`);
+    }
+
+    const userData = await response.json();
+    if (!userData?.isAuthenticated || !userData?.isAdmin) {
+      console.info('VillageShopsAdmin: user is not an authenticated admin, skipping initialization.');
+
+      if (adminButton) {
+        adminButton.addEventListener('click', () => {
+          alert('Admin access required. Please log in with admin privileges.');
+        }, { once: true });
+      }
+      return;
+    }
+  } catch (error) {
+    console.warn('VillageShopsAdmin: unable to verify admin status, skipping initialization.', error);
+    return;
+  }
+
   villageShopsAdmin = new VillageShopsAdmin();
   
   // Add global test function for debugging

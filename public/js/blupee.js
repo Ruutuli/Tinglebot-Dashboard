@@ -13,9 +13,9 @@
 
 const BLUPEE_CONFIG = {
   // Spawn settings
-  minSpawnDelay: 1000, // 1 second minimum before first spawn (instant!)
-  maxSpawnDelay: 3000, // 3 seconds maximum before first spawn
-  spawnChance: 0.3, // 30% chance to spawn on page load
+  minSpawnDelay: 15000, // 15 seconds minimum before first spawn
+  maxSpawnDelay: 60000, // 60 seconds maximum before first spawn
+  spawnChance: 0.12, // 12% chance to spawn on page load
   dailyLimit: 5, // Maximum 5 catches per day (server-enforced)
   cooldownMinutes: 30, // 30 minutes cooldown between catches (server-enforced)
   

@@ -106,6 +106,254 @@ function scrollToTop() {
 }
   
 // ============================================================================
+// ------------------- Section: Search Filter Builder -------------------
+// Provides a consistent, modular way to render search/filter bars
+// ============================================================================
+/**
+ * Creates a standardized search filter bar that automatically applies the
+ * shared styling and layout used across the dashboard.
+ * @param {Object} config - Configuration for the filter bar
+ * @param {string} [config.id] - Optional id for the filter bar element
+ * @param {Array} [config.filters] - List of filter definitions
+ * @param {Array} [config.buttons] - Optional actions (e.g., clear button)
+ * @param {Array} [config.barClasses] - Extra classes for the bar wrapper
+ * @param {Object} [config.dataset] - Data attributes to apply to the bar
+ * @returns {{ bar: HTMLElement, elements: Record<string, HTMLElement> }}
+ */
+function createSearchFilterBar({
+  id,
+  filters = [],
+  advancedFilters = [],
+  buttons = [],
+  barClasses = [],
+  dataset = {},
+  layout = 'responsive',
+  advancedToggleLabel = 'Show advanced filters',
+  advancedToggleExpandedLabel = 'Hide advanced filters'
+} = {}) {
+  const bar = document.createElement('div');
+  const classList = ['search-filter-bar', ...barClasses];
+  bar.className = classList.filter(Boolean).join(' ');
+  bar.dataset.layout = layout;
+
+  if (id) {
+    bar.id = id;
+  }
+
+  if (dataset && typeof dataset === 'object') {
+    Object.entries(dataset).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        bar.dataset[key] = value;
+      }
+    });
+  }
+
+  const createdElements = {};
+
+  const applyAttributes = (element, attributes = {}) => {
+    Object.entries(attributes).forEach(([attr, value]) => {
+      if (value === undefined || value === null || value === false) return;
+      if (value === true) {
+        element.setAttribute(attr, attr);
+      } else {
+        element.setAttribute(attr, value);
+      }
+    });
+  };
+
+  const normalizeOptions = (options = []) =>
+    options.map(option => (typeof option === 'string' ? { value: option, label: option } : option));
+
+  const appendControl = (container, filterConfig = {}) => {
+    if (!filterConfig) return;
+
+    if (filterConfig.type === 'custom' && typeof filterConfig.render === 'function') {
+      const customWrapper = document.createElement('div');
+      customWrapper.className = ['search-filter-control', ...(filterConfig.wrapperClasses || [])].join(' ').trim();
+      if (filterConfig.wrapperAttributes) {
+        applyAttributes(customWrapper, filterConfig.wrapperAttributes);
+      }
+      const renderedNode = filterConfig.render(customWrapper);
+      if (renderedNode instanceof HTMLElement && !customWrapper.contains(renderedNode)) {
+        customWrapper.appendChild(renderedNode);
+      }
+      container.appendChild(customWrapper);
+      return;
+    }
+
+    const control = document.createElement('div');
+    const controlClasses = ['search-filter-control'];
+    if (!filterConfig.type || filterConfig.type === 'input') {
+      controlClasses.push('search-input');
+    }
+    if (filterConfig.width === 'double') {
+      controlClasses.push('span-two');
+    }
+    if (filterConfig.width === 'full') {
+      controlClasses.push('span-full');
+    }
+    if (Array.isArray(filterConfig.wrapperClasses)) {
+      controlClasses.push(...filterConfig.wrapperClasses);
+    }
+
+    control.className = controlClasses.filter(Boolean).join(' ');
+    if (filterConfig.wrapperAttributes) {
+      applyAttributes(control, filterConfig.wrapperAttributes);
+    }
+
+    let element;
+    if (filterConfig.element instanceof HTMLElement) {
+      element = filterConfig.element;
+    } else if (filterConfig.type === 'select') {
+      element = document.createElement('select');
+    } else {
+      element = document.createElement('input');
+      element.type = filterConfig.inputType || 'text';
+    }
+
+    if (filterConfig.id) element.id = filterConfig.id;
+    if (filterConfig.name) element.name = filterConfig.name;
+    if (filterConfig.placeholder) element.placeholder = filterConfig.placeholder;
+    if (filterConfig.value !== undefined) element.value = filterConfig.value;
+    if (filterConfig.maxLength) element.maxLength = filterConfig.maxLength;
+
+    if (filterConfig.attributes) {
+      applyAttributes(element, filterConfig.attributes);
+    }
+
+    if (filterConfig.dataset) {
+      Object.entries(filterConfig.dataset).forEach(([dataKey, dataValue]) => {
+        if (dataValue !== undefined && dataValue !== null) {
+          element.dataset[dataKey] = dataValue;
+        }
+      });
+    }
+
+    if (filterConfig.type === 'select') {
+      const options = normalizeOptions(filterConfig.options || []);
+      if (options.length === 0 && filterConfig.placeholderOption) {
+        options.push(filterConfig.placeholderOption);
+      }
+      options.forEach(opt => {
+        const optionElement = document.createElement('option');
+        optionElement.value = opt.value ?? opt.label ?? '';
+        optionElement.textContent = opt.label ?? opt.value ?? '';
+        if (opt.disabled) optionElement.disabled = true;
+        if (opt.selected) optionElement.selected = true;
+        if (opt.hidden) optionElement.hidden = true;
+        element.appendChild(optionElement);
+      });
+
+      if (filterConfig.defaultValue !== undefined) {
+        element.value = filterConfig.defaultValue;
+      }
+    }
+
+    if (filterConfig.label) {
+      control.classList.add('has-label');
+      const labelEl = document.createElement('label');
+      labelEl.className = ['search-filter-label', filterConfig.labelClass || ''].filter(Boolean).join(' ').trim();
+      labelEl.textContent = filterConfig.label;
+      const labelTarget = filterConfig.id || filterConfig.name;
+      if (labelTarget) {
+        labelEl.setAttribute('for', labelTarget);
+      }
+      if (filterConfig.labelIcon) {
+        const icon = document.createElement('i');
+        icon.className = filterConfig.labelIcon;
+        labelEl.prepend(icon);
+      }
+      control.appendChild(labelEl);
+    }
+
+    control.appendChild(element);
+    container.appendChild(control);
+
+    if (filterConfig.id) {
+      createdElements[filterConfig.id] = element;
+    }
+  };
+
+  filters.forEach(config => appendControl(bar, config));
+
+  const normalizedButtons = buttons.map(buttonConfig => {
+    if (typeof buttonConfig === 'string') {
+      return {
+        label: buttonConfig,
+        className: 'clear-filters-btn'
+      };
+    }
+    return buttonConfig;
+  });
+
+  normalizedButtons.forEach((buttonConfig, index) => {
+    if (!buttonConfig) return;
+    const button = document.createElement('button');
+    button.type = buttonConfig.type || 'button';
+    if (buttonConfig.id) {
+      button.id = buttonConfig.id;
+    } else if (!buttonConfig.html && !buttonConfig.label) {
+      button.id = `filter-btn-${index}`;
+    }
+    button.className = buttonConfig.className || 'clear-filters-btn';
+
+    if (buttonConfig.html) {
+      button.innerHTML = buttonConfig.html;
+    } else {
+      button.textContent = buttonConfig.label || 'Action';
+    }
+
+    if (buttonConfig.attributes) {
+      applyAttributes(button, buttonConfig.attributes);
+    }
+
+    if (buttonConfig.dataset) {
+      Object.entries(buttonConfig.dataset).forEach(([dataKey, dataValue]) => {
+        if (dataValue !== undefined && dataValue !== null) {
+          button.dataset[dataKey] = dataValue;
+        }
+      });
+    }
+
+    bar.appendChild(button);
+
+    if (button.id) {
+      createdElements[button.id] = button;
+    }
+  });
+
+  if (advancedFilters.length) {
+    const advancedSection = document.createElement('div');
+    advancedSection.className = 'search-filter-advanced-section';
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'search-filter-advanced-toggle';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.innerHTML = `<span>${advancedToggleLabel}</span><i class="fas fa-chevron-down"></i>`;
+
+    const advancedGrid = document.createElement('div');
+    advancedGrid.className = 'search-filter-advanced-grid';
+
+    advancedFilters.forEach(config => appendControl(advancedGrid, config));
+
+    toggle.addEventListener('click', () => {
+      const expanded = advancedSection.classList.toggle('expanded');
+      toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      toggle.querySelector('span').textContent = expanded
+        ? advancedToggleExpandedLabel
+        : advancedToggleLabel;
+    });
+
+    advancedSection.appendChild(toggle);
+    advancedSection.appendChild(advancedGrid);
+    bar.appendChild(advancedSection);
+  }
+
+  return { bar, elements: createdElements };
+}
+
+// ============================================================================
 // ------------------- Section: Client-Side Pagination Controls -------------------
 // Handles rendering and event bindings for pagination UI (client-side)
 // ============================================================================
@@ -674,6 +922,8 @@ window.mobileUtils = {
   setupMobileEnhancements
 };
 
+window.createSearchFilterBar = createSearchFilterBar;
+
 // ============================================================================
 // ------------------- Exports -------------------
 // Expose public functions for external use
@@ -683,6 +933,7 @@ export {
   createPagination,
   setupServerPagination,
   capitalizeFirstLetter,
-  scrollToTop
+  scrollToTop,
+  createSearchFilterBar
 };
   

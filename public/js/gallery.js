@@ -3,6 +3,8 @@
 // Handles gallery display, filtering, and pagination for approved submissions
 // ============================================================================
 
+import { createSearchFilterBar } from './ui.js';
+
 class Gallery {
   constructor() {
     this.currentPage = 1;
@@ -18,12 +20,71 @@ class Gallery {
     this.characters = [];
     this.currentUserId = null;
     
+    this.renderFilterBar();
     this.init();
   }
 
   init() {
     this.bindEvents();
     this.loadSubmissions();
+  }
+
+  renderFilterBar() {
+    const container = document.querySelector('.gallery-filters');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    const { bar } = createSearchFilterBar({
+      id: 'gallery-filter-bar',
+      layout: 'wide',
+      filters: [
+        {
+          type: 'select',
+          id: 'category-filter',
+          options: [
+            { value: 'all', label: 'All Categories', selected: true },
+            { value: 'art', label: '🎨 Art' },
+            { value: 'writing', label: '📝 Writing' }
+          ],
+          attributes: { 'aria-label': 'Filter by submission category' }
+        },
+        {
+          type: 'select',
+          id: 'user-filter',
+          options: [{ value: 'all', label: 'All Users', selected: true }],
+          attributes: { 'aria-label': 'Filter by submitting user' },
+          width: 'double'
+        },
+        {
+          type: 'select',
+          id: 'character-filter',
+          options: [{ value: 'all', label: 'All Characters', selected: true }],
+          attributes: { 'aria-label': 'Filter by character' },
+          width: 'double'
+        },
+        {
+          type: 'select',
+          id: 'sort-filter',
+          options: [
+            { value: 'newest', label: '🕒 Newest First', selected: true },
+            { value: 'oldest', label: '⏰ Oldest First' },
+            { value: 'tokens', label: '💰 Most Tokens' }
+          ],
+          attributes: { 'aria-label': 'Sort submissions' }
+        }
+      ],
+      buttons: [
+        {
+          id: 'refresh-gallery',
+          className: 'clear-filters-btn',
+          html: '<i class="fas fa-sync-alt"></i> Refresh',
+          attributes: { 'aria-label': 'Refresh gallery submissions' }
+        }
+      ]
+    });
+
+    container.appendChild(bar);
   }
 
   bindEvents() {
@@ -873,10 +934,8 @@ class Gallery {
       const response = await fetch('/api/characters');
       if (!response.ok) throw new Error('Failed to fetch characters');
       const data = await response.json();
-      console.log('Characters API response:', data);
       // The API returns { characters: [...] }, so extract the characters array
       const characters = data.characters || [];
-      console.log('Extracted characters:', characters.length, 'characters');
       return characters;
     } catch (error) {
       console.error('Error fetching characters:', error);
@@ -1004,11 +1063,6 @@ class Gallery {
     }
     
     const canEdit = submission.userId === this.currentUserId;
-    console.log(`Edit permission for submission ${submission.submissionId}:`, {
-      submissionUserId: submission.userId,
-      currentUserId: this.currentUserId,
-      canEdit: canEdit
-    });
     
     return canEdit;
   }

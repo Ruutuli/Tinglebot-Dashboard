@@ -1224,8 +1224,8 @@ questSchema.methods.checkAutoCompletion = async function(forceCheck = false) {
         this.completionProcessed = false; // Mark for reward processing
         await this.save();
         
-        // Send quest completion summary notification
-        await sendQuestSummary(this, COMPLETION_REASONS.TIME_EXPIRED);
+        // Don't send summary here - it will be sent after rewards are processed
+        // to avoid duplicate messages
         
         console.log(`[QuestModel.js] ⏰ Quest "${this.title}" completed due to time expiration`);
         return { completed: true, reason: COMPLETION_REASONS.TIME_EXPIRED, needsRewardProcessing: true };
@@ -1271,8 +1271,8 @@ questSchema.methods.checkAutoCompletion = async function(forceCheck = false) {
         console.log(`[QuestModel.js] 🎉 Quest "${this.title}" completed - all participants finished`);
         await this.save();
         
-        // Send quest completion summary notification
-        await sendQuestSummary(this, COMPLETION_REASONS.ALL_PARTICIPANTS_COMPLETED);
+        // Don't send summary here - it will be sent after rewards are processed
+        // to avoid duplicate messages
         
         return { completed: true, reason: COMPLETION_REASONS.ALL_PARTICIPANTS_COMPLETED, needsRewardProcessing: true };
     }
@@ -1294,12 +1294,19 @@ questSchema.methods.markCompletionProcessed = async function() {
 
 // ------------------- Time Expiration Check ------------------
 questSchema.methods.checkTimeExpiration = function() {
-    if (!this.postedAt || !this.timeLimit) {
+    if (!this.timeLimit) {
+        return false;
+    }
+    
+    // Use postedAt if available, otherwise fall back to createdAt
+    // This handles quests that were created but never officially "posted"
+    const startDate = this.postedAt || this.createdAt;
+    if (!startDate) {
         return false;
     }
     
     const now = new Date();
-    const postedAt = new Date(this.postedAt);
+    const startDateTime = new Date(startDate);
     const timeLimit = this.timeLimit.toLowerCase();
     
     let durationMs = 0;
@@ -1318,7 +1325,7 @@ questSchema.methods.checkTimeExpiration = function() {
         durationMs = hours * TIME_MULTIPLIERS.HOUR;
     }
     
-    const expirationTime = new Date(postedAt.getTime() + durationMs);
+    const expirationTime = new Date(startDateTime.getTime() + durationMs);
     return now > expirationTime;
 };
 
@@ -1335,8 +1342,30 @@ questSchema.methods.getNormalizedTokenReward = function() {
         return Math.max(0, tokenReward);
     }
     
-    const parsed = parseFloat(tokenReward);
-    return !isNaN(parsed) ? Math.max(0, parsed) : 0;
+    // Handle special formats like "flat:300", "per_unit:50", etc.
+    if (typeof tokenReward === 'string') {
+        // Check for "flat:X" format
+        const flatMatch = tokenReward.match(/^flat:(\d+)$/i);
+        if (flatMatch) {
+            return Math.max(0, parseInt(flatMatch[1], 10));
+        }
+        
+        // Check for "per_unit:X" format
+        const perUnitMatch = tokenReward.match(/^per_unit:(\d+)$/i);
+        if (perUnitMatch) {
+            // For per_unit, we'd need participant info, so return 0 here
+            // The actual calculation should be done elsewhere with participant data
+            return 0;
+        }
+        
+        // Try to parse as a regular number
+        const parsed = parseFloat(tokenReward);
+        if (!isNaN(parsed)) {
+            return Math.max(0, parsed);
+        }
+    }
+    
+    return 0;
 };
 
 // ------------------- Export Quest Model -------------------
