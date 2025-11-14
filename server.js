@@ -6495,7 +6495,6 @@ app.get('/api/gallery/test', (req, res) => {
 // Returns approved submissions for the gallery
 app.get('/api/gallery/submissions', async (req, res) => {
   try {
-    logger.api('Gallery API endpoint called');
     const { category, sort, page = 1, limit = 50 } = req.query;
     
     // Build query
@@ -6525,18 +6524,15 @@ app.get('/api/gallery/submissions', async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
     
     // Fetch submissions
-    logger.debug('Fetching submissions with query:', query);
     const submissions = await ApprovedSubmission.find(query)
       .sort(sortOptions)
       .skip(skip)
       .limit(limitNum)
       .lean();
     
-    logger.debug('Found ' + submissions.length + ' submissions');
     
     // Get total count for pagination
     const totalCount = await ApprovedSubmission.countDocuments(query);
-    logger.debug('Total count: ' + totalCount);
     
     res.json({
       submissions,
