@@ -8562,7 +8562,7 @@ app.get('/api/admin/security-comprehensive', requireAuth, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('[server.js]: ❌ Comprehensive security check error:', error);
+    logger.error('❌ Comprehensive security check error', error, 'server.js');
     res.status(500).json({ 
       error: 'Comprehensive security check failed',
       details: error.message 
@@ -8573,7 +8573,7 @@ app.get('/api/admin/security-comprehensive', requireAuth, async (req, res) => {
 // Automated security audit (runs daily)
 setInterval(async () => {
   try {
-    console.log('[server.js]: 🔍 Running automated security audit...');
+    logger.schedule('Running automated security audit...', 'server.js');
     const [databaseAudit, codebaseAudit, fileIntegrity, logAnalysis, accessAudit] = await Promise.all([
       performSecurityAudit(),
       performCodebaseSecurityScan(),
@@ -8587,18 +8587,19 @@ setInterval(async () => {
     const totalSuspicious = fileIntegrity.suspiciousFiles.length + logAnalysis.suspiciousActivities.length;
     
     if (totalCritical > 0 || totalSuspicious > 0) {
-      console.error('[server.js]: 🚨 CRITICAL SECURITY ISSUES DETECTED:', {
+      const criticalDetails = {
         databaseIssues: databaseAudit.criticalIssues.length,
         codebaseIssues: codebaseAudit.criticalIssues.length,
         suspiciousFiles: fileIntegrity.suspiciousFiles.length,
         suspiciousActivities: logAnalysis.suspiciousActivities.length,
-        totalCritical: totalCritical,
-        totalSuspicious: totalSuspicious
-      });
+        totalCritical,
+        totalSuspicious
+      };
+      logger.error(`🚨 CRITICAL SECURITY ISSUES DETECTED:\n${JSON.stringify(criticalDetails, null, 2)}`, null, 'server.js');
     }
     
     // Log summary
-    console.log('[server.js]: 📊 Daily security audit summary:', {
+    const auditSummary = {
       database: databaseAudit.summary,
       codebase: {
         filesScanned: codebaseAudit.filesScanned,
@@ -8619,10 +8620,11 @@ setInterval(async () => {
         recentLogins: accessAudit.recentLogins.length,
         suspiciousAccess: accessAudit.suspiciousAccess.length
       }
-    });
+    };
+    logger.info(`📊 Daily security audit summary:\n${JSON.stringify(auditSummary, null, 2)}`, 'server.js');
     
   } catch (error) {
-    console.error('[server.js]: ❌ Automated security audit failed:', error);
+    logger.error('❌ Automated security audit failed', error, 'server.js');
   }
 }, 24 * 60 * 60 * 1000); // Run every 24 hours
 
